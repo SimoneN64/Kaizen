@@ -1,0 +1,13 @@
+*build*/
+.idea/
+roms/
+*.dll
+*.bin
+*.ini
+*.json
+*.sh
+log.txt
+.cache/
+vgcore.*
+.vscode/
+*.dump

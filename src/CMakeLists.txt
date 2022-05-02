@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 add_subdirectory(core)
 
+set(FRONTEND "qt" CACHE INTERNAL "")
+
 if(${FRONTEND} MATCHES "qt")
   add_subdirectory(frontend/qt)
 elseif(${FRONTEND} MATCHES "sdl")

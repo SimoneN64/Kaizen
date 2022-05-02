@@ -1,3 +1,8 @@
-#include <BaseCore.hpp>
+#include <Frontend.hpp>
 
-int main() {}
+using namespace natsukashii::frontend;
+
+int main() {
+  App app;
+  return 0;
+}

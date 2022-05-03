@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 add_subdirectory(core)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(FRONTEND "qt" CACHE INTERNAL "")
 
 if(${FRONTEND} MATCHES "qt")

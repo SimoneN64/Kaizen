@@ -1,8 +1,7 @@
 #include <Frontend.hpp>
 
-using namespace natsukashii::frontend;
-
 int main() {
-  App app;
+  natsukashii::frontend::App app;
+  app.Run();
   return 0;
 }

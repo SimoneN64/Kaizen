@@ -1,6 +1,4 @@
 #include <Frontend.hpp>
-#include <SDL2/SDL_events.h>
-#include <SDL2/SDL_video.h>
 
 namespace natsukashii::frontend {
 App::~App() {

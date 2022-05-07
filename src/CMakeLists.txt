@@ -3,7 +3,7 @@ add_subdirectory(core)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(FRONTEND "qt" CACHE INTERNAL "")
+set(FRONTEND "sdl" CACHE INTERNAL "")
 
 if(${FRONTEND} MATCHES "qt")
   add_subdirectory(frontend/qt)

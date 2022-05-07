@@ -1,5 +1,7 @@
 #include <Frontend.hpp>
 
-Window::~Window() {}
+namespace natsukashii::frontend {
+App::~App() {}
 
-Window::Window() {}
+App::App() {}
+}

@@ -1,6 +1,8 @@
 #pragma once
-
-struct Window {
-  ~Window();
-  Window();
+namespace natsukashii::frontend {
+struct App {
+  ~App();
+  App();
+  void Run() {}
 };
+}

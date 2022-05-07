@@ -14,3 +14,7 @@ using s64 = int64_t;
 using u128 = __uint128_t;
 using s128 = __int128_t;
 using m128 = __m128i;
+#define UINT128_MAX ((u128)0xFFFF'FFFF'FFFF'FFFF << 64) | 0xFFFF'FFFF'FFFF'FFFF
+#define UINT128_MIN 0
+#define INT128_MAX ((u128)0x7FFF'FFFF'FFFF'FFFF << 64) | 0xFFFF'FFFF'FFFF'FFFF
+#define INT128_MIN (-INT128_MAX - 1LL)

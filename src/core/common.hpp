@@ -20,14 +20,3 @@ using m128 = __m128i;
 #define INT128_MAX ((u128)0x7FFF'FFFF'FFFF'FFFF << 64) | 0xFFFF'FFFF'FFFF'FFFF
 #define INT128_MIN (-INT128_MAX - 1LL)
 
-template <u8 start, u8 end>
-using BitSliceType =
-std::conditional<(end - start) <= 7, u8,
-  std::conditional<(end - start) <= 15, u16,
-    std::conditional<(end - start) <= 31, u32,
-      std::conditional<(end - start) <= 63, u64,
-        std::conditional<(end - start) <= 127, u128, u128>
-      >
-    >
-  >
->;

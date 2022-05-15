@@ -1,5 +1,6 @@
 #pragma once
 #include <SDL2/SDL.h>
+#include <gb/Core.hpp>
 
 namespace natsukashii::frontend {
 struct App {
@@ -11,5 +12,6 @@ private:
   SDL_Renderer *renderer = nullptr;
   Uint32 id;
   bool quit = false;
+  core::Core gb;
 };
 }

@@ -1,6 +1,6 @@
 #pragma once
-#include <Cpu.hpp>
-#include <Ppu.hpp>
+#include "Cpu.hpp"
+#include "Ppu.hpp"
 
 namespace natsukashii::core {
 struct Core {

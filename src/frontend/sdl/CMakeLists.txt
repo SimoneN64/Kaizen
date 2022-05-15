@@ -6,5 +6,5 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(SDL2 REQUIRED)
 
 add_library(frontend Frontend.cpp Frontend.hpp)
-target_include_directories(frontend PUBLIC .)
+target_include_directories(frontend PUBLIC . ../../core)
 target_link_libraries(frontend PUBLIC SDL2)

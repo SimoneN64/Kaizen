@@ -16,9 +16,11 @@ App::App() {
 
 void App::Run() {
   while(!quit) {
-    SDL_Event e;
-    SDL_PollEvent(&e);
-    quit = e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_CLOSE && e.window.windowID == id;
+    gb.Run();
+
+    SDL_Event event;
+    SDL_PollEvent(&event);
+    quit = event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == id;
   }
 }
 }

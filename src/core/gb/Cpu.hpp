@@ -1,11 +1,13 @@
 #pragma once
-#include "../common.hpp"
+#include "Mem.hpp"
 
 namespace natsukashii::core {
 #define af regs.AF
 #define bc regs.BC
 #define de regs.DE
 #define hl regs.HL
+#define pc regs.PC
+#define sp regs.SP
 
 #define a af.A
 #define f af.F
@@ -76,11 +78,14 @@ struct Registers {
   REGIMPL(u8, B, u8, C);
   REGIMPL(u8, C, u8, E);
   REGIMPL(u8, D, u8, L);
+  u16 PC = 0, SP = 0;
 };
 
 struct Cpu {
   Cpu();
+  void Step(Mem&);
 private:
+  void DecodeAndExecute(u8);
   Registers regs;
 };
 }

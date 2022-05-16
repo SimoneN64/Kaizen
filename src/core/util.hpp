@@ -4,6 +4,12 @@
 #include <cassert>
 
 namespace natsukashii::util {
+template <typename ...Args>
+constexpr void panic(const std::string& fmt, Args... args) {
+  fmt::print(fmt, args...);
+  exit(-1);
+}
+
 template <u8 start, u8 end>
 using BitSliceType =
 typename std::conditional<(end - start) <= 7, u8,
@@ -29,4 +35,5 @@ T BitSlice(const T& num, int start, int end) {
   auto correctedEnd = end == (sizeof(T) * 8) - 1 ? end : end + 1;
   return (num >> start) & ((1 << correctedEnd) - 1);
 }
+
 }

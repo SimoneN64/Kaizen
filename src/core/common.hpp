@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <bitset>
 #include <emmintrin.h>
+#include <fmt/format.h>
 
 using u8 = uint8_t;
 using u16 = uint16_t;
@@ -19,4 +20,6 @@ using m128 = __m128i;
 #define UINT128_MIN 0
 #define INT128_MAX ((u128)0x7FFF'FFFF'FFFF'FFFF << 64) | 0xFFFF'FFFF'FFFF'FFFF
 #define INT128_MIN (-INT128_MAX - 1LL)
-
+#define KiB * 1024
+#define MiB (KiB * 1024)
+#define GiB (MiB * 1024)

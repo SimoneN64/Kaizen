@@ -1,23 +1,8 @@
 #pragma once
-#include "Mem.hpp"
+#include <Mem.hpp>
+#include <util.hpp>
 
-namespace natsukashii::core {
-#define af regs.AF
-#define bc regs.BC
-#define de regs.DE
-#define hl regs.HL
-#define pc regs.PC
-#define sp regs.SP
-
-#define a af.A
-#define f af.F
-#define b bc.B
-#define c bc.C
-#define d de.D
-#define e de.E
-#define h hl.H
-#define l hl.L
-
+namespace natsukashii::gb::core {
 #define REGIMPL(type1, reg1, type2, reg2) \
   struct reg##reg1##reg2 { \
     reg##reg1##reg2() {} \
@@ -26,17 +11,11 @@ namespace natsukashii::core {
       type2 reg2; \
     }; \
     u16 raw = 0; \
-    reg##reg1##reg2& operator=(const u16& rhs) { \
-      reg1 = rhs >> 8; \
-      reg2 = rhs & 0xff; \
-      return *this; \
-    } \
   } reg1##reg2
 
 struct RegF {
   RegF() : raw(0) {}
   RegF(const u8& val) : raw(val) {}
-  u8 raw = 0;
 
   RegF& operator=(const u8& rhs) {
     raw |= ((rhs >> 7) << 7);
@@ -51,6 +30,24 @@ struct RegF {
   bool negative() { return (raw >> 6) & 1; }
   bool halfcarry() { return (raw >> 5) & 1; }
   bool carry() { return (raw >> 4) & 1; }
+
+  void reset() {
+    zero(false);
+    negative(false);
+    halfcarry(false);
+    carry(false);
+  }
+
+  void set(bool z, bool n, bool hc, bool ca) {
+    zero(z);
+    negative(n);
+    halfcarry(hc);
+    carry(ca);
+  }
+
+  u8& get() { return raw; }
+private:
+  u8 raw = 0;
 
   void zero(const bool& rhs) {
     raw &= ~0xF;
@@ -76,16 +73,111 @@ struct RegF {
 struct Registers {
   REGIMPL(u8, A, RegF, F);
   REGIMPL(u8, B, u8, C);
-  REGIMPL(u8, C, u8, E);
-  REGIMPL(u8, D, u8, L);
-  u16 PC = 0, SP = 0;
+  REGIMPL(u8, D, u8, E);
+  REGIMPL(u8, H, u8, L);
+  u16 pc = 0, sp = 0;
+
+  u8& a() { return AF.A; }
+  RegF& f() { return AF.F; }
+  u8& b() { return BC.B; }
+  u8& c() { return BC.C; }
+  u8& d() { return DE.D; }
+  u8& e() { return DE.E; }
+  u8& h() { return HL.H; }
+  u8& l() { return HL.L; }
+  
+  u16& af() { return AF.raw; }
+  u16& bc() { return BC.raw; }
+  u16& de() { return DE.raw; }
+  u16& hl() { return HL.raw; } 
 };
 
 struct Cpu {
   Cpu();
   void Step(Mem&);
 private:
-  void DecodeAndExecute(u8);
+  void FetchDecodeExecute(Mem& mem);
   Registers regs;
+
+  template <int group>
+  u16 GetR16(u8 bits) {
+    static_assert(group > 0 && group < 3, "Invalid GetR16 group");
+    if constexpr (group == 1) {
+      switch(bits & 3) {
+        case 0: return regs.bc();
+        case 1: return regs.de();
+        case 2: return regs.hl();
+        case 3: return regs.sp;
+      }
+    } else if constexpr (group == 2) {
+      switch(bits & 3) {
+        case 0: return regs.bc();
+        case 1: return regs.de();
+        case 2: return regs.hl()++;
+        case 3: return regs.hl()--;
+      }
+    } else if constexpr (group == 3) {
+      switch(bits & 3) {
+        case 0: return regs.bc();
+        case 1: return regs.de();
+        case 2: return regs.hl();
+        case 3: return regs.af();
+      }
+    }
+  }
+
+  template <int group>
+  void SetR16(u8 bits, u16 val) {
+    static_assert(group > 0 && group < 3, "Invalid SetR16 group");
+    if constexpr (group == 1) {
+      switch(bits & 3) {
+        case 0: regs.bc() = val; break;
+        case 1: regs.de() = val; break;
+        case 2: regs.hl() = val; break;
+        case 3: regs.sp = val; break;
+      }
+    } else if constexpr (group == 2) {
+      switch(bits & 3) {
+        case 0: regs.bc() = val; break;
+        case 1: regs.de() = val; break;
+        case 2: regs.hl() = val; regs.hl()++; break;
+        case 3: regs.hl() = val; regs.hl()--; break;
+      }
+    } else if constexpr (group == 3) {
+      switch(bits & 3) {
+        case 0: regs.bc() = val; break;
+        case 1: regs.de() = val; break;
+        case 2: regs.hl() = val; break;
+        case 3: regs.af() = val; break;
+      }
+    }
+  }
+
+  u8 GetR8(u8 bits, Mem& mem) {
+    switch(bits & 7) {
+      case 0: return regs.b();
+      case 1: return regs.c();
+      case 2: return regs.d();
+      case 3: return regs.e();
+      case 4: return regs.h();
+      case 5: return regs.l();
+      case 6: return mem.Read8(regs.hl());
+      case 7: return regs.a();
+    }
+    return 0;
+  }
+
+  void SetR8(u8 bits, u8 val, Mem& mem) {
+    switch(bits & 7) {
+      case 0: regs.b() = val; break;
+      case 1: regs.c() = val; break;
+      case 2: regs.d() = val; break;
+      case 3: regs.e() = val; break;
+      case 4: regs.h() = val; break;
+      case 5: regs.l() = val; break;
+      case 6: return mem.Write8(regs.hl(), val);
+      case 7: regs.a() = val; break;
+    }
+  }
 };
 }

@@ -6,4 +6,5 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 add_subdirectory(src)
 add_executable(natsukashii src/main.cpp)
+target_include_directories(natsukashii PUBLIC src/frontend/)
 target_link_libraries(natsukashii cores frontend)

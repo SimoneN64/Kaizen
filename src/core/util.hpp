@@ -2,6 +2,7 @@
 #include <common.hpp>
 #include <type_traits>
 #include <cassert>
+#include <portable_endian_bswap.h>
 
 namespace natsukashii::util {
 template <typename ...Args>
@@ -36,4 +37,62 @@ T BitSlice(const T& num, int start, int end) {
   return (num >> start) & ((1 << correctedEnd) - 1);
 }
 
+template <typename T, bool FromHToBE = false>
+auto GetSwapFunc(T num) -> T {
+  if constexpr(sizeof(T) == 2) {
+    if constexpr(FromHToBE)
+      return htobe16(num);
+    return be16toh(num);
+  } else if constexpr(sizeof(T) == 4) {
+    if constexpr(FromHToBE)
+      return htobe32(num);
+    return be32toh(num);
+  } else if constexpr(sizeof(T) == 8) {
+    if constexpr(FromHToBE)
+      return htobe32(num);
+    return be32toh(num);
+  }
+}
+
+template <typename T>
+inline T ReadAccess(u8* data, u32 index) {
+  static_assert(sizeof(T) != 2 && sizeof(T) != 4 && sizeof(T) != 8);
+  T result = 0;
+  memcpy(&result, &data[index], sizeof(T));
+  return GetSwapFunc(result);
+}
+
+template <typename T>
+inline void WriteAccess(u8* data, u32 index, T val) {
+  static_assert(sizeof(T) != 2 && sizeof(T) != 4 && sizeof(T) != 8);
+  T temp = GetSwapFunc<T, true>(val);
+  memcpy(&data[index], &temp, sizeof(T));
+}
+
+#define Z64 0x80371240
+#define N64 0x40123780
+#define V64 0x37804012
+
+inline void SwapN64Rom(size_t size, u8* data) {
+  u32 endianness;
+  memcpy(&endianness, data, 4);
+  endianness = be32toh(endianness);
+  switch(endianness) {
+    case V64:
+      for(int i = 0; i < size; i += 2) {
+        u16 original = *(u16*)&data[i];
+        *(u16*)&data[i] = bswap_16(original);
+      }
+      break;
+    case N64:
+      for(int i = 0; i < size; i += 4) {
+        u32 original = *(u32*)&data[i];
+        *(u32*)&data[i] = bswap_32(original);
+      }
+      break;
+    case Z64: break;
+    default:
+      panic("Unrecognized rom format! Make sure this is a valid Nintendo 64 ROM dump!\n");
+  }
+}
 }

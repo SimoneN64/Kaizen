@@ -9,6 +9,8 @@ set(CMAKE_AUTOUIC ON)
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
-add_library(frontend Frontend.hpp)
+add_library(frontend Frontend.hpp Frontend.cpp)
+
+target_compile_definitions(frontend PUBLIC FRONTEND_QT)
 target_include_directories(frontend PUBLIC .)
 target_link_libraries(frontend PUBLIC Qt5::Widgets)

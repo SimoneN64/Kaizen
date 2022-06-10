@@ -1,10 +1,10 @@
 #pragma once
 #include <common.hpp>
 #include <memory>
-#include <mio/mmap.hpp>
 #include <vector>
-#include "memory_regions.hpp"
-#include "mbc.hpp"
+#include <mio/mmap.hpp>
+#include <memory_regions.hpp>
+#include <mbc.hpp>
 
 namespace natsukashii::gb::core {
 struct IO {

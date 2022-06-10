@@ -3,15 +3,15 @@
 #include <util.hpp>
 
 namespace natsukashii::gb::core {
-#define REGIMPL(type1, reg1, type2, reg2) \
-  struct reg##reg1##reg2 { \
-    reg##reg1##reg2() {} \
-    union { \
-      type1 reg1; \
-      type2 reg2; \
-    }; \
-    u16 raw = 0; \
-  } reg1##reg2
+template <class T1, class T2>
+struct Reg {
+  Reg() : raw(0) {};
+  union {
+    T1 hi;
+    T2 lo;
+  };
+  u16 raw = 0;
+};
 
 struct RegF {
   RegF() : raw(0) {}
@@ -71,20 +71,20 @@ private:
 };
 
 struct Registers {
-  REGIMPL(u8, A, RegF, F);
-  REGIMPL(u8, B, u8, C);
-  REGIMPL(u8, D, u8, E);
-  REGIMPL(u8, H, u8, L);
+  Reg<u8, RegF> AF;
+  Reg<u8,   u8> BC;
+  Reg<u8,   u8> DE;
+  Reg<u8,   u8> HL;
   u16 pc = 0, sp = 0;
 
-  u8& a() { return AF.A; }
-  RegF& f() { return AF.F; }
-  u8& b() { return BC.B; }
-  u8& c() { return BC.C; }
-  u8& d() { return DE.D; }
-  u8& e() { return DE.E; }
-  u8& h() { return HL.H; }
-  u8& l() { return HL.L; }
+    u8& a() { return AF.hi; }
+  RegF& f() { return AF.lo; }
+    u8& b() { return BC.hi; }
+    u8& c() { return BC.lo; }
+    u8& d() { return DE.hi; }
+    u8& e() { return DE.lo; }
+    u8& h() { return HL.hi; }
+    u8& l() { return HL.lo; }
   
   u16& af() { return AF.raw; }
   u16& bc() { return BC.raw; }
@@ -124,6 +124,7 @@ private:
         case 3: return regs.af();
       }
     }
+    return 0;
   }
 
   template <int group>

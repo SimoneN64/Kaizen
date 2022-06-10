@@ -11,7 +11,7 @@ add_library(cores
   Scheduler.cpp
   Scheduler.hpp
   common.hpp
-  BaseCore.hpp)
+  util.hpp)
 target_include_directories(cores PRIVATE .)
 target_include_directories(cores PUBLIC ../../external)
 target_link_libraries(cores PUBLIC gb n64)

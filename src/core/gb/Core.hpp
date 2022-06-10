@@ -5,8 +5,10 @@
 #include <BaseCore.hpp>
 
 namespace natsukashii::gb::core {
-struct Core : natsukashii::core::BaseCore {
-  Core(const std::string&);
+using namespace natsukashii::core;
+struct Core : BaseCore {
+  ~Core() override = default;
+  explicit Core(const std::string&);
   void Run() override;
 private:
   Mem mem;

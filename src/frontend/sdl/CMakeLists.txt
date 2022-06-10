@@ -1,11 +1,19 @@
 cmake_minimum_required(VERSION 3.20)
-project(frontend)
+project(natsukashii-sdl)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(SDL2 REQUIRED)
 
-add_library(frontend Frontend.cpp Frontend.hpp)
-target_compile_definitions(frontend PUBLIC FRONTEND_SDL)
-target_include_directories(frontend PUBLIC . ../../core ../../core/gb ../../core/n64)
-target_link_libraries(frontend PUBLIC SDL2)
+add_executable(natsukashii-sdl Frontend.cpp Frontend.hpp main.cpp)
+
+include(FetchContent)
+FetchContent_Declare(
+  argparse
+  GIT_REPOSITORY https://github.com/p-ranav/argparse
+  GIT_TAG 40a3888f151256bba95c45860af381b2b73752e8
+)
+FetchContent_MakeAvailable(argparse)
+
+target_include_directories(natsukashii-sdl PRIVATE . ../../core ../../core/gb ../../core/n64 ../../../external)
+target_link_libraries(natsukashii-sdl PRIVATE cores argparse::argparse SDL2)

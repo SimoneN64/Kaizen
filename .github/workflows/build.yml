@@ -1,0 +1,61 @@
+name: build
+on: push
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y build-essential libsdl2-dev libfmt-dev qt5-default git
+      - name: Build natsukashii
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cd build
+          make -j$(nproc)
+      - name: Collect artifacts
+        run: |
+          mkdir upload
+          cp build/bin/qt/natsukashii-qt upload
+          cp build/bin/sdl/natsukashii-sdl upload
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: natsukashii-linux
+          path: upload
+          if-no-files-found: error
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - uses: msys2/setup-msys2@v2
+        with:
+          install: make git mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-SDL2 mingw-w64-x86_64-qt5-static mingw-w64-x86_64-fmt
+      - name: Build natsukashii
+        run: |
+          cmake \
+            -G"Unix Makefiles" \
+            -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_FLAGS="-s"
+          cd build
+          make -j$(nproc)
+      - name: Collect artifacts
+        run: |
+          mkdir upload
+          cp build/bin/qt/natsukashii-qt upload
+          cp build/bin/sdl/natsukashii-sdl upload
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: natsukashii-windows
+          path: upload
+          if-no-files-found: error

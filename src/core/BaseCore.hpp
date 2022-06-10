@@ -2,6 +2,7 @@
 
 namespace natsukashii::core {
 struct BaseCore {
-  virtual void Run() {}
+  virtual ~BaseCore() {}
+  virtual void Run();
 };
 }

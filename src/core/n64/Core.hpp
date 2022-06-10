@@ -5,8 +5,10 @@
 #include <string>
 
 namespace natsukashii::n64::core {
-struct Core : natsukashii::core::BaseCore {
-  Core(const std::string&);
-  virtual void Run() override;
+using namespace natsukashii::core;
+struct Core : BaseCore {
+  ~Core() override = default;
+  explicit Core(const std::string&);
+  void Run() override;
 };
 }

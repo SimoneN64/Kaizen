@@ -1,4 +1,5 @@
 #pragma once
+#define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 #include <BaseCore.hpp>
 #include <string>
@@ -9,7 +10,7 @@ namespace natsukashii::frontend {
 using namespace natsukashii::core;
 struct App {
   ~App();
-  App(const std::string&);
+  App(const std::string&, const std::string&);
   void Run();
 private:
   SDL_Window *window = nullptr;

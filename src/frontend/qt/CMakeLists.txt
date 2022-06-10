@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(frontend)
+project(natsukashii-qt)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -9,8 +9,7 @@ set(CMAKE_AUTOUIC ON)
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
-add_library(frontend Frontend.hpp Frontend.cpp)
+add_executable(natsukashii-qt Frontend.hpp Frontend.cpp main.cpp)
 
-target_compile_definitions(frontend PUBLIC FRONTEND_QT)
-target_include_directories(frontend PUBLIC .)
-target_link_libraries(frontend PUBLIC Qt5::Widgets)
+target_include_directories(natsukashii-qt PRIVATE . ../../core ../../core/gb ../../core/n64 ../../../external)
+target_link_libraries(natsukashii-qt PRIVATE cores Qt5::Widgets)

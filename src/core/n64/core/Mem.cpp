@@ -18,13 +18,13 @@ void Mem::LoadROM(const std::string& filename) {
 
   file.seekg(std::ios::end);
   auto size = file.tellg();
+  auto size_adjusted = util::NextPow2(size);
+  romMask = size_adjusted - 1;
   file.seekg(std::ios::beg);
 
   std::vector<u8> rom;
-  rom.reserve(size);
-  rom.insert(rom.begin(),
-             std::istream_iterator<u8>(file),
-             std::istream_iterator<u8>());
+  rom.reserve(size_adjusted);
+  file.read(reinterpret_cast<char*>(rom.data()), size);
 
   file.close();
   util::SwapN64Rom(size, rom.data());

@@ -10,6 +10,7 @@ struct Core : BaseCore {
   ~Core() override = default;
   explicit Core(const std::string&);
   void Run() override;
+  void PollInputs(u32) override;
 private:
   Mem mem;
   Cpu cpu;

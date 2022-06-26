@@ -18,16 +18,14 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(mio toml11)
 find_package(fmt REQUIRED)
 
+add_subdirectory(core)
+
 add_library(n64
   Core.hpp
   Core.cpp
-  Cpu.hpp
-  Cpu.cpp
-  Mem.cpp
-  Mem.hpp
   memory_regions.hpp
   ../BaseCore.cpp
   ../BaseCore.hpp)
-target_include_directories(n64 PRIVATE . .. ../../../external)
+target_include_directories(n64 PRIVATE . ..)
 target_include_directories(n64 PUBLIC ${mio_SOURCE_DIR}/include ${toml11_SOURCE_DIR}/include)
-target_link_libraries(n64 PRIVATE mio::mio toml11::toml11 fmt::fmt)
+target_link_libraries(n64 PRIVATE mio::mio toml11::toml11 fmt::fmt n64-core)

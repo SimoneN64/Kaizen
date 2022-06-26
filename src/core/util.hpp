@@ -59,7 +59,7 @@ inline T ReadAccess(u8* data, u32 index) {
   static_assert(sizeof(T) != 2 && sizeof(T) != 4 && sizeof(T) != 8);
   T result = 0;
   memcpy(&result, &data[index], sizeof(T));
-  return GetSwapFunc(result);
+  return GetSwapFunc<T>(result);
 }
 
 template <typename T>
@@ -94,5 +94,17 @@ inline void SwapN64Rom(size_t size, u8* data) {
     default:
       panic("Unrecognized rom format! Make sure this is a valid Nintendo 64 ROM dump!\n");
   }
+}
+
+inline size_t NextPow2(size_t num) {
+  // Taken from "Bit Twiddling Hacks" by Sean Anderson:
+  // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+  --num;
+  num |= num >> 1;
+  num |= num >> 2;
+  num |= num >> 4;
+  num |= num >> 8;
+  num |= num >> 16;
+  return num + 1;
 }
 }

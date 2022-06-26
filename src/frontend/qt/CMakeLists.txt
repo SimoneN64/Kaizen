@@ -11,5 +11,5 @@ find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
 add_executable(natsukashii-qt Frontend.hpp Frontend.cpp main.cpp)
 
-target_include_directories(natsukashii-qt PRIVATE . ../../core ../../core/gb ../../core/n64 ../../../external)
+target_include_directories(natsukashii-qt PRIVATE . ../../core ../../core/gb ../../core/n64)
 target_link_libraries(natsukashii-qt PRIVATE cores Qt5::Widgets)

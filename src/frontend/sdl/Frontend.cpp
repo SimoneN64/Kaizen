@@ -1,6 +1,7 @@
 #include <Frontend.hpp>
 #include <gb/Core.hpp>
 #include <n64/Core.hpp>
+#include <volk.h>
 
 namespace natsukashii::frontend {
 using namespace natsukashii;
@@ -11,14 +12,20 @@ App::~App() {
 }
 
 App::App(const std::string& rom, const std::string& selectedCore) {
-  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-  window = SDL_CreateWindow("natukashii", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN);
-  renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-  id = SDL_GetWindowID(window);
+  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_VIDEO_VULKAN);
 
   if(selectedCore == "gb") {
+    window = SDL_CreateWindow("natukashii", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_RESIZABLE);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    SDL_RenderSetLogicalSize(renderer, 160, 144);
+    id = SDL_GetWindowID(window);
     core = std::make_unique<gb::core::Core>(rom);
   } else if(selectedCore == "n64") {
+    window = SDL_CreateWindow("natukashii", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
+    id = SDL_GetWindowID(window);
+    if(volkInitialize() != VK_SUCCESS) {
+      util::panic("Failed to initialize Volk\n");
+    }
     core = std::make_unique<n64::core::Core>(rom);
   } else {
     util::panic("Unimplemented core!");
@@ -26,12 +33,9 @@ App::App(const std::string& rom, const std::string& selectedCore) {
 }
 
 void App::Run() {
-  while(!quit) {
+  while(!core->ShouldQuit()) {
     core->Run();
-
-    SDL_Event event;
-    SDL_PollEvent(&event);
-    quit = event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == id;
+    core->PollInputs(id);
   }
 }
 }

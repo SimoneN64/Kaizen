@@ -1,8 +1,10 @@
 #include <Frontend.hpp>
-#include <util.hpp>
+#include <QGuiApplication>
 
 int main(int argc, char* argv[]) {
-  natsukashii::frontend::App app;
-  app.Run();
-  return 0;
+  QGuiApplication app(argc, argv);
+  natsukashii::frontend::Window window;
+  window.show();
+
+  return app.exec();
 }

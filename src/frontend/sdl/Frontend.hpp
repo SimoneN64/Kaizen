@@ -1,6 +1,7 @@
 #pragma once
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_vulkan.h>
 #include <BaseCore.hpp>
 #include <string>
 #include <memory>
@@ -8,6 +9,7 @@
 
 namespace natsukashii::frontend {
 using namespace natsukashii::core;
+
 struct App {
   ~App();
   App(const std::string&, const std::string&);
@@ -15,8 +17,7 @@ struct App {
 private:
   SDL_Window *window = nullptr;
   SDL_Renderer *renderer = nullptr;
-  Uint32 id;
-  bool quit = false;
+  u32 id;
   std::unique_ptr<BaseCore> core;
 };
 }

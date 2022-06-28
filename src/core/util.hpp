@@ -5,52 +5,54 @@
 #include <portable_endian_bswap.h>
 
 namespace natsukashii::util {
+enum MessageType : u8 {
+  INFO, WARN, ERROR
+};
+
+template <MessageType messageType = INFO, typename ...Args>
+constexpr void print(const std::string& fmt, Args... args) {
+  if constexpr(messageType == ERROR) {
+    fmt::print(fmt::emphasis::bold | fg(fmt::color::red), fmt, args...);
+    exit(-1);
+  } else if constexpr(messageType == WARN) {
+    fmt::print(fg(fmt::color::yellow), fmt, args...);
+  } else if constexpr(messageType == INFO) {
+    fmt::print(fmt, args...);
+  }
+}
+
 template <typename ...Args>
 constexpr void panic(const std::string& fmt, Args... args) {
-  fmt::print(fmt, args...);
-  exit(-1);
+  print<ERROR>(fmt, args...);
 }
 
-template <u8 start, u8 end>
-using BitSliceType =
-typename std::conditional<(end - start) <= 7, u8,
-  typename std::conditional<(end - start) <= 15, u16,
-    typename std::conditional<(end - start) <= 31, u32,
-      typename std::conditional<(end - start) <= 63, u64,
-        typename std::conditional<(end - start) <= 127, u128, void>::type
-      >::type
-    >::type
-  >::type
->::type;
-
-template <u8 start, u8 end, typename T>
-BitSliceType<start, end> BitSlice(const T& num) {
-  static_assert(end < (sizeof(T) * 8) && start < (sizeof(T) * 8));
-  constexpr auto correctedEnd = end == (sizeof(T) * 8) - 1 ? end : end + 1;
-  return (num >> start) & ((1 << correctedEnd) - 1);
+template <typename ...Args>
+constexpr void warn(const std::string& fmt, Args... args) {
+  print<WARN>(fmt, args...);
 }
 
-template <typename T>
-T BitSlice(const T& num, int start, int end) {
-  assert(end < (sizeof(T) * 8) && start < (sizeof(T) * 8));
-  auto correctedEnd = end == (sizeof(T) * 8) - 1 ? end : end + 1;
-  return (num >> start) & ((1 << correctedEnd) - 1);
+template <typename ...Args>
+constexpr void info(const std::string& fmt, Args... args) {
+  print(fmt, args...);
 }
 
-template <typename T, bool FromHToBE = false>
+template <typename T, bool HToBE = false>
 auto GetSwapFunc(T num) -> T {
   if constexpr(sizeof(T) == 2) {
-    if constexpr(FromHToBE)
+    if constexpr(HToBE) {
       return htobe16(num);
+    }
     return be16toh(num);
   } else if constexpr(sizeof(T) == 4) {
-    if constexpr(FromHToBE)
+    if constexpr(HToBE) {
       return htobe32(num);
+    }
     return be32toh(num);
   } else if constexpr(sizeof(T) == 8) {
-    if constexpr(FromHToBE)
-      return htobe32(num);
-    return be32toh(num);
+    if constexpr(HToBE) {
+      return htobe64(num);
+    }
+    return be64toh(num);
   }
 }
 
@@ -95,6 +97,30 @@ inline void SwapN64Rom(size_t size, u8* data) {
       panic("Unrecognized rom format! Make sure this is a valid Nintendo 64 ROM dump!\n");
   }
 }
+
+template <size_t size, typename T = u8>
+struct CircularBuffer {
+  CircularBuffer() : head(0) {
+    memset(raw, 0, size * sizeof(T));
+  }
+
+  void PushValue(T val) {
+    raw[head & mask] = val;
+    head &= mask;
+    head++;
+  }
+
+  T PopValue() {
+    head--;
+    head &= mask;
+    return raw[head & mask];
+  }
+  size_t GetHead() { return head; }
+private:
+  T raw[size];
+  size_t head;
+  static constexpr size_t mask = size - 1;
+};
 
 inline size_t NextPow2(size_t num) {
   // Taken from "Bit Twiddling Hacks" by Sean Anderson:

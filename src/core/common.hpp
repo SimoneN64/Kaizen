@@ -24,3 +24,6 @@ using m128 = __m128i;
 #define KiB * 1024
 #define MiB (KiB * 1024)
 #define GiB (MiB * 1024)
+
+#define N64_CPU_FREQ 93750000
+#define N64_CYCLES_PER_FRAME (N64_CPU_FREQ / 60)

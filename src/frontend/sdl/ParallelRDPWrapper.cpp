@@ -6,12 +6,11 @@
 #include <SDL2/SDL_vulkan.h>
 #include <util.hpp>
 
-using namespace Vulkan;
 using namespace natsukashii;
+using namespace natsukashii::n64;
+using namespace Vulkan;
+using namespace RDP;
 using std::unique_ptr;
-using RDP::CommandProcessor;
-using RDP::CommandProcessorFlags;
-using RDP::VIRegister;
 
 static CommandProcessor* command_processor;
 static WSI* wsi;
@@ -19,7 +18,7 @@ static WSI* wsi;
 std::vector<Semaphore> acquire_semaphore;
 
 VkQueue GetGraphicsQueue() {
-  return wsi->get_context().get_graphics_queue();
+  return wsi->get_context().get_queue_info().queues[QUEUE_INDEX_GRAPHICS];
 }
 
 VkInstance GetVkInstance() {
@@ -35,7 +34,7 @@ VkDevice GetVkDevice() {
 }
 
 uint32_t GetVkGraphicsQueueFamily() {
-  return wsi->get_context().get_graphics_queue_family();
+  return wsi->get_context().get_queue_info().family_indices[QUEUE_INDEX_GRAPHICS];
 }
 
 VkFormat GetVkFormat() {
@@ -94,11 +93,11 @@ public:
   }
 
   uint32_t get_surface_width() override {
-    return N64_SCREEN_X * SCREEN_SCALE;
+    return 800;
   }
 
   uint32_t get_surface_height() override {
-    return N64_SCREEN_Y * SCREEN_SCALE;
+    return 600;
   }
 
   bool alive(Vulkan::WSI &wsi) override {
@@ -106,11 +105,14 @@ public:
   }
 
   void poll_input() override {
-    n64_poll_input();
+    SDL_Event e;
+    while(SDL_PollEvent(&e)) {
+
+    }
   }
 
   void event_frame_tick(double frame, double elapsed) override {
-    n64_render_screen();
+    //n64_render_screen();
   }
 };
 
@@ -125,22 +127,26 @@ void LoadParallelRDP(const u8* rdram) {
     util::panic("Failed to initialize WSI!");
   }
 
-  ResourceLayout vert_layout;
-  ResourceLayout frag_layout;
+  ResourceLayout vertLayout;
+  ResourceLayout fragLayout;
 
-  vert_layout.input_mask = 1;
-  vert_layout.output_mask = 1;
+  vertLayout.input_mask = 1;
+  vertLayout.output_mask = 1;
 
-  frag_layout.input_mask = 1;
-  frag_layout.output_mask = 1;
-  frag_layout.spec_constant_mask = 1;
-  frag_layout.push_constant_size = 4 * sizeof(float);
+  fragLayout.input_mask = 1;
+  fragLayout.output_mask = 1;
+  fragLayout.spec_constant_mask = 1;
+  fragLayout.push_constant_size = 4 * sizeof(float);
 
-  frag_layout.sets[0].sampled_image_mask = 1;
-  frag_layout.sets[0].fp_mask = 1;
-  frag_layout.sets[0].array_size[0] = 1;
+  fragLayout.sets[0].sampled_image_mask = 1;
+  fragLayout.sets[0].fp_mask = 1;
+  fragLayout.sets[0].array_size[0] = 1;
 
-  fullscreen_quad_program = wsi->get_device().request_program(fullscreen_quad_vert, sizeof(fullscreen_quad_vert), fullscreen_quad_frag, sizeof(fullscreen_quad_frag), &vert_layout, &frag_layout);
+  u32* fullscreenQuadVert, *fullscreenQuadFrag;
+  util::ReadFileBinary("external/vert.spv", fullscreenQuadVert);
+  util::ReadFileBinary("external/frag.spv", fullscreenQuadFrag);
+
+  fullscreen_quad_program = wsi->get_device().request_program(fullscreenQuadVert, sizeof(fullscreenQuadVert), fullscreenQuadFrag, sizeof(fullscreenQuadFrag), &vertLayout, &fragLayout);
 
   auto aligned_rdram = reinterpret_cast<uintptr_t>(rdram);
   uintptr_t offset = 0;
@@ -162,7 +168,7 @@ void LoadParallelRDP(const u8* rdram) {
   }
 }
 
-void draw_fullscreen_textured_quad(Util::IntrusivePtr<Image> image, Util::IntrusivePtr<CommandBuffer> cmd) {
+void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image, Util::IntrusivePtr<CommandBuffer> cmd) {
   cmd->set_texture(0, 0, image->get_view(), Vulkan::StockSampler::LinearClamp);
   cmd->set_program(fullscreen_quad_program);
   cmd->set_quad_state();
@@ -200,11 +206,11 @@ void draw_fullscreen_textured_quad(Util::IntrusivePtr<Image> image, Util::Intrus
   cmd->draw(3, 1);
 }
 
-void update_screen(Util::IntrusivePtr<Image> image) {
+void UpdateScreen(Util::IntrusivePtr<Image> image) {
   wsi->begin_frame();
 
   if (!image) {
-    auto info = Vulkan::ImageCreateInfo::immutable_2d_image(N64_SCREEN_X * SCREEN_SCALE, N64_SCREEN_Y * SCREEN_SCALE, VK_FORMAT_R8G8B8A8_UNORM);
+    auto info = Vulkan::ImageCreateInfo::immutable_2d_image(800, 600, VK_FORMAT_R8G8B8A8_UNORM);
     info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
                  VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     info.misc = IMAGE_MISC_MUTABLE_SRGB_BIT;
@@ -228,32 +234,28 @@ void update_screen(Util::IntrusivePtr<Image> image) {
   Util::IntrusivePtr<CommandBuffer> cmd = wsi->get_device().request_command_buffer();
 
   cmd->begin_render_pass(wsi->get_device().get_swapchain_render_pass(SwapchainRenderPass::ColorOnly));
-  draw_fullscreen_textured_quad(image, cmd);
-  ImGui_ImplVulkan_RenderDrawData(imgui_frame(), cmd->get_command_buffer());
+  DrawFullscreenTexturedQuad(image, cmd);
+  //ImGui_ImplVulkan_RenderDrawData(imgui_frame(), cmd->get_command_buffer());
   cmd->end_render_pass();
   wsi->get_device().submit(cmd);
   wsi->end_frame();
 }
 
-void update_screen_parallel_rdp() {
-  if (unlikely(!command_processor)) {
-    logfatal("Update screen without an initialized command processor");
-  }
-
-  command_processor->set_vi_register(VIRegister::Control,      n64sys.vi.status.raw);
-  command_processor->set_vi_register(VIRegister::Origin,       n64sys.vi.vi_origin);
-  command_processor->set_vi_register(VIRegister::Width,        n64sys.vi.vi_width);
-  command_processor->set_vi_register(VIRegister::Intr,         n64sys.vi.vi_v_intr);
-  command_processor->set_vi_register(VIRegister::VCurrentLine, n64sys.vi.v_current);
-  command_processor->set_vi_register(VIRegister::Timing,       n64sys.vi.vi_burst.raw);
-  command_processor->set_vi_register(VIRegister::VSync,        n64sys.vi.vsync);
-  command_processor->set_vi_register(VIRegister::HSync,        n64sys.vi.hsync);
-  command_processor->set_vi_register(VIRegister::Leap,         n64sys.vi.leap);
-  command_processor->set_vi_register(VIRegister::HStart,       n64sys.vi.hstart.raw);
-  command_processor->set_vi_register(VIRegister::VStart,       n64sys.vi.vstart.raw);
-  command_processor->set_vi_register(VIRegister::VBurst,       n64sys.vi.vburst);
-  command_processor->set_vi_register(VIRegister::XScale,       n64sys.vi.xscale.raw);
-  command_processor->set_vi_register(VIRegister::YScale,       n64sys.vi.yscale.raw);
+void UpdateScreenParallelRdp(const n64::core::VI& vi) {
+  command_processor->set_vi_register(VIRegister::Control,      vi.status.raw);
+  command_processor->set_vi_register(VIRegister::Origin,       vi.origin);
+  command_processor->set_vi_register(VIRegister::Width,        vi.width);
+  command_processor->set_vi_register(VIRegister::Intr,         vi.intr);
+  command_processor->set_vi_register(VIRegister::VCurrentLine, vi.current);
+  command_processor->set_vi_register(VIRegister::Timing,       vi.burst.raw);
+  command_processor->set_vi_register(VIRegister::VSync,        vi.vsync);
+  command_processor->set_vi_register(VIRegister::HSync,        vi.hsync);
+  command_processor->set_vi_register(VIRegister::Leap,         vi.hsyncLeap.raw);
+  command_processor->set_vi_register(VIRegister::HStart,       vi.hstart);
+  command_processor->set_vi_register(VIRegister::VStart,       vi.vstart);
+  command_processor->set_vi_register(VIRegister::VBurst,       vi.burst.raw);
+  command_processor->set_vi_register(VIRegister::XScale,       vi.xscale.raw);
+  command_processor->set_vi_register(VIRegister::YScale,       vi.yscale.raw);
 
   RDP::ScanoutOptions opts;
   opts.persist_frame_on_invalid_input = true;
@@ -265,18 +267,18 @@ void update_screen_parallel_rdp() {
   opts.downscale_steps = true;
   opts.crop_overscan_pixels = true;
   Util::IntrusivePtr<Image> image = command_processor->scanout(opts);
-  update_screen(image);
+  UpdateScreen(image);
   command_processor->begin_frame_context();
 }
 
-void update_screen_parallel_rdp_no_game() {
-  update_screen(static_cast<Util::IntrusivePtr<Image>>(nullptr));
+void UpdateScreenParallelRdpNoGame() {
+  UpdateScreen(static_cast<Util::IntrusivePtr<Image>>(nullptr));
 }
 
-void parallel_rdp_enqueue_command(int command_length, word* buffer) {
+void ParallelRdpEnqueueCommand(int command_length, u32* buffer) {
   command_processor->enqueue_command(command_length, buffer);
 }
 
-void parallel_rdp_on_full_sync() {
+void ParallelRdpOnFullSync() {
   command_processor->wait_for_timeline(command_processor->signal_timeline());
 }

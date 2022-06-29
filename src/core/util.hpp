@@ -3,6 +3,7 @@
 #include <type_traits>
 #include <cassert>
 #include <portable_endian_bswap.h>
+#include <fstream>
 
 namespace natsukashii::util {
 enum MessageType : u8 {
@@ -132,5 +133,22 @@ inline size_t NextPow2(size_t num) {
   num |= num >> 8;
   num |= num >> 16;
   return num + 1;
+}
+
+inline void ReadFileBinary(const std::string& path, void* buf) {
+  std::ifstream file("external/vert.spv", std::ios::binary);
+  file.unsetf(std::ios::skipws);
+  if(!file.is_open()) {
+    util::panic("Could not load file!\n");
+  }
+  file.seekg(std::ios::end);
+  auto size = file.tellg();
+  file.seekg(std::ios::beg);
+  if(buf)
+    free(buf);
+
+  buf = calloc(size, 1);
+  file.read((char*)buf, size);
+  file.close();
 }
 }

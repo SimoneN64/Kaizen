@@ -1,7 +1,10 @@
 #pragma once
 #include <n64/Core.hpp>
 #include <wsi.hpp>
+#include <SDL2/SDL.h>
+#include <n64/core/mmio/VI.hpp>
 
+static SDL_Window* window;
 VkQueue GetGraphicsQueue();
 VkInstance GetVkInstance();
 VkPhysicalDevice GetVkPhysicalDevice();
@@ -10,8 +13,8 @@ uint32_t GetVkGraphicsQueueFamily();
 VkFormat GetVkFormat();
 VkCommandBuffer GetVkCommandBuffer();
 void SubmitRequestedVkCommandBuffer();
-void LoadParallelRdp();
-void UpdateScreenParallelRdp();
+void LoadParallelRDP(const u8* rdram);
+void UpdateScreenParallelRdp(natsukashii::n64::core::VI& vi);
 void ParallelRdpEnqueueCommand(int command_length, u32* buffer);
 void ParallelRdpOnFullSync();
 void UpdateScreenParallelRdpNoGame();

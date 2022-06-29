@@ -15,7 +15,6 @@ struct App {
   App(const std::string&, const std::string&);
   void Run();
 private:
-  SDL_Window *window = nullptr;
   SDL_Renderer *renderer = nullptr;
   u32 id;
   std::unique_ptr<BaseCore> core;

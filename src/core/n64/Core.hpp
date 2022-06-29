@@ -1,7 +1,7 @@
 #pragma once
 #include <BaseCore.hpp>
-#include "n64/core/Cpu.hpp"
-#include "n64/core/Mem.hpp"
+#include <n64/core/Cpu.hpp>
+#include <n64/core/Mem.hpp>
 #include <string>
 
 namespace natsukashii::n64::core {

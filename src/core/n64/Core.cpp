@@ -1,9 +1,11 @@
 #include <Core.hpp>
 #include <SDL2/SDL_events.h>
+#include <ParallelRDPWrapper.hpp>
 
 namespace natsukashii::n64::core {
 Core::Core(const std::string& rom) {
   mem.LoadROM(rom);
+  LoadParallelRDP(mem.GetRDRAM());
 }
 
 void Core::Run() {

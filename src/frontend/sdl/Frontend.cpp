@@ -2,6 +2,7 @@
 #include <gb/Core.hpp>
 #include <n64/Core.hpp>
 #include <volk.h>
+#include <ParallelRDPWrapper.hpp>
 
 namespace natsukashii::frontend {
 using namespace natsukashii;

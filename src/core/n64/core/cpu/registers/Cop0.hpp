@@ -71,23 +71,23 @@ union Cop0Status {
 union EntryLo {
   u32 raw;
   struct {
-    unsigned g: 1;
-    unsigned v: 1;
-    unsigned d: 1;
-    unsigned c: 3;
-    unsigned pfn: 20;
-    unsigned: 6;
+    unsigned g:1;
+    unsigned v:1;
+    unsigned d:1;
+    unsigned c:3;
+    unsigned pfn:20;
+    unsigned:6;
   };
 };
 
 union EntryHi {
   u64 raw;
   struct {
-    u64 asid: 8;
-    u64: 5;
-    u64 vpn2: 27;
-    u64 fill: 22;
-    u64 r: 2;
+    u64 asid:8;
+    u64:5;
+    u64 vpn2:27;
+    u64 fill:22;
+    u64 r:2;
   } __attribute__((__packed__));
 };
 
@@ -101,9 +101,21 @@ union PageMask {
 };
 
 struct TLBEntry {
-  EntryLo entryLo0, entryLo1;
+  union {
+    u32 raw;
+    struct {
+      unsigned:1;
+      unsigned v:1;
+      unsigned d:1;
+      unsigned c:3;
+      unsigned pfn:20;
+      unsigned:6;
+    };
+  } entryLo0, entryLo1;
   EntryHi entryHi;
   PageMask pageMask;
+
+  bool global;
 };
 
 enum TLBError : u8 {
@@ -118,7 +130,7 @@ enum TLBAccessType {
   LOAD, STORE
 };
 
-union Context {
+union Cop0Context {
   u64 raw;
   struct {
     u64: 4;
@@ -127,7 +139,7 @@ union Context {
   };
 };
 
-union XContext {
+union Cop0XContext {
   u64 raw;
   struct {
     u64: 4;
@@ -141,28 +153,36 @@ struct Cop0 {
   Cop0();
 
   template<class T>
-  T GetReg(u8 index);
+  T GetReg(u8);
 
   template<class T>
-  void SetReg(u8 index, T val);
+  void SetReg(u8, T);
 
-  PageMask pageMask;
-  EntryHi entryHi;
-  EntryLo entryLo0, entryLo1;
+  PageMask pageMask{};
+  EntryHi entryHi{};
+  EntryLo entryLo0{}, entryLo1{};
   u32 index, random;
-  Context context;
-  u32 wired, r7;
-  u64 badVaddr, count;
-  u32 compare;
-  Cop0Status status;
-  Cop0Cause cause;
+  Cop0Context context{};
+  u32 wired, r7{};
+  u64 badVaddr{}, count{};
+  u32 compare{};
+  Cop0Status status{};
+  Cop0Cause cause{};
   u64 EPC;
-  u32 PRId, Config, LLAddr, WatchLo, WatchHi;
-  XContext xcontext;
-  u32 r21, r22, r23, r24, r25, ParityError, CacheError, TagLo, TagHi;
+  u32 PRId, Config, LLAddr{}, WatchLo{}, WatchHi{};
+  Cop0XContext xcontext{};
+  u32 r21{}, r22{}, r23{}, r24{}, r25{}, ParityError{}, CacheError{}, TagLo{}, TagHi{};
   u64 ErrorEPC;
-  u32 r31;
-  TLBEntry tlb[32];
-  TLBError tlbError;
+  u32 r31{};
+  TLBEntry tlb[32]{};
+  TLBError tlbError = NONE;
 };
+
+struct Registers;
+enum class ExceptionCode : u8;
+
+TLBEntry* TLBTryMatch(Registers& regs, u32 vaddr, int* match);
+bool ProbeTLB(Registers& regs, TLBAccessType access_type, u32 vaddr, u32& paddr, int* match);
+void HandleTLBException(Registers& regs, u64 vaddr);
+ExceptionCode GetTLBExceptionCode(TLBError error, TLBAccessType access_type);
 }

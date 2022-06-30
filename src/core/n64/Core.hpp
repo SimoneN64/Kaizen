@@ -4,11 +4,13 @@
 #include <n64/core/Mem.hpp>
 #include <string>
 
+enum class Platform : bool;
+
 namespace natsukashii::n64::core {
-using namespace natsukashii::core;
-struct Core : BaseCore {
+
+struct Core : natsukashii::core::BaseCore {
   ~Core() override = default;
-  explicit Core(const std::string&);
+  explicit Core(Platform platform, const std::string&);
   void Run() override;
   void PollInputs(u32) override;
 private:

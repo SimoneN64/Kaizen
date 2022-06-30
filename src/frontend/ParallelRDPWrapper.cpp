@@ -1,13 +1,14 @@
-#include <ParallelRDPWrapper.hpp>
-#include <RDP.hpp>
+#include "ParallelRDPWrapper.hpp"
+#include "n64/core/RDP.hpp"
 #include <memory>
-#include <rdp_device.hpp>
+#include "parallel-rdp-standalone/parallel-rdp/rdp_device.hpp"
 #include <SDL2/SDL_video.h>
 #include <SDL2/SDL_vulkan.h>
-#include <util.hpp>
+#include "util.hpp"
 
-using namespace natsukashii;
 using namespace natsukashii::n64;
+using namespace natsukashii::core;
+using namespace natsukashii::util;
 using namespace Vulkan;
 using namespace RDP;
 using std::unique_ptr;
@@ -64,7 +65,7 @@ void SetFramerateUnlocked(bool unlocked) {
   }
 }
 
-class SDLWSIPlatform : public Vulkan::WSIPlatform {
+class SDLWSIPlatform final : public Vulkan::WSIPlatform {
 public:
   SDLWSIPlatform() = default;
 
@@ -73,7 +74,7 @@ public:
     unsigned int num_extensions = 64;
 
     if (!SDL_Vulkan_GetInstanceExtensions(window, &num_extensions, extensions)) {
-      util::panic("SDL_Vulkan_GetInstanceExtensions failed: %s", SDL_GetError());
+      panic("SDL_Vulkan_GetInstanceExtensions failed: %s", SDL_GetError());
     }
     auto vec = std::vector<const char*>();
 
@@ -87,7 +88,7 @@ public:
   VkSurfaceKHR create_surface(VkInstance instance, VkPhysicalDevice gpu) override {
     VkSurfaceKHR vk_surface;
     if (!SDL_Vulkan_CreateSurface(window, instance, &vk_surface)) {
-      util::panic("Failed to create Vulkan window surface: %s", SDL_GetError());
+      panic("Failed to create Vulkan window surface: %s", SDL_GetError());
     }
     return vk_surface;
   }
@@ -105,26 +106,27 @@ public:
   }
 
   void poll_input() override {
-    SDL_Event e;
-    while(SDL_PollEvent(&e)) {
-
-    }
+    g_Core->PollInputs(windowID);
   }
 
   void event_frame_tick(double frame, double elapsed) override {
-    //n64_render_screen();
+
   }
 };
 
 Program* fullscreen_quad_program;
 
-void LoadParallelRDP(const u8* rdram) {
+void LoadParallelRDP(Platform platform, const u8* rdram) {
   wsi = new WSI();
   wsi->set_backbuffer_srgb(false);
-  wsi->set_platform(new SDLWSIPlatform());
+  if (platform == Platform::SDL) {
+    wsi->set_platform(new SDLWSIPlatform());
+  } else {
+    panic("WSI Qt platform not yet implemented!\n");
+  }
   Context::SystemHandles handles;
   if (!wsi->init(1, handles)) {
-    util::panic("Failed to initialize WSI!");
+    panic("Failed to initialize WSI!");
   }
 
   ResourceLayout vertLayout;
@@ -142,9 +144,9 @@ void LoadParallelRDP(const u8* rdram) {
   fragLayout.sets[0].fp_mask = 1;
   fragLayout.sets[0].array_size[0] = 1;
 
-  u32* fullscreenQuadVert, *fullscreenQuadFrag;
-  util::ReadFileBinary("external/vert.spv", fullscreenQuadVert);
-  util::ReadFileBinary("external/frag.spv", fullscreenQuadFrag);
+  u32* fullscreenQuadVert = nullptr, *fullscreenQuadFrag = nullptr;
+  ReadFileBinary("external/vert.spv", fullscreenQuadVert);
+  ReadFileBinary("external/frag.spv", fullscreenQuadFrag);
 
   fullscreen_quad_program = wsi->get_device().request_program(fullscreenQuadVert, sizeof(fullscreenQuadVert), fullscreenQuadFrag, sizeof(fullscreenQuadFrag), &vertLayout, &fragLayout);
 
@@ -164,7 +166,7 @@ void LoadParallelRDP(const u8* rdram) {
                                            offset, 8 * 1024 * 1024, 4 * 1024 * 1024, flags);
 
   if (!command_processor->device_is_supported()) {
-    util::panic("This device probably does not support 8/16-bit storage. Make sure you're using up-to-date drivers!");
+    panic("This device probably does not support 8/16-bit storage. Make sure you're using up-to-date drivers!");
   }
 }
 
@@ -241,7 +243,7 @@ void UpdateScreen(Util::IntrusivePtr<Image> image) {
   wsi->end_frame();
 }
 
-void UpdateScreenParallelRdp(const n64::core::VI& vi) {
+void UpdateScreenParallelRdp(const core::VI& vi) {
   command_processor->set_vi_register(VIRegister::Control,      vi.status.raw);
   command_processor->set_vi_register(VIRegister::Origin,       vi.origin);
   command_processor->set_vi_register(VIRegister::Width,        vi.width);

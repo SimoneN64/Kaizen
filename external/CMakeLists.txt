@@ -52,7 +52,9 @@ target_include_directories(parallel-rdp PUBLIC
   parallel-rdp-standalone/spirv-cross
   parallel-rdp-standalone/vulkan
   parallel-rdp-standalone/vulkan-headers/include
-  parallel-rdp-standalone/util)
+  parallel-rdp-standalone/util
+  ../src/core/n64
+  )
 
 if(WIN32)
   target_compile_definitions(parallel-rdp PUBLIC VK_USE_PLATFORM_WIN32_KHR)

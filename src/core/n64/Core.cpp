@@ -3,9 +3,9 @@
 #include <ParallelRDPWrapper.hpp>
 
 namespace natsukashii::n64::core {
-Core::Core(const std::string& rom) {
+Core::Core(Platform platform, const std::string& rom) {
   mem.LoadROM(rom);
-  LoadParallelRDP(mem.GetRDRAM());
+  LoadParallelRDP(platform, mem.GetRDRAM());
 }
 
 void Core::Run() {

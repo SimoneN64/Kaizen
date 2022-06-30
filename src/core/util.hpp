@@ -59,7 +59,7 @@ auto GetSwapFunc(T num) -> T {
 
 template <typename T>
 inline T ReadAccess(u8* data, u32 index) {
-  static_assert(sizeof(T) != 2 && sizeof(T) != 4 && sizeof(T) != 8);
+  static_assert(sizeof(T) != 2 || sizeof(T) != 4 || sizeof(T) != 8);
   T result = 0;
   memcpy(&result, &data[index], sizeof(T));
   return GetSwapFunc<T>(result);
@@ -67,7 +67,7 @@ inline T ReadAccess(u8* data, u32 index) {
 
 template <typename T>
 inline void WriteAccess(u8* data, u32 index, T val) {
-  static_assert(sizeof(T) != 2 && sizeof(T) != 4 && sizeof(T) != 8);
+  static_assert(sizeof(T) != 2 || sizeof(T) != 4 || sizeof(T) != 8);
   T temp = GetSwapFunc<T, true>(val);
   memcpy(&data[index], &temp, sizeof(T));
 }

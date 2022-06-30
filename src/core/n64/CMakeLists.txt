@@ -21,6 +21,7 @@ find_package(fmt REQUIRED)
 add_subdirectory(core)
 
 set(PARALLELRDP_INCLUDES
+  ../../frontend
   ../../../external/parallel-rdp-standalone/vulkan
   ../../../external/parallel-rdp-standalone/util
   ../../../external/parallel-rdp-standalone/parallel-rdp
@@ -33,6 +34,6 @@ add_library(n64
   memory_regions.hpp
   ../BaseCore.cpp
   ../BaseCore.hpp)
-target_include_directories(n64 PRIVATE . .. ../../frontend/sdl ${PARALLELRDP_INCLUDES})
+target_include_directories(n64 PRIVATE . .. ${PARALLELRDP_INCLUDES})
 target_include_directories(n64 PUBLIC ${mio_SOURCE_DIR}/include ${toml11_SOURCE_DIR}/include)
 target_link_libraries(n64 PRIVATE mio::mio toml11::toml11 fmt::fmt n64-core)

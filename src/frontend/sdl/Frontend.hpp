@@ -16,7 +16,5 @@ struct App {
   void Run();
 private:
   SDL_Renderer *renderer = nullptr;
-  u32 id;
-  std::unique_ptr<BaseCore> core;
 };
 }

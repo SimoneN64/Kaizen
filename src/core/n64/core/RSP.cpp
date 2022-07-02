@@ -1,7 +1,7 @@
-#include <RSP.hpp>
+#include <n64/core/RSP.hpp>
 #include <util.hpp>
 #include <n64/core/Mem.hpp>
-#include "Interrupt.hpp"
+#include <n64/core/mmio/Interrupt.hpp>
 
 namespace natsukashii::n64::core {
 void RSP::StepRSP(MI& mi, Registers& regs, RDP& rdp) {
@@ -15,7 +15,7 @@ void RSP::StepRSP(MI& mi, Registers& regs, RDP& rdp) {
   }
 }
 
-u32 RSP::Read(u32 addr) {
+auto RSP::Read(u32 addr) const -> u32{
   switch (addr) {
     case 0x04040000: return spDMASPAddr.raw & 0xFFFFF8;
     case 0x04040004: return spDMADRAMAddr.raw & 0x1FF8;
@@ -26,6 +26,7 @@ u32 RSP::Read(u32 addr) {
     case 0x04080000: return pc & 0xFFF;
     default: util::panic("Unimplemented SP register read %08X\n", addr);
   }
+  return 0;
 }
 
 template <bool isDRAMdest>

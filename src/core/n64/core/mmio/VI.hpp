@@ -65,7 +65,7 @@ struct Registers;
 
 struct VI {
   VI();
-  u32 Read(u32);
+  [[nodiscard]] u32 Read(u32) const;
   void Write(MI&, Registers&, u32, u32);
   VIScale xscale{}, yscale{};
   VIVideo hvideo{}, vvideo{};

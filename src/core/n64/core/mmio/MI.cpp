@@ -12,7 +12,7 @@ MI::MI() {
   miMode = 0;
 }
 
-u32 MI::Read(u32 paddr) {
+auto MI::Read(u32 paddr) const -> u32 {
   switch(paddr & 0xF) {
     case 0x0: return miMode & 0x3FF;
     case 0x4: return MI_VERSION_REG;
@@ -20,6 +20,7 @@ u32 MI::Read(u32 paddr) {
     case 0xC: return miIntrMask.raw & 0x3F;
     default: util::panic("Unhandled MI[%08X] read\n", paddr);
   }
+  return 0;
 }
 
 void MI::Write(Registers& regs, u32 paddr, u32 val) {

@@ -13,11 +13,12 @@ struct Mem {
   [[nodiscard]] auto GetRDRAM() -> u8* {
     return rdram.data();
   }
-  template <class T, bool tlb>
+  template <class T, bool tlb = true>
   T Read(Registers&, u32, s64);
-  template <class T, bool tlb>
+  template <class T, bool tlb = true>
   void Write(Registers&, u32, T, s64);
 private:
+  friend struct Cpu;
   friend struct RSP;
   MMIO mmio;
   std::vector<u8> cart, rdram, sram;

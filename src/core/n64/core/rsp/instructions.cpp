@@ -20,7 +20,7 @@ inline void ReleaseSemaphore(RSP& rsp) {
   rsp.semaphore = false;
 }
 
-inline u32 GetCop0Reg(RSP& rsp, RDP& rdp, u8 index) {
+inline auto GetCop0Reg(RSP& rsp, RDP& rdp, u8 index) -> u32{
   switch(index) {
     case 4: return rsp.spStatus.raw;
     case 5: return rsp.spStatus.dmaFull;
@@ -29,6 +29,7 @@ inline u32 GetCop0Reg(RSP& rsp, RDP& rdp, u8 index) {
     case 11: return rdp.dpc.status.raw;
     default: util::panic("Unhandled RSP COP0 register read at index {}\n", index);
   }
+  return 0;
 }
 
 inline void SetCop0Reg(MI& mi, Registers& regs, RSP& rsp, RDP& rdp, u8 index, u32 val) {
@@ -49,7 +50,7 @@ inline void SetCop0Reg(MI& mi, Registers& regs, RSP& rsp, RDP& rdp, u8 index, u3
       break;
     case 9:
       rdp.dpc.end = val & 0xFFFFF8;
-      rdp.RunCommand(mi, regs, rdp, rsp);
+      rdp.RunCommand(mi, regs, rsp);
       break;
     case 11: rdp.StatusWrite(val); break;
     default: util::panic("Unhandled RSP COP0 register write at index {}\n", index);

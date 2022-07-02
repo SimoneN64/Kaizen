@@ -1,6 +1,6 @@
 #pragma once
-#include <mmio/MI.hpp>
-#include <RDP.hpp>
+#include <n64/core/mmio/MI.hpp>
+#include <n64/core/RDP.hpp>
 #include <n64/memory_regions.hpp>
 
 namespace natsukashii::n64::core {
@@ -107,7 +107,7 @@ struct Registers;
 struct RSP {
   RSP() = default;
   void StepRSP(MI& mi, Registers& regs, RDP& rdp);
-  u32 Read(u32 addr);
+  auto Read(u32 addr) const -> u32;
   void Write(Mem& mem, Registers& regs, u32 addr, u32 value);
   void Exec(MI& mi, Registers& regs, RDP& rdp, u32 instr);
   SPStatus spStatus{.raw = 1};
@@ -156,7 +156,7 @@ struct RSP {
     }
     return val;
   }
-private:
+
   void add(u32 instr);
   void addi(u32 instr);
   void and_(u32 instr);
@@ -186,7 +186,7 @@ private:
   void vsar(u32 instr);
   void mfc0(RDP& rdp, u32 instr);
   void mtc0(MI& mi, Registers& regs, RDP& rdp, u32 instr);
-
+private:
   inline void branch(u16 address, bool cond) {
     if(cond) {
       nextPC = address & 0xFFF;

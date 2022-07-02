@@ -15,7 +15,5 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(argparse)
 
-add_subdirectory(../../../external temp)
-
-target_include_directories(natsukashii-sdl PRIVATE . ../../core ../../core/gb ../../core/n64 ../../core/n64/core ../../core/n64/core/cpu/registers)
-target_link_libraries(natsukashii-sdl PRIVATE cores argparse::argparse SDL2 parallel-rdp)
+target_include_directories(natsukashii-sdl PRIVATE . ../../core)
+target_link_libraries(natsukashii-sdl PRIVATE cores argparse::argparse SDL2)

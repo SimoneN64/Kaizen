@@ -53,7 +53,7 @@ struct RDP {
 
   RDP() = default;
 
-  u32 Read(u32 addr);
+  auto Read(u32 addr) const -> u32;
   void Write(u32 addr, u32 val);
   void StatusWrite(u32 val);
   void RunCommand(MI& mi, Registers& regs, RSP& rsp);

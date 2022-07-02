@@ -2,7 +2,6 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
-#include <BaseCore.hpp>
 #include <string>
 #include <memory>
 #include <util.hpp>

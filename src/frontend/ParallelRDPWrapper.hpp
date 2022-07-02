@@ -1,9 +1,9 @@
 #pragma once
-#include "n64/Core.hpp"
-#include "parallel-rdp-standalone/vulkan/wsi.hpp"
+#include <n64/Core.hpp>
+#include <parallel-rdp-standalone/vulkan/wsi.hpp>
 #include <SDL2/SDL.h>
-#include "n64/core/mmio/VI.hpp"
-#include "BaseCore.hpp"
+#include <n64/core/mmio/VI.hpp>
+#include <BaseCore.hpp>
 
 enum class Platform : bool {
   SDL, Qt

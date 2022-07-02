@@ -18,7 +18,7 @@ VI::VI () {
   cyclesPerHalfline = 1000;
 }
 
-u32 VI::Read(u32 paddr) {
+u32 VI::Read(u32 paddr) const {
   switch(paddr) {
     case 0x04400000: return status.raw;
     case 0x04400004: return origin;
@@ -37,6 +37,7 @@ u32 VI::Read(u32 paddr) {
     default:
       util::panic("Unimplemented VI[%08X] read\n", paddr);
   }
+  return 0;
 }
 
 void VI::Write(MI& mi, Registers& regs, u32 paddr, u32 val) {

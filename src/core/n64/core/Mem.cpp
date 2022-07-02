@@ -47,6 +47,8 @@ inline bool MapVAddr(Registers& regs, TLBAccessType accessType, u32 vaddr, u32& 
     default:
       util::panic("Should never end up in default case in map_vaddr! ({:08X})\n", vaddr);
   }
+
+  return false;
 }
 
 template <class T, bool tlb>
@@ -72,16 +74,13 @@ T Mem::Read(Registers& regs, u32 vaddr, s64 pc) {
     case 0x80000000 ... 0xFFFFFFFF: case 0x1FC00800 ... 0x7FFFFFFF: return 0;
     default: util::panic("Unimplemented {}-bit read at address {:08X} (PC = {:016X})\n", sizeof(T) * 8, paddr, regs.pc);
   }
+  return 0;
 }
 
-template u8 Mem::Read<u8, true>(Registers& regs, u32 vaddr, s64 pc);
-template u16 Mem::Read<u16, true>(Registers& regs, u32 vaddr, s64 pc);
-template u32 Mem::Read<u32, true>(Registers& regs, u32 vaddr, s64 pc);
-template u64 Mem::Read<u64, true>(Registers& regs, u32 vaddr, s64 pc);
-template u8 Mem::Read<u8, false>(Registers& regs, u32 vaddr, s64 pc);
-template u16 Mem::Read<u16, false>(Registers& regs, u32 vaddr, s64 pc);
-template u32 Mem::Read<u32, false>(Registers& regs, u32 vaddr, s64 pc);
-template u64 Mem::Read<u64, false>(Registers& regs, u32 vaddr, s64 pc);
+template u8 Mem::Read<u8>(Registers& regs, u32 vaddr, s64 pc);
+template u16 Mem::Read<u16>(Registers& regs, u32 vaddr, s64 pc);
+template u32 Mem::Read<u32>(Registers& regs, u32 vaddr, s64 pc);
+template u64 Mem::Read<u64>(Registers& regs, u32 vaddr, s64 pc);
 
 template <class T, bool tlb>
 void Mem::Write(Registers& regs, u32 vaddr, T val, s64 pc) {
@@ -108,12 +107,8 @@ void Mem::Write(Registers& regs, u32 vaddr, T val, s64 pc) {
   }
 }
 
-template void Mem::Write<u8, true>(Registers& regs, u32 vaddr, u8 val, s64 pc);
-template void Mem::Write<u16, true>(Registers& regs, u32 vaddr, u16 val, s64 pc);
-template void Mem::Write<u32, true>(Registers& regs, u32 vaddr, u32 val, s64 pc);
-template void Mem::Write<u64, true>(Registers& regs, u32 vaddr, u64 val, s64 pc);
-template void Mem::Write<u8, false>(Registers& regs, u32 vaddr, u8 val, s64 pc);
-template void Mem::Write<u16, false>(Registers& regs, u32 vaddr, u16 val, s64 pc);
-template void Mem::Write<u32, false>(Registers& regs, u32 vaddr, u32 val, s64 pc);
-template void Mem::Write<u64, false>(Registers& regs, u32 vaddr, u64 val, s64 pc);
+template void Mem::Write<u8>(Registers& regs, u32 vaddr, u8 val, s64 pc);
+template void Mem::Write<u16>(Registers& regs, u32 vaddr, u16 val, s64 pc);
+template void Mem::Write<u32>(Registers& regs, u32 vaddr, u32 val, s64 pc);
+template void Mem::Write<u64>(Registers& regs, u32 vaddr, u64 val, s64 pc);
 }

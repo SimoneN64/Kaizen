@@ -1,6 +1,6 @@
-#include <Cpu.hpp>
-#include <MI.hpp>
-#include <Interrupt.hpp>
+#include <n64/core/Cpu.hpp>
+#include <n64/core/mmio/MI.hpp>
+#include <n64/core/mmio/Interrupt.hpp>
 #include <util.hpp>
 
 namespace natsukashii::n64::core {
@@ -49,22 +49,22 @@ void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc) {
 
   regs.cop0.status.exl = true;
   regs.cop0.cause.copError = cop;
-  regs.cop0.cause.exceptionCode = code;
+  regs.cop0.cause.exceptionCode = static_cast<u8>(code);
 
   if(regs.cop0.status.bev) {
     util::panic("BEV bit set!\n");
   } else {
     switch(code) {
-      case Interrupt: case TLBModification:
-      case AddressErrorLoad: case AddressErrorStore:
-      case InstructionBusError: case DataBusError:
-      case Syscall: case Breakpoint:
-      case ReservedInstruction: case CoprocessorUnusable:
-      case Overflow: case Trap:
-      case FloatingPointError: case Watch:
+      case ExceptionCode::Interrupt: case ExceptionCode::TLBModification:
+      case ExceptionCode::AddressErrorLoad: case ExceptionCode::AddressErrorStore:
+      case ExceptionCode::InstructionBusError: case ExceptionCode::DataBusError:
+      case ExceptionCode::Syscall: case ExceptionCode::Breakpoint:
+      case ExceptionCode::ReservedInstruction: case ExceptionCode::CoprocessorUnusable:
+      case ExceptionCode::Overflow: case ExceptionCode::Trap:
+      case ExceptionCode::FloatingPointError: case ExceptionCode::Watch:
         regs.SetPC((s64)((s32)0x80000180));
         break;
-      case TLBLoad: case TLBStore:
+      case ExceptionCode::TLBLoad: case ExceptionCode::TLBStore:
         if(old_exl || regs.cop0.tlbError == INVALID) {
           regs.SetPC((s64)((s32)0x80000180));
         } else if(Is64BitAddressing(regs.cop0, regs.cop0.badVaddr)) {
@@ -73,14 +73,14 @@ void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc) {
           regs.SetPC((s64)((s32)0x80000000));
         }
         break;
-      default: util::panic("Unhandled exception! {}\n", code);
+      default: util::panic("Unhandled exception! {}\n", static_cast<u8>(code));
     }
   }
 }
 
 inline void HandleInterrupt(Registers& regs) {
   if(ShouldServiceInterrupt(regs)) {
-    FireException(regs, Interrupt, 0, regs.pc);
+    FireException(regs, ExceptionCode::Interrupt, 0, regs.pc);
   }
 }
 
@@ -89,9 +89,9 @@ void Cpu::Step(Mem& mem) {
   regs.prevDelaySlot = regs.delaySlot;
   regs.delaySlot = false;
 
-  CheckCompareInterrupt(mem.mmio.mi);
+  CheckCompareInterrupt(mem.mmio.mi, regs);
 
-  u32 instruction = mem.Read(regs, regs.pc, regs.pc);
+  u32 instruction = mem.Read<u32>(regs, regs.pc, regs.pc);
 
   HandleInterrupt(regs);
 

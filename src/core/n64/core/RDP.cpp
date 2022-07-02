@@ -1,8 +1,8 @@
-#include <RDP.hpp>
+#include <n64/core/RDP.hpp>
 #include <util.hpp>
-#include <RSP.hpp>
+#include <n64/core/RSP.hpp>
 #include <../../../frontend/ParallelRDPWrapper.hpp>
-#include <Interrupt.hpp>
+#include <n64/core/mmio/Interrupt.hpp>
 
 namespace natsukashii::n64::core {
 static const int cmd_lens[64] = {
@@ -12,11 +12,12 @@ static const int cmd_lens[64] = {
   2, 2, 2, 2, 2, 2, 2, 2, 2, 2,  2,  2,  2,  2,  2,  2
 };
 
-u32 RDP::Read(u32 addr) {
+auto RDP::Read(u32 addr) const -> u32{
   switch(addr) {
     case 0x0410000C: return dpc.status.raw;
     default: util::panic("Unhandled DP Command Registers read (addr: {:08X})\n", addr);
   }
+  return 0;
 }
 
 void RDP::Write(u32 addr, u32 val) {

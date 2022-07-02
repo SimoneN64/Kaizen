@@ -39,6 +39,7 @@ constexpr void info(const std::string& fmt, Args... args) {
 
 template <typename T, bool HToBE = false>
 auto GetSwapFunc(T num) -> T {
+  static_assert(sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8, "GetSwapFunc used with invalid size!");
   if constexpr(sizeof(T) == 2) {
     if constexpr(HToBE) {
       return htobe16(num);
@@ -59,17 +60,26 @@ auto GetSwapFunc(T num) -> T {
 
 template <typename T>
 inline T ReadAccess(u8* data, u32 index) {
-  static_assert(sizeof(T) != 2 || sizeof(T) != 4 || sizeof(T) != 8);
-  T result = 0;
-  memcpy(&result, &data[index], sizeof(T));
-  return GetSwapFunc<T>(result);
+  if constexpr(sizeof(T) == 1) {
+    return data[index];
+  } else {
+    static_assert(sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8);
+    T result = 0;
+    memcpy(&result, &data[index], sizeof(T));
+    return GetSwapFunc<T>(result);
+  }
 }
 
 template <typename T>
 inline void WriteAccess(u8* data, u32 index, T val) {
-  static_assert(sizeof(T) != 2 || sizeof(T) != 4 || sizeof(T) != 8);
-  T temp = GetSwapFunc<T, true>(val);
-  memcpy(&data[index], &temp, sizeof(T));
+  if constexpr(sizeof(T) == 1) {
+    data[index] = val;
+    return;
+  } else {
+    static_assert(sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8);
+    T temp = GetSwapFunc<T, true>(val);
+    memcpy(&data[index], &temp, sizeof(T));
+  }
 }
 
 #define Z64 0x80371240

@@ -23,7 +23,7 @@ add_library(n64-core
   RSP.cpp
   RSP.hpp
   rsp/decode.cpp
-  rsp/instructions.cpp)
+  rsp/instructions.cpp mmio/AI.cpp mmio/AI.hpp)
 
 target_include_directories(n64-core PRIVATE . .. ../../ mmio)
 target_link_libraries(n64-core PUBLIC n64-cpu parallel-rdp)

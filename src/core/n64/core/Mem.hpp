@@ -18,6 +18,7 @@ struct Mem {
   template <class T, bool tlb = true>
   void Write(Registers&, u32, T, s64);
 private:
+  friend struct AI;
   friend struct Cpu;
   friend struct RSP;
   MMIO mmio;

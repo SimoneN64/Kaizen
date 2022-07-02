@@ -1,50 +1,50 @@
-#include <Interrupt.hpp>
-#include <MI.hpp>
+#include <n64/core/mmio/Interrupt.hpp>
+#include <n64/core/mmio/MI.hpp>
 #include <n64/core/cpu/Registers.hpp>
 
 namespace natsukashii::n64::core {
-void InterruptRaise(MI &mi, Registers &regs, InterruptType intr) {
+void InterruptRaise(MI &mi, Registers &regs, Interrupt intr) {
   switch(intr) {
-    case InterruptType::VI:
+    case Interrupt::VI:
       mi.miIntr.vi = true;
       break;
-    case InterruptType::SI:
+    case Interrupt::SI:
       mi.miIntr.si = true;
       break;
-    case InterruptType::PI:
+    case Interrupt::PI:
       mi.miIntr.pi = true;
       break;
-    case InterruptType::AI:
+    case Interrupt::AI:
       mi.miIntr.ai = true;
       break;
-    case InterruptType::DP:
+    case Interrupt::DP:
       mi.miIntr.dp = true;
       break;
-    case InterruptType::SP:
+    case Interrupt::SP:
       mi.miIntr.sp = true;
       break;
   }
 
   UpdateInterrupt(mi, regs);
 }
-void InterruptLower(MI &mi, Registers &regs, InterruptType intr) {
+void InterruptLower(MI &mi, Registers &regs, Interrupt intr) {
   switch(intr) {
-    case InterruptType::VI:
+    case Interrupt::VI:
       mi.miIntr.vi = false;
       break;
-    case InterruptType::SI:
+    case Interrupt::SI:
       mi.miIntr.si = false;
       break;
-    case InterruptType::PI:
+    case Interrupt::PI:
       mi.miIntr.pi = false;
       break;
-    case InterruptType::AI:
+    case Interrupt::AI:
       mi.miIntr.ai = false;
       break;
-    case InterruptType::DP:
+    case Interrupt::DP:
       mi.miIntr.dp = false;
       break;
-    case InterruptType::SP:
+    case Interrupt::SP:
       mi.miIntr.sp = false;
       break;
   }

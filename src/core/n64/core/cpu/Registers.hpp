@@ -1,5 +1,5 @@
 #pragma once
-#include <Cop0.hpp>
+#include <n64/core/cpu/registers/Cop0.hpp>
 
 namespace natsukashii::n64::core {
 struct Registers {

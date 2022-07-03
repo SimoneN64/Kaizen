@@ -12,18 +12,28 @@ add_library(n64-core
   Mem.hpp
   RDP.cpp
   RDP.hpp
-  mmio/VI.cpp
-  mmio/VI.hpp
+  mmio/AI.cpp
+  mmio/AI.hpp
+  mmio/Interrupt.cpp
   mmio/Interrupt.hpp
   mmio/MI.cpp
   mmio/MI.hpp
-  mmio/Interrupt.cpp
+  mmio/PI.cpp
+  mmio/PI.hpp
+  mmio/PIF.cpp
+  mmio/PIF.hpp
+  mmio/RI.cpp
+  mmio/RI.hpp
+  mmio/SI.cpp
+  mmio/SI.hpp
+  mmio/VI.cpp
+  mmio/VI.hpp
   MMIO.cpp
   MMIO.hpp
   RSP.cpp
   RSP.hpp
   rsp/decode.cpp
-  rsp/instructions.cpp mmio/AI.cpp mmio/AI.hpp)
+  rsp/instructions.cpp)
 
 target_include_directories(n64-core PRIVATE . .. ../../ mmio)
 target_link_libraries(n64-core PUBLIC n64-cpu parallel-rdp)

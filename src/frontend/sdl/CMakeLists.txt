@@ -5,7 +5,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(SDL2 REQUIRED)
 
-add_executable(natsukashii-sdl Frontend.cpp Frontend.hpp main.cpp ../ParallelRDPWrapper.cpp ../ParallelRDPWrapper.hpp)
+add_executable(natsukashii-sdl
+  Frontend.cpp
+  Frontend.hpp
+  main.cpp
+  ../ParallelRDPWrapper.cpp
+  ../ParallelRDPWrapper.hpp)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -15,5 +20,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(argparse)
 
-target_include_directories(natsukashii-sdl PRIVATE . ../../core)
+target_include_directories(natsukashii-sdl PRIVATE
+  .
+  ..
+  ../../core
+  ../../../external/parallel-rdp-standalone/parallel-rdp
+  ../../../external/parallel-rdp-standalone/volk
+  ../../../external/parallel-rdp-standalone/spirv-cross
+  ../../../external/parallel-rdp-standalone/vulkan
+  ../../../external/parallel-rdp-standalone/vulkan-headers/include
+  ../../../external/parallel-rdp-standalone/util)
 target_link_libraries(natsukashii-sdl PRIVATE cores argparse::argparse SDL2)
+target_compile_definitions(natsukashii-sdl PUBLIC GRANITE_VULKAN_MT)

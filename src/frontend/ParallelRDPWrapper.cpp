@@ -1,10 +1,10 @@
-#include "ParallelRDPWrapper.hpp"
-#include "n64/core/RDP.hpp"
+#include <ParallelRDPWrapper.hpp>
+#include <n64/core/RDP.hpp>
 #include <memory>
-#include "parallel-rdp-standalone/parallel-rdp/rdp_device.hpp"
+#include <parallel-rdp-standalone/parallel-rdp/rdp_device.hpp>
 #include <SDL2/SDL_video.h>
 #include <SDL2/SDL_vulkan.h>
-#include "util.hpp"
+#include <util.hpp>
 
 using namespace natsukashii::n64;
 using namespace natsukashii::core;

@@ -2,6 +2,9 @@
 #include <n64/core/mmio/VI.hpp>
 #include <n64/core/mmio/MI.hpp>
 #include <n64/core/mmio/AI.hpp>
+#include <n64/core/mmio/PI.hpp>
+#include <n64/core/mmio/RI.hpp>
+#include <n64/core/mmio/SI.hpp>
 #include <n64/core/RSP.hpp>
 #include <n64/core/RDP.hpp>
 
@@ -14,6 +17,9 @@ struct MMIO {
   VI vi;
   MI mi;
   AI ai;
+  PI pi;
+  RI ri;
+  SI si;
   RSP rsp;
   RDP rdp;
 

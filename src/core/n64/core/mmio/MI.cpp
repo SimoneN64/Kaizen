@@ -1,7 +1,7 @@
-#include <MI.hpp>
+#include <n64/core/mmio/MI.hpp>
 #include <n64/core/cpu/Registers.hpp>
 #include <util.hpp>
-#include <Interrupt.hpp>
+#include <n64/core/mmio/Interrupt.hpp>
 
 #define MI_VERSION_REG 0x02020102
 

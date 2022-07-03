@@ -17,13 +17,16 @@ struct Mem {
   T Read(Registers&, u32, s64);
   template <class T, bool tlb = true>
   void Write(Registers&, u32, T, s64);
+  u8 pifRam[PIF_RAM_SIZE]{};
 private:
+  friend struct SI;
+  friend struct PI;
   friend struct AI;
   friend struct Cpu;
   friend struct RSP;
   MMIO mmio;
   std::vector<u8> cart, rdram, sram;
-  u8 dmem[DMEM_SIZE]{}, imem[IMEM_SIZE]{}, pifRam[PIF_RAM_SIZE]{};
+  u8 dmem[DMEM_SIZE]{}, imem[IMEM_SIZE]{};
   u8 pifBootrom[PIF_BOOTROM_SIZE]{};
   size_t romMask;
 };

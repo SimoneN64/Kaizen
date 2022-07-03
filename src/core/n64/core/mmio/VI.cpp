@@ -1,7 +1,7 @@
-#include <VI.hpp>
+#include <n64/core/mmio/VI.hpp>
 #include <util.hpp>
 #include <n64/core/cpu/Registers.hpp>
-#include <MI.hpp>
+#include <n64/core/mmio/MI.hpp>
 #include <n64/core/mmio/Interrupt.hpp>
 
 namespace natsukashii::n64::core {

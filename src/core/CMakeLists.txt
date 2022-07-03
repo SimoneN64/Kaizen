@@ -10,6 +10,6 @@ add_library(cores
   Scheduler.cpp
   Scheduler.hpp
   common.hpp
-  util.hpp)
+  util.hpp Audio.hpp Audio.cpp)
 target_include_directories(cores PUBLIC . ../../external)
 target_link_libraries(cores PUBLIC gb n64)

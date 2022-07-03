@@ -92,7 +92,7 @@ void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
 
       if (cmd == 0x29) {
         OnFullSync();
-        InterruptRaise(mi, regs, InterruptType::DP);
+        InterruptRaise(mi, regs, Interrupt::DP);
       }
 
       buf_index += cmd_len;

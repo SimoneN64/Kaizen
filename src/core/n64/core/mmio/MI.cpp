@@ -18,7 +18,7 @@ auto MI::Read(u32 paddr) const -> u32 {
     case 0x4: return MI_VERSION_REG;
     case 0x8: return miIntr.raw & 0x3F;
     case 0xC: return miIntrMask.raw & 0x3F;
-    default: util::panic("Unhandled MI[%08X] read\n", paddr);
+    default: util::panic("Unhandled MI[{:08X}] read\n", paddr);
   }
   return 0;
 }
@@ -45,7 +45,7 @@ void MI::Write(Registers& regs, u32 paddr, u32 val) {
       }
 
       if (val & (1 << 11)) {
-        InterruptLower(*this, regs, InterruptType::DP);
+        InterruptLower(*this, regs, Interrupt::DP);
       }
 
       if (val & (1 << 12)) {
@@ -74,7 +74,7 @@ void MI::Write(Registers& regs, u32 paddr, u32 val) {
       UpdateInterrupt(*this, regs);
       break;
     default:
-      util::panic("Unhandled MI[%08X] write (%08X)\n", val, paddr);
+      util::panic("Unhandled MI[{:08X}] write ({:08X})\n", val, paddr);
   }
 }
 }

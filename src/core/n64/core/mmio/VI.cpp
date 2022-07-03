@@ -60,7 +60,7 @@ void VI::Write(MI& mi, Registers& regs, u32 paddr, u32 val) {
       intr = val & 0x3FF;
     } break;
     case 0x04400010:
-      InterruptLower(mi, regs, InterruptType::VI);
+      InterruptLower(mi, regs, Interrupt::VI);
       break;
     case 0x04400014: burst.raw = val; break;
     case 0x04400018: {

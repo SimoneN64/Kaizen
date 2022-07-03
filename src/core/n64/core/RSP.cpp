@@ -78,8 +78,8 @@ void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
       write.raw = value;
       CLEAR_SET(spStatus.halt, write.clearHalt, write.setHalt);
       CLEAR_SET(spStatus.broke, write.clearBroke, false);
-      if(write.clearIntr) InterruptLower(mi, regs, InterruptType::SP);
-      if(write.setIntr) InterruptRaise(mi, regs, InterruptType::SP);
+      if(write.clearIntr) InterruptLower(mi, regs, Interrupt::SP);
+      if(write.setIntr) InterruptRaise(mi, regs, Interrupt::SP);
       CLEAR_SET(spStatus.singleStep, write.clearSstep, write.setSstep);
       CLEAR_SET(spStatus.interruptOnBreak, write.clearIntrOnBreak, write.setIntrOnBreak);
       CLEAR_SET(spStatus.signal0Set, write.clearSignal0, write.setSignal0);

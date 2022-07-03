@@ -2,6 +2,7 @@
 #include <util.hpp>
 #include <n64/core/Mem.hpp>
 #include <n64/core/cpu/Registers.hpp>
+#include <Audio.hpp>
 
 namespace natsukashii::n64::core {
 auto AI::Read(u32 addr) const -> u32 {
@@ -22,6 +23,8 @@ auto AI::Read(u32 addr) const -> u32 {
 }
 
 #define max(x, y) ((x) > (y) ? (x) : (y))
+
+using namespace natsukashii::core;
 
 void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
   switch(addr) {

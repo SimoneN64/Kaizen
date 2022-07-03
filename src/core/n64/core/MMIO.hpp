@@ -1,6 +1,7 @@
 #pragma once
 #include <n64/core/mmio/VI.hpp>
 #include <n64/core/mmio/MI.hpp>
+#include <n64/core/mmio/AI.hpp>
 #include <n64/core/RSP.hpp>
 #include <n64/core/RDP.hpp>
 
@@ -12,6 +13,7 @@ struct MMIO {
   MMIO() = default;
   VI vi;
   MI mi;
+  AI ai;
   RSP rsp;
   RDP rdp;
 

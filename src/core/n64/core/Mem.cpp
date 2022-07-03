@@ -81,6 +81,10 @@ template u8 Mem::Read<u8>(Registers& regs, u32 vaddr, s64 pc);
 template u16 Mem::Read<u16>(Registers& regs, u32 vaddr, s64 pc);
 template u32 Mem::Read<u32>(Registers& regs, u32 vaddr, s64 pc);
 template u64 Mem::Read<u64>(Registers& regs, u32 vaddr, s64 pc);
+template u8 Mem::Read<u8, false>(Registers& regs, u32 vaddr, s64 pc);
+template u16 Mem::Read<u16, false>(Registers& regs, u32 vaddr, s64 pc);
+template u32 Mem::Read<u32, false>(Registers& regs, u32 vaddr, s64 pc);
+template u64 Mem::Read<u64, false>(Registers& regs, u32 vaddr, s64 pc);
 
 template <class T, bool tlb>
 void Mem::Write(Registers& regs, u32 vaddr, T val, s64 pc) {
@@ -111,4 +115,8 @@ template void Mem::Write<u8>(Registers& regs, u32 vaddr, u8 val, s64 pc);
 template void Mem::Write<u16>(Registers& regs, u32 vaddr, u16 val, s64 pc);
 template void Mem::Write<u32>(Registers& regs, u32 vaddr, u32 val, s64 pc);
 template void Mem::Write<u64>(Registers& regs, u32 vaddr, u64 val, s64 pc);
+template void Mem::Write<u8, false>(Registers& regs, u32 vaddr, u8 val, s64 pc);
+template void Mem::Write<u16, false>(Registers& regs, u32 vaddr, u16 val, s64 pc);
+template void Mem::Write<u32, false>(Registers& regs, u32 vaddr, u32 val, s64 pc);
+template void Mem::Write<u64, false>(Registers& regs, u32 vaddr, u64 val, s64 pc);
 }

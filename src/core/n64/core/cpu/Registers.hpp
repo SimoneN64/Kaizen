@@ -1,5 +1,6 @@
 #pragma once
 #include <n64/core/cpu/registers/Cop0.hpp>
+#include <n64/core/cpu/registers/Cop1.hpp>
 
 namespace natsukashii::n64::core {
 struct Registers {
@@ -7,6 +8,7 @@ struct Registers {
   void SetPC(s64);
   s64 gpr[32];
   Cop0 cop0;
+  Cop1 cop1;
   s64 oldPC, pc, nextPC;
   s64 hi, lo;
   bool LLBit;

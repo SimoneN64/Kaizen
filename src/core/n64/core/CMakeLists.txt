@@ -12,6 +12,8 @@ add_library(n64-core
   Mem.hpp
   RDP.cpp
   RDP.hpp
+  Audio.cpp
+  Audio.hpp
   mmio/AI.cpp
   mmio/AI.hpp
   mmio/Interrupt.cpp

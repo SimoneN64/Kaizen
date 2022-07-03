@@ -5,6 +5,7 @@ namespace natsukashii::n64::core {
 #define STATUS_MASK 0xFF77FFFF
 
 struct Cpu;
+struct Registers;
 struct Mem;
 
 union Cop0Cause {
@@ -176,6 +177,17 @@ struct Cop0 {
   u32 r31{};
   TLBEntry tlb[32]{};
   TLBError tlbError = NONE;
+  void decode(Registers&, Mem&, u32);
+private:
+  void mtc0(Registers&, u32);
+  void dmtc0(Registers&, u32);
+  void mfc0(Registers&, u32);
+  void dmfc0(Registers&, u32);
+  void eret(Registers&);
+
+  void tlbr(Registers&);
+  void tlbwi(Registers&);
+  void tlbp(Registers&);
 };
 
 struct Registers;

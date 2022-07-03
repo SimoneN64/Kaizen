@@ -2,7 +2,7 @@
 #include <util.hpp>
 #include <n64/core/Mem.hpp>
 #include <n64/core/cpu/Registers.hpp>
-#include <Audio.hpp>
+#include <n64/core/Audio.hpp>
 
 namespace natsukashii::n64::core {
 auto AI::Read(u32 addr) const -> u32 {

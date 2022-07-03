@@ -1,6 +1,6 @@
-#include <Audio.hpp>
+#include "Audio.hpp"
 #include <SDL2/SDL.h>
-#include <util.hpp>
+#include "util.hpp"
 
 namespace natsukashii::core {
 #define AUDIO_SAMPLE_RATE 48000

@@ -98,5 +98,7 @@ void Cpu::Step(Mem& mem) {
   regs.oldPC = regs.pc;
   regs.pc = regs.nextPC;
   regs.nextPC += 4;
+
+  Exec(mem, instruction);
 }
 }

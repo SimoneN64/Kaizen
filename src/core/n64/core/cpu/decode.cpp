@@ -100,7 +100,7 @@ void Cpu::Exec(Mem& mem, u32 instr) {
     case 0x0E: xori(instr); break;
     case 0x0F: lui(instr); break;
     case 0x10: regs.cop0.decode(regs, mem, instr); break;
-    case 0x11: regs.cop1.decode(regs, instr); break;
+    case 0x11: regs.cop1.decode(*this, instr); break;
     case 0x14: bl(instr, regs.gpr[RS(instr)] == regs.gpr[RT(instr)]); break;
     case 0x15: bl(instr, regs.gpr[RS(instr)] != regs.gpr[RT(instr)]); break;
     case 0x16: bl(instr, regs.gpr[RS(instr)] <= 0); break;
@@ -127,14 +127,14 @@ void Cpu::Exec(Mem& mem, u32 instr) {
     case 0x2E: swr(mem, instr); break;
     case 0x2F: break; // CACHE
     case 0x30: ll(mem, instr); break;
-    case 0x31: lwc1(mem, instr); break;
+    case 0x31: regs.cop1.lwc1(regs, mem, instr); break;
     case 0x34: lld(mem, instr); break;
-    case 0x35: ldc1(mem, instr); break;
+    case 0x35: regs.cop1.ldc1(regs, mem, instr); break;
     case 0x37: ld(mem, instr); break;
     case 0x38: sc(mem, instr); break;
-    case 0x39: swc1(mem, instr); break;
+    case 0x39: regs.cop1.swc1(regs, mem, instr); break;
     case 0x3C: scd(mem, instr); break;
-    case 0x3D: sdc1(mem, instr); break;
+    case 0x3D: regs.cop1.sdc1(regs, mem, instr); break;
     case 0x3F: sd(mem, instr); break;
     default:
       util::panic("Unimplemented instruction {} {}", (mask >> 3) & 7, mask & 7);

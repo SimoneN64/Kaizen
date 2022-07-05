@@ -54,6 +54,7 @@ struct Cop1 {
   FCR31 fcr31;
   FGR fgr[32];
   void decode(Cpu&, u32);
+  friend struct Cpu;
 private:
   template <typename T>
   inline void SetReg(Cop0& cop0, u8 index, T value) {

@@ -207,7 +207,7 @@ void Cop0::decode(Registers& regs, Mem& mem, u32 instr) {
         case 0x02: tlbwi(regs); break;
         case 0x08: tlbp(regs); break;
         case 0x18: eret(regs); break;
-        default: util::panic("Unimplemented COP0 function {} {} ({:08X}) ({:016lX})", mask_cop2 >> 3, mask_cop2 & 7, instr, regs->old_pc);
+        default: util::panic("Unimplemented COP0 function {} {} ({:08X}) ({:016lX})", mask_cop2 >> 3, mask_cop2 & 7, instr, regs.oldPC);
       }
       break;
     default: util::panic("Unimplemented COP0 instruction {} {}", mask_cop >> 4, mask_cop & 7);

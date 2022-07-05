@@ -24,6 +24,7 @@ private:
   friend struct AI;
   friend struct Cpu;
   friend struct RSP;
+  friend struct Core;
   MMIO mmio;
   std::vector<u8> cart, rdram, sram;
   u8 dmem[DMEM_SIZE]{}, imem[IMEM_SIZE]{};

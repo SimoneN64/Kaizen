@@ -4,7 +4,7 @@
 #include <n64/core/mmio/Interrupt.hpp>
 
 namespace natsukashii::n64::core {
-void RSP::StepRSP(MI& mi, Registers& regs, RDP& rdp) {
+void RSP::Step(MI& mi, Registers& regs, RDP& rdp) {
   if(!spStatus.halt) {
     gpr[0] = 0;
     u32 instr = util::ReadAccess<u32>(imem, pc & IMEM_DSIZE);

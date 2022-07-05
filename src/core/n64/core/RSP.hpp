@@ -106,7 +106,7 @@ struct Registers;
 
 struct RSP {
   RSP() = default;
-  void StepRSP(MI& mi, Registers& regs, RDP& rdp);
+  void Step(MI& mi, Registers& regs, RDP& rdp);
   auto Read(u32 addr) const -> u32;
   void Write(Mem& mem, Registers& regs, u32 addr, u32 value);
   void Exec(MI& mi, Registers& regs, RDP& rdp, u32 instr);

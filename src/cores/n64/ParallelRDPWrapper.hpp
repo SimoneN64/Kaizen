@@ -15,7 +15,7 @@ VkFormat GetVkFormat();
 VkCommandBuffer GetVkCommandBuffer();
 void SubmitRequestedVkCommandBuffer();
 void LoadParallelRDP(const u8* rdram);
-void UpdateScreenParallelRdp(n64::VI& vi);
+void UpdateScreenParallelRdp(const n64::VI& vi);
 void ParallelRdpEnqueueCommand(int command_length, u32* buffer);
 void ParallelRdpOnFullSync();
 void UpdateScreenParallelRdpNoGame();

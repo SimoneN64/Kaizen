@@ -1,10 +1,12 @@
 cmake_minimum_required(VERSION 3.20)
 project(parallel-rdp)
 
-file(GLOB_RECURSE parallel-rdp-cpp parallel-rdp-standalone/parallel-rdp/*.cpp)
+file(GLOB_RECURSE parallel-rdp-cpp parallel-rdp/*.cpp)
 
 add_library(parallel-rdp
   ${parallel-rdp-cpp}
+  ParallelRDPWrapper.cpp
+  ParallelRDPWrapper.hpp
   vulkan/buffer.cpp
   vulkan/buffer_pool.cpp
   vulkan/command_buffer.cpp
@@ -53,7 +55,9 @@ target_include_directories(parallel-rdp PUBLIC
   vulkan
   vulkan-headers/include
   util
-  ../src/core/n64
+  ../../src/cores/
+  .
+  ..
   )
 
 if(WIN32)

@@ -4,8 +4,6 @@ project(n64)
 add_subdirectory(core)
 
 add_library(n64
-  ParallelRDPWrapper.hpp
-  ParallelRDPWrapper.cpp
   Core.cpp
   Core.hpp
   memory_regions.hpp)

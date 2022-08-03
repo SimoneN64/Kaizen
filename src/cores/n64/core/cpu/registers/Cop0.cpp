@@ -56,6 +56,11 @@ T Cop0::GetReg(u8 addr) {
   }
 }
 
+template u32 Cop0::GetReg<u32>(u8 addr);
+template u64 Cop0::GetReg<u64>(u8 addr);
+template s32 Cop0::GetReg<s32>(u8 addr);
+template s64 Cop0::GetReg<s64>(u8 addr);
+
 template<class T>
 void Cop0::SetReg(u8 addr, T value) {
   switch(addr) {
@@ -101,6 +106,11 @@ void Cop0::SetReg(u8 addr, T value) {
       util::panic("Unsupported word write to COP0 register {}\n", index);
   }
 }
+
+template void Cop0::SetReg<u32>(u8 addr, u32 value);
+template void Cop0::SetReg<u64>(u8 addr, u64 value);
+template void Cop0::SetReg<s32>(u8 addr, s32 value);
+template void Cop0::SetReg<s64>(u8 addr, s64 value);
 
 #define vpn(addr, PageMask) (((((addr) & 0xFFFFFFFFFF) | (((addr) >> 22) & 0x30000000000)) & ~((PageMask) | 0x1FFF)))
 

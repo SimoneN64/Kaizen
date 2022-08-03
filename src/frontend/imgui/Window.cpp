@@ -376,9 +376,10 @@ void Window::Update(std::unique_ptr<BaseCore>& core) {
         }
       }
       if(ImGui::MenuItem("Game Boy")) {
-        ImGui::BeginPopup("##unimplemented_Core");
-        ImGui::TextColored({1.0, 0.0, 0.0, 0.7}, "Unimplemented core 'Game Boy'!");
-        ImGui::EndPopup();
+        if(ImGui::BeginPopup("##unimplemented_Core")) {
+          ImGui::TextColored({1.0, 0.0, 0.0, 0.7}, "Unimplemented core 'Game Boy'!");
+          ImGui::EndPopup();
+        }
       }
       ImGui::EndMenu();
     }

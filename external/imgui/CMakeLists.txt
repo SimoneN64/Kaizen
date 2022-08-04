@@ -5,18 +5,18 @@ find_package(SDL2 REQUIRED)
 find_package(Vulkan REQUIRED FATAL_ERROR)
 
 add_library(imgui
-  imgui_demo.cpp
-  imgui_draw.cpp
-  imgui_internal.h
-  imgui_tables.cpp
-  imgui_widgets.cpp
-  imgui.cpp
-  imgui.h
-  imconfig.h
-  backends/imgui_impl_sdl.h
-  backends/imgui_impl_sdl.cpp
-  backends/imgui_impl_vulkan.h
-  backends/imgui_impl_vulkan.cpp)
+  imgui/imgui_demo.cpp
+  imgui/imgui_draw.cpp
+  imgui/imgui_internal.h
+  imgui/imgui_tables.cpp
+  imgui/imgui_widgets.cpp
+  imgui/imgui.cpp
+  imgui/imgui.h
+  imgui/imconfig.h
+  imgui/backends/imgui_impl_sdl.h
+  imgui/backends/imgui_impl_sdl.cpp
+  imgui/backends/imgui_impl_vulkan.h
+  imgui/backends/imgui_impl_vulkan.cpp)
 
 target_link_libraries(imgui PUBLIC SDL2 ${Vulkan_LIBRARY})
-target_include_directories(imgui PUBLIC . backends)
+target_include_directories(imgui PUBLIC ${SDL2_INCLUDE_DIRS} imgui imgui/backends)

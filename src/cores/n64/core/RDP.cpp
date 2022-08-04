@@ -1,7 +1,7 @@
 #include <n64/core/RDP.hpp>
 #include <util.hpp>
 #include <n64/core/RSP.hpp>
-#include <ParallelRDPWrapper.hpp>
+#include <parallel-rdp/ParallelRDPWrapper.hpp>
 #include <n64/core/mmio/Interrupt.hpp>
 
 namespace n64 {

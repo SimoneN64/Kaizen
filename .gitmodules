@@ -1,0 +1,9 @@
+[submodule "external/parallel-rdp/parallel-rdp-standalone"]
+	path = external/parallel-rdp/parallel-rdp-standalone
+	url = https://github.com/Themaister/parallel-rdp-standalone/
+[submodule "external/nativefiledialog-extended"]
+	path = external/nativefiledialog-extended
+	url = https://github.com/btzy/nativefiledialog-extended
+[submodule "external/imgui/imgui"]
+	path = external/imgui/imgui
+	url = https://github.com/ocornut/imgui

@@ -3,7 +3,7 @@ project(n64-core)
 
 add_subdirectory(cpu)
 
-add_subdirectory(../../../../external/parallel-rdp-standalone temp)
+add_subdirectory(../../../../external/parallel-rdp temp)
 
 add_library(n64-core
   Cpu.hpp

@@ -1,6 +1,6 @@
 #include <Core.hpp>
 #include <SDL2/SDL_events.h>
-#include "parallel-rdp-standalone/ParallelRDPWrapper.hpp"
+#include "parallel-rdp/ParallelRDPWrapper.hpp"
 
 namespace n64 {
 Core::Core(const std::string& rom) {

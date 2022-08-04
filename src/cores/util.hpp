@@ -7,29 +7,29 @@
 
 namespace util {
 enum MessageType : u8 {
-  INFO, WARN, ERROR
+  Info, Warn, Error
 };
 
-template <MessageType messageType = INFO, typename ...Args>
+template <MessageType messageType = Info, typename ...Args>
 constexpr void print(const std::string& fmt, Args... args) {
-  if constexpr(messageType == ERROR) {
+  if constexpr(messageType == Error) {
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red), fmt, args...);
     exit(-1);
-  } else if constexpr(messageType == WARN) {
+  } else if constexpr(messageType == Warn) {
     fmt::print(fg(fmt::color::yellow), fmt, args...);
-  } else if constexpr(messageType == INFO) {
+  } else if constexpr(messageType == Info) {
     fmt::print(fmt, args...);
   }
 }
 
 template <typename ...Args>
 constexpr void panic(const std::string& fmt, Args... args) {
-  print<ERROR>(fmt, args...);
+  print<Error>(fmt, args...);
 }
 
 template <typename ...Args>
 constexpr void warn(const std::string& fmt, Args... args) {
-  print<WARN>(fmt, args...);
+  print<Warn>(fmt, args...);
 }
 
 template <typename ...Args>

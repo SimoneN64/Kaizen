@@ -367,7 +367,7 @@ void Window::Update(std::unique_ptr<BaseCore>& core) {
     if(ImGui::BeginMenu("Open")) {
       if(ImGui::MenuItem("Nintendo 64")) {
         nfdchar_t* outpath;
-        const nfdnfilteritem_t filter {"Nintendo 64 roms", "n64,z64,v64,N64,Z64,V64"};
+        const nfdu8filteritem_t filter {"Nintendo 64 roms", "n64,z64,v64,N64,Z64,V64"};
         nfdresult_t result = NFD_OpenDialog(&outpath, &filter, 1, nullptr);
         if(result == NFD_OKAY) {
           core = std::make_unique<n64::Core>(outpath);

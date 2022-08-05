@@ -9,7 +9,6 @@
 
 using namespace Vulkan;
 using namespace RDP;
-using std::unique_ptr;
 
 static CommandProcessor* command_processor;
 static WSI* wsi;
@@ -110,7 +109,7 @@ public:
 
 Program* fullscreen_quad_program;
 
-void LoadParallelRDP(const u8* rdram) {
+void LoadWSIPlatform() {
   wsi = new WSI();
   wsi->set_backbuffer_srgb(false);
   wsi->set_platform(new SDLWSIPlatform());
@@ -118,7 +117,9 @@ void LoadParallelRDP(const u8* rdram) {
   if (!wsi->init_context_from_platform(1, handles)) {
     util::panic("Failed to initialize WSI!");
   }
+}
 
+void LoadParallelRDP(const u8* rdram) {
   ResourceLayout vertLayout;
   ResourceLayout fragLayout;
 

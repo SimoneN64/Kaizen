@@ -7,3 +7,5 @@ roms/
 *.bin
 *.sh
 .cache/
+.vscode/
+vgcore.*

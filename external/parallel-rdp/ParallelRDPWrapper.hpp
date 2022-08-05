@@ -16,6 +16,7 @@ uint32_t GetVkGraphicsQueueFamily();
 VkFormat GetVkFormat();
 VkCommandBuffer GetVkCommandBuffer();
 void SubmitRequestedVkCommandBuffer();
+void LoadWSIPlatform();
 void LoadParallelRDP(const u8* rdram);
 void UpdateScreenParallelRdp(Window& imguiWindow, const n64::VI& vi);
 void ParallelRdpEnqueueCommand(int command_length, u32* buffer);

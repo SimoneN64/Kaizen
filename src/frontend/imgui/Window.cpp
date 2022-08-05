@@ -8,6 +8,7 @@
 
 Window::Window(std::shared_ptr<BaseCore> core) : core(std::move(core)) {
   InitSDL();
+  LoadWSIPlatform();
   InitImgui();
 }
 

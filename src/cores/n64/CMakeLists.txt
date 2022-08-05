@@ -12,4 +12,6 @@ target_link_libraries(n64 PUBLIC n64-core)
 target_include_directories(n64 PUBLIC
   .
   ..
-  ../../../external)
+  ../../../external
+  ../../../external/imgui/imgui
+  ../../../external/imgui/imgui/backends)

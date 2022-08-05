@@ -1,6 +1,7 @@
 #pragma once
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
+#define VK_NO_PROTOTYPES
 #include <imgui_impl_vulkan.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
@@ -9,9 +10,9 @@
 #include <vector>
 
 struct Window {
-  Window();
+  explicit Window(std::shared_ptr<BaseCore> core);
   ~Window();
-  void Update(std::unique_ptr<BaseCore>&);
+  ImDrawData* Present();
 
   [[nodiscard]] bool gotClosed(SDL_Event event) {
     return event.type == SDL_WINDOWEVENT
@@ -19,12 +20,10 @@ struct Window {
         && event.window.windowID == SDL_GetWindowID(window);
   }
 private:
+  std::shared_ptr<BaseCore> core;
   void InitSDL();
-  void InitVulkan(const std::vector<const char*>&, u32);
-  void InitVulkanWindow();
   void InitImgui();
-  void Render(ImDrawData*);
-  void Present();
+  void Render();
 
   SDL_Window* window{};
 
@@ -35,8 +34,8 @@ private:
   VkQueue queue{};
   VkPipelineCache pipelineCache{};
   VkDescriptorPool descriptorPool{};
+  VkAllocationCallbacks* allocator{};
 
-  ImGui_ImplVulkanH_Window windowData;
   u32 minImageCount = 2;
   bool rebuildSwapchain = false;
 };

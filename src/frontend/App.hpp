@@ -3,9 +3,9 @@
 #include <imgui/Window.hpp>
 
 struct App {
-  App() = default;
+  App() : window(core) {};
   void Run();
 private:
-  std::unique_ptr<BaseCore> core;
+  std::shared_ptr<BaseCore> core;
   Window window;
 };

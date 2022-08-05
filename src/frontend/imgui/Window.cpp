@@ -2,16 +2,12 @@
 #include <util.hpp>
 #include <nfd.hpp>
 #include <n64/Core.hpp>
+#include <parallel-rdp/parallel-rdp-standalone/volk/volk.h>
+#include <parallel-rdp/ParallelRDPWrapper.hpp>
+#include <utility>
 
-Window::Window() {
+Window::Window(std::shared_ptr<BaseCore> core) : core(std::move(core)) {
   InitSDL();
-  u32 extCount;
-  SDL_Vulkan_GetInstanceExtensions(window, &extCount, nullptr);
-  std::vector<const char*> extensions;
-  extensions.resize(extCount);
-  SDL_Vulkan_GetInstanceExtensions(window, &extCount, extensions.data());
-  InitVulkan(extensions, extCount);
-  InitVulkanWindow();
   InitImgui();
 }
 
@@ -24,6 +20,10 @@ void Window::InitSDL() {
     1280, 720,
     SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI
   );
+
+  if(volkInitialize() != VK_SUCCESS) {
+    util::panic("Failed to load Volk!");
+  }
 }
 
 static void check_vk_result(VkResult err) {
@@ -32,88 +32,32 @@ static void check_vk_result(VkResult err) {
   }
 }
 
-void Window::InitVulkan(const std::vector<const char*>& extensions, u32 extCount) {
-  VkResult err{};
+void Window::InitImgui() {
+  VkResult err;
 
-  // Create Vulkan Instance
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGuiIO& io = ImGui::GetIO();
+  (void)io;
+  //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+  //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+  // Setup Dear ImGui style
+  ImGui::StyleColorsDark();
+  //ImGui::StyleColorsLight();
+
+  instance = GetVkInstance();
+  physicalDevice = GetVkPhysicalDevice();
+  device = GetVkDevice();
+  queueFamily = GetVkGraphicsQueueFamily();
+  queue = GetGraphicsQueue();
+  pipelineCache = nullptr;
+  descriptorPool = nullptr;
+  allocator = nullptr;
+  minImageCount = 2;
+
   {
-    VkInstanceCreateInfo create_info = {};
-    create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    create_info.enabledExtensionCount = extCount;
-    create_info.ppEnabledExtensionNames = extensions.data();
-
-    err = vkCreateInstance(&create_info, nullptr, &instance);
-    check_vk_result(err);
-  }
-
-  // Select GPU
-  {
-    uint32_t gpu_count;
-    err = vkEnumeratePhysicalDevices(instance, &gpu_count, nullptr);
-    check_vk_result(err);
-    IM_ASSERT(gpu_count > 0);
-
-    auto* gpus = (VkPhysicalDevice*)malloc(sizeof(VkPhysicalDevice) * gpu_count);
-    err = vkEnumeratePhysicalDevices(instance, &gpu_count, gpus);
-    check_vk_result(err);
-
-    // If a number >1 of GPUs got reported, find discrete GPU if present, or use first one available. This covers
-    // most common cases (multi-gpu/integrated+dedicated graphics). Handling more complicated setups (multiple
-    // dedicated GPUs) is out of scope of this sample.
-    int use_gpu = 0;
-    for (int i = 0; i < (int)gpu_count; i++) {
-      VkPhysicalDeviceProperties properties;
-      vkGetPhysicalDeviceProperties(gpus[i], &properties);
-      if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-        use_gpu = i;
-        break;
-      }
-    }
-
-    physicalDevice = gpus[use_gpu];
-    free(gpus);
-  }
-
-  // Select graphics queue family
-  {
-    uint32_t count;
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &count, nullptr);
-    auto* queues = (VkQueueFamilyProperties*)malloc(sizeof(VkQueueFamilyProperties) * count);
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &count, queues);
-    for (uint32_t i = 0; i < count; i++) {
-      if (queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-        queueFamily = i;
-        break;
-      }
-    }
-    free(queues);
-    IM_ASSERT(queueFamily != (uint32_t)-1);
-  }
-
-  // Create Logical Device (with 1 queue)
-  {
-    int device_extension_count = 1;
-    const char* device_extensions[] = { "VK_KHR_swapchain" };
-    const float queue_priority[] = { 1.0f };
-    VkDeviceQueueCreateInfo queue_info[1] = {};
-    queue_info[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queue_info[0].queueFamilyIndex = queueFamily;
-    queue_info[0].queueCount = 1;
-    queue_info[0].pQueuePriorities = queue_priority;
-    VkDeviceCreateInfo create_info = {};
-    create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    create_info.queueCreateInfoCount = sizeof(queue_info) / sizeof(queue_info[0]);
-    create_info.pQueueCreateInfos = queue_info;
-    create_info.enabledExtensionCount = device_extension_count;
-    create_info.ppEnabledExtensionNames = device_extensions;
-    err = vkCreateDevice(physicalDevice, &create_info, nullptr, &device);
-    check_vk_result(err);
-    vkGetDeviceQueue(device, queueFamily, 0, &queue);
-  }
-
-  // Create Descriptor Pool
-  {
-    VkDescriptorPoolSize pool_sizes[] = {
+    VkDescriptorPoolSize poolSizes[] = {
       { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
       { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
       { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
@@ -126,80 +70,71 @@ void Window::InitVulkan(const std::vector<const char*>& extensions, u32 extCount
       { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
       { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
     };
-    VkDescriptorPoolCreateInfo pool_info = {};
-    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
-    pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
-    pool_info.pPoolSizes = pool_sizes;
-    err = vkCreateDescriptorPool(device, &pool_info, nullptr, &descriptorPool);
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    poolInfo.maxSets = 1000 * IM_ARRAYSIZE(poolSizes);
+    poolInfo.poolSizeCount = (uint32_t)IM_ARRAYSIZE(poolSizes);
+    poolInfo.pPoolSizes = poolSizes;
+    err = vkCreateDescriptorPool(device, &poolInfo, allocator, &descriptorPool);
     check_vk_result(err);
   }
-}
 
-void Window::InitVulkanWindow() {
-  VkSurfaceKHR surface;
-  if (!SDL_Vulkan_CreateSurface(window, instance, &surface)) {
-    util::panic("Failed to create Vulkan surface.");
+  VkRenderPass renderPass;
+  {
+    VkAttachmentDescription attachment = {};
+    attachment.format = GetVkFormat();
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    VkAttachmentReference colorAttachment = {};
+    colorAttachment.attachment = 0;
+    colorAttachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachment;
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    VkRenderPassCreateInfo info = {};
+    info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    info.attachmentCount = 1;
+    info.pAttachments = &attachment;
+    info.subpassCount = 1;
+    info.pSubpasses = &subpass;
+    info.dependencyCount = 1;
+    info.pDependencies = &dependency;
+    err = vkCreateRenderPass(device, &info, allocator, &renderPass);
+    check_vk_result(err);
   }
-
-  // Create Framebuffers
-  int w, h;
-  SDL_GetWindowSize(window, &w, &h);
-  windowData.Surface = surface;
-
-  // Check for WSI support
-  VkBool32 res;
-  vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamily, windowData.Surface, &res);
-  if (res != VK_TRUE) {
-    fprintf(stderr, "Error no WSI support on physical device 0\n");
-    exit(-1);
-  }
-
-  // Select Surface Format
-  const VkFormat requestSurfaceImageFormat[] = { VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_B8G8R8_UNORM, VK_FORMAT_R8G8B8_UNORM };
-  const VkColorSpaceKHR requestSurfaceColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
-  windowData.SurfaceFormat = ImGui_ImplVulkanH_SelectSurfaceFormat(physicalDevice, windowData.Surface, requestSurfaceImageFormat, (size_t)IM_ARRAYSIZE(requestSurfaceImageFormat), requestSurfaceColorSpace);
-
-  // Select Present Mode
-  VkPresentModeKHR present_modes[] = { VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_FIFO_KHR };
-
-  windowData.PresentMode = ImGui_ImplVulkanH_SelectPresentMode(physicalDevice, windowData.Surface, &present_modes[0], IM_ARRAYSIZE(present_modes));
-
-  IM_ASSERT(minImageCount >= 2);
-  ImGui_ImplVulkanH_CreateOrResizeWindow(instance, physicalDevice, device, &windowData, queueFamily, nullptr, w, h, minImageCount);
-}
-
-void Window::InitImgui() {
-  VkResult err;
-  IMGUI_CHECKVERSION();
-  ImGui::CreateContext();
-  ImGuiIO& io = ImGui::GetIO();
-  (void)io;
-  //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-  //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-
-  // Setup Dear ImGui style
-  ImGui::StyleColorsDark();
-  //ImGui::StyleColorsLight();
 
   // Setup Platform/Renderer backends
   ImGui_ImplSDL2_InitForVulkan(window);
-  ImGui_ImplVulkan_InitInfo init_info = {};
-  init_info.Instance = instance;
-  init_info.PhysicalDevice = physicalDevice;
-  init_info.Device = device;
-  init_info.QueueFamily = queueFamily;
-  init_info.Queue = queue;
-  init_info.PipelineCache = pipelineCache;
-  init_info.DescriptorPool = descriptorPool;
-  init_info.Subpass = 0;
-  init_info.MinImageCount = minImageCount;
-  init_info.ImageCount = windowData.ImageCount;
-  init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-  init_info.Allocator = nullptr;
-  init_info.CheckVkResultFn = check_vk_result;
-  ImGui_ImplVulkan_Init(&init_info, windowData.RenderPass);
+  ImGui_ImplVulkan_InitInfo initInfo = {};
+  initInfo.Instance = instance;
+  initInfo.PhysicalDevice = physicalDevice;
+  initInfo.Device = device;
+  initInfo.QueueFamily = queueFamily;
+  initInfo.Queue = queue;
+  initInfo.PipelineCache = pipelineCache;
+  initInfo.DescriptorPool = descriptorPool;
+  initInfo.Allocator = allocator;
+  initInfo.MinImageCount = minImageCount;
+  initInfo.ImageCount = 2;
+  initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+  initInfo.CheckVkResultFn = check_vk_result;
+  ImGui_ImplVulkan_Init(&initInfo, renderPass);
 
   // Load Fonts
   // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
@@ -218,32 +153,9 @@ void Window::InitImgui() {
 
   // Upload Fonts
   {
-    // Use any command queue
-    VkCommandPool command_pool = windowData.Frames[windowData.FrameIndex].CommandPool;
-    VkCommandBuffer command_buffer = windowData.Frames[windowData.FrameIndex].CommandBuffer;
-
-    err = vkResetCommandPool(device, command_pool, 0);
-    check_vk_result(err);
-    VkCommandBufferBeginInfo begin_info = {};
-    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    err = vkBeginCommandBuffer(command_buffer, &begin_info);
-    check_vk_result(err);
-
-    ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
-
-    VkSubmitInfo end_info = {};
-    end_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    end_info.commandBufferCount = 1;
-    end_info.pCommandBuffers = &command_buffer;
-    err = vkEndCommandBuffer(command_buffer);
-    check_vk_result(err);
-    err = vkQueueSubmit(queue, 1, &end_info, VK_NULL_HANDLE);
-    check_vk_result(err);
-
-    err = vkDeviceWaitIdle(device);
-    check_vk_result(err);
-    ImGui_ImplVulkan_DestroyFontUploadObjects();
+    VkCommandBuffer commandBuffer = GetVkCommandBuffer();
+    ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+    SubmitRequestedVkCommandBuffer();
   }
 }
 
@@ -253,115 +165,23 @@ Window::~Window() {
   ImGui_ImplVulkan_Shutdown();
   ImGui_ImplSDL2_Shutdown();
   ImGui::DestroyContext();
-  ImGui_ImplVulkanH_DestroyWindow(instance, device, &windowData, nullptr);
   vkDestroyDescriptorPool(device, descriptorPool, nullptr);
   vkDestroyDevice(device, nullptr);
   vkDestroyInstance(instance, nullptr);
 }
 
-void Window::Render(ImDrawData* drawData) {
-  VkResult err;
-
-  VkSemaphore image_acquired_semaphore  = windowData.FrameSemaphores[windowData.SemaphoreIndex].ImageAcquiredSemaphore;
-  VkSemaphore render_complete_semaphore = windowData.FrameSemaphores[windowData.SemaphoreIndex].RenderCompleteSemaphore;
-  err = vkAcquireNextImageKHR(device, windowData.Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &windowData.FrameIndex);
-  if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR) {
-    rebuildSwapchain = true;
-    return;
-  }
-  check_vk_result(err);
-
-  ImGui_ImplVulkanH_Frame* fd = &windowData.Frames[windowData.FrameIndex];
-  {
-    err = vkWaitForFences(device, 1, &fd->Fence, VK_TRUE, UINT64_MAX);    // wait indefinitely instead of periodically checking
-    check_vk_result(err);
-
-    err = vkResetFences(device, 1, &fd->Fence);
-    check_vk_result(err);
-  }
-  {
-    err = vkResetCommandPool(device, fd->CommandPool, 0);
-    check_vk_result(err);
-    VkCommandBufferBeginInfo info = {};
-    info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    err = vkBeginCommandBuffer(fd->CommandBuffer, &info);
-    check_vk_result(err);
-  }
-  {
-    VkRenderPassBeginInfo info = {};
-    info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    info.renderPass = windowData.RenderPass;
-    info.framebuffer = fd->Framebuffer;
-    info.renderArea.extent.width = windowData.Width;
-    info.renderArea.extent.height = windowData.Height;
-    info.clearValueCount = 1;
-    info.pClearValues = &windowData.ClearValue;
-    vkCmdBeginRenderPass(fd->CommandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
-  }
-
-  // Record dear imgui primitives into command buffer
-  ImGui_ImplVulkan_RenderDrawData(drawData, fd->CommandBuffer);
-
-  // Submit command buffer
-  vkCmdEndRenderPass(fd->CommandBuffer);
-  {
-    VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    VkSubmitInfo info = {};
-    info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    info.waitSemaphoreCount = 1;
-    info.pWaitSemaphores = &image_acquired_semaphore;
-    info.pWaitDstStageMask = &wait_stage;
-    info.commandBufferCount = 1;
-    info.pCommandBuffers = &fd->CommandBuffer;
-    info.signalSemaphoreCount = 1;
-    info.pSignalSemaphores = &render_complete_semaphore;
-
-    err = vkEndCommandBuffer(fd->CommandBuffer);
-    check_vk_result(err);
-    err = vkQueueSubmit(queue, 1, &info, fd->Fence);
-    check_vk_result(err);
-  }
-}
-
-void Window::Present() {
-  if (rebuildSwapchain) {
-    return;
-  }
-  VkSemaphore render_complete_semaphore = windowData.FrameSemaphores[windowData.SemaphoreIndex].RenderCompleteSemaphore;
-  VkPresentInfoKHR info = {};
-  info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-  info.waitSemaphoreCount = 1;
-  info.pWaitSemaphores = &render_complete_semaphore;
-  info.swapchainCount = 1;
-  info.pSwapchains = &windowData.Swapchain;
-  info.pImageIndices = &windowData.FrameIndex;
-  VkResult err = vkQueuePresentKHR(queue, &info);
-  if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR) {
-    rebuildSwapchain = true;
-    return;
-  }
-  check_vk_result(err);
-  windowData.SemaphoreIndex = (windowData.SemaphoreIndex + 1) % windowData.ImageCount;
-}
-
-void Window::Update(std::unique_ptr<BaseCore>& core) {
-  if (rebuildSwapchain) {
-    int width, height;
-    SDL_GetWindowSize(window, &width, &height);
-    if (width > 0 && height > 0) {
-      ImGui_ImplVulkan_SetMinImageCount(minImageCount);
-      ImGui_ImplVulkanH_CreateOrResizeWindow(instance, physicalDevice, device, &windowData, queueFamily, nullptr, width, height, minImageCount);
-      windowData.FrameIndex = 0;
-      rebuildSwapchain = false;
-    }
-  }
-
-  // Start the Dear ImGui frame
+ImDrawData* Window::Present() {
   ImGui_ImplVulkan_NewFrame();
-  ImGui_ImplSDL2_NewFrame();
+  ImGui_ImplSDL2_NewFrame(window);
   ImGui::NewFrame();
 
+  Render();
+
+  ImGui::Render();
+  return ImGui::GetDrawData();
+}
+
+void Window::Render() {
   ImGui::BeginMainMenuBar();
   if(ImGui::BeginMenu("File")) {
     if(ImGui::BeginMenu("Open")) {
@@ -370,8 +190,9 @@ void Window::Update(std::unique_ptr<BaseCore>& core) {
         const nfdu8filteritem_t filter {"Nintendo 64 roms", "n64,z64,v64,N64,Z64,V64"};
         nfdresult_t result = NFD_OpenDialog(&outpath, &filter, 1, nullptr);
         if(result == NFD_OKAY) {
-          core = std::make_unique<n64::Core>(outpath);
+          core = std::make_shared<n64::Core>(outpath);
           core->initialized = true;
+          core->system = System::Nintendo64;
           NFD_FreePath(outpath);
         }
       }
@@ -390,17 +211,4 @@ void Window::Update(std::unique_ptr<BaseCore>& core) {
     ImGui::EndMenu();
   }
   ImGui::EndMainMenuBar();
-
-  // Rendering
-  ImGui::Render();
-  ImDrawData* draw_data = ImGui::GetDrawData();
-  const bool is_minimized = (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f);
-  if (!is_minimized) {
-    windowData.ClearValue.color.float32[0] = 0;
-    windowData.ClearValue.color.float32[1] = 0;
-    windowData.ClearValue.color.float32[2] = 0;
-    windowData.ClearValue.color.float32[3] = 0;
-    Render(draw_data);
-    Present();
-  }
 }

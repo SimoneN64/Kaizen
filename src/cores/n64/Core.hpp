@@ -10,6 +10,7 @@ struct Core : BaseCore {
   explicit Core(const std::string&);
   void Run() override;
   void PollInputs(u32) override;
+  VI& GetVI() { return mem.mmio.vi; }
 private:
   Mem mem;
   Cpu cpu;

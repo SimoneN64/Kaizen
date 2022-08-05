@@ -42,6 +42,8 @@ target_include_directories(n64-core PUBLIC
   ..
   ../..
   ../../../../external
+  ../../../external/imgui/imgui
+  ../../../external/imgui/imgui/backends
   mmio)
 
 target_link_libraries(n64-core PUBLIC n64-cpu parallel-rdp)

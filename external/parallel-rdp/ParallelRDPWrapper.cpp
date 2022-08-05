@@ -4,6 +4,8 @@
 #include <rdp_device.hpp>
 #include <util.hpp>
 #include <SDL2/SDL_vulkan.h>
+#include <imgui/backends/imgui_impl_vulkan.h>
+#include <imgui/Window.hpp>
 
 using namespace Vulkan;
 using namespace RDP;
@@ -196,7 +198,7 @@ void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image, Util::Intrusive
   cmd->draw(3, 1);
 }
 
-void UpdateScreen(Util::IntrusivePtr<Image> image) {
+void UpdateScreen(Window& imguiWindow, Util::IntrusivePtr<Image> image) {
   wsi->begin_frame();
 
   if (!image) {
@@ -225,13 +227,15 @@ void UpdateScreen(Util::IntrusivePtr<Image> image) {
 
   cmd->begin_render_pass(wsi->get_device().get_swapchain_render_pass(SwapchainRenderPass::ColorOnly));
   DrawFullscreenTexturedQuad(image, cmd);
-  //ImGui_ImplVulkan_RenderDrawData(imgui_frame(), cmd->get_command_buffer());
+
+  ImGui_ImplVulkan_RenderDrawData(imguiWindow.Present(), cmd->get_command_buffer());
+
   cmd->end_render_pass();
   wsi->get_device().submit(cmd);
   wsi->end_frame();
 }
 
-void UpdateScreenParallelRdp(const n64::VI& vi) {
+void UpdateScreenParallelRdp(Window& imguiWindow, const n64::VI& vi) {
   command_processor->set_vi_register(VIRegister::Control,      vi.status.raw);
   command_processor->set_vi_register(VIRegister::Origin,       vi.origin);
   command_processor->set_vi_register(VIRegister::Width,        vi.width);
@@ -257,12 +261,12 @@ void UpdateScreenParallelRdp(const n64::VI& vi) {
   opts.downscale_steps = true;
   opts.crop_overscan_pixels = true;
   Util::IntrusivePtr<Image> image = command_processor->scanout(opts);
-  UpdateScreen(image);
+  UpdateScreen(imguiWindow, image);
   command_processor->begin_frame_context();
 }
 
-void UpdateScreenParallelRdpNoGame() {
-  UpdateScreen(static_cast<Util::IntrusivePtr<Image>>(nullptr));
+void UpdateScreenParallelRdpNoGame(Window& imguiWindow) {
+  UpdateScreen(imguiWindow, static_cast<Util::IntrusivePtr<Image>>(nullptr));
 }
 
 void ParallelRdpEnqueueCommand(int command_length, u32* buffer) {

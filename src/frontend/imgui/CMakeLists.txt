@@ -8,5 +8,11 @@ add_library(frontend-imgui
   Window.cpp
   Window.hpp)
 
-target_include_directories(frontend-imgui PUBLIC . ../../cores ../../../external)
+target_include_directories(frontend-imgui PUBLIC
+  .
+  ../../cores
+  ../../../external
+  ../../../external/parallel-rdp/parallel-rdp-standalone/vulkan
+  ../../../external/parallel-rdp/parallel-rdp-standalone/util
+  ../../../external/parallel-rdp/parallel-rdp-standalone/volk)
 target_link_libraries(frontend-imgui PUBLIC imgui nfd)

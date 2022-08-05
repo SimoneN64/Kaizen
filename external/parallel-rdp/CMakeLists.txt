@@ -58,6 +58,10 @@ target_include_directories(parallel-rdp PUBLIC
   ../../src/cores
   parallel-rdp-standalone
   ..
+  ../../src/frontend
+  ../imgui
+  ../imgui/imgui
+  ../imgui/imgui/backends
   )
 
 if(WIN32)

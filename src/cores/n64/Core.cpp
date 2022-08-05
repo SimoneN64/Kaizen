@@ -22,8 +22,6 @@ void Core::Run() {
     if((mmio.vi.current & 0x3FE) == mmio.vi.intr) {
       InterruptRaise(mmio.mi, cpu.regs, Interrupt::VI);
     }
-
-    UpdateScreenParallelRdp(mmio.vi);
   }
 }
 

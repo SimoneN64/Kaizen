@@ -1,4 +1,5 @@
 #include <App.hpp>
+#include <parallel-rdp/ParallelRDPWrapper.hpp>
 
 void App::Run() {
   // Main loop
@@ -15,6 +16,9 @@ void App::Run() {
 
     if(core->initialized)
       core->Run();
-    window.Update(core);
+    if(core->system == System::Nintendo64) {
+      if(core->initialized) UpdateScreenParallelRdp(window, dynamic_cast<n64::Core*>(core.get())->GetVI());
+      else UpdateScreenParallelRdpNoGame(window);
+    }
   }
 }

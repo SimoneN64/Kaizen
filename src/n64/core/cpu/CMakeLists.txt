@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
-project(n64-cpu)
+project(cpu)
 
-add_library(n64-cpu
+add_library(cpu
   Registers.cpp
   Registers.hpp
   registers/Cop0.cpp
@@ -13,5 +13,5 @@ add_library(n64-cpu
   registers/cop1instructions.cpp
   instructions.cpp)
 
-target_include_directories(n64-cpu PUBLIC registers . .. ../../
+target_include_directories(cpu PUBLIC registers . .. ../../
   ../../../../../external ../../../)

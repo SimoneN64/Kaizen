@@ -1,14 +1,14 @@
 #include <Window.hpp>
 #include <util.hpp>
 #include <nfd.hpp>
-#include <n64/Core.hpp>
+#include <Core.hpp>
 #include <parallel-rdp/parallel-rdp-standalone/volk/volk.h>
 #include <parallel-rdp/ParallelRDPWrapper.hpp>
 #include <utility>
 
-Window::Window(std::shared_ptr<BaseCore> core) : core(std::move(core)) {
+Window::Window(n64::Core& core) {
   InitSDL();
-  LoadWSIPlatform();
+  InitParallelRDP(core.GetRDRAM());
   InitImgui();
 }
 

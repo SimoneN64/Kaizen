@@ -6,11 +6,11 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
 #include <vulkan/vulkan.h>
-#include <BaseCore.hpp>
+#include <Core.hpp>
 #include <vector>
 
 struct Window {
-  explicit Window(std::shared_ptr<BaseCore> core);
+  explicit Window(n64::Core& core);
   ~Window();
   ImDrawData* Present();
 
@@ -20,7 +20,7 @@ struct Window {
         && event.window.windowID == SDL_GetWindowID(window);
   }
 private:
-  std::shared_ptr<BaseCore> core;
+  n64::Core core;
   void InitSDL();
   void InitImgui();
   void Render();

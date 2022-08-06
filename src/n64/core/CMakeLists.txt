@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
-project(n64-core)
+project(core)
 
 add_subdirectory(cpu)
 
-add_subdirectory(../../../../external/parallel-rdp temp)
+add_subdirectory(../../../external/parallel-rdp temp)
 
-add_library(n64-core
+add_library(core
   Cpu.hpp
   Cpu.cpp
   Mem.cpp
@@ -37,13 +37,13 @@ add_library(n64-core
   rsp/decode.cpp
   rsp/instructions.cpp)
 
-target_include_directories(n64-core PUBLIC
+target_include_directories(core PUBLIC
   .
   ..
   ../..
-  ../../../../external
+  ../../../external
   ../../../external/imgui/imgui
   ../../../external/imgui/imgui/backends
   mmio)
 
-target_link_libraries(n64-core PUBLIC n64-cpu parallel-rdp)
+target_link_libraries(core PUBLIC cpu parallel-rdp)

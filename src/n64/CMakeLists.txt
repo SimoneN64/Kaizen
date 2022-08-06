@@ -8,10 +8,10 @@ add_library(n64
   Core.hpp
   memory_regions.hpp)
 
-target_link_libraries(n64 PUBLIC n64-core)
+target_link_libraries(n64 PUBLIC core)
 target_include_directories(n64 PUBLIC
   .
   ..
-  ../../../external
-  ../../../external/imgui/imgui
-  ../../../external/imgui/imgui/backends)
+  ../../external
+  ../../external/imgui/imgui
+  ../../external/imgui/imgui/backends)

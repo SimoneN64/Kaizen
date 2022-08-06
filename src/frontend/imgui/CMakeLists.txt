@@ -10,7 +10,7 @@ add_library(frontend-imgui
 
 target_include_directories(frontend-imgui PUBLIC
   .
-  ../../cores
+  ../../n64
   ../../../external
   ../../../external/parallel-rdp/parallel-rdp-standalone/vulkan
   ../../../external/parallel-rdp/parallel-rdp-standalone/util

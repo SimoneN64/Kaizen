@@ -1,12 +1,30 @@
 #pragma once
-#include <n64/Core.hpp>
+#include <Core.hpp>
 #include <wsi.hpp>
 #include <SDL2/SDL.h>
 #include <n64/core/mmio/VI.hpp>
 
 struct Window;
-
 static SDL_Window* window;
+
+class ParallelRdpWindowInfo {
+public:
+  struct CoordinatePair {
+    int x;
+    int y;
+  };
+  virtual CoordinatePair get_window_size() = 0;
+  virtual ~ParallelRdpWindowInfo() = default;
+};
+
+class SDLParallelRdpWindowInfo : public ParallelRdpWindowInfo {
+  CoordinatePair get_window_size() {
+    int width, height;
+    SDL_GetWindowSize(window, &width, &height);
+    return CoordinatePair{ width, height };
+  }
+};
+
 static u32 windowID;
 VkQueue GetGraphicsQueue();
 VkInstance GetVkInstance();
@@ -16,8 +34,7 @@ uint32_t GetVkGraphicsQueueFamily();
 VkFormat GetVkFormat();
 VkCommandBuffer GetVkCommandBuffer();
 void SubmitRequestedVkCommandBuffer();
-void LoadWSIPlatform();
-void LoadParallelRDP(const u8* rdram);
+void InitParallelRDP(const u8* rdram);
 void UpdateScreenParallelRdp(Window& imguiWindow, const n64::VI& vi);
 void ParallelRdpEnqueueCommand(int command_length, u32* buffer);
 void ParallelRdpOnFullSync();

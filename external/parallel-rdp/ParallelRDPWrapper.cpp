@@ -12,6 +12,7 @@ using namespace RDP;
 
 static CommandProcessor* command_processor;
 static WSI* wsi;
+static std::unique_ptr<ParallelRdpWindowInfo> windowInfo;
 
 std::vector<Semaphore> acquire_semaphore;
 
@@ -109,14 +110,17 @@ public:
 
 Program* fullscreen_quad_program;
 
-void LoadWSIPlatform() {
+WSI* LoadWSIPlatform(Vulkan::WSIPlatform* wsi_platform, std::unique_ptr<ParallelRdpWindowInfo>&& newWindowInfo) {
   wsi = new WSI();
   wsi->set_backbuffer_srgb(false);
-  wsi->set_platform(new SDLWSIPlatform());
+  wsi->set_platform(wsi_platform);
   Context::SystemHandles handles;
   if (!wsi->init_context_from_platform(1, handles)) {
     util::panic("Failed to initialize WSI!");
   }
+
+  windowInfo = std::move(newWindowInfo);
+  return wsi;
 }
 
 void LoadParallelRDP(const u8* rdram) {
@@ -159,6 +163,11 @@ void LoadParallelRDP(const u8* rdram) {
   if (!command_processor->device_is_supported()) {
     util::panic("This device probably does not support 8/16-bit storage. Make sure you're using up-to-date drivers!");
   }
+}
+
+void InitParallelRDP(const u8* rdram) {
+  LoadWSIPlatform(new SDLWSIPlatform(), std::make_unique<SDLParallelRdpWindowInfo>());
+  LoadParallelRDP(rdram);
 }
 
 void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image, Util::IntrusivePtr<CommandBuffer> cmd) {

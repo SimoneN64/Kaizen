@@ -1,5 +1,5 @@
-#include <parallel-rdp/ParallelRDPWrapper.hpp>
-#include <n64/core/RDP.hpp>
+#include <ParallelRDPWrapper.hpp>
+#include <core/RDP.hpp>
 #include <memory>
 #include <rdp_device.hpp>
 #include <util.hpp>
@@ -115,7 +115,7 @@ WSI* LoadWSIPlatform(Vulkan::WSIPlatform* wsi_platform, std::unique_ptr<Parallel
   wsi->set_backbuffer_srgb(false);
   wsi->set_platform(wsi_platform);
   Context::SystemHandles handles;
-  if (!wsi->init_context_from_platform(1, handles)) {
+  if (!wsi->init_simple(1, handles)) {
     util::panic("Failed to initialize WSI!");
   }
 
@@ -139,11 +139,11 @@ void LoadParallelRDP(const u8* rdram) {
   fragLayout.sets[0].fp_mask = 1;
   fragLayout.sets[0].array_size[0] = 1;
 
-  u32* fullscreenQuadVert = nullptr, *fullscreenQuadFrag = nullptr;
-  util::ReadFileBinary("external/vert.spv", fullscreenQuadVert);
-  util::ReadFileBinary("external/frag.spv", fullscreenQuadFrag);
+  u32* fullscreenQuadVert, *fullscreenQuadFrag;
+  auto sizeVert = util::ReadFileBinary("external/vert.spv", fullscreenQuadVert);
+  auto sizeFrag = util::ReadFileBinary("external/frag.spv", fullscreenQuadFrag);
 
-  fullscreen_quad_program = wsi->get_device().request_program(fullscreenQuadVert, sizeof(fullscreenQuadVert), fullscreenQuadFrag, sizeof(fullscreenQuadFrag), &vertLayout, &fragLayout);
+  fullscreen_quad_program = wsi->get_device().request_program(fullscreenQuadVert, sizeVert, fullscreenQuadFrag, sizeFrag, &vertLayout, &fragLayout);
 
   auto aligned_rdram = reinterpret_cast<uintptr_t>(rdram);
   uintptr_t offset = 0;

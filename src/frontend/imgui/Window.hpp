@@ -10,7 +10,7 @@
 #include <vector>
 
 struct Window {
-  explicit Window(n64::Core& core);
+  explicit Window(const n64::Core& core);
   ~Window();
   ImDrawData* Present();
 

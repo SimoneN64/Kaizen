@@ -14,11 +14,10 @@ void App::Run() {
         done = true;
     }
 
-    if(core->initialized)
-      core->Run();
-    if(core->system == System::Nintendo64) {
-      if(core->initialized) UpdateScreenParallelRdp(window, dynamic_cast<n64::Core*>(core.get())->GetVI());
-      else UpdateScreenParallelRdpNoGame(window);
-    }
+    if(core.initialized)
+      core.Run();
+
+    if(core.initialized) UpdateScreenParallelRdp(window, core.GetVI());
+    else UpdateScreenParallelRdpNoGame(window);
   }
 }

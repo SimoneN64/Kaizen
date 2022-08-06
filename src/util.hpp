@@ -4,6 +4,7 @@
 #include <cassert>
 #include <portable_endian_bswap.h>
 #include <fstream>
+#include <vector>
 
 namespace util {
 enum MessageType : u8 {
@@ -145,20 +146,20 @@ inline size_t NextPow2(size_t num) {
   return num + 1;
 }
 
-inline void ReadFileBinary(const std::string& path, void* buf) {
-  std::ifstream file("external/vert.spv", std::ios::binary);
+inline auto ReadFileBinary(const std::string& path, u32* buf) {
+  std::ifstream file(path, std::ios::binary);
   file.unsetf(std::ios::skipws);
   if(!file.is_open()) {
     util::panic("Could not load file!\n");
   }
-  file.seekg(std::ios::end);
-  auto size = file.tellg();
-  file.seekg(std::ios::beg);
-  if(buf)
-    free(buf);
 
-  buf = calloc(size, 1);
-  file.read((char*)buf, size);
+  file.seekg(0, std::ios::end);
+  size_t size = file.tellg();
+  file.seekg(0, std::ios::beg);
+
+  buf = (u32*)calloc(size, 1);
+  file.read(reinterpret_cast<char*>(buf), size);
   file.close();
+  return size;
 }
 }

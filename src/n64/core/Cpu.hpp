@@ -1,6 +1,6 @@
 #pragma once
-#include <n64/core/cpu/Registers.hpp>
-#include <n64/core/Mem.hpp>
+#include <Registers.hpp>
+#include <Mem.hpp>
 
 namespace n64 {
 struct Cpu {

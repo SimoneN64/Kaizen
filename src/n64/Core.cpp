@@ -2,8 +2,9 @@
 #include <SDL2/SDL_events.h>
 
 namespace n64 {
-Core::Core(const std::string& rom) {
+void Core::LoadROM(const std::string& rom) {
   mem.LoadROM(rom);
+  initialized = true;
 }
 
 void Core::Run() {

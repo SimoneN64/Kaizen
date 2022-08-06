@@ -2,7 +2,7 @@
 #include <Core.hpp>
 #include <wsi.hpp>
 #include <SDL2/SDL.h>
-#include <n64/core/mmio/VI.hpp>
+#include <core/mmio/VI.hpp>
 
 struct Window;
 static SDL_Window* window;

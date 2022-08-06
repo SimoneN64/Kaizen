@@ -6,7 +6,7 @@
 #include <parallel-rdp/ParallelRDPWrapper.hpp>
 #include <utility>
 
-Window::Window(n64::Core& core) {
+Window::Window(const n64::Core& core) {
   InitSDL();
   InitParallelRDP(core.GetRDRAM());
   InitImgui();
@@ -191,9 +191,7 @@ void Window::Render() {
         const nfdu8filteritem_t filter {"Nintendo 64 roms", "n64,z64,v64,N64,Z64,V64"};
         nfdresult_t result = NFD_OpenDialog(&outpath, &filter, 1, nullptr);
         if(result == NFD_OKAY) {
-          core = std::make_shared<n64::Core>(outpath);
-          core->initialized = true;
-          core->system = System::Nintendo64;
+          core.LoadROM(outpath);
           NFD_FreePath(outpath);
         }
       }

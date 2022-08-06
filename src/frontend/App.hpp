@@ -1,11 +1,11 @@
 #pragma once
-#include <BaseCore.hpp>
+#include <Core.hpp>
 #include <imgui/Window.hpp>
 
 struct App {
   App() : window(core) {};
   void Run();
 private:
-  std::shared_ptr<BaseCore> core;
+  n64::Core core;
   Window window;
 };

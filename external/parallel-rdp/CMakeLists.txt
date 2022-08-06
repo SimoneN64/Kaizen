@@ -55,13 +55,18 @@ target_include_directories(parallel-rdp PUBLIC
   parallel-rdp-standalone/vulkan
   parallel-rdp-standalone/vulkan-headers/include
   parallel-rdp-standalone/util
-  ../../src/cores
+  ../../src/n64
+  ../../src/n64/core/
+  ../../src/n64/core/cpu/
+  ../../src/n64/core/cpu/registers
   parallel-rdp-standalone
   ..
   ../../src/frontend
+  ../../src
   ../imgui
   ../imgui/imgui
   ../imgui/imgui/backends
+  .
   )
 
 if(WIN32)

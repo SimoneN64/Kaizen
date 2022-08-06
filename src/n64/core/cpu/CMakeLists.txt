@@ -13,5 +13,9 @@ add_library(cpu
   registers/cop1instructions.cpp
   instructions.cpp)
 
-target_include_directories(cpu PUBLIC registers . .. ../../
-  ../../../../../external ../../../)
+target_include_directories(cpu PUBLIC registers
+  . ..
+  ../../../../external
+  ../../../../src
+  ../../
+)

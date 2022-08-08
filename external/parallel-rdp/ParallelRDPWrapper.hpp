@@ -5,7 +5,7 @@
 #include <core/mmio/VI.hpp>
 
 struct Window;
-static SDL_Window* window;
+static SDL_Window* g_Window;
 
 class ParallelRdpWindowInfo {
 public:
@@ -20,7 +20,7 @@ public:
 class SDLParallelRdpWindowInfo : public ParallelRdpWindowInfo {
   CoordinatePair get_window_size() {
     int width, height;
-    SDL_GetWindowSize(window, &width, &height);
+    SDL_GetWindowSize(g_Window, &width, &height);
     return CoordinatePair{ width, height };
   }
 };
@@ -34,7 +34,7 @@ uint32_t GetVkGraphicsQueueFamily();
 VkFormat GetVkFormat();
 VkCommandBuffer GetVkCommandBuffer();
 void SubmitRequestedVkCommandBuffer();
-void InitParallelRDP(const u8* rdram);
+void InitParallelRDP(const u8* rdram, SDL_Window*);
 void UpdateScreenParallelRdp(Window& imguiWindow, const n64::VI& vi);
 void ParallelRdpEnqueueCommand(int command_length, u32* buffer);
 void ParallelRdpOnFullSync();

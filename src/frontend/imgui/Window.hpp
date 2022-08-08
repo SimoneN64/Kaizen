@@ -1,11 +1,11 @@
 #pragma once
+#include <parallel-rdp/ParallelRDPWrapper.hpp>
+#include <volk.h>
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
-#define VK_NO_PROTOTYPES
+#define VULKAN_DEBUG
 #include <imgui_impl_vulkan.h>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_vulkan.h>
-#include <vulkan/vulkan.h>
+#include <SDL2/SDL_video.h>
 #include <Core.hpp>
 #include <vector>
 
@@ -14,18 +14,13 @@ struct Window {
   ~Window();
   ImDrawData* Present();
 
-  [[nodiscard]] bool gotClosed(SDL_Event event) {
-    return event.type == SDL_WINDOWEVENT
-        && event.window.event == SDL_WINDOWEVENT_CLOSE
-        && event.window.windowID == SDL_GetWindowID(window);
-  }
+  [[nodiscard]] bool gotClosed(SDL_Event event);
 private:
+  SDL_Window* window;
   n64::Core core;
   void InitSDL();
   void InitImgui();
   void Render();
-
-  SDL_Window* window{};
 
   VkInstance instance{};
   VkPhysicalDevice physicalDevice{};

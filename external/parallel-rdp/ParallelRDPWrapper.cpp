@@ -71,7 +71,7 @@ public:
     const char* extensions[64];
     unsigned int num_extensions = 64;
 
-    if (!SDL_Vulkan_GetInstanceExtensions(window, &num_extensions, extensions)) {
+    if (!SDL_Vulkan_GetInstanceExtensions(g_Window, &num_extensions, extensions)) {
       util::panic("SDL_Vulkan_GetInstanceExtensions failed: %s", SDL_GetError());
     }
     auto vec = std::vector<const char*>();
@@ -85,8 +85,8 @@ public:
 
   VkSurfaceKHR create_surface(VkInstance instance, VkPhysicalDevice gpu) override {
     VkSurfaceKHR vk_surface;
-    if (!SDL_Vulkan_CreateSurface(window, instance, &vk_surface)) {
-      util::panic("Failed to create Vulkan window surface: %s", SDL_GetError());
+    if (!SDL_Vulkan_CreateSurface(g_Window, instance, &vk_surface)) {
+      util::panic("Failed to create Vulkan window surface: {}", SDL_GetError());
     }
     return vk_surface;
   }
@@ -165,7 +165,8 @@ void LoadParallelRDP(const u8* rdram) {
   }
 }
 
-void InitParallelRDP(const u8* rdram) {
+void InitParallelRDP(const u8* rdram, SDL_Window* window) {
+  g_Window = window;
   LoadWSIPlatform(new SDLWSIPlatform(), std::make_unique<SDLParallelRdpWindowInfo>());
   LoadParallelRDP(rdram);
 }
@@ -183,7 +184,7 @@ void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image, Util::Intrusive
   *data++ = +1.0f;
 
   int sdlWinWidth, sdlWinHeight;
-  SDL_GetWindowSize(window, &sdlWinWidth, &sdlWinHeight);
+  SDL_GetWindowSize(g_Window, &sdlWinWidth, &sdlWinHeight);
 
   float zoom = std::min(
     (float)sdlWinWidth / wsi->get_platform().get_surface_width(),

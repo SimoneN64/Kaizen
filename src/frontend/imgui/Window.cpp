@@ -2,14 +2,18 @@
 #include <util.hpp>
 #include <nfd.hpp>
 #include <Core.hpp>
-#include <parallel-rdp/parallel-rdp-standalone/volk/volk.h>
-#include <parallel-rdp/ParallelRDPWrapper.hpp>
 #include <utility>
 
 Window::Window(const n64::Core& core) {
   InitSDL();
-  InitParallelRDP(core.GetRDRAM());
+  InitParallelRDP(core.GetRDRAM(), window);
   InitImgui();
+}
+
+[[nodiscard]] bool Window::gotClosed(SDL_Event event) {
+  return event.type == SDL_WINDOWEVENT
+      && event.window.event == SDL_WINDOWEVENT_CLOSE
+      && event.window.windowID == SDL_GetWindowID(window);
 }
 
 void Window::InitSDL() {

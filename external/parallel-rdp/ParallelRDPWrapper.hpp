@@ -1,4 +1,5 @@
 #pragma once
+#define VULKAN_DEBUG
 #include <Core.hpp>
 #include <wsi.hpp>
 #include <SDL2/SDL.h>

@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.20)
 project(imgui)
 
 find_package(SDL2 REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_search_module(Vulkan REQUIRED vulkan)
 
 add_library(imgui
   imgui/imgui_demo.cpp
@@ -19,5 +17,4 @@ add_library(imgui
   imgui/backends/imgui_impl_vulkan.h
   imgui/backends/imgui_impl_vulkan.cpp)
 
-target_link_libraries(imgui PUBLIC SDL2 vulkan)
 target_include_directories(imgui PUBLIC ${SDL2_INCLUDE_DIRS} imgui imgui/backends)

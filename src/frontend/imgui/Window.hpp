@@ -1,9 +1,7 @@
 #pragma once
 #include <parallel-rdp/ParallelRDPWrapper.hpp>
-#include <volk.h>
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
-#define VULKAN_DEBUG
 #include <imgui_impl_vulkan.h>
 #include <SDL2/SDL_video.h>
 #include <Core.hpp>

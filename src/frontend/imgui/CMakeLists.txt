@@ -4,6 +4,8 @@ project(frontend-imgui)
 add_subdirectory(../../../external/imgui temp)
 add_subdirectory(../../../external/nativefiledialog-extended temp1)
 
+find_package(SDL2 REQUIRED)
+
 add_library(frontend-imgui
   Window.cpp
   Window.hpp)
@@ -20,4 +22,4 @@ target_include_directories(frontend-imgui PUBLIC
   ../../../external/parallel-rdp/parallel-rdp-standalone/vulkan
   ../../../external/parallel-rdp/parallel-rdp-standalone/util
   ../../../external/parallel-rdp/parallel-rdp-standalone/volk)
-target_link_libraries(frontend-imgui PUBLIC imgui nfd)
+target_link_libraries(frontend-imgui PUBLIC SDL2 imgui nfd)

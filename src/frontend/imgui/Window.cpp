@@ -7,7 +7,7 @@
 Window::Window(const n64::Core& core) {
   InitSDL();
   InitParallelRDP(core.GetRDRAM(), window);
-  InitImgui();
+  //InitImgui();
 }
 
 [[nodiscard]] bool Window::gotClosed(SDL_Event event) {
@@ -168,22 +168,22 @@ void Window::InitImgui() {
 Window::~Window() {
   VkResult err = vkDeviceWaitIdle(device);
   check_vk_result(err);
-  ImGui_ImplVulkan_Shutdown();
-  ImGui_ImplSDL2_Shutdown();
-  ImGui::DestroyContext();
+  //ImGui_ImplVulkan_Shutdown();
+  //ImGui_ImplSDL2_Shutdown();
+  //ImGui::DestroyContext();
   vkDestroyDescriptorPool(device, descriptorPool, nullptr);
   vkDestroyDevice(device, nullptr);
   vkDestroyInstance(instance, nullptr);
 }
 
 ImDrawData* Window::Present() {
-  ImGui_ImplVulkan_NewFrame();
-  ImGui_ImplSDL2_NewFrame(window);
-  ImGui::NewFrame();
-
+  //ImGui_ImplVulkan_NewFrame();
+  //ImGui_ImplSDL2_NewFrame(window);
+  //ImGui::NewFrame();
+//
   Render();
 
-  ImGui::Render();
+  //ImGui::Render();
   return ImGui::GetDrawData();
 }
 

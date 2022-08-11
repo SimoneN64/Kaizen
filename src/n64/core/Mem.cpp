@@ -19,19 +19,18 @@ void Mem::LoadROM(const std::string& filename) {
     util::panic("Unable to open {}!", filename);
   }
 
-  file.seekg(std::ios::end);
+  file.seekg(0, std::ios::end);
   auto size = file.tellg();
   auto size_adjusted = util::NextPow2(size);
   romMask = size_adjusted - 1;
-  file.seekg(std::ios::beg);
+  file.seekg(0, std::ios::beg);
 
-  std::vector<u8> rom;
-  rom.reserve(size_adjusted);
-  file.read(reinterpret_cast<char*>(rom.data()), size);
+  cart.resize(size_adjusted);
+  file.read(reinterpret_cast<char*>(cart.data()), size);
 
   file.close();
-  util::SwapN64Rom(size, rom.data());
-  memcpy(dmem, rom.data(), 0x1000);
+  util::SwapN64Rom(size, cart.data());
+  memcpy(mmio.rsp.dmem, cart.data(), 0x1000);
 }
 
 template <bool tlb>

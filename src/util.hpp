@@ -146,7 +146,7 @@ inline size_t NextPow2(size_t num) {
   return num + 1;
 }
 
-inline auto ReadFileBinary(const std::string& path, u32* buf) {
+inline auto ReadFileBinary(const std::string& path, u32** buf) {
   std::ifstream file(path, std::ios::binary);
   file.unsetf(std::ios::skipws);
   if(!file.is_open()) {
@@ -157,8 +157,8 @@ inline auto ReadFileBinary(const std::string& path, u32* buf) {
   size_t size = file.tellg();
   file.seekg(0, std::ios::beg);
 
-  buf = (u32*)calloc(size, 1);
-  file.read(reinterpret_cast<char*>(buf), size);
+  *buf = (u32*)calloc(size, 1);
+  file.read(reinterpret_cast<char*>(*buf), size);
   file.close();
   return size;
 }

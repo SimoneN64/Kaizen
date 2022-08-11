@@ -27,7 +27,6 @@ private:
   friend struct Core;
   MMIO mmio;
   std::vector<u8> cart, rdram, sram;
-  u8 dmem[DMEM_SIZE]{}, imem[IMEM_SIZE]{};
   u8 pifBootrom[PIF_BOOTROM_SIZE]{};
   size_t romMask;
 };

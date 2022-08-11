@@ -114,6 +114,7 @@ WSI* LoadWSIPlatform(Vulkan::WSIPlatform* wsi_platform, std::unique_ptr<Parallel
   wsi = new WSI();
   wsi->set_backbuffer_srgb(false);
   wsi->set_platform(wsi_platform);
+  wsi->set_present_mode(PresentMode::SyncToVBlank);
   Context::SystemHandles handles;
   if (!wsi->init_simple(1, handles)) {
     util::panic("Failed to initialize WSI!");
@@ -140,8 +141,8 @@ void LoadParallelRDP(const u8* rdram) {
   fragLayout.sets[0].array_size[0] = 1;
 
   u32* fullscreenQuadVert, *fullscreenQuadFrag;
-  auto sizeVert = util::ReadFileBinary("external/vert.spv", fullscreenQuadVert);
-  auto sizeFrag = util::ReadFileBinary("external/frag.spv", fullscreenQuadFrag);
+  auto sizeVert = util::ReadFileBinary("resources/vert.spv", &fullscreenQuadVert);
+  auto sizeFrag = util::ReadFileBinary("resources/frag.spv", &fullscreenQuadFrag);
 
   fullscreen_quad_program = wsi->get_device().request_program(fullscreenQuadVert, sizeVert, fullscreenQuadFrag, sizeFrag, &vertLayout, &fragLayout);
 
@@ -239,7 +240,7 @@ void UpdateScreen(Window& imguiWindow, Util::IntrusivePtr<Image> image) {
   cmd->begin_render_pass(wsi->get_device().get_swapchain_render_pass(SwapchainRenderPass::ColorOnly));
   DrawFullscreenTexturedQuad(image, cmd);
 
-  ImGui_ImplVulkan_RenderDrawData(imguiWindow.Present(), cmd->get_command_buffer());
+  //ImGui_ImplVulkan_RenderDrawData(imguiWindow.Present(), cmd->get_command_buffer());
 
   cmd->end_render_pass();
   wsi->get_device().submit(cmd);

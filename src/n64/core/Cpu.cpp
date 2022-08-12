@@ -100,7 +100,7 @@ inline void HandleInterrupt(Registers& regs) {
 
 void Cpu::LogInstruction(u32 instruction) {
 #ifndef NDEBUG
-  u8 code[4]{};
+  /*u8 code[4]{};
   u32 bswapped = be32toh(instruction);
   memcpy(code, &instruction, 4);
   count = cs_disasm(handle, code, 4, regs.pc, 0, &insn);
@@ -112,7 +112,7 @@ void Cpu::LogInstruction(u32 instruction) {
     cs_free(insn, count);
   } else {
     util::panic("Failed to disassemble {:08X}!", instruction);
-  }
+  }*/
 #endif
 }
 

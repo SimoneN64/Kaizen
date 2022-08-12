@@ -124,7 +124,7 @@ WSI* LoadWSIPlatform(Vulkan::WSIPlatform* wsi_platform, std::unique_ptr<Parallel
   return wsi;
 }
 
-void LoadParallelRDP(const u8* rdram) {
+void LoadParallelRDP(u8* rdram) {
   ResourceLayout vertLayout;
   ResourceLayout fragLayout;
 
@@ -166,7 +166,7 @@ void LoadParallelRDP(const u8* rdram) {
   }
 }
 
-void InitParallelRDP(const u8* rdram, SDL_Window* window) {
+void InitParallelRDP(u8* rdram, SDL_Window* window) {
   g_Window = window;
   LoadWSIPlatform(new SDLWSIPlatform(), std::make_unique<SDLParallelRdpWindowInfo>());
   LoadParallelRDP(rdram);
@@ -247,7 +247,7 @@ void UpdateScreen(Window& imguiWindow, Util::IntrusivePtr<Image> image) {
   wsi->end_frame();
 }
 
-void UpdateScreenParallelRdp(Window& imguiWindow, const n64::VI& vi) {
+void UpdateScreenParallelRdp(Window& imguiWindow, n64::VI& vi) {
   command_processor->set_vi_register(VIRegister::Control,      vi.status.raw);
   command_processor->set_vi_register(VIRegister::Origin,       vi.origin);
   command_processor->set_vi_register(VIRegister::Width,        vi.width);
@@ -257,9 +257,9 @@ void UpdateScreenParallelRdp(Window& imguiWindow, const n64::VI& vi) {
   command_processor->set_vi_register(VIRegister::VSync,        vi.vsync);
   command_processor->set_vi_register(VIRegister::HSync,        vi.hsync);
   command_processor->set_vi_register(VIRegister::Leap,         vi.hsyncLeap.raw);
-  command_processor->set_vi_register(VIRegister::HStart,       vi.hstart);
-  command_processor->set_vi_register(VIRegister::VStart,       vi.vstart);
-  command_processor->set_vi_register(VIRegister::VBurst,       vi.burst.raw);
+  command_processor->set_vi_register(VIRegister::HStart,       vi.hstart.raw);
+  command_processor->set_vi_register(VIRegister::VStart,       vi.vstart.raw);
+  command_processor->set_vi_register(VIRegister::VBurst,       vi.vburst);
   command_processor->set_vi_register(VIRegister::XScale,       vi.xscale.raw);
   command_processor->set_vi_register(VIRegister::YScale,       vi.yscale.raw);
 

@@ -4,7 +4,7 @@
 #include <Core.hpp>
 #include <utility>
 
-Window::Window(const n64::Core& core) {
+Window::Window(n64::Core& core) {
   InitSDL();
   InitParallelRDP(core.GetRDRAM(), window);
   //InitImgui();

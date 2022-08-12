@@ -12,7 +12,7 @@ struct Core {
   void Run();
   void PollInputs(SDL_Event);
   VI& GetVI() { return mem.mmio.vi; }
-  const u8* GetRDRAM() const { return mem.rdram.data(); }
+  u8* GetRDRAM() { return mem.rdram.data(); }
   bool romLoaded = false;
 private:
   Mem mem;

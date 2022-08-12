@@ -21,7 +21,8 @@ auto PI::Read(MI& mi, u32 addr) const -> u32 {
     case 0x04600014: case 0x04600018: case 0x0460001C: case 0x04600020:
     case 0x04600024: case 0x04600028: case 0x0460002C: case 0x04600030:
       return stub[(addr & 0xff) - 5];
-    default: util::panic("Unhandled PI[{:08X}] read\n", addr); return 0;
+    default:
+      util::panic("Unhandled PI[{:08X}] read\n", addr); return 0;
   }
 }
 
@@ -68,7 +69,8 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
     case 0x04600024: case 0x04600028: case 0x0460002C: case 0x04600030:
       stub[(addr & 0xff) - 5] = val & 0xff;
       break;
-    default: util::panic("Unhandled PI[{:08X}] write ({:08X})\n", val, addr);
+    default:
+      util::panic("Unhandled PI[{:08X}] write ({:08X})\n", val, addr);
   }
 }
 

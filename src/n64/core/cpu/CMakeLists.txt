@@ -16,6 +16,7 @@ add_library(cpu
 target_include_directories(cpu PUBLIC registers
   . ..
   ../../../../external
+  ../../../../external/capstone/include
   ../../../../src
   ../../
 )

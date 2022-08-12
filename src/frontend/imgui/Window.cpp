@@ -8,6 +8,7 @@ Window::Window(const n64::Core& core) {
   InitSDL();
   InitParallelRDP(core.GetRDRAM(), window);
   //InitImgui();
+  NFD::Init();
 }
 
 [[nodiscard]] bool Window::gotClosed(SDL_Event event) {

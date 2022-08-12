@@ -1,14 +1,25 @@
 #pragma once
 #include <Registers.hpp>
 #include <Mem.hpp>
+#ifndef NDEBUG
+#include <capstone/capstone.h>
+#endif
 
 namespace n64 {
 struct Cpu {
-  Cpu() = default;
+  Cpu();
+  ~Cpu();
   void Step(Mem&);
   Registers regs;
 private:
+#ifndef NDEBUG
+  csh handle{};
+  cs_insn *insn = nullptr;
+  size_t count{};
+#endif
   friend struct Cop1;
+
+  void LogInstruction(u32);
   void special(Mem&, u32);
   void regimm(u32);
   void Exec(Mem&, u32);
@@ -99,7 +110,7 @@ private:
   void xori(u32);
 };
 
-enum class ExceptionCode : u8 {
+enum ExceptionCode : u8 {
   Interrupt,
   TLBModification,
   TLBLoad,

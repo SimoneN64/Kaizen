@@ -191,7 +191,7 @@ private:
 };
 
 struct Registers;
-enum class ExceptionCode : u8;
+enum ExceptionCode : u8;
 
 TLBEntry* TLBTryMatch(Registers& regs, u32 vaddr, int* match);
 bool ProbeTLB(Registers& regs, TLBAccessType access_type, u32 vaddr, u32& paddr, int* match);

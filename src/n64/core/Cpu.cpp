@@ -4,6 +4,20 @@
 #include <util.hpp>
 
 namespace n64 {
+Cpu::Cpu() {
+#ifndef NDEBUG
+  if (cs_open(CS_ARCH_MIPS, CS_MODE_MIPS64, &handle)) {
+    util::panic("Could not initialize capstone!\n");
+  }
+#endif
+}
+
+Cpu::~Cpu() {
+#ifndef NDEBUG
+  cs_close(&handle);
+#endif
+}
+
 inline bool ShouldServiceInterrupt(Registers& regs) {
   bool interrupts_pending = (regs.cop0.status.im & regs.cop0.cause.interruptPending) != 0;
   bool interrupts_enabled = regs.cop0.status.ie == 1;
@@ -49,22 +63,22 @@ void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc) {
 
   regs.cop0.status.exl = true;
   regs.cop0.cause.copError = cop;
-  regs.cop0.cause.exceptionCode = static_cast<u8>(code);
+  regs.cop0.cause.exceptionCode = code;
 
   if(regs.cop0.status.bev) {
     util::panic("BEV bit set!\n");
   } else {
     switch(code) {
-      case ExceptionCode::Interrupt: case ExceptionCode::TLBModification:
-      case ExceptionCode::AddressErrorLoad: case ExceptionCode::AddressErrorStore:
-      case ExceptionCode::InstructionBusError: case ExceptionCode::DataBusError:
-      case ExceptionCode::Syscall: case ExceptionCode::Breakpoint:
-      case ExceptionCode::ReservedInstruction: case ExceptionCode::CoprocessorUnusable:
-      case ExceptionCode::Overflow: case ExceptionCode::Trap:
-      case ExceptionCode::FloatingPointError: case ExceptionCode::Watch:
+      case Interrupt: case TLBModification:
+      case AddressErrorLoad: case AddressErrorStore:
+      case InstructionBusError: case DataBusError:
+      case Syscall: case Breakpoint:
+      case ReservedInstruction: case CoprocessorUnusable:
+      case Overflow: case Trap:
+      case FloatingPointError: case Watch:
         regs.SetPC((s64)((s32)0x80000180));
         break;
-      case ExceptionCode::TLBLoad: case ExceptionCode::TLBStore:
+      case TLBLoad: case TLBStore:
         if(old_exl || regs.cop0.tlbError == INVALID) {
           regs.SetPC((s64)((s32)0x80000180));
         } else if(Is64BitAddressing(regs.cop0, regs.cop0.badVaddr)) {
@@ -73,7 +87,7 @@ void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc) {
           regs.SetPC((s64)((s32)0x80000000));
         }
         break;
-      default: util::panic("Unhandled exception! {}\n", static_cast<u8>(code));
+      default: util::panic("Unhandled exception! {}\n", code);
     }
   }
 }
@@ -84,6 +98,24 @@ inline void HandleInterrupt(Registers& regs) {
   }
 }
 
+void Cpu::LogInstruction(u32 instruction) {
+#ifndef NDEBUG
+  u8 code[4]{};
+  u32 bswapped = be32toh(instruction);
+  memcpy(code, &instruction, 4);
+  count = cs_disasm(handle, code, 4, regs.pc, 0, &insn);
+
+  if (count > 0) {
+    for(auto j = 0; j < count; j++) {
+      printf("%016lX:\t%s\t\t%s\n", insn[j].address, insn[j].mnemonic, insn[j].op_str);
+    }
+    cs_free(insn, count);
+  } else {
+    util::panic("Failed to disassemble {:08X}!", instruction);
+  }
+#endif
+}
+
 void Cpu::Step(Mem& mem) {
   regs.gpr[0] = 0;
   regs.prevDelaySlot = regs.delaySlot;
@@ -92,6 +124,7 @@ void Cpu::Step(Mem& mem) {
   CheckCompareInterrupt(mem.mmio.mi, regs);
 
   u32 instruction = mem.Read<u32>(regs, regs.pc, regs.pc);
+  LogInstruction(instruction);
 
   HandleInterrupt(regs);
 

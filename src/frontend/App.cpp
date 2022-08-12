@@ -26,13 +26,17 @@ void App::Run() {
           } break;
         }
       }
+
+      core.PollInputs(event);
     }
 
-    if(core.initialized)
+    if(core.romLoaded)
       core.Run();
 
-    if(core.initialized) UpdateScreenParallelRdp(window, core.GetVI());
-    else UpdateScreenParallelRdpNoGame(window);
+    if(core.romLoaded)
+      UpdateScreenParallelRdp(window, core.GetVI());
+    else
+      UpdateScreenParallelRdpNoGame(window);
 
     SDL_Delay(16);
   }

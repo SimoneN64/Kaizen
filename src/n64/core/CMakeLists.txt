@@ -4,6 +4,7 @@ project(core)
 add_subdirectory(cpu)
 
 add_subdirectory(../../../external/parallel-rdp temp)
+add_subdirectory(../../../external/capstone temp1)
 
 add_library(core
   Cpu.hpp
@@ -44,6 +45,7 @@ target_include_directories(core PUBLIC
   ../../../external
   ../../../external/imgui/imgui
   ../../../external/imgui/imgui/backends
+  ../../../external/capstone/include
   mmio)
 
-target_link_libraries(core PUBLIC cpu parallel-rdp)
+target_link_libraries(core PUBLIC cpu parallel-rdp capstone)

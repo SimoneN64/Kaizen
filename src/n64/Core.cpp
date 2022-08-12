@@ -1,10 +1,9 @@
 #include <Core.hpp>
-#include <SDL2/SDL_events.h>
 
 namespace n64 {
 void Core::LoadROM(const std::string& rom) {
   mem.LoadROM(rom);
-  initialized = true;
+  romLoaded = true;
 }
 
 void Core::Run() {
@@ -24,8 +23,7 @@ void Core::Run() {
   }
 }
 
-void Core::PollInputs(u32 windowID) {
-  SDL_Event event;
-  SDL_PollEvent(&event);
+void Core::PollInputs(SDL_Event e) {
+
 }
 }

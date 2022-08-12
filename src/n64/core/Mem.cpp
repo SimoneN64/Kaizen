@@ -106,7 +106,7 @@ void Mem::Write(Registers& regs, u32 vaddr, T val, s64 pc) {
     case 0x04000000 ... 0x04000FFF: util::WriteAccess<T>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val); break;
     case 0x04001000 ... 0x04001FFF: util::WriteAccess<T>(mmio.rsp.imem, paddr & IMEM_DSIZE, val); break;
     case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
-    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Read(paddr); break;
+    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(*this, regs, paddr, val); break;
     case 0x10000000 ... 0x1FBFFFFF: util::WriteAccess<T>(cart.data(), paddr & romMask, val); break;
     case 0x1FC00000 ... 0x1FC007BF: util::WriteAccess<T>(pifBootrom, paddr & PIF_BOOTROM_DSIZE, val); break;
     case 0x1FC007C0 ... 0x1FC007FF: util::WriteAccess<T>(pifRam, paddr & PIF_RAM_DSIZE, val); break;

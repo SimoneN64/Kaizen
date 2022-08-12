@@ -175,28 +175,27 @@ void Cpu::lui(u32 instr) {
 
 void Cpu::lb(Mem& mem, u32 instr) {
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  regs.gpr[RT(instr)] = s64(mem.Read<s8>(regs, address, regs.oldPC));
+  regs.gpr[RT(instr)] = mem.Read<s8>(regs, address, regs.oldPC);
 }
 
 void Cpu::lh(Mem& mem, u32 instr) {
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
   if ((address & 1) != 0) {
-    HandleTLBException(regs, (s64)((s32)address));
+    HandleTLBException(regs, s64(s32(address)));
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
 
-  regs.gpr[RT(instr)] = (s64)(s16)mem.Read<u16>(regs, address, regs.oldPC);
+  regs.gpr[RT(instr)] = mem.Read<s16>(regs, address, regs.oldPC);
 }
 
 void Cpu::lw(Mem& mem, u32 instr) {
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
   if ((address & 3) != 0) {
-    HandleTLBException(regs, (s64)((s32)address));
+    HandleTLBException(regs, s64(s32(address)));
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
 
-  s32 value = mem.Read<s32>(regs, address, regs.oldPC);
-  regs.gpr[RT(instr)] = value;
+  regs.gpr[RT(instr)] = mem.Read<s32>(regs, address, regs.oldPC);
 }
 
 void Cpu::ll(Mem& mem, u32 instr) {
@@ -209,8 +208,7 @@ void Cpu::ll(Mem& mem, u32 instr) {
   regs.LLBit = true;
   regs.cop0.LLAddr = address;
 
-  s32 value = mem.Read<s32>(regs, address, regs.oldPC);
-  regs.gpr[RT(instr)] = value;
+  regs.gpr[RT(instr)] = mem.Read<s32>(regs, address, regs.oldPC);
 }
 
 void Cpu::lwl(Mem& mem, u32 instr) {

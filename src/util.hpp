@@ -8,7 +8,7 @@
 
 namespace util {
 enum MessageType : u8 {
-  Info, Warn, Error
+  Info, Warn, Error, Debug
 };
 
 template <MessageType messageType = Info, typename ...Args>
@@ -18,7 +18,7 @@ constexpr void print(const std::string& fmt, Args... args) {
     exit(-1);
   } else if constexpr(messageType == Warn) {
     fmt::print(fg(fmt::color::yellow), fmt, args...);
-  } else if constexpr(messageType == Info) {
+  } else if constexpr(messageType == Info || messageType == Debug) {
     fmt::print(fmt, args...);
   }
 }
@@ -36,6 +36,13 @@ constexpr void warn(const std::string& fmt, Args... args) {
 template <typename ...Args>
 constexpr void info(const std::string& fmt, Args... args) {
   print(fmt, args...);
+}
+
+template <typename ...Args>
+constexpr void logdebug(const std::string& fmt, Args... args) {
+#ifndef NDEBUG
+  print(fmt, args...);
+#endif
 }
 
 template <typename T, bool HToBE = false>

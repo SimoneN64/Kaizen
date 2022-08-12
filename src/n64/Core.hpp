@@ -1,4 +1,5 @@
 #pragma once
+#include <SDL2/SDL_events.h>
 #include <Cpu.hpp>
 #include <Mem.hpp>
 #include <string>
@@ -9,10 +10,10 @@ struct Core {
   Core() = default;
   void LoadROM(const std::string&);
   void Run();
-  void PollInputs(u32);
+  void PollInputs(SDL_Event);
   VI& GetVI() { return mem.mmio.vi; }
   const u8* GetRDRAM() const { return mem.rdram.data(); }
-  bool initialized = false;
+  bool romLoaded = false;
 private:
   Mem mem;
   Cpu cpu;

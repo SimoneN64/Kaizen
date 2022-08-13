@@ -2,6 +2,17 @@
 #include <util.hpp>
 
 namespace n64 {
+RI::RI() {
+  Reset();
+}
+
+void RI::Reset() {
+  mode = 0xE;
+  config = 0x40;
+  select = 0x14;
+  refresh = 0x63634;
+}
+
 auto RI::Read(u32 addr) const -> u32 {
   switch(addr) {
     case 0x04700000: return mode;

@@ -4,18 +4,18 @@
 #include <util.hpp>
 
 namespace n64 {
+void Cpu::Reset() {
+  regs.Reset();
+}
+
 Cpu::Cpu() {
-#ifndef NDEBUG
   if (cs_open(CS_ARCH_MIPS, CS_MODE_MIPS64, &handle)) {
     util::panic("Could not initialize capstone!\n");
   }
-#endif
 }
 
 Cpu::~Cpu() {
-#ifndef NDEBUG
   cs_close(&handle);
-#endif
 }
 
 inline bool ShouldServiceInterrupt(Registers& regs) {
@@ -99,21 +99,16 @@ inline void HandleInterrupt(Registers& regs) {
 }
 
 void Cpu::LogInstruction(u32 instruction) {
-#ifndef NDEBUG
-  /*u8 code[4]{};
-  u32 bswapped = be32toh(instruction);
-  memcpy(code, &instruction, 4);
-  count = cs_disasm(handle, code, 4, regs.pc, 0, &insn);
+  count = cs_disasm(handle, reinterpret_cast<u8*>(&instruction), 4, regs.pc, 0, &insn);
 
   if (count > 0) {
     for(auto j = 0; j < count; j++) {
-      printf("%016lX:\t%s\t\t%s\n", insn[j].address, insn[j].mnemonic, insn[j].op_str);
+      util::logdebug("0x{:016X}:\t{}\t\t{}\n", insn[j].address, insn[j].mnemonic, insn[j].op_str);
     }
     cs_free(insn, count);
   } else {
-    util::panic("Failed to disassemble {:08X}!", instruction);
-  }*/
-#endif
+    util::logdebug("Failed to disassemble 0x{:08X}!", instruction);
+  }
 }
 
 void Cpu::Step(Mem& mem) {

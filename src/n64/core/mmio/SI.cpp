@@ -3,6 +3,15 @@
 #include <util.hpp>
 
 namespace n64 {
+SI::SI() {
+  Reset();
+}
+
+void SI::Reset() {
+  status.raw = 0;
+  dramAddr = 0;
+  controller.raw = 0;
+}
 
 auto SI::Read(MI& mi, u32 addr) const -> u32 {
   switch(addr) {

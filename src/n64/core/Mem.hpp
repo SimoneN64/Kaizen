@@ -9,6 +9,7 @@ struct Registers;
 struct Mem {
   ~Mem() = default;
   Mem();
+  void Reset();
   void LoadROM(const std::string&);
   [[nodiscard]] auto GetRDRAM() -> u8* {
     return rdram.data();

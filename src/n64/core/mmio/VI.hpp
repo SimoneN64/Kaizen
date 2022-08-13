@@ -87,6 +87,7 @@ struct Registers;
 
 struct VI {
   VI();
+  void Reset();
   [[nodiscard]] u32 Read(u32) const;
   void Write(MI&, Registers&, u32, u32);
   AxisScale xscale{}, yscale{};

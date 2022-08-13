@@ -169,7 +169,7 @@ void Cpu::bllink(u32 instr, bool cond) {
 
 void Cpu::lui(u32 instr) {
   s64 val = (s16)instr;
-  val *= 65536;
+  val <<= 16;
   regs.gpr[RT(instr)] = val;
 }
 

@@ -1,22 +1,19 @@
 #pragma once
 #include <Registers.hpp>
 #include <Mem.hpp>
-#ifndef NDEBUG
 #include <capstone/capstone.h>
-#endif
 
 namespace n64 {
 struct Cpu {
   Cpu();
   ~Cpu();
+  void Reset();
   void Step(Mem&);
   Registers regs;
 private:
-#ifndef NDEBUG
   csh handle{};
   cs_insn *insn = nullptr;
   size_t count{};
-#endif
   friend struct Cop1;
 
   void LogInstruction(u32);

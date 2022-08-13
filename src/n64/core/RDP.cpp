@@ -5,6 +5,15 @@
 #include <n64/core/mmio/Interrupt.hpp>
 
 namespace n64 {
+RDP::RDP() {
+  Reset();
+}
+
+void RDP::Reset() {
+  dpc = {.status{.raw = 0x80}};
+  memset(cmd_buf, 0, 0x100000);
+}
+
 static const int cmd_lens[64] = {
   2, 2, 2, 2, 2, 2, 2, 2, 8, 12, 24, 28, 24, 28, 40, 44,
   2, 2, 2, 2, 2, 2, 2, 2, 2, 2,  2,  2,  2,  2,  2,  2,

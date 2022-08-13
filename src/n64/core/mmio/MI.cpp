@@ -7,6 +7,10 @@
 
 namespace n64 {
 MI::MI() {
+  Reset();
+}
+
+void MI::Reset() {
   miIntrMask.raw = 0;
   miIntr.raw = 0;
   miMode = 0;

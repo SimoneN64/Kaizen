@@ -1,7 +1,18 @@
 #include <Core.hpp>
 
 namespace n64 {
+Core::Core() {
+  Reset();
+}
+
+void Core::Reset() {
+  cpu.Reset();
+  mem.Reset();
+  romLoaded = false;
+}
+
 void Core::LoadROM(const std::string& rom) {
+  Reset();
   mem.LoadROM(rom);
   romLoaded = true;
 }

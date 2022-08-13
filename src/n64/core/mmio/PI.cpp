@@ -4,6 +4,19 @@
 #include <n64/core/cpu/Registers.hpp>
 
 namespace n64 {
+PI::PI() {
+  Reset();
+}
+
+void PI::Reset() {
+  dramAddr = 0;
+  cartAddr = 0;
+  rdLen = 0;
+  wrLen = 0;
+  status = 0;
+  memset(stub, 0, 8);
+}
+
 auto PI::Read(MI& mi, u32 addr) const -> u32 {
   switch(addr) {
     case 0x04600000: return dramAddr;

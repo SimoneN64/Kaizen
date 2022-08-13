@@ -7,7 +7,8 @@
 namespace n64 {
 struct Core {
   ~Core() = default;
-  Core() = default;
+  Core();
+  void Reset();
   void LoadROM(const std::string&);
   void Run();
   void PollInputs(SDL_Event);

@@ -6,6 +6,10 @@
 
 namespace n64 {
 VI::VI () {
+  Reset();
+}
+
+void VI::Reset() {
   status.raw = 0xF;
   intr = 256;
   origin = 0;

@@ -38,6 +38,6 @@ void App::Run() {
     else
       UpdateScreenParallelRdpNoGame(window);
 
-    SDL_Delay(16);
+    SDL_Delay(1);
   }
 }

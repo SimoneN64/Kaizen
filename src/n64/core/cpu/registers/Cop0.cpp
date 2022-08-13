@@ -5,6 +5,10 @@
 
 namespace n64 {
 Cop0::Cop0() {
+  Reset();
+}
+
+void Cop0::Reset() {
   cause.raw = 0xB000007C;
   random = 0x0000001F;
   status.raw = 0x241000E0;

@@ -20,6 +20,7 @@ struct Registers;
 
 struct MI {
   MI();
+  void Reset();
   [[nodiscard]] auto Read(u32) const -> u32;
   void Write(Registers& regs, u32, u32);
 

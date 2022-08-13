@@ -5,6 +5,18 @@
 #include <n64/core/Audio.hpp>
 
 namespace n64 {
+void AI::Reset() {
+  dmaEnable = 0;
+  dacRate = 0;
+  bitrate = 0;
+  dmaCount = 0;
+  memset(dmaLen, 0, 2);
+  memset(dmaAddr, 0, 2);
+  dmaAddrCarry = false;
+  cycles = 0;
+  dac = {44100, N64_CPU_FREQ / dac.freq, 16};
+}
+
 auto AI::Read(u32 addr) const -> u32 {
   switch(addr) {
     case 0x04500004: return dmaLen[0];

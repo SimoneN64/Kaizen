@@ -92,11 +92,11 @@ public:
   }
 
   uint32_t get_surface_width() override {
-    return 800;
+    return 640;
   }
 
   uint32_t get_surface_height() override {
-    return 600;
+    return 480;
   }
 
   bool alive(Vulkan::WSI &wsi_) override {

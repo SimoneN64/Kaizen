@@ -7,8 +7,16 @@
 
 namespace n64 {
 Mem::Mem() {
+  Reset();
+}
+
+void Mem::Reset() {
   rdram.resize(RDRAM_SIZE);
   sram.resize(SRAM_SIZE);
+  std::fill(rdram.begin(), rdram.end(), 0);
+  std::fill(sram.begin(), sram.end(), 0);
+  romMask = 0;
+  mmio.Reset();
 }
 
 void Mem::LoadROM(const std::string& filename) {
@@ -21,12 +29,13 @@ void Mem::LoadROM(const std::string& filename) {
 
   file.seekg(0, std::ios::end);
   auto size = file.tellg();
-  auto size_adjusted = util::NextPow2(size);
-  romMask = size_adjusted - 1;
+  auto sizeAdjusted = util::NextPow2(size);
+  romMask = sizeAdjusted - 1;
   file.seekg(0, std::ios::beg);
 
-  cart.resize(size_adjusted);
-  file.read(reinterpret_cast<char*>(cart.data()), size);
+  std::fill(cart.begin(), cart.end(), 0);
+  cart.resize(sizeAdjusted);
+  cart.insert(cart.begin(), std::istream_iterator<u8>(file), std::istream_iterator<u8>());
 
   file.close();
   util::SwapN64Rom(size, cart.data());
@@ -107,8 +116,6 @@ void Mem::Write(Registers& regs, u32 vaddr, T val, s64 pc) {
     case 0x04001000 ... 0x04001FFF: util::WriteAccess<T>(mmio.rsp.imem, paddr & IMEM_DSIZE, val); break;
     case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
     case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(*this, regs, paddr, val); break;
-    case 0x10000000 ... 0x1FBFFFFF: util::WriteAccess<T>(cart.data(), paddr & romMask, val); break;
-    case 0x1FC00000 ... 0x1FC007BF: util::WriteAccess<T>(pifBootrom, paddr & PIF_BOOTROM_DSIZE, val); break;
     case 0x1FC007C0 ... 0x1FC007FF: util::WriteAccess<T>(pifRam, paddr & PIF_RAM_DSIZE, val); break;
     case 0x00800000 ... 0x03FFFFFF: case 0x04002000 ... 0x0403FFFF:
     case 0x04200000 ... 0x042FFFFF:

@@ -33,8 +33,8 @@ u32 VI::Read(u32 paddr) const {
     case 0x04400018: return vsync;
     case 0x0440001C: return hsync;
     case 0x04400020: return hsyncLeap.raw;
-    case 0x04400024: return hvideo.raw;
-    case 0x04400028: return vvideo.raw;
+    case 0x04400024: return hstart.raw;
+    case 0x04400028: return vstart.raw;
     case 0x0440002C: return vburst;
     case 0x04400030: return xscale.raw;
     case 0x04400034: return yscale.raw;
@@ -76,8 +76,8 @@ void VI::Write(MI& mi, Registers& regs, u32 paddr, u32 val) {
       hsync = val & 0x3FF;
     } break;
     case 0x04400020: hsyncLeap.raw = val; break;
-    case 0x04400024: hvideo.raw = val; break;
-    case 0x04400028: vvideo.raw = val; break;
+    case 0x04400024: hstart.raw = val; break;
+    case 0x04400028: vstart.raw = val; break;
     case 0x0440002C: vburst = val; break;
     case 0x04400030: xscale.raw = val; break;
     case 0x04400034: yscale.raw = val; break;

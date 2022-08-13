@@ -91,7 +91,6 @@ struct VI {
   [[nodiscard]] u32 Read(u32) const;
   void Write(MI&, Registers&, u32, u32);
   AxisScale xscale{}, yscale{};
-  VIVideo hvideo{}, vvideo{};
   VIHsyncLeap hsyncLeap{};
   VIStatus status{};
   VIBurst burst{};

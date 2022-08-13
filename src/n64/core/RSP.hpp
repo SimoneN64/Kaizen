@@ -105,12 +105,13 @@ struct Registers;
 } while(0)
 
 struct RSP {
-  RSP() = default;
+  RSP();
+  void Reset();
   void Step(MI& mi, Registers& regs, RDP& rdp);
   auto Read(u32 addr) const -> u32;
   void Write(Mem& mem, Registers& regs, u32 addr, u32 value);
   void Exec(MI& mi, Registers& regs, RDP& rdp, u32 instr);
-  SPStatus spStatus{.raw = 1};
+  SPStatus spStatus;
   u16 oldPC{}, pc{}, nextPC = 4;
   SPDMASPAddr spDMASPAddr{};
   SPDMADRAMAddr spDMADRAMAddr{};

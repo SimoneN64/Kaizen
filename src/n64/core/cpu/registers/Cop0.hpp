@@ -159,6 +159,8 @@ struct Cop0 {
   template<class T>
   void SetReg(u8, T);
 
+  void Reset();
+
   PageMask pageMask{};
   EntryHi entryHi{};
   EntryLo entryLo0{}, entryLo1{};

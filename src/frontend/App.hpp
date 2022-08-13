@@ -1,5 +1,4 @@
 #pragma once
-#include <Core.hpp>
 #include <imgui/Window.hpp>
 
 struct App {

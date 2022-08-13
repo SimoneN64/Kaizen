@@ -10,15 +10,14 @@
 struct Window {
   explicit Window(n64::Core& core);
   ~Window();
-  ImDrawData* Present();
+  ImDrawData* Present(n64::Core& core);
 
   [[nodiscard]] bool gotClosed(SDL_Event event);
 private:
   SDL_Window* window;
-  n64::Core core;
   void InitSDL();
   void InitImgui();
-  void Render();
+  void Render(n64::Core& core);
 
   VkInstance instance{};
   VkPhysicalDevice physicalDevice{};

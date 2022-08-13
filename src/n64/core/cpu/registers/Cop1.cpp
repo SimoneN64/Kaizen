@@ -4,6 +4,16 @@
 #include <util.hpp>
 
 namespace n64 {
+Cop1::Cop1() {
+  Reset();
+}
+
+void Cop1::Reset() {
+  fcr0 = 0xa00;
+  fcr31.raw = 0;
+  memset(fgr, 0, 32 * sizeof(FGR));
+}
+
 void Cop1::decode(Cpu& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   if(!regs.cop0.status.cu1) {

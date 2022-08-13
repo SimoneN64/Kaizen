@@ -3,6 +3,8 @@ project(natsukashii)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
+add_compile_definitions(VULKAN_DEBUG)
+
 add_subdirectory(n64)
 add_subdirectory(frontend)
 
@@ -12,3 +14,4 @@ add_executable(natsukashii main.cpp)
 
 target_link_libraries(natsukashii PUBLIC frontend n64 fmt)
 target_include_directories(natsukashii PUBLIC . ../external)
+target_compile_options(natsukashii PUBLIC -Wpedantic -Wimplicit-fallthrough -Wextra -Wall)

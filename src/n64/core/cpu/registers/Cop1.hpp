@@ -50,9 +50,11 @@ struct Cpu;
 struct Registers;
 
 struct Cop1 {
-  u32 fcr0;
-  FCR31 fcr31;
-  FGR fgr[32];
+  Cop1();
+  u32 fcr0{};
+  FCR31 fcr31{};
+  FGR fgr[32]{};
+  void Reset();
   void decode(Cpu&, u32);
   friend struct Cpu;
 private:

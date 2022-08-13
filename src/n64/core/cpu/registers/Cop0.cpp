@@ -5,12 +5,16 @@
 
 namespace n64 {
 Cop0::Cop0() {
+  Reset();
+}
+
+void Cop0::Reset() {
   cause.raw = 0xB000007C;
   random = 0x0000001F;
   status.raw = 0x241000E0;
   wired = 64;
   index = 64;
-  PRId = 0x00000B00;
+  PRId = 0x00000B22;
   Config = 0x7006E463;
   EPC = 0xFFFFFFFFFFFFFFFF;
   ErrorEPC = 0xFFFFFFFFFFFFFFFF;

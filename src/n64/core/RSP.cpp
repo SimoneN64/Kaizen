@@ -4,6 +4,31 @@
 #include <n64/core/mmio/Interrupt.hpp>
 
 namespace n64 {
+RSP::RSP() {
+  Reset();
+}
+
+void RSP::Reset() {
+  spStatus.raw = 0;
+  spStatus.halt = true;
+  oldPC = 0;
+  pc = 0;
+  nextPC = 0;
+  spDMASPAddr.raw = 0;
+  spDMADRAMAddr.raw = 0;
+  spDMARDLen.raw = 0;
+  spDMAWRLen.raw = 0;
+  memset(dmem, 0, DMEM_SIZE);
+  memset(imem, 0, IMEM_SIZE);
+  memset(vpr, 0, 32 * sizeof(VPR));
+  memset(gpr, 0, 32);
+  vce = 0;
+  acc = {.h={}, .m={}, .l={}};
+  vcc = {.l = {}, .h = {}};
+  vco = {.l = {}, .h = {}};
+  semaphore = false;
+}
+
 void RSP::Step(MI& mi, Registers& regs, RDP& rdp) {
   if(!spStatus.halt) {
     gpr[0] = 0;

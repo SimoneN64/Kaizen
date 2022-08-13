@@ -12,8 +12,7 @@ Window::Window(n64::Core& core) {
 }
 
 [[nodiscard]] bool Window::gotClosed(SDL_Event event) {
-  return event.type == SDL_WINDOWEVENT
-      && event.window.event == SDL_WINDOWEVENT_CLOSE
+  return event.window.event == SDL_WINDOWEVENT_CLOSE
       && event.window.windowID == SDL_GetWindowID(window);
 }
 
@@ -177,18 +176,18 @@ Window::~Window() {
   vkDestroyInstance(instance, nullptr);
 }
 
-ImDrawData* Window::Present() {
+ImDrawData* Window::Present(n64::Core& core) {
   //ImGui_ImplVulkan_NewFrame();
   //ImGui_ImplSDL2_NewFrame(window);
   //ImGui::NewFrame();
 //
-  Render();
+  Render(core);
 
   //ImGui::Render();
   return ImGui::GetDrawData();
 }
 
-void Window::Render() {
+void Window::Render(n64::Core& core) {
   ImGui::BeginMainMenuBar();
   if(ImGui::BeginMenu("File")) {
     if(ImGui::BeginMenu("Open")) {

@@ -12,6 +12,7 @@ target_link_libraries(n64 PUBLIC core)
 target_include_directories(n64 PUBLIC
   .
   ..
+  ../frontend/imgui
   ../../external
   ../../external/imgui/imgui
   ../../external/imgui/imgui/backends

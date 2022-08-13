@@ -48,10 +48,11 @@ struct DPC {
 };
 
 struct RDP {
-  DPC dpc{.status{.raw = 0x80}};
+  DPC dpc;
   u32 cmd_buf[0xFFFFF]{};
 
-  RDP() = default;
+  RDP();
+  void Reset();
 
   auto Read(u32 addr) const -> u32;
   void Write(u32 addr, u32 val);

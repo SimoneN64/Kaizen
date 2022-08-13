@@ -2,6 +2,10 @@
 
 namespace n64 {
 Registers::Registers() {
+  Reset();
+}
+
+void Registers::Reset() {
   delaySlot = false;
   prevDelaySlot = false;
   memset(gpr, 0, 32*sizeof(s64));
@@ -14,6 +18,8 @@ Registers::Registers() {
   gpr[20] = 0x0000000000000001;
   gpr[22] = 0x000000000000003F;
   gpr[29] = (s64)0xFFFFFFFFA4001FF0;
+  cop0.Reset();
+  cop1.Reset();
 }
 
 void Registers::SetPC(s64 val) {

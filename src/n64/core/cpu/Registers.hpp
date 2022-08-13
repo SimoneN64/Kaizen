@@ -5,6 +5,7 @@
 namespace n64 {
 struct Registers {
   Registers();
+  void Reset();
   void SetPC(s64);
   s64 gpr[32];
   Cop0 cop0;

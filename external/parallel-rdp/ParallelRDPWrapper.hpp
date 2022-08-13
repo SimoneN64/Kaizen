@@ -1,5 +1,4 @@
 #pragma once
-#define VULKAN_DEBUG
 #include <Core.hpp>
 #include <wsi.hpp>
 #include <SDL2/SDL.h>
@@ -26,7 +25,6 @@ class SDLParallelRdpWindowInfo : public ParallelRdpWindowInfo {
   }
 };
 
-static u32 windowID;
 VkQueue GetGraphicsQueue();
 VkInstance GetVkInstance();
 VkPhysicalDevice GetVkPhysicalDevice();

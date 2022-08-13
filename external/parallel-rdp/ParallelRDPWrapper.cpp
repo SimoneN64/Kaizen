@@ -92,11 +92,11 @@ public:
   }
 
   uint32_t get_surface_width() override {
-    return 800;
+    return 640;
   }
 
   uint32_t get_surface_height() override {
-    return 600;
+    return 480;
   }
 
   bool alive(Vulkan::WSI &wsi_) override {
@@ -106,6 +106,15 @@ public:
   void poll_input() override { }
 
   void event_frame_tick(double frame, double elapsed) override { }
+
+  const VkApplicationInfo *get_application_info() override {
+      return &appInfo;
+  }
+
+    VkApplicationInfo appInfo {
+            .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+            .apiVersion = VK_API_VERSION_1_1
+    };
 };
 
 Program* fullscreen_quad_program;

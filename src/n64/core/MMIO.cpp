@@ -4,6 +4,21 @@
 #include <n64/core/cpu/Registers.hpp>
 
 namespace n64 {
+MMIO::MMIO () {
+  Reset();
+}
+
+void MMIO::Reset() {
+  rsp.Reset();
+  rdp.Reset();
+  mi.Reset();
+  vi.Reset();
+  ai.Reset();
+  pi.Reset();
+  ri.Reset();
+  si.Reset();
+}
+
 u32 MMIO::Read(u32 addr) {
   switch (addr) {
     case 0x04040000 ... 0x040FFFFF: return rsp.Read(addr);

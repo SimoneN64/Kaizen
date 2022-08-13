@@ -8,7 +8,8 @@ struct Mem;
 struct Registers;
 
 struct PI {
-  PI() = default;
+  PI();
+  void Reset();
   auto Read(MI&, u32) const -> u32;
   void Write(Mem&, Registers&, u32, u32);
   u32 dramAddr{}, cartAddr{};

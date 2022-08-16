@@ -26,3 +26,5 @@ using m128 = __m128i;
 #define GiB ((MiB) * 1024)
 #define N64_CPU_FREQ 93750000
 #define N64_CYCLES_PER_FRAME ((N64_CPU_FREQ) / 60)
+#define HALF_ADDRESS(addr) ((addr) ^ 2)
+#define BYTE_ADDRESS(addr) ((addr) ^ 3)

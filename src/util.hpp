@@ -5,6 +5,7 @@
 #include <portable_endian_bswap.h>
 #include <fstream>
 #include <vector>
+#include <array>
 
 namespace util {
 enum MessageType : u8 {
@@ -46,7 +47,7 @@ constexpr void logdebug(const std::string& fmt, Args... args) {
 }
 
 template <typename T, bool HToBE = false>
-auto GetSwapFunc(T num) -> T {
+[[maybe_unused]] auto GetSwapFunc(T num) -> T {
   static_assert(sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8, "GetSwapFunc used with invalid size!");
   if constexpr(sizeof(T) == 2) {
     if constexpr(HToBE) {
@@ -70,11 +71,18 @@ template <typename T>
 inline T ReadAccess(u8* data, u32 index) {
   if constexpr(sizeof(T) == 1) {
     return data[index];
-  } else {
-    static_assert(sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8);
+  } else if constexpr (sizeof(T) == 2 || sizeof(T) == 4) {
     T result = 0;
     memcpy(&result, &data[index], sizeof(T));
-    return GetSwapFunc<T>(result);
+    return result;
+  } else {
+    static_assert(sizeof(T) == 8);
+    u32 hi = 0;
+    u32 lo = 0;
+    memcpy(&hi, &data[index + 0], sizeof(u32));
+    memcpy(&lo, &data[index + 4], sizeof(u32));
+    T result = ((T)hi << 32) | (T)lo;
+    return result;
   }
 }
 
@@ -83,35 +91,52 @@ inline void WriteAccess(u8* data, u32 index, T val) {
   if constexpr(sizeof(T) == 1) {
     data[index] = val;
     return;
+  } else if constexpr (sizeof(T) == 2 || sizeof(T) == 4){
+    memcpy(&data[index], &val, sizeof(T));
   } else {
-    static_assert(sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8);
-    T temp = GetSwapFunc<T, true>(val);
-    memcpy(&data[index], &temp, sizeof(T));
+    static_assert(sizeof(T) == 8);
+    u32 hi = val >> 32;
+    u32 lo = val;
+    memcpy(&data[index + 0], &hi, sizeof(u32));
+    memcpy(&data[index + 4], &lo, sizeof(u32));
   }
 }
 
-#define Z64 0x80371240
-#define N64 0x40123780
-#define V64 0x37804012
+inline void SwapBuffer32(size_t size, u8* data) {
+  for(int i = 0; i < size; i += 4) {
+    u32 original = *(u32*)&data[i];
+    *(u32*)&data[i] = bswap_32(original);
+  }
+}
+
+inline void SwapBuffer16(size_t size, u8* data) {
+  for(int i = 0; i < size; i += 2) {
+    u16 original = *(u16*)&data[i];
+    *(u16*)&data[i] = bswap_16(original);
+  }
+}
+
+enum RomTypes {
+  Z64 = 0x80371240,
+  N64 = 0x40123780,
+  V64 = 0x37804012
+};
 
 inline void SwapN64Rom(size_t size, u8* data) {
-  u32 endianness;
+  RomTypes endianness;
   memcpy(&endianness, data, 4);
-  endianness = be32toh(endianness);
+  endianness = static_cast<RomTypes>(be32toh(endianness));
   switch(endianness) {
-    case V64:
-      for(int i = 0; i < size; i += 2) {
-        u16 original = *(u16*)&data[i];
-        *(u16*)&data[i] = bswap_16(original);
+    case V64: {
+      u8* tmp = (u8*)calloc(size, 1);
+      for(int i = 0; i < size; i++) {
+        data[i] = tmp[i ^ 2];
       }
-      break;
-    case N64:
-      for(int i = 0; i < size; i += 4) {
-        u32 original = *(u32*)&data[i];
-        *(u32*)&data[i] = bswap_32(original);
-      }
-      break;
-    case Z64: break;
+      free(tmp);
+    } break;
+    case N64: break;
+    case Z64:
+      SwapBuffer32(size, data); break;
     default:
       panic("Unrecognized rom format! Make sure this is a valid Nintendo 64 ROM dump!\n");
   }
@@ -120,23 +145,29 @@ inline void SwapN64Rom(size_t size, u8* data) {
 template <size_t size, typename T = u8>
 struct CircularBuffer {
   CircularBuffer() : head(0) {
-    memset(raw, 0, size * sizeof(T));
+    memset(raw.data(), 0, size * sizeof(T));
   }
 
   void PushValue(T val) {
-    raw[head & mask] = val;
-    head &= mask;
+    raw[head] = val;
     head++;
+    head &= mask;
   }
 
   T PopValue() {
     head--;
     head &= mask;
-    return raw[head & mask];
+    return raw[head];
   }
+
+  T& operator[](const int index) {
+    return raw[index];
+  }
+  auto begin() { return raw.begin(); }
+  auto end() { return raw.end(); }
   size_t GetHead() { return head; }
 private:
-  T raw[size];
+  std::array<T, size> raw;
   size_t head;
   static constexpr size_t mask = size - 1;
 };

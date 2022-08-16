@@ -14,9 +14,9 @@ struct Core {
   void Run(Window&);
   void PollInputs(SDL_Event);
   VI& GetVI() { return mem.mmio.vi; }
-  u8* GetRDRAM() { return mem.rdram.data(); }
   bool romLoaded = false;
 private:
+  friend struct ::Window;
   Mem mem;
   Cpu cpu;
 };

@@ -6,7 +6,7 @@
 
 Window::Window(n64::Core& core) {
   InitSDL();
-  InitParallelRDP(core.GetRDRAM(), window);
+  InitParallelRDP(core.mem.GetRDRAM(), window);
   //InitImgui();
   NFD::Init();
 }

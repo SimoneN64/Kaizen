@@ -11,6 +11,8 @@ RDP::RDP() {
 
 void RDP::Reset() {
   dpc.status.raw = 0x80;
+  dram.resize(RDRAM_SIZE);
+  std::fill(dram.begin(), dram.end(), 0);
   memset(cmd_buf, 0, 0x100000);
 }
 

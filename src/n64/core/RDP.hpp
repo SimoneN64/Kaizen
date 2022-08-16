@@ -1,5 +1,6 @@
 #pragma once
 #include <common.hpp>
+#include <vector>
 
 namespace n64 {
 
@@ -54,7 +55,8 @@ struct RDP {
   RDP();
   void Reset();
 
-  auto Read(u32 addr) const -> u32;
+  std::vector<u8> dram;
+  [[nodiscard]] auto Read(u32 addr) const -> u32;
   void Write(u32 addr, u32 val);
   void StatusWrite(u32 val);
   void RunCommand(MI& mi, Registers& regs, RSP& rsp);

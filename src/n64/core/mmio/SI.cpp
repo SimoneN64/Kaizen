@@ -38,7 +38,7 @@ void SI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       ProcessPIFCommands(mem.pifRam, controller, mem);
 
       u8 pifAddr = (val & 0x7FC) & PIF_RAM_DSIZE;
-      memcpy(&mem.rdram[dramAddr & RDRAM_DSIZE],
+      memcpy(&mem.mmio.rdp.dram[dramAddr & RDRAM_DSIZE],
              &mem.pifRam[pifAddr], 64);
       InterruptRaise(mem.mmio.mi, regs, Interrupt::SI);
       status.intr = 1;
@@ -47,8 +47,7 @@ void SI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       //if(!(status.raw & 3)) {
       u8 pifAddr = (val & 0x7FC) & PIF_RAM_DSIZE;
       memcpy(&mem.pifRam[pifAddr],
-             &mem.rdram[dramAddr & RDRAM_DSIZE], 64);
-
+             &mem.mmio.rdp.dram[dramAddr & RDRAM_DSIZE], 64);
       ProcessPIFCommands(mem.pifRam, controller, mem);
       InterruptRaise(mem.mmio.mi, regs, Interrupt::SI);
       status.intr = 1;

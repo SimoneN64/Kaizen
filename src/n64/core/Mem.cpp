@@ -11,9 +11,7 @@ Mem::Mem() {
 }
 
 void Mem::Reset() {
-  rdram.resize(RDRAM_SIZE);
   sram.resize(SRAM_SIZE);
-  std::fill(rdram.begin(), rdram.end(), 0);
   std::fill(sram.begin(), sram.end(), 0);
   romMask = 0;
   mmio.Reset();
@@ -38,7 +36,7 @@ void Mem::LoadROM(const std::string& filename) {
   cart.insert(cart.begin(), std::istream_iterator<u8>(file), std::istream_iterator<u8>());
 
   file.close();
-  util::SwapN64Rom(size, cart.data());
+  util::SwapN64Rom(sizeAdjusted, cart.data());
   memcpy(mmio.rsp.dmem, cart.data(), 0x1000);
 }
 
@@ -68,14 +66,56 @@ T Mem::Read(Registers& regs, u32 vaddr, s64 pc) {
   }
 
   switch(paddr) {
-    case 0x00000000 ... 0x007FFFFF: return util::ReadAccess<T>(rdram.data(), paddr & RDRAM_DSIZE);
-    case 0x04000000 ... 0x04000FFF: return util::ReadAccess<T>(mmio.rsp.dmem, paddr & DMEM_DSIZE);
-    case 0x04001000 ... 0x04001FFF: return util::ReadAccess<T>(mmio.rsp.imem, paddr & IMEM_DSIZE);
+    case 0x00000000 ... 0x007FFFFF:
+      if constexpr (sizeof(T) == 1) {
+        return util::ReadAccess<T>(mmio.rdp.dram.data(), BYTE_ADDRESS(paddr) & RDRAM_DSIZE);
+      } else if constexpr (sizeof(T) == 2) {
+        return util::ReadAccess<T>(mmio.rdp.dram.data(), HALF_ADDRESS(paddr) & RDRAM_DSIZE);
+      } else {
+        return util::ReadAccess<T>(mmio.rdp.dram.data(), paddr & RDRAM_DSIZE);
+      }
+    case 0x04000000 ... 0x04000FFF:
+      if constexpr (sizeof(T) == 1) {
+        return util::ReadAccess<T>(mmio.rsp.dmem, BYTE_ADDRESS(paddr) & DMEM_DSIZE);
+      } else if constexpr (sizeof(T) == 2) {
+        return util::ReadAccess<T>(mmio.rsp.dmem, HALF_ADDRESS(paddr) & DMEM_DSIZE);
+      } else {
+        return util::ReadAccess<T>(mmio.rsp.dmem, paddr & DMEM_DSIZE);
+      }
+    case 0x04001000 ... 0x04001FFF:
+      if constexpr (sizeof(T) == 1) {
+        return util::ReadAccess<T>(mmio.rsp.imem, BYTE_ADDRESS(paddr) & IMEM_DSIZE);
+      } else if constexpr (sizeof(T) == 2) {
+        return util::ReadAccess<T>(mmio.rsp.imem, HALF_ADDRESS(paddr) & IMEM_DSIZE);
+      } else {
+        return util::ReadAccess<T>(mmio.rsp.imem, paddr & IMEM_DSIZE);
+      }
     case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
     case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: return mmio.Read(paddr);
-    case 0x10000000 ... 0x1FBFFFFF: return util::ReadAccess<T>(cart.data(), paddr & romMask);
-    case 0x1FC00000 ... 0x1FC007BF: return util::ReadAccess<T>(pifBootrom, paddr & PIF_BOOTROM_DSIZE);
-    case 0x1FC007C0 ... 0x1FC007FF: return util::ReadAccess<T>(pifRam, paddr & PIF_RAM_DSIZE);
+    case 0x10000000 ... 0x1FBFFFFF:
+      if constexpr (sizeof(T) == 1) {
+        return util::ReadAccess<T>(cart.data(), BYTE_ADDRESS(paddr) & romMask);
+      } else if constexpr (sizeof(T) == 2) {
+        return util::ReadAccess<T>(cart.data(), HALF_ADDRESS(paddr) & romMask);
+      } else {
+        return util::ReadAccess<T>(cart.data(), paddr & romMask);
+      }
+    case 0x1FC00000 ... 0x1FC007BF:
+      if constexpr (sizeof(T) == 1) {
+        return util::ReadAccess<T>(pifBootrom, BYTE_ADDRESS(paddr) & PIF_BOOTROM_DSIZE);
+      } else if constexpr (sizeof(T) == 2) {
+        return util::ReadAccess<T>(pifBootrom, HALF_ADDRESS(paddr) & PIF_BOOTROM_DSIZE);
+      } else {
+        return util::ReadAccess<T>(pifBootrom, paddr & PIF_BOOTROM_DSIZE);
+      }
+    case 0x1FC007C0 ... 0x1FC007FF:
+      if constexpr (sizeof(T) == 1) {
+        return util::ReadAccess<T>(pifRam, BYTE_ADDRESS(paddr) & PIF_RAM_DSIZE);
+      } else if constexpr (sizeof(T) == 2) {
+        return util::ReadAccess<T>(pifRam, HALF_ADDRESS(paddr) & PIF_RAM_DSIZE);
+      } else {
+        return util::ReadAccess<T>(pifRam, paddr & PIF_RAM_DSIZE);
+      }
     case 0x00800000 ... 0x03FFFFFF: case 0x04002000 ... 0x0403FFFF:
     case 0x04200000 ... 0x042FFFFF:
     case 0x04900000 ... 0x07FFFFFF: case 0x08000000 ... 0x0FFFFFFF:
@@ -111,12 +151,44 @@ void Mem::Write(Registers& regs, u32 vaddr, T val, s64 pc) {
   }
 
   switch(paddr) {
-    case 0x00000000 ... 0x007FFFFF: util::WriteAccess<T>(rdram.data(), paddr & RDRAM_DSIZE, val); break;
-    case 0x04000000 ... 0x04000FFF: util::WriteAccess<T>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val); break;
-    case 0x04001000 ... 0x04001FFF: util::WriteAccess<T>(mmio.rsp.imem, paddr & IMEM_DSIZE, val); break;
+    case 0x00000000 ... 0x007FFFFF:
+      if constexpr (sizeof(T) == 1) {
+        util::WriteAccess<T>(mmio.rdp.dram.data(), BYTE_ADDRESS(paddr) & RDRAM_DSIZE, val);
+      } else if constexpr (sizeof(T) == 2) {
+        util::WriteAccess<T>(mmio.rdp.dram.data(), HALF_ADDRESS(paddr) & RDRAM_DSIZE, val);
+      } else {
+        util::WriteAccess<T>(mmio.rdp.dram.data(), paddr & RDRAM_DSIZE, val);
+      }
+      break;
+    case 0x04000000 ... 0x04000FFF:
+      if constexpr (sizeof(T) == 1) {
+        util::WriteAccess<T>(mmio.rsp.dmem, BYTE_ADDRESS(paddr) & DMEM_DSIZE, val);
+      } else if constexpr (sizeof(T) == 2) {
+        util::WriteAccess<T>(mmio.rsp.dmem, HALF_ADDRESS(paddr) & DMEM_DSIZE, val);
+      } else {
+        util::WriteAccess<T>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
+      }
+      break;
+    case 0x04001000 ... 0x04001FFF:
+      if constexpr (sizeof(T) == 1) {
+        util::WriteAccess<T>(mmio.rsp.imem, BYTE_ADDRESS(paddr) & IMEM_DSIZE, val);
+      } else if constexpr (sizeof(T) == 2) {
+        util::WriteAccess<T>(mmio.rsp.imem, HALF_ADDRESS(paddr) & IMEM_DSIZE, val);
+      } else {
+        util::WriteAccess<T>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
+      }
+      break;
     case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
     case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(*this, regs, paddr, val); break;
-    case 0x1FC007C0 ... 0x1FC007FF: util::WriteAccess<T>(pifRam, paddr & PIF_RAM_DSIZE, val); break;
+    case 0x1FC007C0 ... 0x1FC007FF:
+      if constexpr (sizeof(T) == 1) {
+        util::WriteAccess<T>(pifRam, BYTE_ADDRESS(paddr) & PIF_RAM_DSIZE, val);
+      } else if constexpr (sizeof(T) == 2) {
+        util::WriteAccess<T>(pifRam, HALF_ADDRESS(paddr) & PIF_RAM_DSIZE, val);
+      } else {
+        util::WriteAccess<T>(pifRam, paddr & PIF_RAM_DSIZE, val);
+      }
+      break;
     case 0x00800000 ... 0x03FFFFFF: case 0x04002000 ... 0x0403FFFF:
     case 0x04200000 ... 0x042FFFFF:
     case 0x04900000 ... 0x07FFFFFF: case 0x08000000 ... 0x0FFFFFFF:

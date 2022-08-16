@@ -118,14 +118,8 @@ void Cpu::Step(Mem& mem) {
 
   CheckCompareInterrupt(mem.mmio.mi, regs);
 
-  static int count = 0;
-  if(regs.gpr[30] == -1 && count < 1) {
-    util::logdebug("Test passed!\n");
-    count++;
-  }
-
   u32 instruction = mem.Read<u32>(regs, regs.pc, regs.pc);
-  //LogInstruction(instruction);
+  LogInstruction(instruction);
 
   HandleInterrupt(regs);
 

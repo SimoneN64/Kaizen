@@ -6,8 +6,13 @@
 #include <fstream>
 #include <vector>
 #include <array>
+#include <chrono>
 
 namespace util {
+using SteadyClock = std::chrono::steady_clock;
+using DurationMillis = std::chrono::duration<double, std::milli>;
+using TimePoint = std::chrono::time_point<SteadyClock, DurationMillis>;
+
 enum MessageType : u8 {
   Info, Warn, Error
 };
@@ -45,6 +50,25 @@ constexpr void logdebug(const std::string& fmt, Args... args) {
   print(fmt, args...);
 #endif
 }
+
+#define TIMER(name)  \
+  struct Timer##name { \
+    util::TimePoint start, end; \
+    Timer##name() {} \
+    ~Timer##name() {} \
+    void Start() { \
+      start = util::SteadyClock::now(); \
+    } \
+   \
+    void End() { \
+      end = util::SteadyClock::now(); \
+    } \
+   \
+    void PrintDuration() { \
+      auto diff = end - start; \
+      util::info(#name + std::string(" took {:.3f}ms to run\n"), diff.count()); \
+    } \
+  }
 
 template <typename T, bool HToBE = false>
 [[maybe_unused]] auto GetSwapFunc(T num) -> T {

@@ -12,9 +12,11 @@ struct Core {
   void Reset();
   void LoadROM(const std::string&);
   void Run(Window&);
-  void PollInputs(SDL_Event);
+  void UpdateController(const u8*);
   VI& GetVI() { return mem.mmio.vi; }
   bool romLoaded = false;
+  SDL_GameController* gamepad;
+  bool gamepadConnected = false;
 private:
   friend struct ::Window;
   Mem mem;

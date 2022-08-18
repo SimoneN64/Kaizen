@@ -99,7 +99,9 @@ inline void HandleInterrupt(Registers& regs) {
 }
 
 void Cpu::LogInstruction(u32 instruction) {
+#ifndef NDEBUG
   count = cs_disasm(handle, reinterpret_cast<u8*>(&instruction), 4, regs.pc, 0, &insn);
+#endif
 
   if (count > 0) {
     for(auto j = 0; j < count; j++) {
@@ -113,13 +115,14 @@ void Cpu::LogInstruction(u32 instruction) {
 
 void Cpu::Step(Mem& mem) {
   regs.gpr[0] = 0;
+
   regs.prevDelaySlot = regs.delaySlot;
   regs.delaySlot = false;
 
   CheckCompareInterrupt(mem.mmio.mi, regs);
 
   u32 instruction = mem.Read<u32>(regs, regs.pc, regs.pc);
-  LogInstruction(instruction);
+  //LogInstruction(instruction);
 
   HandleInterrupt(regs);
 

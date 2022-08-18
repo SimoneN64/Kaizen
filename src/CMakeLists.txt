@@ -4,6 +4,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
 add_compile_definitions(VULKAN_DEBUG)
+file(COPY ${CMAKE_SOURCE_DIR}/../resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 add_subdirectory(n64)
 add_subdirectory(frontend)

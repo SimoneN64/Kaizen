@@ -5,6 +5,7 @@
 void App::Run() {
   // Main loop
   bool done = false;
+  const u8* state = SDL_GetKeyboardState(nullptr);
   while (!done) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -13,6 +14,15 @@ void App::Run() {
         case SDL_QUIT: done = true; break;
         case SDL_WINDOWEVENT:
           done = window.gotClosed(event);
+          break;
+        case SDL_CONTROLLERDEVICEADDED: {
+          const int index = event.cdevice.which;
+          core.gamepad = SDL_GameControllerOpen(index);
+          core.gamepadConnected = true;
+        } break;
+        case SDL_CONTROLLERDEVICEREMOVED:
+          SDL_GameControllerClose(core.gamepad);
+          core.gamepadConnected = false;
           break;
         case SDL_KEYDOWN:
           switch(event.key.keysym.sym) {
@@ -28,7 +38,7 @@ void App::Run() {
           } break;
       }
 
-      core.PollInputs(event);
+      core.UpdateController(state);
     }
 
     core.Run(window);

@@ -174,6 +174,9 @@ Window::~Window() {
   vkDestroyDescriptorPool(device, descriptorPool, nullptr);
   vkDestroyDevice(device, nullptr);
   vkDestroyInstance(instance, nullptr);
+  SDL_DestroyWindow(window);
+  SDL_DestroyWindow(g_Window);
+  SDL_Quit();
 }
 
 ImDrawData* Window::Present(n64::Core& core) {

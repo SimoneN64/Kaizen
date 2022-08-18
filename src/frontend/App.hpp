@@ -3,6 +3,7 @@
 
 struct App {
   App() : window(core) {};
+  ~App() = default;
   void Run();
   inline void LoadROM(const std::string& path) {
     core.LoadROM(path);

@@ -10,3 +10,4 @@ roms/
 .vscode/
 vgcore.*
 *.txt
+*.data

@@ -31,13 +31,6 @@ void App::Run() {
       core.PollInputs(event);
     }
 
-    if(core.romLoaded) {
-      core.Run(window);
-      UpdateScreenParallelRdp(window, core.GetVI());
-    } else {
-      UpdateScreenParallelRdpNoGame(window);
-    }
-
-    SDL_Delay(1);
+    core.Run(window);
   }
 }

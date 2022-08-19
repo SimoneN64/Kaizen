@@ -18,4 +18,3 @@ add_library(imgui
   imgui/backends/imgui_impl_vulkan.cpp)
 
 target_include_directories(imgui PUBLIC ${SDL2_INCLUDE_DIRS} imgui imgui/backends)
-#target_compile_definitions(imgui PRIVATE VK_NO_PROTOTYPES)

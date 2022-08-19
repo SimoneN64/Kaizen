@@ -12,6 +12,10 @@ Cpu::Cpu() {
   if (cs_open(CS_ARCH_MIPS, CS_MODE_MIPS64, &handle)) {
     util::panic("Could not initialize capstone!\n");
   }
+
+  if (cs_option(handle, CS_OPT_UNSIGNED, CS_OPT_ON)) {
+    util::panic("Could not initialize capstone!\n");
+  }
 }
 
 Cpu::~Cpu() {

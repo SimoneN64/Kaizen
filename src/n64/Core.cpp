@@ -47,9 +47,9 @@ void Core::Run(Window& window) {
         InterruptRaise(mmio.mi, cpu.regs, Interrupt::VI);
       }
 
-      UpdateScreenParallelRdp(window, GetVI());
+      UpdateScreenParallelRdp(*this, window, GetVI());
     } else {
-      UpdateScreenParallelRdpNoGame(window);
+      UpdateScreenParallelRdpNoGame(*this, window);
     }
   }
 }

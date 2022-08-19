@@ -9,5 +9,4 @@ roms/
 .cache/
 .vscode/
 vgcore.*
-*.txt
 *.data

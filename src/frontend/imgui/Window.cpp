@@ -4,10 +4,12 @@
 #include <Core.hpp>
 #include <utility>
 
+VkInstance instance{};
+
 Window::Window(n64::Core& core) {
   InitSDL();
   InitParallelRDP(core.mem.GetRDRAM(), window);
-  //InitImgui();
+  InitImgui();
   NFD::Init();
 }
 
@@ -60,6 +62,8 @@ void Window::InitImgui() {
   descriptorPool = nullptr;
   allocator = nullptr;
   minImageCount = 2;
+
+  ImGui_ImplVulkan_LoadFunctions([](const char* function_name, void*) { return vkGetInstanceProcAddr(instance, function_name); });
 
   {
     VkDescriptorPoolSize poolSizes[] = {
@@ -168,9 +172,9 @@ void Window::InitImgui() {
 Window::~Window() {
   VkResult err = vkDeviceWaitIdle(device);
   check_vk_result(err);
-  //ImGui_ImplVulkan_Shutdown();
-  //ImGui_ImplSDL2_Shutdown();
-  //ImGui::DestroyContext();
+  ImGui_ImplVulkan_Shutdown();
+  ImGui_ImplSDL2_Shutdown();
+  ImGui::DestroyContext();
   vkDestroyDescriptorPool(device, descriptorPool, nullptr);
   vkDestroyDevice(device, nullptr);
   vkDestroyInstance(instance, nullptr);
@@ -180,13 +184,13 @@ Window::~Window() {
 }
 
 ImDrawData* Window::Present(n64::Core& core) {
-  //ImGui_ImplVulkan_NewFrame();
-  //ImGui_ImplSDL2_NewFrame(window);
-  //ImGui::NewFrame();
+  ImGui_ImplVulkan_NewFrame();
+  ImGui_ImplSDL2_NewFrame(window);
+  ImGui::NewFrame();
 //
   Render(core);
 
-  //ImGui::Render();
+  ImGui::Render();
   return ImGui::GetDrawData();
 }
 

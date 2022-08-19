@@ -19,7 +19,6 @@ private:
   void InitImgui();
   void Render(n64::Core& core);
 
-  VkInstance instance{};
   VkPhysicalDevice physicalDevice{};
   VkDevice device{};
   uint32_t queueFamily{uint32_t(-1)};

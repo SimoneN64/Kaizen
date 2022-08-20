@@ -9,14 +9,19 @@ namespace n64 {
 struct Core {
   ~Core() = default;
   Core();
+  void Stop();
   void Reset();
   void LoadROM(const std::string&);
   void Run(Window&);
   void UpdateController(const u8*);
+  void TogglePause() { pause = !pause; }
   VI& GetVI() { return mem.mmio.vi; }
+  bool pause = true;
   bool romLoaded = false;
   SDL_GameController* gamepad;
   bool gamepadConnected = false;
+  bool done = false;
+  std::string rom;
 private:
   friend struct ::Window;
   Mem mem;

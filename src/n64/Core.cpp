@@ -6,18 +6,31 @@
 
 namespace n64 {
 Core::Core() {
-  Reset();
+  Stop();
+}
+
+void Core::Stop() {
+  cpu.Reset();
+  mem.Reset();
+  pause = true;
+  romLoaded = false;
+  rom.clear();
 }
 
 void Core::Reset() {
   cpu.Reset();
   mem.Reset();
+  pause = true;
   romLoaded = false;
+  if(!rom.empty()) {
+    LoadROM(rom);
+  }
 }
 
-void Core::LoadROM(const std::string& rom) {
-  Reset();
+void Core::LoadROM(const std::string& rom_) {
+  rom = rom_;
   mem.LoadROM(rom);
+  pause = false;
   romLoaded = true;
 }
 
@@ -25,8 +38,7 @@ void Core::Run(Window& window) {
   MMIO& mmio = mem.mmio;
   int cycles = 0;
   for(int field = 0; field < mmio.vi.numFields; field++) {
-    if(romLoaded) {
-      //timerInstructions.Start();
+    if(!pause && romLoaded) {
       for (int i = 0; i < mmio.vi.numHalflines; i++) {
         if ((mmio.vi.current & 0x3FE) == mmio.vi.intr) {
           InterruptRaise(mmio.mi, cpu.regs, Interrupt::VI);
@@ -48,7 +60,9 @@ void Core::Run(Window& window) {
       }
 
       UpdateScreenParallelRdp(*this, window, GetVI());
-    } else {
+    } else if(pause && romLoaded) {
+      UpdateScreenParallelRdp(*this, window, GetVI());
+    } else if(pause && !romLoaded) {
       UpdateScreenParallelRdpNoGame(*this, window);
     }
   }

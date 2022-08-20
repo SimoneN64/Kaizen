@@ -4,16 +4,15 @@
 
 void App::Run() {
   // Main loop
-  bool done = false;
   const u8* state = SDL_GetKeyboardState(nullptr);
-  while (!done) {
+  while (!core.done) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
       ImGui_ImplSDL2_ProcessEvent(&event);
       switch(event.type) {
-        case SDL_QUIT: done = true; break;
+        case SDL_QUIT: core.done = true; break;
         case SDL_WINDOWEVENT:
-          done = window.gotClosed(event);
+          core.done = window.gotClosed(event);
           break;
         case SDL_CONTROLLERDEVICEADDED: {
           const int index = event.cdevice.which;

@@ -15,6 +15,7 @@ struct Window {
   [[nodiscard]] bool gotClosed(SDL_Event event);
 private:
   SDL_Window* window;
+  u32 windowID;
   void InitSDL();
   void InitImgui();
   void Render(n64::Core& core);

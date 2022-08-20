@@ -28,6 +28,8 @@ void Window::InitSDL() {
     SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI
   );
 
+  windowID = SDL_GetWindowID(window);
+
   if(volkInitialize() != VK_SUCCESS) {
     util::panic("Failed to load Volk!");
   }
@@ -187,7 +189,7 @@ ImDrawData* Window::Present(n64::Core& core) {
   ImGui_ImplVulkan_NewFrame();
   ImGui_ImplSDL2_NewFrame(window);
   ImGui::NewFrame();
-//
+
   Render(core);
 
   ImGui::Render();
@@ -195,31 +197,35 @@ ImDrawData* Window::Present(n64::Core& core) {
 }
 
 void Window::Render(n64::Core& core) {
-  ImGui::BeginMainMenuBar();
-  if(ImGui::BeginMenu("File")) {
-    if(ImGui::BeginMenu("Open")) {
-      if(ImGui::MenuItem("Nintendo 64")) {
-        nfdchar_t* outpath;
-        const nfdu8filteritem_t filter {"Nintendo 64 roms", "n64,z64,v64,N64,Z64,V64"};
+  if(windowID == SDL_GetWindowID(SDL_GetMouseFocus())) {
+    ImGui::BeginMainMenuBar();
+    if (ImGui::BeginMenu("File")) {
+      if (ImGui::MenuItem("Open", "O")) {
+        nfdchar_t *outpath;
+        const nfdu8filteritem_t filter{"Nintendo 64 roms", "n64,z64,v64,N64,Z64,V64"};
         nfdresult_t result = NFD_OpenDialog(&outpath, &filter, 1, nullptr);
-        if(result == NFD_OKAY) {
+        if (result == NFD_OKAY) {
           core.LoadROM(outpath);
           NFD_FreePath(outpath);
         }
       }
-      if(ImGui::MenuItem("Game Boy")) {
-        if(ImGui::BeginPopup("##unimplemented_Core")) {
-          ImGui::TextColored({1.0, 0.0, 0.0, 0.7}, "Unimplemented core 'Game Boy'!");
-          ImGui::EndPopup();
-        }
+      if (ImGui::MenuItem("Exit")) {
+        core.done = true;
       }
       ImGui::EndMenu();
     }
-    if(ImGui::BeginMenu("Exit")) {
-
+    if (ImGui::BeginMenu("Emulation")) {
+      if (ImGui::MenuItem("Reset")) {
+        core.Reset();
+      }
+      if (ImGui::MenuItem("Stop")) {
+        core.Stop();
+      }
+      if (ImGui::MenuItem(core.pause ? "Resume" : "Pause", nullptr, false, core.romLoaded)) {
+        core.TogglePause();
+      }
       ImGui::EndMenu();
     }
-    ImGui::EndMenu();
+    ImGui::EndMainMenuBar();
   }
-  ImGui::EndMainMenuBar();
 }

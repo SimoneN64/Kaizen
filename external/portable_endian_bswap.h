@@ -5,7 +5,11 @@
 // an example on how to get the endian conversion functions on different platforms.
 
 #pragma once
-#include <stdint.h>
+#include <cstdint>
+
+#define bswap_16(x) (((x) & 0xFF00u) >> 8) | (((x) & 0x00FFu) << 8)
+#define bswap_32(x) (((x) & 0xFF000000u) >> 24u) | (((x) & 0x00FF0000u) >>  8u) | (((x) & 0x0000FF00u) <<  8u) | (((x) & 0x000000FFu) << 24u)
+#define bswap_64(x) (((x) & 0xFF00000000000000u) >> 56u) | (((x) & 0x00FF000000000000u) >> 40u) | (((x) & 0x0000FF0000000000u) >> 24u) | (((x) & 0x000000FF00000000u) >>  8u) | (((x) & 0x00000000FF000000u) <<  8u) | (((x) & 0x0000000000FF0000u) << 24u) | (((x) & 0x000000000000FF00u) << 40u) | (((x) & 0x00000000000000FFu) << 56u)
 
 #if (defined(_WIN16) || defined(_WIN32) || defined(_WIN64)) && !defined(__WINDOWS__)
 
@@ -60,52 +64,40 @@
 
 #elif defined(__WINDOWS__)
 
-#	include <winsock2.h>
-#	include <sys/param.h>
-
-
-#if __BIG_ENDIAN__
-    #define htonll(x)   (x)
-    #define ntohll(x)   (x)
-#else
-    #define htonll(x)   ((((uint64_t)htonl(x&0xFFFFFFFF)) << 32) + htonl(x >> 32))
-    #define ntohll(x)   ((((uint64_t)ntohl(x&0xFFFFFFFF)) << 32) + ntohl(x >> 32))
-#endif
-
 #	if BYTE_ORDER == LITTLE_ENDIAN
 
-#		define htobe16(x) htons(x)
+#		define htobe16(x) bswap_16(x)
 #		define htole16(x) (x)
-#		define be16toh(x) ntohs(x)
+#		define be16toh(x) bswap_16(x)
 #		define le16toh(x) (x)
  
-#		define htobe32(x) htonl(x)
+#		define htobe32(x) bswap_32(x)
 #		define htole32(x) (x)
-#		define be32toh(x) ntohl(x)
+#		define be32toh(x) bswap_32(x)
 #		define le32toh(x) (x)
  
-#		define htobe64(x) htonll(x)
+#		define htobe64(x) bswap_64(x)
 #		define htole64(x) (x)
-#		define be64toh(x) ntohll(x)
+#		define be64toh(x) bswap_64(x)
 #		define le64toh(x) (x)
 
 #	elif BYTE_ORDER == BIG_ENDIAN
 
 		/* that would be xbox 360 */
 #		define htobe16(x) (x)
-#		define htole16(x) __builtin_bswap16(x)
+#		define htole16(x) bswap_16(x)
 #		define be16toh(x) (x)
-#		define le16toh(x) __builtin_bswap16(x)
+#		define le16toh(x) bswap_16(x)
  
 #		define htobe32(x) (x)
-#		define htole32(x) __builtin_bswap32(x)
+#		define htole32(x) bswap_32(x)
 #		define be32toh(x) (x)
-#		define le32toh(x) __builtin_bswap32(x)
+#		define le32toh(x) bswap_32(x)
  
 #		define htobe64(x) (x)
-#		define htole64(x) __builtin_bswap64(x)
+#		define htole64(x) bswap_64(x)
 #		define be64toh(x) (x)
-#		define le64toh(x) __builtin_bswap64(x)
+#		define le64toh(x) bswap_64(x)
 
 #	else
 
@@ -123,18 +115,3 @@
 #	error platform not supported
 
 #endif
-
-#define bswap_16(x) (((x) & 0xFF00u) >> 8) | \
-                    (((x) & 0x00FFu) << 8)
-#define bswap_32(x) (((x) & 0xFF000000u) >> 24u) | \
-                    (((x) & 0x00FF0000u) >>  8u) | \
-                    (((x) & 0x0000FF00u) <<  8u) | \
-                    (((x) & 0x000000FFu) << 24u)
-#define bswap_64(x) (((x) & 0xFF00000000000000u) >> 56u) | \
-                    (((x) & 0x00FF000000000000u) >> 40u) | \
-                    (((x) & 0x0000FF0000000000u) >> 24u) | \
-                    (((x) & 0x000000FF00000000u) >>  8u) | \
-                    (((x) & 0x00000000FF000000u) <<  8u) | \
-                    (((x) & 0x0000000000FF0000u) << 24u) | \
-                    (((x) & 0x000000000000FF00u) << 40u) | \
-                    (((x) & 0x00000000000000FFu) << 56u)

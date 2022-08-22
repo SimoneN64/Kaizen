@@ -52,7 +52,7 @@ inline void SetCop0Reg(MI& mi, Registers& regs, RSP& rsp, RDP& rdp, u8 index, u3
       rdp.dpc.end = val & 0xFFFFF8;
       rdp.RunCommand(mi, regs, rsp);
       break;
-    case 11: rdp.StatusWrite(val); break;
+    case 11: rdp.StatusWrite(mi, regs, rsp, val); break;
     default: util::panic("Unhandled RSP COP0 register write at index {}\n", index);
   }
 }

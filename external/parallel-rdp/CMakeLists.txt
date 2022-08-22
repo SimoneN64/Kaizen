@@ -3,6 +3,8 @@ project(parallel-rdp)
 
 file(GLOB_RECURSE parallel-rdp-cpp parallel-rdp-standalone/parallel-rdp/*.cpp)
 
+find_package(SDL2 REQUIRED)
+
 add_library(parallel-rdp
   ${parallel-rdp-cpp}
   ParallelRDPWrapper.cpp
@@ -69,6 +71,8 @@ target_include_directories(parallel-rdp PUBLIC
   ../capstone/include
   .
   )
+
+target_link_libraries(parallel-rdp SDL2main SDL2)
 
 if(WIN32)
   target_compile_definitions(parallel-rdp PUBLIC VK_USE_PLATFORM_WIN32_KHR)

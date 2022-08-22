@@ -6,6 +6,9 @@ add_subdirectory(cpu)
 add_subdirectory(../../../external/parallel-rdp temp)
 add_subdirectory(../../../external/capstone temp1)
 
+find_package(fmt REQUIRED)
+find_package(SDL2 REQUIRED)
+
 add_library(core
   Cpu.hpp
   Cpu.cpp
@@ -48,4 +51,7 @@ target_include_directories(core PUBLIC
   ../../../external/capstone/include
   mmio)
 
-target_link_libraries(core PUBLIC cpu parallel-rdp capstone)
+target_link_libraries(core PUBLIC SDL2main SDL2 fmt cpu parallel-rdp capstone)
+if(WIN32)
+
+endif()

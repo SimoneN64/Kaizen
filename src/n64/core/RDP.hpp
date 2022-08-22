@@ -46,6 +46,8 @@ struct DPC {
   u32 start;
   u32 current;
   u32 end;
+  u32 clock;
+  u32 tmem;
 };
 
 struct RDP {
@@ -57,8 +59,8 @@ struct RDP {
 
   std::vector<u8> dram;
   [[nodiscard]] auto Read(u32 addr) const -> u32;
-  void Write(u32 addr, u32 val);
-  void StatusWrite(u32 val);
+  void Write(MI& mi, Registers& regs, RSP& rsp, u32 addr, u32 val);
+  void StatusWrite(MI& mi, Registers& regs, RSP& rsp, u32 val);
   void RunCommand(MI& mi, Registers& regs, RSP& rsp);
   void OnFullSync();
 };

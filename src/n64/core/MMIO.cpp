@@ -36,7 +36,7 @@ u32 MMIO::Read(u32 addr) {
 void MMIO::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
   switch (addr) {
     case 0x04040000 ... 0x040FFFFF: rsp.Write(mem, regs, addr, val); break;
-    case 0x04100000 ... 0x041FFFFF: rdp.Write(addr, val); break;
+    case 0x04100000 ... 0x041FFFFF: rdp.Write(mi, regs, rsp, addr, val); break;
     case 0x04300000 ... 0x043FFFFF: mi.Write(regs, addr, val); break;
     case 0x04400000 ...	0x044FFFFF: vi.Write(mi, regs, addr, val); break;
     case 0x04500000 ... 0x045FFFFF: ai.Write(mem, regs, addr, val); break;

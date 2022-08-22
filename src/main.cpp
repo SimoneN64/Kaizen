@@ -2,10 +2,10 @@
 #include <frontend/App.hpp>
 
 int main(int argc, char* argv[]) {
-  App app;
+  App* app = new App;
   if(argc > 1) {
-    app.LoadROM(argv[1]);
+    app->LoadROM(argv[1]);
   }
-  app.Run();
+  app->Run();
   return 0;
 }

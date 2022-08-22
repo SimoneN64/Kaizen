@@ -42,6 +42,12 @@ VkFormat GetVkFormat() {
 
 CommandBufferHandle requested_command_buffer;
 
+VkRenderPass GetVkRenderPass() {
+  return wsi->get_device().request_render_pass(
+    wsi->get_device().get_swapchain_render_pass(SwapchainRenderPass::ColorOnly), true
+    ).get_render_pass();
+}
+
 VkCommandBuffer GetVkCommandBuffer() {
   requested_command_buffer = wsi->get_device().request_command_buffer();
   return requested_command_buffer->get_command_buffer();
@@ -111,10 +117,10 @@ public:
       return &appInfo;
   }
 
-    VkApplicationInfo appInfo {
-            .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-            .apiVersion = VK_API_VERSION_1_1
-    };
+  VkApplicationInfo appInfo {
+    .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+    .apiVersion = VK_API_VERSION_1_1
+  };
 };
 
 Program* fullscreen_quad_program;

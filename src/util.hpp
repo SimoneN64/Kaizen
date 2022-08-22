@@ -51,25 +51,6 @@ constexpr void logdebug(const std::string& fmt, Args... args) {
 #endif
 }
 
-#define TIMER(name)  \
-  struct Timer##name { \
-    util::TimePoint start, end; \
-    Timer##name() {} \
-    ~Timer##name() {} \
-    void Start() { \
-      start = util::SteadyClock::now(); \
-    } \
-   \
-    void End() { \
-      end = util::SteadyClock::now(); \
-    } \
-   \
-    void PrintDuration() { \
-      auto diff = end - start; \
-      util::info(#name + std::string(" took {:.3f}ms to run\n"), diff.count()); \
-    } \
-  }
-
 template <typename T, bool HToBE = false>
 [[maybe_unused]] auto GetSwapFunc(T num) -> T {
   static_assert(sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8, "GetSwapFunc used with invalid size!");
@@ -212,7 +193,7 @@ inline auto ReadFileBinary(const std::string& path, u32** buf) {
   std::ifstream file(path, std::ios::binary);
   file.unsetf(std::ios::skipws);
   if(!file.is_open()) {
-    util::panic("Could not load file!\n");
+    panic("Could not load file!\n");
   }
 
   file.seekg(0, std::ios::end);

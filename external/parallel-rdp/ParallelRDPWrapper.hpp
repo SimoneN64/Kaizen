@@ -25,6 +25,7 @@ class SDLParallelRdpWindowInfo : public ParallelRdpWindowInfo {
   }
 };
 
+VkRenderPass GetVkRenderPass();
 VkQueue GetGraphicsQueue();
 VkInstance GetVkInstance();
 VkPhysicalDevice GetVkPhysicalDevice();

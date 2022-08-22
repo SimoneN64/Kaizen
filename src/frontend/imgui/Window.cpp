@@ -93,43 +93,6 @@ void Window::InitImgui() {
     check_vk_result(err);
   }
 
-  VkRenderPass renderPass;
-  {
-    VkAttachmentDescription attachment = {};
-    attachment.format = GetVkFormat();
-    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    VkAttachmentReference colorAttachment = {};
-    colorAttachment.attachment = 0;
-    colorAttachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &colorAttachment;
-    VkSubpassDependency dependency = {};
-    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependency.dstSubpass = 0;
-    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependency.srcAccessMask = 0;
-    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    VkRenderPassCreateInfo info = {};
-    info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    info.attachmentCount = 1;
-    info.pAttachments = &attachment;
-    info.subpassCount = 1;
-    info.pSubpasses = &subpass;
-    info.dependencyCount = 1;
-    info.pDependencies = &dependency;
-    err = vkCreateRenderPass(device, &info, allocator, &renderPass);
-    check_vk_result(err);
-  }
-
   // Setup Platform/Renderer backends
   ImGui_ImplSDL2_InitForVulkan(window);
   ImGui_ImplVulkan_InitInfo initInfo = {};
@@ -145,7 +108,7 @@ void Window::InitImgui() {
   initInfo.ImageCount = 2;
   initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
   initInfo.CheckVkResultFn = check_vk_result;
-  ImGui_ImplVulkan_Init(&initInfo, renderPass);
+  ImGui_ImplVulkan_Init(&initInfo, GetVkRenderPass());
 
   // Load Fonts
   // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
@@ -177,9 +140,6 @@ Window::~Window() {
   ImGui_ImplVulkan_Shutdown();
   ImGui_ImplSDL2_Shutdown();
   ImGui::DestroyContext();
-  vkDestroyDescriptorPool(device, descriptorPool, nullptr);
-  vkDestroyDevice(device, nullptr);
-  vkDestroyInstance(instance, nullptr);
   SDL_DestroyWindow(window);
   SDL_DestroyWindow(g_Window);
   SDL_Quit();

@@ -10,7 +10,7 @@
 struct Window {
   explicit Window(n64::Core& core);
   ~Window();
-  ImDrawData* Present(n64::Core& core);
+  ImDrawData* Present(const Util::IntrusivePtr<Vulkan::Image>&, n64::Core& core);
 
   [[nodiscard]] bool gotClosed(SDL_Event event);
 private:
@@ -18,9 +18,11 @@ private:
   u32 windowID;
   void InitSDL();
   void InitImgui();
-  void Render(n64::Core& core);
+  void Render(const Util::IntrusivePtr<Vulkan::Image>&, n64::Core& core);
 
   VkPhysicalDevice physicalDevice{};
+  VkSampler screenSampler{};
+  VkDescriptorSet screenTexture{};
   VkDevice device{};
   uint32_t queueFamily{uint32_t(-1)};
   VkQueue queue{};

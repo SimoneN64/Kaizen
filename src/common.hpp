@@ -28,3 +28,4 @@ using m128 = __m128i;
 #define N64_CYCLES_PER_FRAME ((N64_CPU_FREQ) / 60)
 #define HALF_ADDRESS(addr) ((addr) ^ 2)
 #define BYTE_ADDRESS(addr) ((addr) ^ 3)
+#define ASPECT_RATIO ((float)4/3)

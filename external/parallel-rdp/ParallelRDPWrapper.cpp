@@ -45,7 +45,7 @@ CommandBufferHandle requested_command_buffer;
 VkRenderPass GetVkRenderPass() {
   return wsi->get_device().request_render_pass(
     wsi->get_device().get_swapchain_render_pass(SwapchainRenderPass::ColorOnly), true
-    ).get_render_pass();
+  ).get_render_pass();
 }
 
 VkCommandBuffer GetVkCommandBuffer() {
@@ -171,7 +171,7 @@ void LoadParallelRDP(u8* rdram) {
     aligned_rdram -= offset;
   }
 
-  CommandProcessorFlags flags = COMMAND_PROCESSOR_FLAG_UPSCALING_8X_BIT; // TODO configurable scaling
+  CommandProcessorFlags flags = COMMAND_PROCESSOR_FLAG_UPSCALING_4X_BIT;
 
   command_processor = new CommandProcessor(wsi->get_device(), reinterpret_cast<void *>(aligned_rdram),
                                            offset, 8 * 1024 * 1024, 4 * 1024 * 1024, flags);
@@ -253,9 +253,8 @@ void UpdateScreen(n64::Core& core, Window& imguiWindow, Util::IntrusivePtr<Image
   Util::IntrusivePtr<CommandBuffer> cmd = wsi->get_device().request_command_buffer();
 
   cmd->begin_render_pass(wsi->get_device().get_swapchain_render_pass(SwapchainRenderPass::ColorOnly));
-  DrawFullscreenTexturedQuad(image, cmd);
 
-  ImGui_ImplVulkan_RenderDrawData(imguiWindow.Present(core), cmd->get_command_buffer());
+  ImGui_ImplVulkan_RenderDrawData(imguiWindow.Present(image, core), cmd->get_command_buffer());
 
   cmd->end_render_pass();
   wsi->get_device().submit(cmd);

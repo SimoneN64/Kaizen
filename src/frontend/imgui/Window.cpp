@@ -132,11 +132,28 @@ void Window::InitImgui() {
     ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
     SubmitRequestedVkCommandBuffer();
   }
+
+  VkSamplerCreateInfo samplerCreateInfo {
+    .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+    .magFilter = VK_FILTER_NEAREST,
+    .minFilter = VK_FILTER_NEAREST,
+    .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+    .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+    .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+    .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+    .maxAnisotropy = 1.0f,
+    .minLod = -1000,
+    .maxLod = 1000,
+  };
+  VkSampler sampler;
+  err = vkCreateSampler(device, &samplerCreateInfo, allocator, &sampler);
+  check_vk_result(err);
 }
 
 Window::~Window() {
   VkResult err = vkDeviceWaitIdle(device);
   check_vk_result(err);
+  vkDestroySampler(device, screenSampler, nullptr);
   ImGui_ImplVulkan_Shutdown();
   ImGui_ImplSDL2_Shutdown();
   ImGui::DestroyContext();
@@ -145,18 +162,18 @@ Window::~Window() {
   SDL_Quit();
 }
 
-ImDrawData* Window::Present(n64::Core& core) {
+ImDrawData* Window::Present(const Util::IntrusivePtr<Vulkan::Image>& image, n64::Core& core) {
   ImGui_ImplVulkan_NewFrame();
   ImGui_ImplSDL2_NewFrame(window);
   ImGui::NewFrame();
 
-  Render(core);
+  Render(image, core);
 
   ImGui::Render();
   return ImGui::GetDrawData();
 }
 
-void Window::Render(n64::Core& core) {
+void Window::Render(const Util::IntrusivePtr<Vulkan::Image>& image, n64::Core& core) {
   if(windowID == SDL_GetWindowID(SDL_GetMouseFocus())) {
     ImGui::BeginMainMenuBar();
     if (ImGui::BeginMenu("File")) {
@@ -188,4 +205,30 @@ void Window::Render(n64::Core& core) {
     }
     ImGui::EndMainMenuBar();
   }
+
+  ImGui::Begin("Screen");
+  if(core.romLoaded && !core.pause) {
+    auto size = ImGui::GetContentRegionAvail();
+    float current_aspect_ratio = size.x / size.y;
+    if (ASPECT_RATIO > current_aspect_ratio) {
+      size.y = size.x / ASPECT_RATIO;
+    }
+    else {
+      size.x = size.y * ASPECT_RATIO;
+    }
+
+    ImGui::SetCursorPos({
+      (ImGui::GetContentRegionAvail().x / 2) - (size.x / 2),
+      (ImGui::GetContentRegionAvail().y / 2) - (size.y / 2) + 24
+    });
+    ImGui::Image(
+      ImGui_ImplVulkan_AddTexture(
+        screenSampler,
+        image->get_view().get_view(),
+        image->get_layout(VK_IMAGE_LAYOUT_GENERAL)
+      ),
+      size
+    );
+  }
+  ImGui::End();
 }

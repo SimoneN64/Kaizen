@@ -9,7 +9,9 @@ find_package(fmt REQUIRED)
 
 add_library(frontend-imgui STATIC
   Window.cpp
-  Window.hpp)
+  Window.hpp
+  widgets.cpp
+  debugger.hpp debugger.cpp)
 
 target_include_directories(frontend-imgui PUBLIC
   .
@@ -24,4 +26,4 @@ target_include_directories(frontend-imgui PUBLIC
   ../../../external/parallel-rdp/parallel-rdp-standalone/vulkan
   ../../../external/parallel-rdp/parallel-rdp-standalone/util
   ../../../external/parallel-rdp/parallel-rdp-standalone/volk)
-target_link_libraries(frontend-imgui PUBLIC SDL2main SDL2 imgui nfd fmt)
+target_link_libraries(frontend-imgui PUBLIC ws2_32 SDL2main SDL2 imgui nfd fmt)

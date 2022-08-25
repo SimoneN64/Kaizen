@@ -253,8 +253,9 @@ void UpdateScreen(n64::Core& core, Window& imguiWindow, Util::IntrusivePtr<Image
   Util::IntrusivePtr<CommandBuffer> cmd = wsi->get_device().request_command_buffer();
 
   cmd->begin_render_pass(wsi->get_device().get_swapchain_render_pass(SwapchainRenderPass::ColorOnly));
+  DrawFullscreenTexturedQuad(image, cmd);
 
-  ImGui_ImplVulkan_RenderDrawData(imguiWindow.Present(image, core), cmd->get_command_buffer());
+  ImGui_ImplVulkan_RenderDrawData(imguiWindow.Present(core), cmd->get_command_buffer());
 
   cmd->end_render_pass();
   wsi->get_device().submit(cmd);

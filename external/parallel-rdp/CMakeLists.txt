@@ -64,6 +64,7 @@ target_include_directories(parallel-rdp PUBLIC
   parallel-rdp-standalone
   ..
   ../../src/frontend
+  ../../src/frontend/imgui
   ../../src
   ../imgui
   ../imgui/imgui

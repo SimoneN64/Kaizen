@@ -3,10 +3,12 @@
 #include <Window.hpp>
 #include <algorithm>
 #include <util.hpp>
+#include <debugger.hpp>
 
 namespace n64 {
 Core::Core() {
   Stop();
+  DebuggerInit();
 }
 
 void Core::Stop() {
@@ -15,6 +17,7 @@ void Core::Stop() {
   pause = true;
   romLoaded = false;
   rom.clear();
+  DebuggerCleanup();
 }
 
 void Core::Reset() {
@@ -22,6 +25,8 @@ void Core::Reset() {
   mem.Reset();
   pause = true;
   romLoaded = false;
+  DebuggerCleanup();
+  DebuggerInit();
   if(!rom.empty()) {
     LoadROM(rom);
   }
@@ -32,6 +37,12 @@ void Core::LoadROM(const std::string& rom_) {
   mem.LoadROM(rom);
   pause = false;
   romLoaded = true;
+}
+
+void Core::Step() {
+  MMIO& mmio = mem.mmio;
+  cpu.Step(mem);
+  mmio.rsp.Step(mmio.mi, cpu.regs, mmio.rdp);
 }
 
 void Core::Run(Window& window) {
@@ -45,6 +56,16 @@ void Core::Run(Window& window) {
         }
 
         for(;cycles <= mmio.vi.cyclesPerHalfline; cycles++) {
+          #ifndef NDEBUG
+          if (debuggerState.enabled && CheckBreakpoint(debuggerState, cpu.regs.pc)) {
+            DebuggerBreakpointHit();
+          }
+
+          while (debuggerState.broken) {
+            SDL_Delay(1000);
+            DebuggerTick();
+          }
+          #endif
           cpu.Step(mem);
           mmio.rsp.Step(mmio.mi, cpu.regs, mmio.rdp);
           mmio.rsp.Step(mmio.mi, cpu.regs, mmio.rdp);
@@ -147,6 +168,51 @@ void Core::UpdateController(const u8* state) {
       controller.b3 = 0;
       controller.b4 = 0;
     }
+  }
+}
+
+void Core::DebuggerInit() {
+  gdbstub_config_t config;
+  memset(&config, 0, sizeof(gdbstub_config_t));
+  config.port                  = GDB_CPU_PORT;
+  config.user_data             = this;
+  config.start                 = (gdbstub_start_t) DebugStart;
+  config.stop                  = (gdbstub_stop_t) DebugStop;
+  config.step                  = (gdbstub_step_t) DebugStep;
+  config.set_breakpoint        = (gdbstub_set_breakpoint_t) DebugSetBreakpoint;
+  config.clear_breakpoint      = (gdbstub_clear_breakpoint_t) DebugClearBreakpoint;
+  config.get_memory            = (gdbstub_get_memory_t) DebugGetMemory;
+  config.get_register_value    = (gdbstub_get_register_value_t) DebugGetRegisterValue;
+  config.get_general_registers = (gdbstub_get_general_registers_t) DebugGetGeneralRegisters;
+
+  config.target_config = target_xml;
+  config.target_config_length = strlen(target_xml);
+
+  printf("Sizeof target: %zu\n", config.target_config_length);
+
+  config.memory_map = memory_map;
+  config.memory_map_length = strlen(memory_map);
+
+  printf("Sizeof memory map: %zu\n", config.memory_map_length);
+
+  debuggerState.gdb = gdbstub_init(config);
+  if (!debuggerState.gdb) {
+    util::panic("Failed to initialize GDB stub!");
+  }
+}
+
+void Core::DebuggerTick() const {
+  gdbstub_tick(debuggerState.gdb);
+}
+
+void Core::DebuggerBreakpointHit() {
+  debuggerState.broken = true;
+  gdbstub_breakpoint_hit(debuggerState.gdb);
+}
+
+void Core::DebuggerCleanup() const {
+  if (debuggerState.enabled) {
+    gdbstub_term(debuggerState.gdb);
   }
 }
 }

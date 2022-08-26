@@ -141,4 +141,5 @@ ImDrawData* Window::Present(n64::Core& core) {
 
 void Window::Render(n64::Core& core) {
   MainMenuBar(core);
+  DebuggerWindow(core);
 }

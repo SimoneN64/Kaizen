@@ -38,7 +38,7 @@ void Window::MainMenuBar(n64::Core& core) {
   ImGui::PopFont();
 }
 
-void Window::DebuggerWindow(n64::Core& core) {
+void Window::DebuggerWindow(n64::Core& core) const {
   ImGui::PushFont(uiFont);
   ImGui::Begin("Debugger");
   if(ImGui::Button("Step")) {

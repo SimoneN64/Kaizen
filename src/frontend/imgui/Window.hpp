@@ -21,7 +21,7 @@ private:
   void InitImgui();
   void Render(n64::Core& core);
   void MainMenuBar(n64::Core& core);
-  void DebuggerWindow(n64::Core& core);
+  void DebuggerWindow(n64::Core& core) const;
 
   VkPhysicalDevice physicalDevice{};
   VkDevice device{};

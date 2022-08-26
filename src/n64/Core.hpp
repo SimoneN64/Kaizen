@@ -19,11 +19,6 @@ struct Core {
   void TogglePause() { pause = !pause; }
   VI& GetVI() { return mem.mmio.vi; }
 
-  void DebuggerInit();
-  void DebuggerTick() const;
-  void DebuggerBreakpointHit();
-  void DebuggerCleanup() const;
-
   bool pause = true;
   bool romLoaded = false;
   SDL_GameController* gamepad;

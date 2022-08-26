@@ -1,149 +1,226 @@
 #pragma once
-#define GDBSTUB_IMPLEMENTATION
-#include <gdbstub.h>
 #include <util.hpp>
+#include <map>
+#include <functional>
 
 struct Core;
 
-#define GDB_CPU_PORT 1337
-
-struct Breakpoint {
-  u32 addr;
-  Breakpoint* next;
+const std::string gprStr[32] = {
+  "zero", "at", "v0", "v1",
+  "a0", "a1", "a2", "a3",
+  "t0", "t1", "t2", "t3",
+  "t4", "t5", "t6", "t7",
+  "s0", "s1", "s2", "s3",
+  "s4", "s5", "s6", "s7",
+  "t8", "t9", "k0", "k1",
+  "gp", "sp", "s8", "ra"
 };
 
-struct DebuggerState {
-  gdbstub_t* gdb;
-  bool broken;
-  int steps;
-  Breakpoint* breakpoints;
-  bool enabled;
-};
-
-inline bool CheckBreakpoint(DebuggerState& state, u32 addr) {
-  Breakpoint* cur = state.breakpoints;
-  while (cur != NULL) {
-    if (cur->addr == addr) {
-      util::print("Hit breakpoint at 0x{:08X}\n", addr);
-      return true;
-    }
-    cur = cur->next;
+std::string special(u32 instr) {
+  u8 mask = (instr & 0x3F);
+  u8 sa = (instr >> 6) & 0x1f;
+  switch (mask) { // TODO: named constants for clearer code
+    case 0:
+      if (mask != 0) {
+        return fmt::format("sll {}, {}, {:02X}", gprStr[RD(instr)], gprStr[RT(instr)], sa);
+      }
+      return "nop";
+    case 0x02: return fmt::format("srl {}, {}, {:02X}", gprStr[RD(instr)], gprStr[RT(instr)], sa);
+    case 0x03: return fmt::format("sra {}, {}, {:02X}", gprStr[RD(instr)], gprStr[RT(instr)], sa);
+    case 0x04: return fmt::format("sllv {}, {}, {}", gprStr[RD(instr)], gprStr[RT(instr)], gprStr[RS(instr)]);
+    case 0x06: return fmt::format("srlv {}, {}, {}", gprStr[RD(instr)], gprStr[RT(instr)], gprStr[RS(instr)]);
+    case 0x07: return fmt::format("srav {}, {}, {}", gprStr[RD(instr)], gprStr[RT(instr)], gprStr[RS(instr)]);
+    case 0x08: return fmt::format("jr {}", gprStr[RS(instr)]);
+    case 0x09: return fmt::format("jalr {}, {}", gprStr[RD(instr)], gprStr[RS(instr)]);
+    case 0x0C: return fmt::format("syscall");
+    case 0x0D: return fmt::format("break");
+    case 0x0F: return fmt::format("sync");
+    case 0x10: return fmt::format("mfhi {}", gprStr[RD(instr)]);
+    case 0x11: return fmt::format("mthi {}", gprStr[RS(instr)]);
+    case 0x12: return fmt::format("mflo {}", gprStr[RD(instr)]);
+    case 0x13: return fmt::format("mtlo {}", gprStr[RS(instr)]);
+    case 0x14: return fmt::format("dsllv {}, {}, {}", gprStr[RD(instr)], gprStr[RT(instr)], gprStr[RS(instr)]);
+    case 0x16: return fmt::format("dsrlv {}, {}, {}", gprStr[RD(instr)], gprStr[RT(instr)], gprStr[RS(instr)]);
+    case 0x17: return fmt::format("dsrav {}, {}, {}", gprStr[RD(instr)], gprStr[RT(instr)], gprStr[RS(instr)]);
+    case 0x18: return fmt::format("mult {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x19: return fmt::format("multu {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x1A: return fmt::format("div {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x1B: return fmt::format("divu {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x1C: return fmt::format("dmult {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x1D: return fmt::format("dmultu {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x1E: return fmt::format("ddiv {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x1F: return fmt::format("ddivu {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x20: return fmt::format("add {}, {}, {}", gprStr[RD(instr)], gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x21: return fmt::format("addu {}, {}, {}", gprStr[RD(instr)], gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x22: return fmt::format("sub {}, {}, {}", gprStr[RD(instr)], gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x23: return fmt::format("subu {}, {}, {}", gprStr[RD(instr)], gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x24: return fmt::format("and {}, {}, {}", gprStr[RD(instr)], gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x25: return fmt::format("or {}, {}, {}", gprStr[RD(instr)], gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x26: return fmt::format("xor {}, {}, {}", gprStr[RD(instr)], gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x27: return fmt::format("nor {}, {}, {}", gprStr[RD(instr)], gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x2A: return fmt::format("slt {}, {}, {}", gprStr[RD(instr)], gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x2B: return fmt::format("sltu {}, {}, {}", gprStr[RD(instr)], gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x2C: return fmt::format("dadd {}, {}, {}", gprStr[RD(instr)], gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x2D: return fmt::format("daddu {}, {}, {}", gprStr[RD(instr)], gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x2E: return fmt::format("dsub {}, {}, {}", gprStr[RD(instr)], gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x2F: return fmt::format("dsubu {}, {}, {}", gprStr[RD(instr)], gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x34: return fmt::format("teq {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+    case 0x38: return fmt::format("dsll {}, {}, {:02X}", gprStr[RD(instr)], gprStr[RS(instr)], sa);
+    case 0x3A: return fmt::format("dsrl {}, {}, {:02X}", gprStr[RD(instr)], gprStr[RS(instr)], sa);
+    case 0x3B: return fmt::format("dsra {}, {}, {:02X}", gprStr[RD(instr)], gprStr[RS(instr)], sa);
+    case 0x3C: return fmt::format("dsll32 {}, {}, {:02X}", gprStr[RD(instr)], gprStr[RS(instr)], sa);
+    case 0x3E: return fmt::format("dsrl32 {}, {}, {:02X}", gprStr[RD(instr)], gprStr[RS(instr)], sa);
+    case 0x3F: return fmt::format("dsra32 {}, {}, {:02X}", gprStr[RD(instr)], gprStr[RS(instr)], sa);
+    default:
+      return fmt::format("INVALID ({:08X})\n", instr);
   }
-  return false;
 }
 
-const char* target_xml =
-  "<?xml version=\"1.0\"?>"
-  "<!DOCTYPE feature SYSTEM \"gdb-target.dtd\">"
-  "<target version=\"1.0\">"
-  "<architecture>mips:4000</architecture>"
-  "<osabi>none</osabi>"
-  "<feature name=\"org.gnu.gdb.mips.cpu\">"
-  "  <reg name=\"r0\" bitsize=\"64\" regnum=\"0\"/>"
-  "  <reg name=\"r1\" bitsize=\"64\"/>"
-  "  <reg name=\"r2\" bitsize=\"64\"/>"
-  "  <reg name=\"r3\" bitsize=\"64\"/>"
-  "  <reg name=\"r4\" bitsize=\"64\"/>"
-  "  <reg name=\"r5\" bitsize=\"64\"/>"
-  "  <reg name=\"r6\" bitsize=\"64\"/>"
-  "  <reg name=\"r7\" bitsize=\"64\"/>"
-  "  <reg name=\"r8\" bitsize=\"64\"/>"
-  "  <reg name=\"r9\" bitsize=\"64\"/>"
-  "  <reg name=\"r10\" bitsize=\"64\"/>"
-  "  <reg name=\"r11\" bitsize=\"64\"/>"
-  "  <reg name=\"r12\" bitsize=\"64\"/>"
-  "  <reg name=\"r13\" bitsize=\"64\"/>"
-  "  <reg name=\"r14\" bitsize=\"64\"/>"
-  "  <reg name=\"r15\" bitsize=\"64\"/>"
-  "  <reg name=\"r16\" bitsize=\"64\"/>"
-  "  <reg name=\"r17\" bitsize=\"64\"/>"
-  "  <reg name=\"r18\" bitsize=\"64\"/>"
-  "  <reg name=\"r19\" bitsize=\"64\"/>"
-  "  <reg name=\"r20\" bitsize=\"64\"/>"
-  "  <reg name=\"r21\" bitsize=\"64\"/>"
-  "  <reg name=\"r22\" bitsize=\"64\"/>"
-  "  <reg name=\"r23\" bitsize=\"64\"/>"
-  "  <reg name=\"r24\" bitsize=\"64\"/>"
-  "  <reg name=\"r25\" bitsize=\"64\"/>"
-  "  <reg name=\"r26\" bitsize=\"64\"/>"
-  "  <reg name=\"r27\" bitsize=\"64\"/>"
-  "  <reg name=\"r28\" bitsize=\"64\"/>"
-  "  <reg name=\"r29\" bitsize=\"64\"/>"
-  "  <reg name=\"r30\" bitsize=\"64\"/>"
-  "  <reg name=\"r31\" bitsize=\"64\"/>"
-  "  <reg name=\"lo\" bitsize=\"64\" regnum=\"33\"/>"
-  "  <reg name=\"hi\" bitsize=\"64\" regnum=\"34\"/>"
-  "  <reg name=\"pc\" bitsize=\"64\" regnum=\"37\"/>"
-  "</feature>"
-  "<feature name=\"org.gnu.gdb.mips.cp0\">"
-  "  <reg name=\"status\" bitsize=\"32\" regnum=\"32\"/>"
-  "  <reg name=\"badvaddr\" bitsize=\"32\" regnum=\"35\"/>"
-  "  <reg name=\"cause\" bitsize=\"32\" regnum=\"36\"/>"
-  "  </feature>"
-  "<!-- TODO fix the sizes here. How do we deal with configurable sizes? -->"
-  "<feature name=\"org.gnu.gdb.mips.fpu\">"
-  "  <reg name=\"f0\" bitsize=\"32\" type=\"ieee_single\" regnum=\"38\"/>"
-  "  <reg name=\"f1\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f2\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f3\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f4\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f5\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f6\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f7\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f8\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f9\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f10\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f11\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f12\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f13\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f14\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f15\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f16\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f17\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f18\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f19\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f20\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f21\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f22\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f23\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f24\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f25\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f26\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f27\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f28\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f29\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f30\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"f31\" bitsize=\"32\" type=\"ieee_single\"/>"
-  "  <reg name=\"fcsr\" bitsize=\"32\" group=\"float\"/>"
-  "  <reg name=\"fir\" bitsize=\"32\" group=\"float\"/>"
-  "</feature>"
-  "</target>";
+std::string regimm(u32 instr) {
+  u8 mask = ((instr >> 16) & 0x1F);
+  // 000r_rccc
+  switch (mask) { // TODO: named constants for clearer code
+    case 0x00: return fmt::format("bltz {}", gprStr[RS(instr)]);
+    case 0x01: return fmt::format("bgez {}", gprStr[RS(instr)]);
+    case 0x02: return fmt::format("bltzl {}", gprStr[RS(instr)]);
+    case 0x03: return fmt::format("bgezl {}", gprStr[RS(instr)]);
+    case 0x10: return fmt::format("bltzal {}", gprStr[RS(instr)]);
+    case 0x11: return fmt::format("bgezal {}", gprStr[RS(instr)]);
+    case 0x12: return fmt::format("bltzall {}", gprStr[RS(instr)]);
+    case 0x13: return fmt::format("bgezall {}", gprStr[RS(instr)]);
+    default:   return fmt::format("INVALID {:08X}", instr);
+  }
+}
 
-const char* memory_map =
-  "<?xml version=\"1.0\"?>"
-  "<memory-map>"
-  "<!-- KUSEG - TLB mapped, treat it as a giant block of RAM. Not ideal, but not sure how else to deal with it -->"
-  "<memory type=\"ram\" start=\"0x0000000000000000\" length=\"0x80000000\"/>"
+const std::map<u8, std::function<std::string(u32)>> cpuInstr = {
+  {0b000000, special},
+  {0b000001, regimm},
+  {0b000010, [](u32 instr) {
+    return fmt::format("j {:08X}", instr & 0x3FFFFFF);
+  }}, {0b000011, [](u32 instr) {
+    return fmt::format("jal {:08X}", instr & 0x3FFFFFF);
+  }}, {0b000100, [](u32 instr) {
+    return fmt::format("beq {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+  }}, {0b000101, [](u32 instr) {
+    return fmt::format("bne {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+  }}, {0b000110, [](u32 instr) {
+    return fmt::format("blez {}", gprStr[RS(instr)]);
+  }}, {0b000111, [](u32 instr) {
+    return fmt::format("bgtz {}", gprStr[RS(instr)]);
+  }}, {0b001000, [](u32 instr) {
+    return fmt::format("addi {}, {:04X}", gprStr[RS(instr)], instr & 0xFFFF);
+  }}, {0b001001, [](u32 instr) {
+    return fmt::format("addiu {}, {:04X}", gprStr[RS(instr)], instr & 0x3FFFFFF);
+  }}, {0b001010, [](u32 instr) {
+    return fmt::format("slti {}, {}, {:04X}", gprStr[RT(instr)], gprStr[RS(instr)], instr & 0xFFFF);
+  }}, {0b001011, [](u32 instr) {
+    return fmt::format("sltiu {}, {}, {:04X}", gprStr[RT(instr)], gprStr[RS(instr)], instr & 0xFFFF);
+  }}, {0b001100, [](u32 instr) {
+    return fmt::format("andi {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+  }}, {0b001101, [](u32 instr) {
+    return fmt::format("ori {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+  }}, {0b001110, [](u32 instr) {
+    return fmt::format("xori {}", gprStr[RS(instr)]);
+  }}, {0b001111, [](u32 instr) {
+    return fmt::format("lui {}", gprStr[RS(instr)]);
+  }}, {0b010000, /*cop0decode*/ },
+      {0b010001, [](u32 instr) {
+    return fmt::format("j {:08X}", instr & 0x3FFFFFF);
+  }}, {0b010010, [](u32 instr) {
+    return fmt::format("j {:08X}", instr & 0x3FFFFFF);
+  }}, {0b010011, [](u32 instr) {
+    return fmt::format("jal {:08X}", instr & 0x3FFFFFF);
+  }}, {0b010100, [](u32 instr) {
+    return fmt::format("beq {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+  }}, {0b010101, [](u32 instr) {
+    return fmt::format("bne {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+  }}, {0b010110, [](u32 instr) {
+    return fmt::format("blez {}", gprStr[RS(instr)]);
+  }}, {0b010111, [](u32 instr) {
+    return fmt::format("bgtz {}", gprStr[RS(instr)]);
+  }}, {0b011000, [](u32 instr) {
+    return fmt::format("j {:08X}", instr & 0x3FFFFFF);
+  }}, {0b011001, [](u32 instr) {
+    return fmt::format("j {:08X}", instr & 0x3FFFFFF);
+  }}, {0b011010, [](u32 instr) {
+    return fmt::format("j {:08X}", instr & 0x3FFFFFF);
+  }}, {0b011011, [](u32 instr) {
+    return fmt::format("jal {:08X}", instr & 0x3FFFFFF);
+  }}, {0b011100, [](u32 instr) {
+    return fmt::format("beq {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+  }}, {0b011101, [](u32 instr) {
+    return fmt::format("bne {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+  }}, {0b011110, [](u32 instr) {
+    return fmt::format("blez {}", gprStr[RS(instr)]);
+  }}, {0b011111, [](u32 instr) {
+    return fmt::format("bgtz {}", gprStr[RS(instr)]);
+  }}, {0b100000, [](u32 instr) {
+    return fmt::format("j {:08X}", instr & 0x3FFFFFF);
+  }}, {0b100001, [](u32 instr) {
+    return fmt::format("j {:08X}", instr & 0x3FFFFFF);
+  }}, {0b100010, [](u32 instr) {
+    return fmt::format("j {:08X}", instr & 0x3FFFFFF);
+  }}, {0b100011, [](u32 instr) {
+    return fmt::format("jal {:08X}", instr & 0x3FFFFFF);
+  }}, {0b100100, [](u32 instr) {
+    return fmt::format("beq {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+  }}, {0b100101, [](u32 instr) {
+    return fmt::format("bne {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+  }}, {0b100110, [](u32 instr) {
+    return fmt::format("blez {}", gprStr[RS(instr)]);
+  }}, {0b100111, [](u32 instr) {
+    return fmt::format("bgtz {}", gprStr[RS(instr)]);
+  }}, {0b101000, [](u32 instr) {
+    return fmt::format("j {:08X}", instr & 0x3FFFFFF);
+  }}, {0b101001, [](u32 instr) {
+    return fmt::format("j {:08X}", instr & 0x3FFFFFF);
+  }}, {0b101010, [](u32 instr) {
+    return fmt::format("j {:08X}", instr & 0x3FFFFFF);
+  }}, {0b101011, [](u32 instr) {
+    return fmt::format("jal {:08X}", instr & 0x3FFFFFF);
+  }}, {0b101100, [](u32 instr) {
+    return fmt::format("beq {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+  }}, {0b101101, [](u32 instr) {
+    return fmt::format("bne {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+  }}, {0b101110, [](u32 instr) {
+    return fmt::format("blez {}", gprStr[RS(instr)]);
+  }}, {0b101111, [](u32 instr) {
+    return fmt::format("bgtz {}", gprStr[RS(instr)]);
+  }}, {0b110000, [](u32 instr) {
+    return fmt::format("j {:08X}", instr & 0x3FFFFFF);
+  }}, {0b110001, [](u32 instr) {
+    return fmt::format("j {:08X}", instr & 0x3FFFFFF);
+  }}, {0b110010, [](u32 instr) {
+    return fmt::format("j {:08X}", instr & 0x3FFFFFF);
+  }}, {0b110011, [](u32 instr) {
+    return fmt::format("jal {:08X}", instr & 0x3FFFFFF);
+  }}, {0b110100, [](u32 instr) {
+    return fmt::format("beq {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+  }}, {0b110101, [](u32 instr) {
+    return fmt::format("bne {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+  }}, {0b110110, [](u32 instr) {
+    return fmt::format("blez {}", gprStr[RS(instr)]);
+  }}, {0b110111, [](u32 instr) {
+    return fmt::format("bgtz {}", gprStr[RS(instr)]);
+  }}, {0b111000, [](u32 instr) {
+    return fmt::format("j {:08X}", instr & 0x3FFFFFF);
+  }}, {0b111001, [](u32 instr) {
+    return fmt::format("j {:08X}", instr & 0x3FFFFFF);
+  }}, {0b111010, [](u32 instr) {
+    return fmt::format("j {:08X}", instr & 0x3FFFFFF);
+  }}, {0b111011, [](u32 instr) {
+    return fmt::format("jal {:08X}", instr & 0x3FFFFFF);
+  }}, {0b111100, [](u32 instr) {
+    return fmt::format("beq {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+  }}, {0b111101, [](u32 instr) {
+    return fmt::format("bne {}, {}", gprStr[RS(instr)], gprStr[RT(instr)]);
+  }}, {0b111110, [](u32 instr) {
+    return fmt::format("blez {}", gprStr[RS(instr)]);
+  }}, {0b111111, [](u32 instr) {
+    return fmt::format("bgtz {}", gprStr[RS(instr)]);
+  }}
+};
 
-  "<!-- KSEG0 hardware mapped, full copy of the memory map goes here -->" // TODO finish
-  "<memory type=\"ram\" start=\"0xffffffff80000000\" length=\"0x800000\"/>" // RDRAM
-  "<memory type=\"ram\" start=\"0xffffffff84000000\" length=\"0x1000\"/>" // RSP DMEM
-  "<memory type=\"ram\" start=\"0xffffffff84001000\" length=\"0x1000\"/>" // RSP IMEM
-  "<memory type=\"rom\" start=\"0xffffffff9fc00000\" length=\"0x7c0\"/>" // PIF ROM
+struct Debugger {
 
-  "<!-- KSEG1 hardware mapped, full copy of the memory map goes here -->" // TODO finish
-  "<memory type=\"ram\" start=\"0xffffffffa0000000\" length=\"0x800000\"/>" // RDRAM
-  "<memory type=\"ram\" start=\"0xffffffffa4000000\" length=\"0x1000\"/>" // RSP DMEM
-  "<memory type=\"ram\" start=\"0xffffffffa4001000\" length=\"0x1000\"/>" // RSP IMEM
-  "<memory type=\"rom\" start=\"0xffffffffbfc00000\" length=\"0x7c0\"/>" // PIF ROM
-  "</memory-map>";
-
-
-void DebugStart(void* user_data);
-void DebugStop(void* user_data);
-void DebugStep(void* user_data);
-void DebugSetBreakpoint(void* user_data, u32 address);
-void DebugClearBreakpoint(void* user_data, u32 address);
-ssize_t DebugGetMemory(void* user_data, char* buffer, size_t length, u32 address, size_t bytes);
-ssize_t DebugGetRegisterValue(void* user_data, char * buffer, size_t buffer_length, int reg);
-ssize_t DebugGetGeneralRegisters(void* user_data, char * buffer, size_t buffer_length);
+};

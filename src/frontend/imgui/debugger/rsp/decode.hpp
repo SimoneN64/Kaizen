@@ -22,8 +22,8 @@ inline std::string rspSpecial(u32 instr) {
 inline std::string rspRegimm(u32 instr) {
   u8 mask = ((instr >> 16) & 0x1F);
   switch(mask) {
-    case 0x00: return fmt::format("[rsp]: bltz {}", gprStr[RS(instr)]);
-    case 0x01: return fmt::format("[rsp]: bgez {}", gprStr[RS(instr)]);
+    case 0x00: return fmt::format("[rsp]: bltz {}, {:04X}", gprStr[RS(instr)], instr & 0xffff);
+    case 0x01: return fmt::format("[rsp]: bgez {}, {:04X}", gprStr[RS(instr)], instr & 0xffff);
     default: return fmt::format("INVALID ({:08X})", instr);
   }
 }
@@ -31,7 +31,7 @@ inline std::string rspRegimm(u32 instr) {
 inline std::string lwc2(u32 instr) {
   u8 mask = (instr >> 11) & 0x1F;
   switch(mask) {
-    case 0x04: return fmt::format("lqv", instr);
+    case 0x04: return fmt::format("[rsp]: lqv {}[{}], {:02X}({})", vprStr[VT(instr)], vprByteStr[BYTE_INDEX(E(instr))], instr & 0x7F, gprStr[BASE(instr)]);
     default: return fmt::format("INVALID ({:08X})", instr);
   }
 }
@@ -39,7 +39,7 @@ inline std::string lwc2(u32 instr) {
 inline std::string swc2(u32 instr) {
   u8 mask = (instr >> 11) & 0x1F;
   switch(mask) {
-    //case 0x04: rsp.sqv(instr); break;
+    case 0x04: return fmt::format("[rsp]: sqv {}[{}], {:02X}({})", vprStr[VT(instr)], vprByteStr[BYTE_INDEX(E(instr))], instr & 0x7F, gprStr[BASE(instr)]);
     default: return fmt::format("INVALID ({:08X})", instr);
   }
 }
@@ -50,15 +50,15 @@ inline std::string cop2decode(u32 instr) {
   switch(mask) {
     case 0x00:
       switch(mask_sub) {
-        //case 0x02: rsp.cfc2(instr); break;
+        case 0x02: return fmt::format("[rsp]: cfc2 {}, {}", gprStr[RT(instr)], rspControlStr[RD(instr) & 3]);
         default: return fmt::format("INVALID ({:08X})", instr);
       }
       break;
-      //case 0x13: rsp.vabs(instr); break;
-      //case 0x1D: rsp.vsar(instr); break;
-      //case 0x21: rsp.veq(instr); break;
-      //case 0x22: rsp.vne(instr); break;
-      //case 0x33: rsp.vmov(instr); break;
+      case 0x13: return fmt::format("[rsp]: vabs {}, {}, {}", vprStr[VD(instr)], vprStr[VS(instr)], vprStr[VT(instr)]);
+      case 0x1D: return fmt::format("[rsp]: vsar {}, {}, {}", vprStr[VD(instr)], vprStr[VS(instr)], vprStr[VT(instr)]);
+      case 0x21: return fmt::format("[rsp]: veq {}, {}, {}", vprStr[VD(instr)], vprStr[VS(instr)], vprStr[VT(instr)]);
+      case 0x22: return fmt::format("[rsp]: vne {}, {}, {}", vprStr[VD(instr)], vprStr[VS(instr)], vprStr[VT(instr)]);
+      case 0x33: return fmt::format("[rsp]: vmov {}[{}], {}[{}]", vprStr[VD(instr)], vprElementStr[DE(instr)], vprStr[VT(instr)], vprElementStr[E(instr)]);
     default: return fmt::format("INVALID ({:08X})", instr);
   }
 }
@@ -66,8 +66,8 @@ inline std::string cop2decode(u32 instr) {
 inline std::string rspCop0Decode(u32 instr) {
   u8 mask = (instr >> 21) & 0x1F;
   switch(mask) {
-    //case 0x00: rsp.mfc0(rdp, instr); break;
-    //case 0x04: rsp.mtc0(mi, regs, rdp, instr); break;
+    case 0x00: return fmt::format("[rsp]: mfc0 {}, {}", gprStr[RT(instr)], cop0Str[RD(instr)]);
+    case 0x04: return fmt::format("[rsp]: mtc0 {}, {}", gprStr[RT(instr)], cop0Str[RD(instr)]);
     default: return fmt::format("INVALID ({:08X})", instr);
   }
 }
@@ -79,9 +79,9 @@ inline std::string rspDecode(u32 instr) {
     case 0x01: return regimm(instr);
     case 0x02: return fmt::format("[rsp]: j {:04X}", instr & 0xffff);
     case 0x03: return fmt::format("[rsp]: jal {:04X}", instr & 0xffff);
-    case 0x04: return fmt::format("[rsp]: beq {}, {}", gprStr[RT(instr)], gprStr[RS(instr)]);
-    case 0x05: return fmt::format("[rsp]: bne {}, {}", gprStr[RT(instr)], gprStr[RS(instr)]);
-    case 0x07: return fmt::format("[rsp]: bgtz {}", gprStr[RS(instr)]);
+    case 0x04: return fmt::format("[rsp]: beq {}, {}, {:04X}", gprStr[RT(instr)], gprStr[RS(instr)], instr & 0xffff);
+    case 0x05: return fmt::format("[rsp]: bne {}, {}, {:04X}", gprStr[RT(instr)], gprStr[RS(instr)], instr & 0xffff);
+    case 0x07: return fmt::format("[rsp]: bgtz {}, {:04X}", gprStr[RS(instr)], instr & 0xffff);
     case 0x08: case 0x09:
       return fmt::format("[rsp]: addi {}, {}, {:04X}", gprStr[RT(instr)], gprStr[RS(instr)], instr & 0xffff);
     case 0x0C: return fmt::format("[rsp]: andi {}, {}, {:04X}", instr);

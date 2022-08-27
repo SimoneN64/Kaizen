@@ -41,9 +41,9 @@ void Window::MainMenuBar(n64::Core& core) {
 void Window::DebuggerWindow(n64::Core& core) const {
   ImGui::PushFont(uiFont);
   ImGui::Begin("Debugger");
-  if(ImGui::Button("Step")) {
-    core.debuggerState.gdb->config.step(&core);
-  }
+  ImGui::PushFont(codeFont);
+  ImGui::Text("%s", core.Decode(core.mem.Read<u32>(core.cpu.regs, core.cpu.regs.pc, core.cpu.regs.pc)).c_str());
+  ImGui::PopFont();
   ImGui::End();
   ImGui::PopFont();
 }

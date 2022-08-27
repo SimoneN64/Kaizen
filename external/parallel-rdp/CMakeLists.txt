@@ -65,6 +65,7 @@ target_include_directories(parallel-rdp PUBLIC
   ..
   ../../src/frontend
   ../../src/frontend/imgui
+  ../../src/frontend/imgui/debugger
   ../../src
   ../imgui
   ../imgui/imgui

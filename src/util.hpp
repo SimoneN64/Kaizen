@@ -152,7 +152,7 @@ struct CircularBuffer {
   CircularBuffer() : head(0) {
     memset(raw.data(), 0, size * sizeof(T));
   }
-
+  // make it scroll
   void PushValue(T val) {
     raw[head] = val;
     head++;

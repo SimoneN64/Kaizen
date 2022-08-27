@@ -23,7 +23,6 @@ struct Core {
   bool romLoaded = false;
   SDL_GameController* gamepad;
   bool gamepadConnected = false;
-  DebuggerState debuggerState;
   bool done = false;
   std::string rom;
   Mem mem;

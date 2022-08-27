@@ -65,14 +65,14 @@ inline std::string regimm(u32 instr) {
   u8 mask = ((instr >> 16) & 0x1F);
   // 000r_rccc
   switch (mask) { // TODO: named constants for clearer code
-    case 0x00: return fmt::format("bltz {}", gprStr[RS(instr)]);
-    case 0x01: return fmt::format("bgez {}", gprStr[RS(instr)]);
-    case 0x02: return fmt::format("bltzl {}", gprStr[RS(instr)]);
-    case 0x03: return fmt::format("bgezl {}", gprStr[RS(instr)]);
-    case 0x10: return fmt::format("bltzal {}", gprStr[RS(instr)]);
-    case 0x11: return fmt::format("bgezal {}", gprStr[RS(instr)]);
-    case 0x12: return fmt::format("bltzall {}", gprStr[RS(instr)]);
-    case 0x13: return fmt::format("bgezall {}", gprStr[RS(instr)]);
+    case 0x00: return fmt::format("bltz {}, {:04X}", gprStr[RS(instr)], instr & 0xffff);
+    case 0x01: return fmt::format("bgez {}, {:04X}", gprStr[RS(instr)], instr & 0xffff);
+    case 0x02: return fmt::format("bltzl {}, {:04X}", gprStr[RS(instr)], instr & 0xffff);
+    case 0x03: return fmt::format("bgezl {}, {:04X}", gprStr[RS(instr)], instr & 0xffff);
+    case 0x10: return fmt::format("bltzal {}, {:04X}", gprStr[RS(instr)], instr & 0xffff);
+    case 0x11: return fmt::format("bgezal {}, {:04X}", gprStr[RS(instr)], instr & 0xffff);
+    case 0x12: return fmt::format("bltzall {}, {:04X}", gprStr[RS(instr)], instr & 0xffff);
+    case 0x13: return fmt::format("bgezall {}, {:04X}", gprStr[RS(instr)], instr & 0xffff);
     default:   return fmt::format("INVALID ({:08X})", instr);
   }
 }

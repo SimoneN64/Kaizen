@@ -87,17 +87,13 @@ union SPDMADRAMAddr {
 union VPR {
   s16 selement[8];
   u16 element[8];
-  u8 byte[8];
+  u8 byte[16];
   u32 word[4];
 };
 
 struct Mem;
 struct Registers;
 
-#define VT(x) (((x) >> 16) & 0x1F)
-#define VS(x) (((x) >> 11) & 0x1F)
-#define VD(x) (((x) >> 6) & 0x1F)
-#define E(x) (((x) >> 21) & 0x1F)
 #define DE(x) (((x) >> 11) & 0x1F)
 #define CLEAR_SET(val, clear, set) do { \
   if(clear) (val) = 0; \

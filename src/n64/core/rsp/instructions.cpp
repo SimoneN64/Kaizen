@@ -3,10 +3,6 @@
 #include <n64/core/cpu/Registers.hpp>
 
 namespace n64 {
-
-#define ELEMENT_INDEX(i) (7 - (i))
-#define BYTE_INDEX(i) (15 - (i))
-
 inline bool AcquireSemaphore(RSP& rsp) {
   if(rsp.semaphore) {
     return true;

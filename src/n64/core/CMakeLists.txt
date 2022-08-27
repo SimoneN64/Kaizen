@@ -45,13 +45,12 @@ target_include_directories(core PUBLIC
   .
   ..
   ../..
+  ../../frontend/imgui/debugger
   ../../../external
   ../../../external/imgui/imgui
+  ../../../external/imgui/imgui/debugger
   ../../../external/imgui/imgui/backends
   ../../../external/capstone/include
   mmio)
 
 target_link_libraries(core PUBLIC SDL2main SDL2 fmt cpu parallel-rdp capstone)
-if(WIN32)
-
-endif()

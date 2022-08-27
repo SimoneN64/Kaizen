@@ -11,10 +11,17 @@ add_library(frontend-imgui STATIC
   Window.cpp
   Window.hpp
   widgets.cpp
-  debugger.hpp debugger.cpp)
+  debugger.hpp
+  debugger.cpp
+  debugger/cpu/decode.hpp
+  debugger/cop0/decode.hpp
+  debugger/fpu/decode.hpp
+  debugger/rsp/decode.hpp
+  debugger/debugger_common.hpp)
 
 target_include_directories(frontend-imgui PUBLIC
   .
+  debugger
   ../..
   ../../n64
   ../../n64/core

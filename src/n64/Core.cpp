@@ -8,7 +8,6 @@
 namespace n64 {
 Core::Core() {
   Stop();
-  DebuggerInit();
 }
 
 void Core::Stop() {
@@ -17,7 +16,6 @@ void Core::Stop() {
   pause = true;
   romLoaded = false;
   rom.clear();
-  DebuggerCleanup();
 }
 
 void Core::Reset() {
@@ -25,8 +23,6 @@ void Core::Reset() {
   mem.Reset();
   pause = true;
   romLoaded = false;
-  DebuggerCleanup();
-  DebuggerInit();
   if(!rom.empty()) {
     LoadROM(rom);
   }

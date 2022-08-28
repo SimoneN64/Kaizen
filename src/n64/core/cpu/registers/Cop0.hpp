@@ -2,7 +2,7 @@
 #include <common.hpp>
 
 namespace n64 {
-#define STATUS_MASK 0xFF77FFFF
+#define STATUS_MASK 0xFF57FFFF
 
 struct Cpu;
 struct Registers;
@@ -160,6 +160,12 @@ struct Cop0 {
   void SetReg(u8, T);
 
   void Reset();
+
+  bool kernel_mode;
+  bool supervisor_mode;
+  bool user_mode;
+  bool is_64bit_addressing;
+  bool llbit;
 
   PageMask pageMask{};
   EntryHi entryHi{};

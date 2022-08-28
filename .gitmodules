@@ -4,7 +4,3 @@
 [submodule "external/nativefiledialog-extended"]
 	path = external/nativefiledialog-extended
 	url = https://github.com/btzy/nativefiledialog-extended
-[submodule "external/capstone"]
-	path = external/capstone
-	url = https://github.com/capstone-engine/capstone
-	branch = next

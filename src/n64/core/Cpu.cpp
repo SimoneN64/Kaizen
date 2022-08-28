@@ -8,20 +8,6 @@ void Cpu::Reset() {
   regs.Reset();
 }
 
-Cpu::Cpu() {
-  if (cs_open(CS_ARCH_MIPS, CS_MODE_MIPS64, &handle)) {
-    util::panic("Could not initialize capstone!\n");
-  }
-
-  if (cs_option(handle, CS_OPT_UNSIGNED, CS_OPT_ON)) {
-    util::panic("Could not initialize capstone!\n");
-  }
-}
-
-Cpu::~Cpu() {
-  cs_close(&handle);
-}
-
 inline bool ShouldServiceInterrupt(Registers& regs) {
   bool interrupts_pending = (regs.cop0.status.im & regs.cop0.cause.interruptPending) != 0;
   bool interrupts_enabled = regs.cop0.status.ie == 1;
@@ -37,7 +23,7 @@ inline void CheckCompareInterrupt(MI& mi, Registers& regs) {
   regs.cop0.count &= 0x1FFFFFFFF;
   if(regs.cop0.count == (u64)regs.cop0.compare << 1) {
     regs.cop0.cause.ip7 = 1;
-    UpdateInterrupt(mi, regs);
+    //UpdateInterrupt(mi, regs);
   }
 }
 
@@ -55,7 +41,7 @@ void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc) {
   bool old_exl = regs.cop0.status.exl;
 
   if(!regs.cop0.status.exl) {
-    if(regs.prevDelaySlot) { // TODO: cached value of delay_slot should be used, but Namco Museum breaks!
+    if(regs.delaySlot) { // TODO: cached value of delay_slot should be used, but Namco Museum breaks!
       regs.cop0.cause.branchDelay = true;
       pc -= 4;
     } else {
@@ -102,31 +88,15 @@ inline void HandleInterrupt(Registers& regs) {
   }
 }
 
-void Cpu::LogInstruction(u32 instruction) {
-#ifndef NDEBUG
-  count = cs_disasm(handle, reinterpret_cast<u8*>(&instruction), 4, regs.pc, 0, &insn);
-#endif
-
-  if (count > 0) {
-    for(auto j = 0; j < count; j++) {
-      util::logdebug("0x{:016X}:\t{}\t\t{}\n", insn[j].address, insn[j].mnemonic, insn[j].op_str);
-    }
-    cs_free(insn, count);
-  } else {
-    util::logdebug("Failed to disassemble 0x{:08X}!", instruction);
-  }
-}
-
 void Cpu::Step(Mem& mem) {
   regs.gpr[0] = 0;
+
+  CheckCompareInterrupt(mem.mmio.mi, regs);
 
   regs.prevDelaySlot = regs.delaySlot;
   regs.delaySlot = false;
 
-  CheckCompareInterrupt(mem.mmio.mi, regs);
-
   u32 instruction = mem.Read<u32>(regs, regs.pc, regs.pc);
-  //LogInstruction(instruction);
 
   HandleInterrupt(regs);
 

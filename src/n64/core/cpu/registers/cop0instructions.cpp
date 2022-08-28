@@ -27,6 +27,7 @@ void Cop0::eret(Registers& regs) {
     regs.SetPC((s64)EPC);
     status.exl = false;
   }
+  llbit = false;
 }
 
 

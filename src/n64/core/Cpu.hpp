@@ -1,22 +1,17 @@
 #pragma once
 #include <Registers.hpp>
 #include <Mem.hpp>
-#include <capstone/capstone.h>
 
 namespace n64 {
 struct Cpu {
-  Cpu();
-  ~Cpu();
+  Cpu() = default;
+  ~Cpu() = default;
   void Reset();
   void Step(Mem&);
   Registers regs;
 private:
-  csh handle{};
-  cs_insn *insn = nullptr;
-  size_t count{};
   friend struct Cop1;
 
-  void LogInstruction(u32);
   void special(Mem&, u32);
   void regimm(u32);
   void Exec(Mem&, u32);

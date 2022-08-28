@@ -20,7 +20,7 @@ void Cpu::special(Mem& mem, u32 instr) {
     case 0x09: jalr(instr); break;
     case 0x0C: FireException(regs, ExceptionCode::Syscall, 0, regs.oldPC); break;
     case 0x0D: FireException(regs, ExceptionCode::Breakpoint, 0, regs.oldPC); break;
-    case 0x0F: break;
+    case 0x0F: break; // SYNC
     case 0x10: mfhi(instr); break;
     case 0x11: mthi(instr); break;
     case 0x12: mflo(instr); break;
@@ -58,7 +58,7 @@ void Cpu::special(Mem& mem, u32 instr) {
     case 0x3E: dsrl32(instr); break;
     case 0x3F: dsra32(instr); break;
     default:
-      util::panic("Unimplemented special {} {}", (mask >> 3) & 7, mask & 7);
+      util::panic("Unimplemented special {} {} (pc: {:+016X})", (mask >> 3) & 7, mask & 7, regs.oldPC);
   }
 }
 

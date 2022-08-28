@@ -11,7 +11,6 @@ target_include_directories(frontend PUBLIC
   .
   ..
   ../../external
-  ../../external/capstone/include
   ../../external/parallel-rdp
   ../../external/parallel-rdp/parallel-rdp-standalone/vulkan
   ../../external/parallel-rdp/parallel-rdp-standalone/util

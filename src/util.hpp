@@ -19,6 +19,7 @@ enum MessageType : u8 {
 
 template <MessageType messageType = Info, typename ...Args>
 constexpr void print(const std::string& fmt, Args... args) {
+#ifndef __WIN32
   if constexpr(messageType == Error) {
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red), fmt, args...);
     exit(-1);
@@ -27,6 +28,14 @@ constexpr void print(const std::string& fmt, Args... args) {
   } else if constexpr(messageType == Info) {
     fmt::print(fmt, args...);
   }
+#else
+  if constexpr(messageType == Error) {
+    fmt::print(fmt, args...);
+    exit(-1);
+  } else {
+    fmt::print(fmt, args...);
+  }
+#endif
 }
 
 template <typename ...Args>

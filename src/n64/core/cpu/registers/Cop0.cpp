@@ -82,7 +82,10 @@ void Cop0::SetReg(u8 addr, T value) {
       cause.ip7 = 0;
       compare = value;
     } break;
-    case 12: status.raw = value & STATUS_MASK; break;
+    case 12:
+      status.raw &= ~STATUS_MASK;
+      status.raw |= value & STATUS_MASK;
+      break;
     case 13: {
       Cop0Cause tmp{};
       tmp.raw = value;
@@ -220,7 +223,9 @@ void Cop0::decode(Registers& regs, Mem& mem, u32 instr) {
         case 0x01: tlbr(regs); break;
         case 0x02: tlbwi(regs); break;
         case 0x08: tlbp(regs); break;
-        case 0x18: eret(regs); break;
+        case 0x18:
+          eret(regs);
+          break;
         default: util::panic("Unimplemented COP0 function {} {} ({:08X}) ({:016lX})", mask_cop2 >> 3, mask_cop2 & 7, instr, regs.oldPC);
       }
       break;

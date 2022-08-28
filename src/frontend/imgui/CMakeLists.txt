@@ -9,15 +9,7 @@ find_package(fmt REQUIRED)
 
 add_library(frontend-imgui STATIC
   Window.cpp
-  Window.hpp
-  widgets.cpp
-  debugger.hpp
-  debugger.cpp
-  debugger/cpu/decode.hpp
-  debugger/cop0/decode.hpp
-  debugger/fpu/decode.hpp
-  debugger/rsp/decode.hpp
-  debugger/debugger_common.hpp)
+  Window.hpp)
 
 target_include_directories(frontend-imgui PUBLIC
   .
@@ -28,7 +20,6 @@ target_include_directories(frontend-imgui PUBLIC
   ../../n64/core/cpu
   ../../n64/core/cpu/registers
   ../../../external
-  ../../../external/capstone/include
   ../../../external/parallel-rdp/parallel-rdp-standalone
   ../../../external/parallel-rdp/parallel-rdp-standalone/vulkan
   ../../../external/parallel-rdp/parallel-rdp-standalone/util

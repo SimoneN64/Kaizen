@@ -3,7 +3,6 @@
 #include <Cpu.hpp>
 #include <Mem.hpp>
 #include <string>
-#include <debugger.hpp>
 
 struct Window;
 namespace n64 {
@@ -12,12 +11,13 @@ struct Core {
   Core();
   void Stop();
   void Reset();
-  void Step();
   void LoadROM(const std::string&);
   void Run(Window&);
   void UpdateController(const u8*);
   void TogglePause() { pause = !pause; }
   VI& GetVI() { return mem.mmio.vi; }
+
+  u32 breakpoint = 0;
 
   bool pause = true;
   bool romLoaded = false;

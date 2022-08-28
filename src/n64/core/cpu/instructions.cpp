@@ -205,7 +205,7 @@ void Cpu::ll(Mem& mem, u32 instr) {
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
 
-  regs.LLBit = true;
+  regs.cop0.llbit = true;
   regs.cop0.LLAddr = address;
 
   regs.gpr[RT(instr)] = mem.Read<s32>(regs, address, regs.oldPC);
@@ -249,7 +249,7 @@ void Cpu::lld(Mem& mem, u32 instr) {
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
 
-  regs.LLBit = true;
+  regs.cop0.llbit = true;
   regs.cop0.LLAddr = address;
 
   s64 value = mem.Read<s64>(regs, address, regs.oldPC);
@@ -316,12 +316,12 @@ void Cpu::sc(Mem& mem, u32 instr) {
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }
 
-  if(regs.LLBit) {
+  if(regs.cop0.llbit) {
     mem.Write<u32>(regs, address, regs.gpr[RT(instr)], regs.oldPC);
   }
 
-  regs.gpr[RT(instr)] = (s64)((u64)regs.LLBit);
-  regs.LLBit = false;
+  regs.gpr[RT(instr)] = (s64)((u64)regs.cop0.llbit);
+  regs.cop0.llbit = false;
 }
 
 void Cpu::scd(Mem& mem, u32 instr) {
@@ -331,12 +331,12 @@ void Cpu::scd(Mem& mem, u32 instr) {
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }
 
-  if(regs.LLBit) {
+  if(regs.cop0.llbit) {
     mem.Write<u64>(regs, address, regs.gpr[RT(instr)], regs.oldPC);
   }
 
-  regs.gpr[RT(instr)] = (s64)((u64)regs.LLBit);
-  regs.LLBit = false;
+  regs.gpr[RT(instr)] = (s64)((u64)regs.cop0.llbit);
+  regs.cop0.llbit = false;
 }
 
 void Cpu::sh(Mem& mem, u32 instr) {

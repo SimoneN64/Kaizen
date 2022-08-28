@@ -12,7 +12,6 @@ struct Registers {
   Cop1 cop1;
   s64 oldPC, pc, nextPC;
   s64 hi, lo;
-  bool LLBit;
   bool prevDelaySlot, delaySlot;
 };
 }

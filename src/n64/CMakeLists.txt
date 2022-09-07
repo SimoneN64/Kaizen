@@ -14,5 +14,6 @@ target_include_directories(n64 PUBLIC
   ..
   ../frontend/imgui/debugger
   ../../external
+  ../../external/capstone/include
   ../../external/imgui/imgui
   ../../external/imgui/imgui/backends)

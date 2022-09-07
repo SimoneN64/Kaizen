@@ -47,7 +47,7 @@ target_include_directories(core PUBLIC
   ../..
   ../../frontend/imgui/debugger
   ../../../external
-  ../../../external/capstone
+  ../../../external/capstone/include
   ../../../external/imgui/imgui
   ../../../external/imgui/imgui/debugger
   ../../../external/imgui/imgui/backends

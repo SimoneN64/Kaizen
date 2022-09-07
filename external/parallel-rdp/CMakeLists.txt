@@ -67,6 +67,7 @@ target_include_directories(parallel-rdp PUBLIC
   ../../src/frontend/imgui
   ../../src/frontend/imgui/debugger
   ../../src
+  ../capstone/include
   ../imgui
   ../imgui/imgui
   ../imgui/imgui/backends

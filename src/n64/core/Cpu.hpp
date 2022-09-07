@@ -2,10 +2,11 @@
 #include <Registers.hpp>
 #include <Mem.hpp>
 #include <util.hpp>
+#include <capstone/capstone.h>
 
 namespace n64 {
 struct Cpu {
-  Cpu() = default;
+  Cpu() { Reset(); }
   ~Cpu() = default;
   void Reset();
   void Step(Mem&);

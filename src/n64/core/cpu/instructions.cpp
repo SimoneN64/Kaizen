@@ -578,7 +578,7 @@ void Cpu::dsra32(u32 instr) {
 }
 
 void Cpu::jr(u32 instr) {
-  u32 address = regs.gpr[RS(instr)];
+  s32 address = regs.gpr[RS(instr)];
   if ((address & 3) != 0) {
     HandleTLBException(regs, (s64)((s32)address));
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);

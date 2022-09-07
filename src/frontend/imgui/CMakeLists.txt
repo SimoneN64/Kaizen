@@ -21,6 +21,7 @@ target_include_directories(frontend-imgui PUBLIC
   ../../n64/core/cpu
   ../../n64/core/cpu/registers
   ../../../external
+  ../../../external/capstone/include
   ../../../external/parallel-rdp/parallel-rdp-standalone
   ../../../external/parallel-rdp/parallel-rdp-standalone/vulkan
   ../../../external/parallel-rdp/parallel-rdp-standalone/util

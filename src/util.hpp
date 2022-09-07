@@ -7,6 +7,7 @@
 #include <vector>
 #include <array>
 #include <chrono>
+#include <functional>
 
 namespace util {
 using SteadyClock = std::chrono::steady_clock;
@@ -141,16 +142,12 @@ inline void SwapN64Rom(size_t size, u8* data) {
   memcpy(&endianness, data, 4);
   endianness = static_cast<RomTypes>(be32toh(endianness));
   switch(endianness) {
-    case V64: {
-      u8* tmp = (u8*)calloc(size, 1);
-      for(int i = 0; i < size; i++) {
-        data[i] = tmp[i ^ 2];
-      }
-      free(tmp);
-    } break;
+    case V64:
+      SwapBuffer32(size, data);
+      SwapBuffer16(size, data);
+      break;
     case N64: break;
-    case Z64:
-      SwapBuffer32(size, data); break;
+    case Z64: SwapBuffer32(size, data); break;
     default:
       panic("Unrecognized rom format! Make sure this is a valid Nintendo 64 ROM dump!\n");
   }
@@ -159,18 +156,22 @@ inline void SwapN64Rom(size_t size, u8* data) {
 template <size_t size, typename T = u8>
 struct CircularBuffer {
   CircularBuffer() : head(0) {
-    memset(raw.data(), 0, size * sizeof(T));
+    raw.fill(T());
   }
   // make it scroll
   void PushValue(T val) {
     raw[head] = val;
     head++;
-    head &= mask;
+    if(head == size) {
+      head = 0;
+    }
   }
 
   T PopValue() {
     head--;
-    head &= mask;
+    if(head == 0) {
+      head = size - 1;
+    }
     return raw[head];
   }
 
@@ -179,11 +180,11 @@ struct CircularBuffer {
   }
   auto begin() { return raw.begin(); }
   auto end() { return raw.end(); }
+  auto fill(const T& u) { raw.fill(u); }
   size_t GetHead() { return head; }
 private:
   std::array<T, size> raw;
   size_t head;
-  static constexpr size_t mask = size - 1;
 };
 
 inline size_t NextPow2(size_t num) {

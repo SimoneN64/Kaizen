@@ -29,6 +29,7 @@ private:
   MMIO mmio;
   std::vector<u8> cart, sram;
   u8 pifBootrom[PIF_BOOTROM_SIZE]{};
+  u8 isviewer[ISVIEWER_SIZE]{};
   size_t romMask;
 };
 }

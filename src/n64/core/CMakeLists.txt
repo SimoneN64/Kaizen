@@ -4,6 +4,7 @@ project(core)
 add_subdirectory(cpu)
 
 add_subdirectory(../../../external/parallel-rdp temp)
+add_subdirectory(../../../external/capstone temp1)
 
 find_package(fmt REQUIRED)
 find_package(SDL2 REQUIRED)
@@ -46,9 +47,10 @@ target_include_directories(core PUBLIC
   ../..
   ../../frontend/imgui/debugger
   ../../../external
+  ../../../external/capstone
   ../../../external/imgui/imgui
   ../../../external/imgui/imgui/debugger
   ../../../external/imgui/imgui/backends
   mmio)
 
-target_link_libraries(core PUBLIC SDL2main SDL2 fmt cpu parallel-rdp)
+target_link_libraries(core PUBLIC capstone SDL2main SDL2 fmt cpu parallel-rdp)

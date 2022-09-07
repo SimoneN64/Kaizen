@@ -71,7 +71,7 @@ target_include_directories(parallel-rdp PUBLIC
   ../imgui/imgui
   ../imgui/imgui/backends
   .
-  )
+)
 
 target_link_libraries(parallel-rdp SDL2main SDL2)
 

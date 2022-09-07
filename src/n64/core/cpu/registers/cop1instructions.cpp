@@ -2,7 +2,7 @@
 #include <n64/core/cpu/Registers.hpp>
 #include <n64/core/Mem.hpp>
 #include <util.hpp>
-#include <math.h>
+#include <cmath>
 
 namespace n64 {
 void Cop1::absd(Registers& regs, u32 instr) {
@@ -202,7 +202,7 @@ void Cop1::ccondd(Registers& regs, u32 instr, CompConds cond) {
   double ft = GetCop1RegDouble(regs.cop0, FT(instr));
 
   bool less, equal, unordered;
-  if(isnan(fs) || isnan(ft)) {
+  if(std::isnan(fs) || std::isnan(ft)) {
     less = false;
     equal = false;
     unordered = true;
@@ -222,7 +222,7 @@ void Cop1::cconds(Registers& regs, u32 instr, CompConds cond) {
   float ft = GetCop1RegFloat(regs.cop0, FT(instr));
 
   bool less, equal, unordered;
-  if(isnan(fs) || isnan(ft)) {
+  if(std::isnan(fs) || std::isnan(ft)) {
     less = false;
     equal = false;
     unordered = true;

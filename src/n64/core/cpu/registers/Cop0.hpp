@@ -3,6 +3,36 @@
 
 namespace n64 {
 #define STATUS_MASK 0xFF57FFFF
+#define CONFIG_MASK 0x0F00800F
+#define COP0_REG_INDEX 0
+#define COP0_REG_RANDOM 1
+#define COP0_REG_ENTRYLO0 2
+#define COP0_REG_ENTRYLO1 3
+#define COP0_REG_CONTEXT 4
+#define COP0_REG_PAGEMASK 5
+#define COP0_REG_WIRED 6
+#define COP0_REG_BADVADDR 8
+#define COP0_REG_COUNT 9
+#define COP0_REG_ENTRYHI 10
+#define COP0_REG_COMPARE 11
+#define COP0_REG_STATUS 12
+#define COP0_REG_CAUSE 13
+#define COP0_REG_EPC 14
+#define COP0_REG_PRID 15
+#define COP0_REG_CONFIG 16
+#define COP0_REG_LLADDR 17
+#define COP0_REG_WATCHLO 18
+#define COP0_REG_WATCHHI 19
+#define COP0_REG_XCONTEXT 20
+#define COP0_REG_PARITY_ERR 26
+#define COP0_REG_CACHE_ERR 27
+#define COP0_REG_TAGLO 28
+#define COP0_REG_TAGHI 29
+#define COP0_REG_ERROREPC 30
+
+#define ENTRY_LO_MASK 0x3FFFFFFF
+#define ENTRY_HI_MASK 0xC00000FFFFFFE0FF
+#define PAGEMASK_MASK 0x1FFE000
 
 struct Cpu;
 struct Registers;
@@ -153,11 +183,11 @@ union Cop0XContext {
 struct Cop0 {
   Cop0();
 
-  template<class T>
-  T GetReg(u8);
+  u32 GetReg32(u8);
+  u64 GetReg64(u8);
 
-  template<class T>
-  void SetReg(u8, T);
+  void SetReg32(u8, u32);
+  void SetReg64(u8, u64);
 
   void Reset();
 
@@ -170,23 +200,41 @@ struct Cop0 {
   PageMask pageMask{};
   EntryHi entryHi{};
   EntryLo entryLo0{}, entryLo1{};
-  u32 index, random;
+  u32 index;
   Cop0Context context{};
   u32 wired, r7{};
   u64 badVaddr{}, count{};
   u32 compare{};
   Cop0Status status{};
   Cop0Cause cause{};
-  u64 EPC;
+  s64 EPC;
   u32 PRId, Config, LLAddr{}, WatchLo{}, WatchHi{};
   Cop0XContext xcontext{};
   u32 r21{}, r22{}, r23{}, r24{}, r25{}, ParityError{}, CacheError{}, TagLo{}, TagHi{};
-  u64 ErrorEPC;
+  s64 ErrorEPC;
   u32 r31{};
   TLBEntry tlb[32]{};
   TLBError tlbError = NONE;
   void decode(Registers&, Mem&, u32);
 private:
+  inline u32 GetWired() { return wired & 0x3F; }
+  inline u32 GetCount() { return u32(u64(count >> 1)); }
+  inline u32 GetRandom() {
+    int val = rand();
+    int wired = GetWired();
+    int lower, upper;
+    if(wired > 31) {
+      lower = 0;
+      upper = 64;
+    } else {
+      lower = wired;
+      upper = 32 - wired;
+    }
+
+    val = (val % upper) + lower;
+    return val;
+  }
+
   void mtc0(Registers&, u32);
   void dmtc0(Registers&, u32);
   void mfc0(Registers&, u32);

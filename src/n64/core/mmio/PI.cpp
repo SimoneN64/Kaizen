@@ -59,7 +59,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       cartAddr = cart_addr + len;
       InterruptRaise(mi, regs, Interrupt::PI);
       status = status & 0xFFFFFFFE;
-      util::info("PI DMA from rdram to cart (size: {:.2f} MiB)\n", (float)len / 1048576);
+      util::logdebug("PI DMA from rdram to cart (size: {:.2f} MiB)\n", (float)len / 1048576);
     } break;
     case 0x0460000C: {
       u32 len = (val & 0x00FFFFFF) + 1;
@@ -76,7 +76,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       cartAddr = cart_addr + len;
       InterruptRaise(mi, regs, Interrupt::PI);
       status = status & 0xFFFFFFFE;
-      util::info("PI DMA from cart to rdram (size: {:.2f} MiB)\n", (float)len / 1048576);
+      util::logdebug("PI DMA from cart to rdram (size: {:.2f} MiB)\n", (float)len / 1048576);
     } break;
     case 0x04600010:
       if(val & 2) {

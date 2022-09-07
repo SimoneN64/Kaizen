@@ -3,6 +3,7 @@ project(frontend-imgui)
 
 add_subdirectory(../../../external/imgui temp)
 add_subdirectory(../../../external/nativefiledialog-extended temp1)
+SET(NFD_PORTAL ON CACHE BOOL "Use dbus for native file dialog instead of gtk")
 
 find_package(SDL2 REQUIRED)
 find_package(fmt REQUIRED)

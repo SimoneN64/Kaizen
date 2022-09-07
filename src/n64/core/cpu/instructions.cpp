@@ -137,7 +137,7 @@ void Cpu::branch_likely(bool cond, s64 address) {
   if (cond) {
     regs.nextPC = address;
   } else {
-    regs.SetPC(regs.nextPC);
+    regs.SetPC(regs.pc + 4);
   }
 }
 
@@ -420,8 +420,8 @@ void Cpu::nor(u32 instr) {
 }
 
 void Cpu::j(u32 instr) {
-  u32 target = (instr & 0x3ffffff) << 2;
-  u32 address = (regs.oldPC & ~0xfffffff) | target;
+  s32 target = (instr & 0x3ffffff) << 2;
+  s32 address = (regs.oldPC & ~0xfffffff) | target;
   if ((address & 3) != 0) {
     HandleTLBException(regs, (s64)((s32)address));
     FireException(regs, ExceptionCode::DataBusError, 0, regs.oldPC);

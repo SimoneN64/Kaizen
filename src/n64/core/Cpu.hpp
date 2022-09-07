@@ -1,6 +1,7 @@
 #pragma once
 #include <Registers.hpp>
 #include <Mem.hpp>
+#include <util.hpp>
 
 namespace n64 {
 struct Cpu {
@@ -121,5 +122,5 @@ enum ExceptionCode : u8 {
   Watch = 23
 };
 
-void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc);
+void FireException(Registers& regs_, ExceptionCode code, int cop, s64 pc);
 }

@@ -29,8 +29,10 @@ void Core::Reset() {
 
 void Core::LoadROM(const std::string& rom_) {
   rom = rom_;
+  cpu.Reset();
+  mem.Reset();
   mem.LoadROM(rom);
-  pause = true;
+  pause = false;
   romLoaded = true;
 }
 

@@ -4,27 +4,27 @@
 
 namespace n64 {
 void Cop0::mtc0(Registers& regs, u32 instr) {
-  SetReg<u32>(RD(instr), regs.gpr[RT(instr)]);
+  SetReg32(RD(instr), regs.gpr[RT(instr)]);
 }
 
 void Cop0::dmtc0(Registers& regs, u32 instr) {
-  SetReg(RD(instr), regs.gpr[RT(instr)]);
+  SetReg64(RD(instr), regs.gpr[RT(instr)]);
 }
 
 void Cop0::mfc0(Registers& regs, u32 instr) {
-  regs.gpr[RT(instr)] = GetReg<s32>(RD(instr));
+  regs.gpr[RT(instr)] = s32(GetReg32(RD(instr)));
 }
 
 void Cop0::dmfc0(Registers& regs, u32 instr) {
-  regs.gpr[RT(instr)] = GetReg<s64>(RD(instr));
+  regs.gpr[RT(instr)] = s64(GetReg64(RD(instr)));
 }
 
 void Cop0::eret(Registers& regs) {
   if(status.erl) {
-    regs.SetPC((s64)ErrorEPC);
+    regs.SetPC(ErrorEPC);
     status.erl = false;
   } else {
-    regs.SetPC((s64)EPC);
+    regs.SetPC(EPC);
     status.exl = false;
   }
   llbit = false;

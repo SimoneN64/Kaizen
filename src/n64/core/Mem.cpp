@@ -180,6 +180,18 @@ void Mem::Write(Registers& regs, u32 vaddr, T val, s64 pc) {
       break;
     case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
     case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(*this, regs, paddr, val); break;
+    case 0x10000000 ... 0x13FF0013: break;
+    case 0x13FF0014: {
+      if(val < ISVIEWER_SIZE) {
+        char* message = (char*)calloc(val + 1, 1);
+        memcpy(message, isviewer, val);
+        printf("%s", message);
+        free(message);
+      }
+    } break;
+    case 0x13FF0020 ... 0x13FFFFFF:
+      util::WriteAccess<T>(isviewer, paddr & ISVIEWER_DSIZE, be32toh(val));
+      break;
     case 0x1FC007C0 ... 0x1FC007FF:
       if constexpr (sizeof(T) == 1) {
         util::WriteAccess<T>(pifRam, BYTE_ADDRESS(paddr) & PIF_RAM_DSIZE, val);
@@ -188,11 +200,12 @@ void Mem::Write(Registers& regs, u32 vaddr, T val, s64 pc) {
       } else {
         util::WriteAccess<T>(pifRam, paddr & PIF_RAM_DSIZE, val);
       }
+      ProcessPIFCommands(pifRam, mmio.si.controller, *this);
       break;
     case 0x00800000 ... 0x03FFFFFF: case 0x04002000 ... 0x0403FFFF:
-    case 0x04200000 ... 0x042FFFFF:
-    case 0x04900000 ... 0x07FFFFFF: case 0x08000000 ... 0x0FFFFFFF:
-    case 0x80000000 ... 0xFFFFFFFF: case 0x1FC00800 ... 0x7FFFFFFF: break;
+    case 0x04200000 ... 0x042FFFFF: case 0x04900000 ... 0x07FFFFFF:
+    case 0x08000000 ... 0x0FFFFFFF:
+    case 0x1FC00800 ... 0x7FFFFFFF: case 0x80000000 ... 0xFFFFFFFF: break;
     default: util::panic("Unimplemented {}-bit write at address {:08X} with value {:0X} (PC = {:016X})\n", sizeof(T) * 8, paddr, val, regs.pc);
   }
 }

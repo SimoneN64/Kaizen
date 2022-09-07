@@ -50,7 +50,12 @@ void Cpu::special(Mem& mem, u32 instr) {
     case 0x2D: daddu(instr); break;
     case 0x2E: dsub(instr); break;
     case 0x2F: dsubu(instr); break;
+    case 0x30: trap(regs.gpr[RS(instr)] >= regs.gpr[RT(instr)]); break;
+    case 0x31: trap((u64)regs.gpr[RS(instr)] >= (u64)regs.gpr[RT(instr)]); break;
+    case 0x32: trap(regs.gpr[RS(instr)] < regs.gpr[RT(instr)]); break;
+    case 0x33: trap((u64)regs.gpr[RS(instr)] < (u64)regs.gpr[RT(instr)]); break;
     case 0x34: trap(regs.gpr[RS(instr)] == regs.gpr[RT(instr)]); break;
+    case 0x36: trap(regs.gpr[RS(instr)] != regs.gpr[RT(instr)]); break;
     case 0x38: dsll(instr); break;
     case 0x3A: dsrl(instr); break;
     case 0x3B: dsra(instr); break;
@@ -58,7 +63,7 @@ void Cpu::special(Mem& mem, u32 instr) {
     case 0x3E: dsrl32(instr); break;
     case 0x3F: dsra32(instr); break;
     default:
-      util::panic("Unimplemented special {} {} (pc: {:+016X})", (mask >> 3) & 7, mask & 7, regs.oldPC);
+      util::panic("Unimplemented special {} {} ({:08X}) (pc: {:016X})\n", (mask >> 3) & 7, mask & 7, instr, (u64)regs.oldPC);
   }
 }
 
@@ -70,12 +75,18 @@ void Cpu::regimm(u32 instr) {
     case 0x01: b(instr, regs.gpr[RS(instr)] >= 0); break;
     case 0x02: bl(instr, regs.gpr[RS(instr)] < 0); break;
     case 0x03: bl(instr, regs.gpr[RS(instr)] >= 0); break;
+    case 0x08: trap(regs.gpr[RS(instr)] >= s64(s16(instr))); break;
+    case 0x09: trap(u64(regs.gpr[RS(instr)]) >= u64(s64(s16(instr)))); break;
+    case 0x0A: trap(regs.gpr[RS(instr)] < s64(s16(instr))); break;
+    case 0x0B: trap(u64(regs.gpr[RS(instr)]) < u64(s64(s16(instr)))); break;
+    case 0x0C: trap(regs.gpr[RS(instr)] == s64(s16(instr))); break;
+    case 0x0E: trap(regs.gpr[RS(instr)] != s64(s16(instr))); break;
     case 0x10: blink(instr, regs.gpr[RS(instr)] < 0); break;
     case 0x11: blink(instr, regs.gpr[RS(instr)] >= 0); break;
     case 0x12: bllink(instr, regs.gpr[RS(instr)] < 0); break;
     case 0x13: bllink(instr, regs.gpr[RS(instr)] >= 0); break;
     default:
-      util::panic("Unimplemented regimm {} {}", (mask >> 3) & 3, mask & 7);
+      util::panic("Unimplemented regimm {} {} ({:08X}) (pc: {:016X})\n", (mask >> 3) & 3, mask & 7, instr, (u64)regs.oldPC);
   }
 }
 
@@ -137,7 +148,7 @@ void Cpu::Exec(Mem& mem, u32 instr) {
     case 0x3D: regs.cop1.sdc1(regs, mem, instr); break;
     case 0x3F: sd(mem, instr); break;
     default:
-      util::panic("Unimplemented instruction {} {}", (mask >> 3) & 7, mask & 7);
+      util::panic("Unimplemented instruction {} {} ({:08X}) (pc: {:016X})\n", (mask >> 3) & 7, mask & 7, instr, (u64)regs.oldPC);
   }
 }
 }

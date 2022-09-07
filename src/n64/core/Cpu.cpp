@@ -23,7 +23,7 @@ inline void CheckCompareInterrupt(MI& mi, Registers& regs) {
   regs.cop0.count &= 0x1FFFFFFFF;
   if(regs.cop0.count == (u64)regs.cop0.compare << 1) {
     regs.cop0.cause.ip7 = 1;
-    //UpdateInterrupt(mi, regs);
+    UpdateInterrupt(mi, regs);
   }
 }
 
@@ -41,7 +41,7 @@ void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc) {
   bool old_exl = regs.cop0.status.exl;
 
   if(!regs.cop0.status.exl) {
-    if(regs.delaySlot) { // TODO: cached value of delay_slot should be used, but Namco Museum breaks!
+    if(regs.prevDelaySlot) { // TODO: cached value of delay_slot should be used, but Namco Museum breaks!
       regs.cop0.cause.branchDelay = true;
       pc -= 4;
     } else {
@@ -66,15 +66,15 @@ void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc) {
       case ReservedInstruction: case CoprocessorUnusable:
       case Overflow: case Trap:
       case FloatingPointError: case Watch:
-        regs.SetPC((s64)((s32)0x80000180));
+        regs.SetPC(s64(s32(0x80000180)));
         break;
       case TLBLoad: case TLBStore:
         if(old_exl || regs.cop0.tlbError == INVALID) {
-          regs.SetPC((s64)((s32)0x80000180));
+          regs.SetPC(s64(s32(0x80000180)));
         } else if(Is64BitAddressing(regs.cop0, regs.cop0.badVaddr)) {
-          regs.SetPC((s64)((s32)0x80000080));
+          regs.SetPC(s64(s32(0x80000080)));
         } else {
-          regs.SetPC((s64)((s32)0x80000000));
+          regs.SetPC(s64(s32(0x80000000)));
         }
         break;
       default: util::panic("Unhandled exception! {}\n", code);
@@ -91,10 +91,10 @@ inline void HandleInterrupt(Registers& regs) {
 void Cpu::Step(Mem& mem) {
   regs.gpr[0] = 0;
 
-  CheckCompareInterrupt(mem.mmio.mi, regs);
-
   regs.prevDelaySlot = regs.delaySlot;
   regs.delaySlot = false;
+
+  CheckCompareInterrupt(mem.mmio.mi, regs);
 
   u32 instruction = mem.Read<u32>(regs, regs.pc, regs.pc);
 

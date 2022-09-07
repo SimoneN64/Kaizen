@@ -10,114 +10,151 @@ Cop0::Cop0() {
 
 void Cop0::Reset() {
   cause.raw = 0xB000007C;
-  random = 0x0000001F;
   status.raw = 0x241000E0;
-  wired = 64;
-  index = 64;
   PRId = 0x00000B22;
   Config = 0x7006E463;
   EPC = 0xFFFFFFFFFFFFFFFF;
   ErrorEPC = 0xFFFFFFFFFFFFFFFF;
 }
 
-template<class T>
-T Cop0::GetReg(u8 addr) {
+u32 Cop0::GetReg32(u8 addr) {
   switch(addr) {
-    case 0: return index & 0x8000001F;
-    case 1: return random & 0x1F;
-    case 2: return entryLo0.raw & 0x3FFFFFFF;
-    case 3: return entryLo1.raw & 0x3FFFFFFF;
-    case 4: return context.raw;
-    case 5: return pageMask.raw;
-    case 6: return wired & 0x3F;
-    case 7: return r7;
-    case 8: return badVaddr;
-    case 9: return count >> 1;
-    case 10: return entryHi.raw & 0xFFFFFFFFFFFFE0FF;
-    case 11: return compare;
-    case 12: return status.raw & STATUS_MASK;
-    case 13: return cause.raw;
-    case 14: return EPC;
-    case 15: return PRId & 0xFFFF;
-    case 16: return Config;
-    case 17: return LLAddr;
-    case 18: return WatchLo;
-    case 19: return WatchHi;
-    case 20: return xcontext.raw & 0xFFFFFFF0;
-    case 21: return r21;
-    case 22: return r22;
-    case 23: return r23;
-    case 24: return r24;
-    case 25: return r25;
-    case 26: return ParityError;
-    case 27: return CacheError;
-    case 28: return TagLo & 0xFFFFFFF;
-    case 29: return TagHi;
-    case 30: return ErrorEPC;
-    case 31: return r31;
+    case COP0_REG_INDEX: return index & 0x8000003F;
+    case COP0_REG_RANDOM: return GetRandom();
+    case COP0_REG_ENTRYLO0: return entryLo0.raw;
+    case COP0_REG_ENTRYLO1: return entryLo1.raw;
+    case COP0_REG_CONTEXT: return context.raw;
+    case COP0_REG_PAGEMASK: return pageMask.raw;
+    case COP0_REG_WIRED: return wired;
+    case COP0_REG_BADVADDR: return badVaddr;
+    case COP0_REG_COUNT: return GetCount();
+    case COP0_REG_ENTRYHI: return entryHi.raw;
+    case COP0_REG_COMPARE: return compare;
+    case COP0_REG_STATUS: return status.raw;
+    case COP0_REG_CAUSE: return cause.raw;
+    case COP0_REG_EPC: return EPC;
+    case COP0_REG_PRID: return PRId;
+    case COP0_REG_CONFIG: return Config;
+    case COP0_REG_LLADDR: return LLAddr;
+    case COP0_REG_WATCHLO: return WatchLo;
+    case COP0_REG_WATCHHI: return WatchHi;
+    case COP0_REG_XCONTEXT: return xcontext.raw;
+    case COP0_REG_PARITY_ERR: return ParityError;
+    case COP0_REG_CACHE_ERR: return CacheError;
+    case COP0_REG_TAGLO: return TagLo;
+    case COP0_REG_TAGHI: return TagHi;
+    case COP0_REG_ERROREPC: return ErrorEPC;
+    case  7: case 21: case 22:
+    case 23: case 24: case 25:
+    case 31: return 0;
     default:
       util::panic("Unsupported word read from COP0 register {}\n", index);
   }
 }
 
-template u32 Cop0::GetReg<u32>(u8 addr);
-template u64 Cop0::GetReg<u64>(u8 addr);
-template s32 Cop0::GetReg<s32>(u8 addr);
-template s64 Cop0::GetReg<s64>(u8 addr);
-
-template<class T>
-void Cop0::SetReg(u8 addr, T value) {
+u64 Cop0::GetReg64(u8 addr) {
   switch(addr) {
-    case 0: index = value & 0x8000001F; break;
-    case 1: random = value & 0x1F; break;
-    case 2: entryLo0.raw = value & 0x3FFFFFFF; break;
-    case 3: entryLo1.raw = value & 0x3FFFFFFF; break;
-    case 4: context.raw = value; break;
-    case 5: pageMask.raw = value; break;
-    case 6: wired = value & 0x3F; break;
-    case 7: r7 = value; break;
-    case 9: count = value << 1; break;
-    case 10: entryHi.raw = value & 0xFFFFFFFFFFFFE0FF; break;
-    case 11: {
-      cause.ip7 = 0;
-      compare = value;
-    } break;
-    case 12:
-      status.raw &= ~STATUS_MASK;
-      status.raw |= value & STATUS_MASK;
+    case 2: return entryLo0.raw;
+    case 3: return entryLo1.raw;
+    case 4: return context.raw;
+    case 8: return badVaddr;
+    case 10: return entryHi.raw;
+    case 12: return status.raw;
+    case 14: return EPC;
+    case 15: return PRId;
+    case 17: return LLAddr;
+    case 20: return xcontext.raw & 0xFFFFFFFFFFFFFFF0;
+    case 30: return ErrorEPC;
+    default:
+      util::panic("Unsupported word read from COP0 register {}\n", index);
+  }
+}
+
+void Cop0::SetReg32(u8 addr, u32 value) {
+  switch(addr) {
+    case COP0_REG_INDEX: index = value; break;
+    case COP0_REG_RANDOM: break;
+    case COP0_REG_ENTRYLO0:
+      entryLo0.raw = value & ENTRY_LO_MASK;
       break;
-    case 13: {
+    case COP0_REG_ENTRYLO1:
+      entryLo1.raw = value & ENTRY_LO_MASK;
+      break;
+    case COP0_REG_CONTEXT:
+      context.raw = (s64(s32(value)) & 0xFFFFFFFFFF800000) | (context.raw & 0x7FFFFF);
+      break;
+    case COP0_REG_PAGEMASK: pageMask.raw = value & PAGEMASK_MASK; break;
+    case COP0_REG_WIRED: wired = value & 63; break;
+    case COP0_REG_BADVADDR: break;
+    case COP0_REG_COUNT: count = (u64)value << 1; break;
+    case COP0_REG_ENTRYHI:
+      entryHi.raw = s64(s32(value)) & ENTRY_HI_MASK;
+      break;
+    case COP0_REG_COMPARE:
+      compare = value;
+      cause.ip7 = false;
+      break;
+    case COP0_REG_STATUS:
+      status.raw &= ~STATUS_MASK;
+      status.raw |= (value & STATUS_MASK);
+      break;
+    case COP0_REG_CAUSE: {
+      Cop0Cause temp{};
+      temp.raw = value;
+      cause.ip0 = temp.ip0;
+      cause.ip1 = temp.ip1;
+    } break;
+    case COP0_REG_EPC: EPC = s64(s32(value)); break;
+    case COP0_REG_PRID: break;
+    case COP0_REG_CONFIG: {
+      Config &= ~CONFIG_MASK;
+      Config |= (value & CONFIG_MASK);
+    } break;
+    case COP0_REG_LLADDR: LLAddr = value; break;
+    case COP0_REG_WATCHLO: WatchLo = value; break;
+    case COP0_REG_WATCHHI: WatchHi = value; break;
+    case COP0_REG_XCONTEXT:
+      xcontext.raw = (s64(s32(value)) & 0xFFFFFFFE00000000) | (xcontext.raw & 0x1FFFFFFFF);
+      break;
+    case COP0_REG_PARITY_ERR: ParityError = value & 0xff; break;
+    case COP0_REG_CACHE_ERR: break;
+    case COP0_REG_TAGLO: TagLo = value; break;
+    case COP0_REG_TAGHI: TagHi = value; break;
+    case COP0_REG_ERROREPC: ErrorEPC = s64(s32(value)); break;
+    case  7: case 21: case 22: break;
+    case 23: case 24: case 25: break;
+    case 31: break;
+    default:
+      util::panic("Unsupported word read from COP0 register {}\n", index);
+  }
+}
+
+void Cop0::SetReg64(u8 addr, u64 value) {
+  switch(addr) {
+    case COP0_REG_ENTRYLO0: entryLo0.raw = value & ENTRY_LO_MASK; break;
+    case COP0_REG_ENTRYLO1: entryLo1.raw = value & ENTRY_LO_MASK; break;
+    case COP0_REG_CONTEXT:
+      context.raw = (((s64)(s32)value) & 0xFFFFFFFFFF800000) | (context.raw & 0x7FFFFF);
+      break;
+    case COP0_REG_XCONTEXT:
+      context.raw = (((s64)(s32)value) & 0xFFFFFFFE00000000) | (xcontext.raw & 0x1FFFFFFFF);
+      break;
+    case COP0_REG_ENTRYHI: entryHi.raw = value & ENTRY_HI_MASK; break;
+    case COP0_REG_STATUS: status.raw = value; break;
+    case COP0_REG_CAUSE: {
       Cop0Cause tmp{};
       tmp.raw = value;
       cause.ip0 = tmp.ip0;
       cause.ip1 = tmp.ip1;
     } break;
-    case 14: EPC = value; break;
-    case 15: PRId = value & 0xFFFF; break;
-    case 16: Config = value; break;
-    case 17: LLAddr = value; break;
-    case 18: WatchLo = value; break;
-    case 19: WatchHi = value; break;
-    case 21: r21 = value; break;
-    case 22: r22 = value; break;
-    case 23: r23 = value; break;
-    case 24: r24 = value; break;
-    case 25: r25 = value; break;
-    case 26: ParityError = value; break;
-    case 27: CacheError = value; break;
-    case 28: TagLo = value & 0xFFFFFFF; break;
-    case 29: TagHi = value; break;
-    case 30: ErrorEPC = value; break;
-    case 31: r31 = value; break;
+    case COP0_REG_BADVADDR: break;
+    case COP0_REG_EPC: EPC = (s64)value; break;
+    case COP0_REG_LLADDR: LLAddr = value; break;
+    case COP0_REG_ERROREPC: ErrorEPC = (s64)value; break;
     default:
-      util::panic("Unsupported word write to COP0 register {}\n", index);
+      util::panic("Unsupported word write to COP0 register {}\n", addr);
   }
 }
-
-template void Cop0::SetReg<u32>(u8 addr, u32 value);
-template void Cop0::SetReg<u64>(u8 addr, u64 value);
-template void Cop0::SetReg<s32>(u8 addr, s32 value);
-template void Cop0::SetReg<s64>(u8 addr, s64 value);
 
 #define vpn(addr, PageMask) (((((addr) & 0xFFFFFFFFFF) | (((addr) >> 22) & 0x30000000000)) & ~((PageMask) | 0x1FFF)))
 
@@ -223,9 +260,7 @@ void Cop0::decode(Registers& regs, Mem& mem, u32 instr) {
         case 0x01: tlbr(regs); break;
         case 0x02: tlbwi(regs); break;
         case 0x08: tlbp(regs); break;
-        case 0x18:
-          eret(regs);
-          break;
+        case 0x18: eret(regs); break;
         default: util::panic("Unimplemented COP0 function {} {} ({:08X}) ({:016lX})", mask_cop2 >> 3, mask_cop2 & 7, instr, regs.oldPC);
       }
       break;

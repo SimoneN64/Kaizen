@@ -11,7 +11,9 @@ Cop0::Cop0() {
 void Cop0::Reset() {
   cause.raw = 0xB000007C;
   status.raw = 0x241000E0;
-  PRId = 0x00000B22;
+  wired = 64;
+  index = 64;
+  PRId = 0x00000B00;
   Config = 0x7006E463;
   EPC = 0xFFFFFFFFFFFFFFFF;
   ErrorEPC = 0xFFFFFFFFFFFFFFFF;
@@ -54,17 +56,17 @@ u32 Cop0::GetReg32(u8 addr) {
 
 u64 Cop0::GetReg64(u8 addr) {
   switch(addr) {
-    case 2: return entryLo0.raw;
-    case 3: return entryLo1.raw;
-    case 4: return context.raw;
-    case 8: return badVaddr;
-    case 10: return entryHi.raw;
-    case 12: return status.raw;
-    case 14: return EPC;
-    case 15: return PRId;
-    case 17: return LLAddr;
-    case 20: return xcontext.raw & 0xFFFFFFFFFFFFFFF0;
-    case 30: return ErrorEPC;
+    case COP0_REG_ENTRYLO0: return entryLo0.raw;
+    case COP0_REG_ENTRYLO1: return entryLo1.raw;
+    case COP0_REG_CONTEXT: return context.raw;
+    case COP0_REG_BADVADDR: return badVaddr;
+    case COP0_REG_ENTRYHI: return entryHi.raw;
+    case COP0_REG_STATUS: return status.raw;
+    case COP0_REG_EPC: return EPC;
+    case COP0_REG_PRID: return PRId;
+    case COP0_REG_LLADDR: return LLAddr;
+    case COP0_REG_XCONTEXT: return xcontext.raw & 0xFFFFFFFFFFFFFFF0;
+    case COP0_REG_ERROREPC: return ErrorEPC;
     default:
       util::panic("Unsupported word read from COP0 register {}\n", index);
   }
@@ -104,7 +106,9 @@ void Cop0::SetReg32(u8 addr, u32 value) {
       cause.ip0 = temp.ip0;
       cause.ip1 = temp.ip1;
     } break;
-    case COP0_REG_EPC: EPC = s64(s32(value)); break;
+    case COP0_REG_EPC:
+      EPC = s64(s32(value));
+      break;
     case COP0_REG_PRID: break;
     case COP0_REG_CONFIG: {
       Config &= ~CONFIG_MASK;
@@ -121,8 +125,8 @@ void Cop0::SetReg32(u8 addr, u32 value) {
     case COP0_REG_TAGLO: TagLo = value; break;
     case COP0_REG_TAGHI: TagHi = value; break;
     case COP0_REG_ERROREPC: ErrorEPC = s64(s32(value)); break;
-    case  7: case 21: case 22: break;
-    case 23: case 24: case 25: break;
+    case  7: case 21: case 22:
+    case 23: case 24: case 25:
     case 31: break;
     default:
       util::panic("Unsupported word read from COP0 register {}\n", index);

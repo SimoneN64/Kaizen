@@ -137,7 +137,7 @@ void Cpu::branch_likely(bool cond, s64 address) {
   if (cond) {
     regs.nextPC = address;
   } else {
-    regs.SetPC(regs.pc + 4);
+    regs.SetPC(regs.nextPC);
   }
 }
 
@@ -580,7 +580,7 @@ void Cpu::dsra32(u32 instr) {
 void Cpu::jr(u32 instr) {
   s32 address = regs.gpr[RS(instr)];
   if ((address & 3) != 0) {
-    HandleTLBException(regs, (s64)((s32)address));
+    HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }
 

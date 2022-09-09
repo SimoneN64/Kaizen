@@ -81,15 +81,15 @@ void RSP::Exec(MI &mi, Registers &regs, RDP &rdp, u32 instr) {
   u8 mask = (instr >> 26) & 0x3F;
   switch(mask) {
     //case 0x00: special(*this, instr); break;
-    //case 0x01: regimm(*this, instr); break;
-    //case 0x02: j(instr); break;
+    case 0x01: regimm(*this, instr); break;
+    case 0x02: j(instr); break;
     //case 0x03: jal(instr); break;
     //case 0x04: b(instr, gpr[RT(instr)] == gpr[RS(instr)]); break;
     //case 0x05: b(instr, gpr[RT(instr)] != gpr[RS(instr)]); break;
     //case 0x07: b(instr, gpr[RS(instr)] > 0); break;
-    //case 0x08: case 0x09: addi(instr); break;
+    case 0x08: case 0x09: addi(instr); break;
     //case 0x0C: andi(instr); break;
-    //case 0x0D: ori(instr); break;
+    case 0x0D: ori(instr); break;
     //case 0x0F: lui(instr); break;
     //case 0x10: cop0(mi, regs, *this, rdp, instr); break;
     //case 0x12: cop2(*this, instr); break;
@@ -100,7 +100,7 @@ void RSP::Exec(MI &mi, Registers &regs, RDP &rdp, u32 instr) {
     //case 0x2B: sw(instr); break;
     //case 0x32: lwc2(*this, instr); break;
     //case 0x3A: swc2(*this, instr); break;
-    default: util::panic("Unhandled RSP instruction {} {}\n", (mask >> 3) & 7, mask & 7);
+    default: util::panic("Unhandled RSP instruction ({:06b})\n", mask);
   }
 }
 }

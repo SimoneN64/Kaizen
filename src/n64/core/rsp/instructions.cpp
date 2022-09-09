@@ -91,7 +91,10 @@ void RSP::add(u32 instr) {
 }
 
 void RSP::addi(u32 instr) {
-
+  s32 op1 = gpr[RS(instr)];
+  s16 op2 = instr;
+  s32 result = op1 + op2;
+  gpr[RT(instr)] = result;
 }
 
 void RSP::and_(u32 instr) {
@@ -128,7 +131,8 @@ void RSP::lqv(u32 instr) {
 }
 
 void RSP::j(u32 instr) {
-
+  u32 target = (instr & 0x3ffffff) << 2;
+  nextPC = target;
 }
 
 void RSP::jal(u32 instr) {
@@ -148,7 +152,8 @@ void RSP::or_(u32 instr) {
 }
 
 void RSP::ori(u32 instr) {
-
+  s16 imm = instr;
+  gpr[RT(instr)] = imm | gpr[RS(instr)];
 }
 
 void RSP::sb(u32 instr) {

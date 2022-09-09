@@ -13,6 +13,15 @@ find_package(fmt REQUIRED)
 
 add_executable(natsukashii main.cpp)
 
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+  set(OPTIMIZATIONS -g
+    #-fsanitize=address -fsanitize=undefined
+    )
+  #target_link_libraries(natsukashii PUBLIC -fsanitize=address -fsanitize=undefined)
+elseif(CMAKE_BUILD_TYPE MATCHES Release)
+  set(OPTIMIZATIONS -O3)
+endif()
+
 target_link_libraries(natsukashii PUBLIC frontend n64 fmt)
 target_include_directories(natsukashii PUBLIC . ../external)
-target_compile_options(natsukashii PUBLIC -Wpedantic -Wimplicit-fallthrough -Wextra -Wall)
+target_compile_options(natsukashii PUBLIC ${OPTIMIZATIONS} -Wpedantic -Wimplicit-fallthrough -Wextra -Wall)

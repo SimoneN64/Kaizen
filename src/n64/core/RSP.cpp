@@ -31,13 +31,12 @@ void RSP::Reset() {
 
 void RSP::Step(MI& mi, Registers& regs, RDP& rdp) {
   if(!spStatus.halt) {
-    util::panic("RSP!\n");
-   //gpr[0] = 0;
-   //u32 instr = util::ReadAccess<u32>(imem, pc & IMEM_DSIZE);
-   //oldPC = pc & 0xFFF;
-   //pc = nextPC & 0xFFF;
-   //nextPC += 4;
-   //Exec(mi, regs, rdp, instr);
+   gpr[0] = 0;
+   u32 instr = util::ReadAccess<u32>(imem, pc & IMEM_DSIZE);
+   oldPC = pc & 0xFFF;
+   pc = nextPC & 0xFFF;
+   nextPC += 4;
+   Exec(mi, regs, rdp, instr);
   }
 }
 

@@ -6,12 +6,24 @@
 
 namespace n64 {
 struct Cpu {
-  Cpu() { Reset(); }
-  ~Cpu() = default;
+  Cpu() {
+    log = fopen("disasm.txt", "w");
+    if(cs_open(CS_ARCH_MIPS, CS_MODE_MIPS64, &handle) != CS_ERR_OK) {
+      util::panic("Could not initialize capstone!\n");
+    }
+    Reset();
+  }
+
+  ~Cpu() {
+    fclose(log);
+    cs_close(&handle);
+  }
   void Reset();
   void Step(Mem&);
   Registers regs;
 private:
+  csh handle;
+  FILE* log;
   friend struct Cop1;
 
   void special(Mem&, u32);

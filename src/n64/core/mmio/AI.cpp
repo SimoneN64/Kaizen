@@ -10,10 +10,10 @@ void AI::Reset() {
   dacRate = 0;
   bitrate = 0;
   dmaCount = 0;
-  memset(dmaLen, 0, 2);
-  memset(dmaAddr, 0, 2);
   dmaAddrCarry = false;
   cycles = 0;
+  memset(dmaLen, 0, 2);
+  memset(dmaAddr, 0, 2);
   dac = {44100, N64_CPU_FREQ / dac.freq, 16};
 }
 
@@ -35,8 +35,6 @@ auto AI::Read(u32 addr) const -> u32 {
 }
 
 #define max(x, y) ((x) > (y) ? (x) : (y))
-
-using namespace natsukashii::core;
 
 void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
   switch(addr) {

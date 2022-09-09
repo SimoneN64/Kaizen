@@ -2,7 +2,7 @@
 #include <SDL2/SDL.h>
 #include "util.hpp"
 
-namespace natsukashii::core {
+namespace n64 {
 #define AUDIO_SAMPLE_RATE 48000
 #define SYSTEM_SAMPLE_FORMAT AUDIO_F32SYS
 #define SYSTEM_SAMPLE_SIZE 4

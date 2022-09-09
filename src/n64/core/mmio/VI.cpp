@@ -10,7 +10,13 @@ VI::VI () {
 }
 
 void VI::Reset() {
+  status.raw = 0xF;
   intr = 256;
+  origin = 0;
+  width = 320;
+  current = 0;
+  vsync = 0;
+  hsync = 0;
   numHalflines = 262;
   numFields = 1;
   cyclesPerHalfline = 1000;
@@ -35,7 +41,6 @@ u32 VI::Read(u32 paddr) const {
     default:
       util::panic("Unimplemented VI[%08X] read\n", paddr);
   }
-  return 0;
 }
 
 void VI::Write(MI& mi, Registers& regs, u32 paddr, u32 val) {

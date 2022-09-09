@@ -43,6 +43,8 @@ void Core::Run(Window& window) {
     int frameCycles = 0;
     if(!pause && romLoaded) {
       for (int i = 0; i < mmio.vi.numHalflines; i++) {
+        mmio.vi.current = (i << 1) + field;
+
         if ((mmio.vi.current & 0x3FE) == mmio.vi.intr) {
           InterruptRaise(mmio.mi, cpu.regs, Interrupt::VI);
         }
@@ -54,7 +56,7 @@ void Core::Run(Window& window) {
           mmio.rsp.Step(mmio.mi, cpu.regs, mmio.rdp);
           mmio.rsp.Step(mmio.mi, cpu.regs, mmio.rdp);
 
-          mmio.ai.Step(mem, cpu.regs, 1);
+          //mmio.ai.Step(mem, cpu.regs, 1);
         }
 
         cycles -= mmio.vi.cyclesPerHalfline;
@@ -67,7 +69,7 @@ void Core::Run(Window& window) {
       UpdateScreenParallelRdp(*this, window, GetVI());
 
       int missedCycles = N64_CYCLES_PER_FRAME - frameCycles;
-      mmio.ai.Step(mem, cpu.regs, missedCycles);
+      //mmio.ai.Step(mem, cpu.regs, missedCycles);
     } else if(pause && romLoaded) {
       UpdateScreenParallelRdp(*this, window, GetVI());
     } else if(pause && !romLoaded) {

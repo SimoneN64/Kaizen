@@ -27,6 +27,7 @@ void InterruptRaise(MI &mi, Registers &regs, Interrupt intr) {
 
   UpdateInterrupt(mi, regs);
 }
+
 void InterruptLower(MI &mi, Registers &regs, Interrupt intr) {
   switch(intr) {
     case Interrupt::VI:

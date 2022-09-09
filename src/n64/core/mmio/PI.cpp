@@ -58,7 +58,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       dramAddr = dram_addr + len;
       cartAddr = cart_addr + len;
       InterruptRaise(mi, regs, Interrupt::PI);
-      status = status & 0xFFFFFFFE;
+      status &= 0xFFFFFFFE;
       util::logdebug("PI DMA from rdram to cart (size: {:.2f} MiB)\n", (float)len / 1048576);
     } break;
     case 0x0460000C: {
@@ -75,7 +75,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       dramAddr = dram_addr + len;
       cartAddr = cart_addr + len;
       InterruptRaise(mi, regs, Interrupt::PI);
-      status = status & 0xFFFFFFFE;
+      status &= 0xFFFFFFFE;
       util::logdebug("PI DMA from cart to rdram (size: {:.2f} MiB)\n", (float)len / 1048576);
     } break;
     case 0x04600010:

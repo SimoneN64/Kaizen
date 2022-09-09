@@ -3,6 +3,12 @@
 #include <n64/core/RDP.hpp>
 #include <n64/memory_regions.hpp>
 
+#define RSP_BYTE(addr) (dmem[BYTE_ADDRESS(addr) & 0xfff])
+#define GET_RSP_HALF(addr) ((RSP_BYTE(addr) << 8) | RSP_BYTE((addr) + 1))
+#define SET_RSP_HALF(addr, value) do { RSP_BYTE(addr) = ((value) >> 8) & 0xFF; RSP_BYTE((addr) + 1) = (value) & 0xFF;} while(0)
+#define GET_RSP_WORD(addr) ((GET_RSP_HALF(addr) << 16) | GET_RSP_HALF((addr) + 2))
+#define SET_RSP_WORD(addr, value) do { SET_RSP_HALF(addr, ((value) >> 16) & 0xFFFF); SET_RSP_HALF((addr) + 2, (value) & 0xFFFF);} while(0)
+
 namespace n64 {
 union SPStatus {
   u32 raw;
@@ -152,6 +158,30 @@ struct RSP {
       val |= mask;
     }
     return val;
+  }
+
+  inline u32 ReadWord(u32 addr) {
+    return GET_RSP_WORD(addr);
+  }
+
+  inline void WriteWord(u32 addr, u32 val) {
+    SET_RSP_WORD(addr, val);
+  }
+
+  inline u16 ReadHalf(u32 addr) {
+    return GET_RSP_HALF(addr);
+  }
+
+  inline void WriteHalf(u32 addr, u16 val) {
+    SET_RSP_HALF(addr, val);
+  }
+
+  inline u8 ReadByte(u32 addr) {
+    return GET_RSP_WORD(addr);
+  }
+
+  inline void WriteByte(u32 addr, u8 val) {
+    SET_RSP_WORD(addr, val);
   }
 
   void add(u32 instr);

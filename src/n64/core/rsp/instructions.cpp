@@ -98,11 +98,11 @@ void RSP::addi(u32 instr) {
 }
 
 void RSP::and_(u32 instr) {
-
+  gpr[RD(instr)] = gpr[RT(instr)] & gpr[RS(instr)];
 }
 
 void RSP::andi(u32 instr) {
-
+  gpr[RT(instr)] = gpr[RS(instr)] & (u16)instr;
 }
 
 void RSP::cfc2(u32 instr) {
@@ -119,11 +119,13 @@ void RSP::lh(u32 instr) {
 }
 
 void RSP::lw(u32 instr) {
-
+  u32 address = gpr[BASE(instr)] + (s16)instr;
+  gpr[RT(instr)] = ReadWord(address);
 }
 
 void RSP::lui(u32 instr) {
-
+  u32 imm = ((u16)instr) << 16;
+  gpr[RT(instr)] = imm;
 }
 
 void RSP::lqv(u32 instr) {
@@ -136,7 +138,8 @@ void RSP::j(u32 instr) {
 }
 
 void RSP::jal(u32 instr) {
-
+  gpr[31] = nextPC;
+  j(instr);
 }
 
 void RSP::jr(u32 instr) {
@@ -147,13 +150,13 @@ void RSP::nor(u32 instr) {
 
 }
 
-void RSP::or_(u32 instr) {
-
-}
-
 void RSP::ori(u32 instr) {
   s16 imm = instr;
   gpr[RT(instr)] = imm | gpr[RS(instr)];
+}
+
+void RSP::or_(u32 instr) {
+  gpr[RD(instr)] = gpr[RT(instr)] | gpr[RS(instr)];
 }
 
 void RSP::sb(u32 instr) {
@@ -165,7 +168,8 @@ void RSP::sh(u32 instr) {
 }
 
 void RSP::sw(u32 instr) {
-
+  u32 address = gpr[BASE(instr)] + (s16)instr;
+  WriteWord(address, gpr[RT(instr)]);
 }
 
 void RSP::sqv(u32 instr) {
@@ -178,7 +182,8 @@ void RSP::sllv(u32 instr) {
 }
 
 void RSP::sll(u32 instr) {
-
+  u8 sa = (instr >> 6) & 0x1f;
+  gpr[RD(instr)] = gpr[RT(instr)] << sa;
 }
 
 void RSP::vabs(u32 instr) {

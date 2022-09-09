@@ -12,7 +12,7 @@ static SDL_AudioStream* audioStream = nullptr;
 SDL_mutex* audioStreamMutex;
 SDL_AudioSpec audioSpec;
 SDL_AudioSpec request;
-SDL_AudioDeviceID audioDev;
+SDL_AudioDeviceID audioDev{};
 
 #define LockAudioMutex() SDL_LockMutex(audioStreamMutex)
 #define UnlockAudioMutex() SDL_UnlockMutex(audioStreamMutex)
@@ -48,7 +48,9 @@ void InitAudio() {
   request.callback = audioCallback;
   request.userdata = nullptr;
 
-  audioDev = SDL_OpenAudioDevice(nullptr, 0, &request, &audioSpec, 0);
+  if(!audioDev) {
+    audioDev = SDL_OpenAudioDevice(nullptr, 0, &request, &audioSpec, 0);
+  }
 
   if(!audioDev) {
     util::panic("Failed to initialize SDL Audio: {}", SDL_GetError());

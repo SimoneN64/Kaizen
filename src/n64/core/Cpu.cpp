@@ -59,8 +59,12 @@ void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc) {
     util::panic("BEV bit set!\n");
   } else {
     switch(code) {
-      case Interrupt ... TLBModification:
-      case AddressErrorLoad ... Trap:
+      case Interrupt: case TLBModification:
+      case AddressErrorLoad: case AddressErrorStore:
+      case InstructionBusError: case DataBusError:
+      case Syscall: case Breakpoint:
+      case ReservedInstruction: case CoprocessorUnusable:
+      case Overflow: case Trap:
       case FloatingPointError: case Watch:
         regs.SetPC(s64(s32(0x80000180)));
         break;

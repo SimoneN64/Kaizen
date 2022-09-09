@@ -34,23 +34,29 @@ void SI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       dramAddr = val;
       break;
     case 0x04800004: {
-      // if(!(status.raw & 3)) {
-      ProcessPIFCommands(mem.pifRam, controller, mem);
+      if(!(status.raw & 3)) {
+        ProcessPIFCommands(mem.pifRam, controller, mem);
 
-      u8 pifAddr = (val & 0x7FC) & PIF_RAM_DSIZE;
-      memcpy(&mem.mmio.rdp.dram[dramAddr & RDRAM_DSIZE],
-             &mem.pifRam[pifAddr], 64);
-      InterruptRaise(mem.mmio.mi, regs, Interrupt::SI);
-      status.intr = 1;
+        pifAddr = (val & 0x7FC) & PIF_RAM_DSIZE;
+        for(int i = 0; i < 64; i++) {
+          mem.mmio.rdp.dram[BYTE_ADDRESS(dramAddr + i) & RDRAM_DSIZE] = mem.pifRam[pifAddr + i];
+        }
+        InterruptRaise(mem.mmio.mi, regs, Interrupt::SI);
+        status.intr = 1;
+        //util::logdebug("SI DMA from PIF RAM to RDP RAM ({:08X} to {:08X})\n", pifAddr, dramAddr);
+      }
     } break;
     case 0x04800010: {
-      //if(!(status.raw & 3)) {
-      u8 pifAddr = (val & 0x7FC) & PIF_RAM_DSIZE;
-      memcpy(&mem.pifRam[pifAddr],
-             &mem.mmio.rdp.dram[dramAddr & RDRAM_DSIZE], 64);
-      ProcessPIFCommands(mem.pifRam, controller, mem);
-      InterruptRaise(mem.mmio.mi, regs, Interrupt::SI);
-      status.intr = 1;
+      if(!(status.raw & 3)) {
+        pifAddr = (val & 0x7FC) & PIF_RAM_DSIZE;
+        for(int i = 0; i < 64; i++) {
+          mem.pifRam[pifAddr + i] = mem.mmio.rdp.dram[BYTE_ADDRESS(dramAddr + i) & RDRAM_DSIZE];
+        }
+        ProcessPIFCommands(mem.pifRam, controller, mem);
+        InterruptRaise(mem.mmio.mi, regs, Interrupt::SI);
+        status.intr = 1;
+        //util::logdebug("SI DMA from RDP RAM to PIF RAM ({:08X} to {:08X})\n", dramAddr, pifAddr);
+      }
     } break;
     case 0x04800018:
       InterruptLower(mem.mmio.mi, regs, Interrupt::SI);

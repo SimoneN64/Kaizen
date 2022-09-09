@@ -65,7 +65,7 @@ void ProcessPIFCommands(u8* pifRam, Controller& controller, Mem& mem) {
     pifRam[63] = 128;
   }
 
-  //mem->pif_ram[63] &= ~1;
+  //pifRam[63] &= ~1;
 }
 
 }

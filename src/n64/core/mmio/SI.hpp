@@ -25,6 +25,7 @@ struct SI {
   void Reset();
   SIStatus status{};
   u32 dramAddr{};
+  u32 pifAddr{};
   Controller controller{};
 
   auto Read(MI&, u32) const -> u32;

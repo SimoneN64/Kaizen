@@ -72,8 +72,8 @@ void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
   }
 }
 
-void AI::Step(Mem& mem, Registers& regs, int) {
-  cycles += cycles;
+void AI::Step(Mem& mem, Registers& regs, int cpuCycles) {
+  cycles += cpuCycles;
   while(cycles > dac.period) {
     if (dmaCount == 0) {
       return;

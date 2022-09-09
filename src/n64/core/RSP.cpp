@@ -33,8 +33,8 @@ void RSP::Step(MI& mi, Registers& regs, RDP& rdp) {
   if(!spStatus.halt) {
    gpr[0] = 0;
    u32 instr = util::ReadAccess<u32>(imem, pc & IMEM_DSIZE);
-   oldPC = pc & 0xFFF;
-   pc = nextPC & 0xFFF;
+   oldPC = pc & 0xFFC;
+   pc = nextPC & 0xFFC;
    nextPC += 4;
    Exec(mi, regs, rdp, instr);
   }
@@ -120,7 +120,7 @@ void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
       if(spStatus.halt) {
         oldPC = pc;
         pc = nextPC;
-        nextPC = value & 0xFFF;
+        nextPC = value & 0xFFC;
       } break;
     default: util::panic("Unimplemented SP register write {:08X}, val: {:08X}\n", addr, value);
   }

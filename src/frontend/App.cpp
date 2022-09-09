@@ -6,6 +6,9 @@ void App::Run() {
   // Main loop
   const u8* state = SDL_GetKeyboardState(nullptr);
   while (!core.done) {
+    core.Run(window);
+    core.UpdateController(state);
+
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
       ImGui_ImplSDL2_ProcessEvent(&event);
@@ -36,10 +39,6 @@ void App::Run() {
             } break;
           } break;
       }
-
-      core.UpdateController(state);
     }
-
-    core.Run(window);
   }
 }

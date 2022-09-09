@@ -3,6 +3,7 @@
 #include <nfd.hpp>
 #include <Core.hpp>
 #include <utility>
+#include <Audio.hpp>
 
 VkInstance instance{};
 
@@ -20,6 +21,8 @@ Window::Window(n64::Core& core) {
 
 void Window::InitSDL() {
   SDL_Init(SDL_INIT_EVERYTHING);
+  n64::InitAudio();
+
   window = SDL_CreateWindow(
     "natsukashii",
     SDL_WINDOWPOS_CENTERED,

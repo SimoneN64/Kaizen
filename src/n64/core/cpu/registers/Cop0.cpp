@@ -11,9 +11,7 @@ Cop0::Cop0() {
 void Cop0::Reset() {
   cause.raw = 0xB000007C;
   status.raw = 0x241000E0;
-  wired = 64;
-  index = 64;
-  PRId = 0x00000B00;
+  PRId = 0x00000B22;
   Config = 0x7006E463;
   EPC = 0xFFFFFFFFFFFFFFFF;
   ErrorEPC = 0xFFFFFFFFFFFFFFFF;

@@ -1,6 +1,5 @@
 #include <Mem.hpp>
 #include <fstream>
-#include <util.hpp>
 #include <n64/core/cpu/Registers.hpp>
 #include <n64/core/cpu/registers/Cop0.hpp>
 #include <n64/core/Cpu.hpp>
@@ -41,7 +40,7 @@ void Mem::LoadROM(const std::string& filename) {
 }
 
 template <bool tlb>
-inline bool MapVAddr(Registers& regs, TLBAccessType accessType, u32 vaddr, u32& paddr) {
+bool MapVAddr(Registers& regs, TLBAccessType accessType, u32 vaddr, u32& paddr) {
   paddr = vaddr & 0x1FFFFFFF;
   if constexpr(!tlb) return true;
 
@@ -56,6 +55,9 @@ inline bool MapVAddr(Registers& regs, TLBAccessType accessType, u32 vaddr, u32& 
 
   return false;
 }
+
+template bool MapVAddr<true>(Registers& regs, TLBAccessType accessType, u32 vaddr, u32& paddr);
+template bool MapVAddr<false>(Registers& regs, TLBAccessType accessType, u32 vaddr, u32& paddr);
 
 template <class T, bool tlb>
 T Mem::Read(Registers& regs, u32 vaddr, s64 pc) {

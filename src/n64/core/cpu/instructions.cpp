@@ -200,15 +200,16 @@ void Cpu::lw(Mem& mem, u32 instr) {
 
 void Cpu::ll(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 3) != 0 || (address > 0)) {
+  u32 physical;
+  if (!MapVAddr(regs, LOAD, address, physical)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+  } else {
+    regs.gpr[RT(instr)] = mem.Read<s32, false>(regs, physical, regs.oldPC);
   }
 
   regs.cop0.llbit = true;
-  regs.cop0.LLAddr = address;
-
-  regs.gpr[RT(instr)] = mem.Read<s32>(regs, address, regs.oldPC);
+  regs.cop0.LLAddr = physical >> 4;
 }
 
 void Cpu::lwl(Mem& mem, u32 instr) {
@@ -244,16 +245,16 @@ void Cpu::ld(Mem& mem, u32 instr) {
 
 void Cpu::lld(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 7) != 0 || (address > 0)) {
+  u32 physical;
+  if (!MapVAddr(regs, LOAD, address, physical)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+  } else {
+    regs.gpr[RT(instr)] = mem.Read<s64, false>(regs, physical, regs.oldPC);
   }
 
   regs.cop0.llbit = true;
-  regs.cop0.LLAddr = address;
-
-  s64 value = mem.Read<s64>(regs, address, regs.oldPC);
-  regs.gpr[RT(instr)] = value;
+  regs.cop0.LLAddr = physical >> 4;
 }
 
 void Cpu::ldl(Mem& mem, u32 instr) {

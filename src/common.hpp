@@ -43,3 +43,8 @@ using m128 = __m128i;
 #define E(x) BASE(x)
 #define ELEMENT_INDEX(i) (7 - (i))
 #define BYTE_INDEX(i) (15 - (i))
+
+
+enum TLBAccessType {
+  LOAD, STORE
+};

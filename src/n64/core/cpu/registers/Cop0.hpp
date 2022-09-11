@@ -157,10 +157,6 @@ enum TLBError : u8 {
   DISALLOWED_ADDRESS
 };
 
-enum TLBAccessType {
-  LOAD, STORE
-};
-
 union Cop0Context {
   u64 raw;
   struct {
@@ -249,8 +245,8 @@ private:
 struct Registers;
 enum ExceptionCode : u8;
 
-TLBEntry* TLBTryMatch(Registers& regs, u32 vaddr, int* match);
-bool ProbeTLB(Registers& regs, TLBAccessType access_type, u32 vaddr, u32& paddr, int* match);
+TLBEntry* TLBTryMatch(Registers& regs, s64 vaddr, int* match);
+bool ProbeTLB(Registers& regs, TLBAccessType access_type, s64 vaddr, u32& paddr, int* match);
 void HandleTLBException(Registers& regs, u64 vaddr);
 ExceptionCode GetTLBExceptionCode(TLBError error, TLBAccessType access_type);
 }

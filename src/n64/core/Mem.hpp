@@ -3,6 +3,7 @@
 #include <n64/memory_regions.hpp>
 #include <n64/core/MMIO.hpp>
 #include <vector>
+#include <util.hpp>
 
 namespace n64 {
 struct Registers;
@@ -32,4 +33,7 @@ private:
   u8 isviewer[ISVIEWER_SIZE]{};
   size_t romMask;
 };
+
+template <bool tlb = true>
+bool MapVAddr(Registers& regs, TLBAccessType accessType, u32 vaddr, u32& paddr);
 }

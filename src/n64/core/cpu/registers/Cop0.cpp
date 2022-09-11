@@ -160,7 +160,7 @@ void Cop0::SetReg64(u8 addr, u64 value) {
 
 #define vpn(addr, PageMask) (((((addr) & 0xFFFFFFFFFF) | (((addr) >> 22) & 0x30000000000)) & ~((PageMask) | 0x1FFF)))
 
-TLBEntry* TLBTryMatch(Registers& regs, u32 vaddr, int* match) {
+TLBEntry* TLBTryMatch(Registers& regs, s64 vaddr, int* match) {
   for(int i = 0; i < 32; i++) {
     TLBEntry *entry = &regs.cop0.tlb[i];
     u64 entry_vpn = vpn(entry->entryHi.raw, entry->pageMask.raw);
@@ -180,7 +180,7 @@ TLBEntry* TLBTryMatch(Registers& regs, u32 vaddr, int* match) {
   return nullptr;
 }
 
-bool ProbeTLB(Registers& regs, TLBAccessType access_type, u32 vaddr, u32& paddr, int* match) {
+bool ProbeTLB(Registers& regs, TLBAccessType access_type, s64 vaddr, u32& paddr, int* match) {
   TLBEntry* entry = TLBTryMatch(regs, vaddr, match);
   if(!entry) {
     regs.cop0.tlbError = MISS;

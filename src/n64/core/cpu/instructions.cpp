@@ -179,9 +179,9 @@ void Cpu::lb(Mem& mem, u32 instr) {
 }
 
 void Cpu::lh(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 1) != 0) {
-    HandleTLBException(regs, s64(s32(address)));
+  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  if (((address & 1) != 0) || (address > 0)) {
+    HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
 
@@ -189,9 +189,9 @@ void Cpu::lh(Mem& mem, u32 instr) {
 }
 
 void Cpu::lw(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 3) != 0) {
-    HandleTLBException(regs, s64(s32(address)));
+  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  if (((address & 3) != 0) || (address > 0)) {
+    HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
 
@@ -199,9 +199,9 @@ void Cpu::lw(Mem& mem, u32 instr) {
 }
 
 void Cpu::ll(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 3) != 0) {
-    HandleTLBException(regs, s64(s32(address)));
+  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  if ((address & 3) != 0 || (address > 0)) {
+    HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
 
@@ -232,9 +232,9 @@ void Cpu::lwr(Mem& mem, u32 instr) {
 }
 
 void Cpu::ld(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 7) != 0) {
-    HandleTLBException(regs, (s64)((s32)address));
+  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  if ((address & 7) != 0 || (address > 0)) {
+    HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
 
@@ -243,9 +243,9 @@ void Cpu::ld(Mem& mem, u32 instr) {
 }
 
 void Cpu::lld(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 7) != 0) {
-    HandleTLBException(regs, (s64)((s32)address));
+  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  if ((address & 7) != 0 || (address > 0)) {
+    HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
 
@@ -283,9 +283,9 @@ void Cpu::lbu(Mem& mem, u32 instr) {
 }
 
 void Cpu::lhu(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 1) != 0) {
-    HandleTLBException(regs, (s64)((s32)address));
+  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  if ((address & 1) != 0 || (address > 0)) {
+    HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
 
@@ -294,9 +294,9 @@ void Cpu::lhu(Mem& mem, u32 instr) {
 }
 
 void Cpu::lwu(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 3) != 0) {
-    HandleTLBException(regs, (s64)((s32)address));
+  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  if ((address & 3) != 0 || (address > 0)) {
+    HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
 
@@ -310,9 +310,9 @@ void Cpu::sb(Mem& mem, u32 instr) {
 }
 
 void Cpu::sc(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 3) != 0) {
-    HandleTLBException(regs, (s64)((s32)address));
+  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  if ((address & 3) != 0 || (address > 0)) {
+    HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }
 
@@ -325,9 +325,9 @@ void Cpu::sc(Mem& mem, u32 instr) {
 }
 
 void Cpu::scd(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 7) != 0) {
-    HandleTLBException(regs, (s64)((s32)address));
+  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  if ((address & 7) != 0 || (address > 0)) {
+    HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }
 
@@ -340,9 +340,9 @@ void Cpu::scd(Mem& mem, u32 instr) {
 }
 
 void Cpu::sh(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 1) != 0) {
-    HandleTLBException(regs, (s64)((s32)address));
+  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  if ((address & 1) != 0 || (address > 0)) {
+    HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }
 
@@ -350,9 +350,9 @@ void Cpu::sh(Mem& mem, u32 instr) {
 }
 
 void Cpu::sw(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 3) != 0) {
-    HandleTLBException(regs, (s64)((s32)address));
+  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  if ((address & 3) != 0 || (address > 0)) {
+    HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }
 
@@ -360,9 +360,9 @@ void Cpu::sw(Mem& mem, u32 instr) {
 }
 
 void Cpu::sd(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 7) != 0) {
-    HandleTLBException(regs, (s64)((s32)address));
+  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  if ((address & 7) != 0 || (address > 0)) {
+    HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }
 
@@ -421,9 +421,9 @@ void Cpu::nor(u32 instr) {
 
 void Cpu::j(u32 instr) {
   s32 target = (instr & 0x3ffffff) << 2;
-  s32 address = (regs.oldPC & ~0xfffffff) | target;
-  if ((address & 3) != 0) {
-    HandleTLBException(regs, (s64)((s32)address));
+  s64 address = (regs.oldPC & ~0xfffffff) | target;
+  if ((address & 3) != 0 || (address > 0)) {
+    HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::DataBusError, 0, regs.oldPC);
   }
 
@@ -578,8 +578,8 @@ void Cpu::dsra32(u32 instr) {
 }
 
 void Cpu::jr(u32 instr) {
-  s32 address = regs.gpr[RS(instr)];
-  if ((address & 3) != 0) {
+  s64 address = regs.gpr[RS(instr)];
+  if ((address & 3) != 0 || (address > 0)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }

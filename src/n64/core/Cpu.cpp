@@ -41,7 +41,7 @@ void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc) {
   bool old_exl = regs.cop0.status.exl;
 
   if(!regs.cop0.status.exl) {
-    if(regs.delaySlot) { // TODO: cached value of delay_slot should be used, but Namco Museum breaks!
+    if(regs.prevDelaySlot) {
       regs.cop0.cause.branchDelay = true;
       pc -= 4;
     } else {
@@ -94,30 +94,15 @@ void Cpu::Step(Mem& mem) {
   CheckCompareInterrupt(mem.mmio.mi, regs);
   HandleInterrupt(regs);
 
-  regs.prevDelaySlot = regs.delaySlot;
-  regs.delaySlot = false;
-
   u32 instruction = mem.Read<u32>(regs, regs.pc, regs.pc);
-
-  /*cs_insn* insn;
-  u8 code[4]{};
-  memcpy(code, &instruction, 4);
-
-  u32 pc = regs.pc;
-
-  size_t count = cs_disasm(handle, code, 4, (u64)pc, 0, &insn);
-  if(count > 0) {
-    for(int i = 0; i < count; i++) {
-      fprintf(log, "%s", fmt::format("0x{:016X}\t{}\t{}\n", insn[i].address, insn[i].mnemonic, insn[i].op_str).c_str());
-    }
-
-    cs_free(insn, count);
-  }*/
 
   regs.oldPC = regs.pc;
   regs.pc = regs.nextPC;
   regs.nextPC += 4;
 
   Exec(mem, instruction);
+
+  regs.prevDelaySlot = regs.delaySlot;
+  regs.delaySlot = false;
 }
 }

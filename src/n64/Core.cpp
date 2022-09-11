@@ -53,9 +53,6 @@ void Core::Run(Window& window) {
         for(;cycles <= mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
           cpu.Step(mem);
           mmio.rsp.Step(mmio.mi, cpu.regs, mmio.rdp);
-          mmio.rsp.Step(mmio.mi, cpu.regs, mmio.rdp);
-          mmio.rsp.Step(mmio.mi, cpu.regs, mmio.rdp);
-          mmio.rsp.Step(mmio.mi, cpu.regs, mmio.rdp);
 
           mmio.ai.Step(mem, cpu.regs, 1);
         }

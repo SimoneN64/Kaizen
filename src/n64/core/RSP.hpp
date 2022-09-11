@@ -110,17 +110,17 @@ struct RSP {
   RSP();
   void Reset();
   void Step(MI& mi, Registers& regs, RDP& rdp);
-  auto Read(u32 addr) const -> u32;
+  auto Read(u32 addr) -> u32;
   void Write(Mem& mem, Registers& regs, u32 addr, u32 value);
   void Exec(MI& mi, Registers& regs, RDP& rdp, u32 instr);
   SPStatus spStatus;
-  u16 oldPC{}, pc{}, nextPC = 4;
+  u16 oldPC{}, pc{}, nextPC{};
   SPDMASPAddr spDMASPAddr{};
   SPDMADRAMAddr spDMADRAMAddr{};
   SPDMALen spDMARDLen{}, spDMAWRLen{};
   u8 dmem[DMEM_SIZE]{}, imem[IMEM_SIZE]{};
   VPR vpr[32]{};
-  u32 gpr[32]{};
+  s32 gpr[32]{};
   u8 vce{};
 
   struct {
@@ -177,11 +177,24 @@ struct RSP {
   }
 
   inline u8 ReadByte(u32 addr) {
-    return GET_RSP_WORD(addr);
+    return RSP_BYTE(addr);
   }
 
   inline void WriteByte(u32 addr, u8 val) {
-    SET_RSP_WORD(addr, val);
+    RSP_BYTE(addr) = val;
+  }
+
+  inline bool AcquireSemaphore() {
+    if(semaphore) {
+      return true;
+    } else {
+      semaphore = true;
+      return false;
+    }
+  }
+
+  inline void ReleaseSemaphore() {
+    semaphore = false;
   }
 
   void add(u32 instr);
@@ -190,22 +203,38 @@ struct RSP {
   void andi(u32 instr);
   void cfc2(u32 instr);
   void b(u32 instr, bool cond);
+  void bl(u32 instr, bool cond);
+  void lb(u32 instr);
   void lh(u32 instr);
   void lw(u32 instr);
+  void lbu(u32 instr);
+  void lhu(u32 instr);
   void lui(u32 instr);
   void lqv(u32 instr);
   void j(u32 instr);
   void jal(u32 instr);
   void jr(u32 instr);
+  void jalr(u32 instr);
   void nor(u32 instr);
   void or_(u32 instr);
   void ori(u32 instr);
+  void xor_(u32 instr);
+  void xori(u32 instr);
   void sb(u32 instr);
   void sh(u32 instr);
   void sw(u32 instr);
+  void sub(u32 instr);
   void sqv(u32 instr);
   void sllv(u32 instr);
+  void srlv(u32 instr);
+  void srav(u32 instr);
   void sll(u32 instr);
+  void srl(u32 instr);
+  void sra(u32 instr);
+  void slt(u32 instr);
+  void sltu(u32 instr);
+  void slti(u32 instr);
+  void sltiu(u32 instr);
   void vabs(u32 instr);
   void vmov(u32 instr);
   void veq(u32 instr);
@@ -216,7 +245,16 @@ struct RSP {
 private:
   inline void branch(u16 address, bool cond) {
     if(cond) {
-      nextPC = address & 0xFFF;
+      nextPC = address & 0xFFC;
+    }
+  }
+
+  inline void branch_likely(u16 address, bool cond) {
+    if(cond) {
+      nextPC = address & 0xFFC;
+    } else {
+      pc = nextPC & 0xFFC;
+      nextPC = pc + 4;
     }
   }
 };

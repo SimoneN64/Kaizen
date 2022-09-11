@@ -40,7 +40,7 @@ void RSP::Step(MI& mi, Registers& regs, RDP& rdp) {
   }
 }
 
-auto RSP::Read(u32 addr) const -> u32{
+auto RSP::Read(u32 addr) -> u32{
   switch (addr) {
     case 0x04040000: return spDMASPAddr.raw & 0xFFFFF8;
     case 0x04040004: return spDMADRAMAddr.raw & 0x1FF8;
@@ -48,10 +48,11 @@ auto RSP::Read(u32 addr) const -> u32{
     case 0x0404000C: return spDMAWRLen.raw;
     case 0x04040010: return spStatus.raw;
     case 0x04040018: return 0;
-    case 0x04080000: return pc & 0xFFF;
-    default: util::panic("Unimplemented SP register read %08X\n", addr);
+    case 0x0404001C: return AcquireSemaphore();
+    case 0x04080000:
+      return pc & 0xFFC;
+    default: util::panic("Unimplemented SP register read {:08X}\n", addr);
   }
-  return 0;
 }
 
 template <bool isDRAMdest>
@@ -99,8 +100,7 @@ void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
       spDMAWRLen.raw = 0xFF8 | (spDMAWRLen.skip << 20);
     } break;
     case 0x04040010: {
-      SPStatusWrite write;
-      write.raw = value;
+      auto write = SPStatusWrite{.raw = value};
       CLEAR_SET(spStatus.halt, write.clearHalt, write.setHalt);
       CLEAR_SET(spStatus.broke, write.clearBroke, false);
       if(write.clearIntr) InterruptLower(mi, regs, Interrupt::SP);
@@ -116,10 +116,11 @@ void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
       CLEAR_SET(spStatus.signal6Set, write.clearSignal6, write.setSignal6);
       CLEAR_SET(spStatus.signal7Set, write.clearSignal7, write.setSignal7);
     } break;
+    case 0x0404001C: ReleaseSemaphore(); break;
     case 0x04080000:
       if(spStatus.halt) {
-        oldPC = pc;
-        pc = nextPC;
+        oldPC = pc & 0xFFC;
+        pc = value & 0xFFC;
         nextPC = value & 0xFFC;
       } break;
     default: util::panic("Unimplemented SP register write {:08X}, val: {:08X}\n", addr, value);

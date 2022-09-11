@@ -87,7 +87,7 @@ inline VPR GetVTE(VPR vt, u8 e) {
 }
 
 void RSP::add(u32 instr) {
-
+  gpr[RD(instr)] = gpr[RS(instr)] + gpr[RT(instr)];
 }
 
 void RSP::addi(u32 instr) {
@@ -114,13 +114,34 @@ void RSP::b(u32 instr, bool cond) {
   branch(address, cond);
 }
 
-void RSP::lh(u32 instr) {
+void RSP::bl(u32 instr, bool cond) {
+  b(instr, cond);
+  gpr[31] = pc + 4;
+}
 
+void RSP::lb(u32 instr) {
+  u32 address = gpr[BASE(instr)] + (s16)instr;
+  gpr[RT(instr)] = (s32)(s8)ReadByte(address);
+}
+
+void RSP::lh(u32 instr) {
+  u32 address = gpr[BASE(instr)] + (s16)instr;
+  gpr[RT(instr)] = (s32)(s16)ReadHalf(address);
 }
 
 void RSP::lw(u32 instr) {
   u32 address = gpr[BASE(instr)] + (s16)instr;
   gpr[RT(instr)] = ReadWord(address);
+}
+
+void RSP::lbu(u32 instr) {
+  u32 address = gpr[BASE(instr)] + (s16)instr;
+  gpr[RT(instr)] = ReadByte(address);
+}
+
+void RSP::lhu(u32 instr) {
+  u32 address = gpr[BASE(instr)] + (s16)instr;
+  gpr[RT(instr)] = ReadHalf(address);
 }
 
 void RSP::lui(u32 instr) {
@@ -138,38 +159,62 @@ void RSP::j(u32 instr) {
 }
 
 void RSP::jal(u32 instr) {
-  gpr[31] = nextPC;
   j(instr);
+  gpr[31] = pc + 4;
 }
 
 void RSP::jr(u32 instr) {
+  nextPC = gpr[RS(instr)];
+}
 
+void RSP::jalr(u32 instr) {
+  jr(instr);
+  gpr[RD(instr)] = pc + 4;
 }
 
 void RSP::nor(u32 instr) {
-
+  gpr[RD(instr)] = ~(gpr[RT(instr)] | gpr[RS(instr)]);
 }
 
 void RSP::ori(u32 instr) {
-  s16 imm = instr;
-  gpr[RT(instr)] = imm | gpr[RS(instr)];
+  s32 op1 = gpr[RS(instr)];
+  u32 op2 = instr & 0xffff;
+  s32 result = op1 | op2;
+  gpr[RT(instr)] = result;
+}
+
+void RSP::xori(u32 instr) {
+  s32 op1 = gpr[RS(instr)];
+  u32 op2 = instr & 0xffff;
+  s32 result = op1 ^ op2;
+  gpr[RT(instr)] = result;
 }
 
 void RSP::or_(u32 instr) {
   gpr[RD(instr)] = gpr[RT(instr)] | gpr[RS(instr)];
 }
 
-void RSP::sb(u32 instr) {
+void RSP::xor_(u32 instr) {
+  gpr[RD(instr)] = gpr[RT(instr)] ^ gpr[RS(instr)];
+}
 
+void RSP::sb(u32 instr) {
+  u32 address = gpr[BASE(instr)] + (s16)instr;
+  WriteByte(address, gpr[RT(instr)]);
 }
 
 void RSP::sh(u32 instr) {
-
+  u32 address = gpr[BASE(instr)] + (s16)instr;
+  WriteHalf(address, gpr[RT(instr)]);
 }
 
 void RSP::sw(u32 instr) {
   u32 address = gpr[BASE(instr)] + (s16)instr;
   WriteWord(address, gpr[RT(instr)]);
+}
+
+void RSP::sub(u32 instr) {
+  gpr[RD(instr)] = gpr[RS(instr)] - gpr[RT(instr)];
 }
 
 void RSP::sqv(u32 instr) {
@@ -181,9 +226,47 @@ void RSP::sllv(u32 instr) {
   gpr[RD(instr)] = gpr[RT(instr)] << sa;
 }
 
+void RSP::srlv(u32 instr) {
+  u8 sa = gpr[RS(instr)] & 0x1F;
+  gpr[RD(instr)] = (u32)gpr[RT(instr)] >> sa;
+}
+
+void RSP::srav(u32 instr) {
+  u8 sa = gpr[RS(instr)] & 0x1F;
+  gpr[RD(instr)] = gpr[RT(instr)] >> sa;
+}
+
 void RSP::sll(u32 instr) {
   u8 sa = (instr >> 6) & 0x1f;
   gpr[RD(instr)] = gpr[RT(instr)] << sa;
+}
+
+void RSP::srl(u32 instr) {
+  u8 sa = (instr >> 6) & 0x1f;
+  gpr[RD(instr)] = (u32)gpr[RT(instr)] >> sa;
+}
+
+void RSP::sra(u32 instr) {
+  u8 sa = (instr >> 6) & 0x1f;
+  gpr[RD(instr)] = gpr[RT(instr)] >> sa;
+}
+
+void RSP::slt(u32 instr) {
+  gpr[RD(instr)] = gpr[RS(instr)] < gpr[RT(instr)];
+}
+
+void RSP::sltu(u32 instr) {
+  gpr[RD(instr)] = (u32)gpr[RS(instr)] < (u32)gpr[RT(instr)];
+}
+
+void RSP::slti(u32 instr) {
+  s32 imm = (s16)instr;
+  gpr[RT(instr)] = gpr[RS(instr)] < imm;
+}
+
+void RSP::sltiu(u32 instr) {
+  s32 imm = (s16)instr;
+  gpr[RT(instr)] = (u32)gpr[RS(instr)] < imm;
 }
 
 void RSP::vabs(u32 instr) {

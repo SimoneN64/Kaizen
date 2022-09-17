@@ -10,12 +10,19 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y build-essential libgtk-3-dev libsdl2-dev libfmt-dev git
+          sudo apt-get install -y build-essential libgtk-3-dev libsdl2-dev libfmt-dev git ninja-build
           sudo apt-get install -y vulkan-tools libvulkan1 libvulkan-dev vulkan-validationlayers-dev spirv-tools
       - name: Build natsukashii
         run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Release -S src
-          make -j$(nproc) -C build
+          cmake \
+            -G Ninja \
+            -B build \
+            -DCAPSTONE_ARCHITECTURE_DEFAULT=OFF \
+            -DCAPSTONE_BUILD_TESTS=OFF \
+            -DCAPSTONE_MIPS_SUPPORT=ON \
+            -DCMAKE_BUILD_TYPE=Release \
+            -S src
+          ninja -j$(nproc) -C build
       - name: Collect artifacts
         run: |
           mkdir upload
@@ -37,16 +44,18 @@ jobs:
           submodules: recursive
       - uses: msys2/setup-msys2@v2
         with:
-          install: make git mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-SDL2 mingw-w64-x86_64-vulkan-devel mingw-w64-x86_64-fmt
+          install: make git mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-SDL2 mingw-w64-x86_64-vulkan-devel mingw-w64-x86_64-fmt mingw-w64-x86_64-ninja
       - name: Build natsukashii
         run: |
           cmake \
-            -G"Unix Makefiles" \
+            -G Ninja \
             -B build \
+            -DCAPSTONE_ARCHITECTURE_DEFAULT=OFF \
+            -DCAPSTONE_BUILD_TESTS=OFF \
+            -DCAPSTONE_MIPS_SUPPORT=ON \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_FLAGS="-s" \
             -S src
-          make -j$(nproc) -C build
+          ninja -j$(nproc) -C build
       - name: Collect artifacts
         run: |
           mkdir upload

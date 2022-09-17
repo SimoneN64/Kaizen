@@ -9,7 +9,7 @@ RSP::RSP() {
 }
 
 void RSP::Reset() {
-  spStatus.raw = 0;
+  spStatus.raw = 0x1;
   spStatus.halt = true;
   oldPC = 0;
   pc = 0;
@@ -102,9 +102,11 @@ void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
     case 0x04040010: {
       auto write = SPStatusWrite{.raw = value};
       CLEAR_SET(spStatus.halt, write.clearHalt, write.setHalt);
-      CLEAR_SET(spStatus.broke, write.clearBroke, false);
-      if(write.clearIntr) InterruptLower(mi, regs, Interrupt::SP);
-      if(write.setIntr) InterruptRaise(mi, regs, Interrupt::SP);
+      if(write.clearBroke) spStatus.broke = false;
+      if(write.clearIntr && !write.setIntr)
+        InterruptLower(mi, regs, Interrupt::SP);
+      if(write.setIntr && !write.clearIntr)
+        InterruptRaise(mi, regs, Interrupt::SP);
       CLEAR_SET(spStatus.singleStep, write.clearSstep, write.setSstep);
       CLEAR_SET(spStatus.interruptOnBreak, write.clearIntrOnBreak, write.setIntrOnBreak);
       CLEAR_SET(spStatus.signal0Set, write.clearSignal0, write.setSignal0);

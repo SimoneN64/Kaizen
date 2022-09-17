@@ -18,6 +18,10 @@ inline void ReleaseSemaphore(RSP& rsp) {
 
 inline auto GetCop0Reg(RSP& rsp, RDP& rdp, u8 index) -> u32{
   switch(index) {
+    case 0: return rsp.spDMASPAddr.raw;
+    case 1: return rsp.spDMADRAMAddr.raw;
+    case 2: return rsp.spDMARDLen.raw;
+    case 3: return rsp.spDMAWRLen.raw;
     case 4: return rsp.spStatus.raw;
     case 5: return rsp.spStatus.dmaFull;
     case 6: return 0;

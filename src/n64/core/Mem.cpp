@@ -122,7 +122,7 @@ T Mem::Read(Registers& regs, u32 vaddr, s64 pc) {
     case 0x04200000 ... 0x042FFFFF:
     case 0x04900000 ... 0x07FFFFFF: case 0x08000000 ... 0x0FFFFFFF:
     case 0x80000000 ... 0xFFFFFFFF: case 0x1FC00800 ... 0x7FFFFFFF: return 0;
-    default: util::panic("Unimplemented {}-bit read at address {:08X} (PC = {:016X})\n", sizeof(T) * 8, paddr, regs.pc);
+    default: util::panic("Unimplemented {}-bit read at address {:08X} (PC = {:016X})\n", sizeof(T) * 8, paddr, (u64)regs.pc);
   }
   return 0;
 }
@@ -208,7 +208,7 @@ void Mem::Write(Registers& regs, u32 vaddr, T val, s64 pc) {
     case 0x04200000 ... 0x042FFFFF: case 0x04900000 ... 0x07FFFFFF:
     case 0x08000000 ... 0x0FFFFFFF:
     case 0x1FC00800 ... 0x7FFFFFFF: case 0x80000000 ... 0xFFFFFFFF: break;
-    default: util::panic("Unimplemented {}-bit write at address {:08X} with value {:0X} (PC = {:016X})\n", sizeof(T) * 8, paddr, val, regs.pc);
+    default: util::panic("Unimplemented {}-bit write at address {:08X} with value {:0X} (PC = {:016X})\n", sizeof(T) * 8, paddr, val, (u64)regs.pc);
   }
 }
 

@@ -136,10 +136,10 @@ void Cop0::SetReg64(u8 addr, u64 value) {
     case COP0_REG_ENTRYLO0: entryLo0.raw = value & ENTRY_LO_MASK; break;
     case COP0_REG_ENTRYLO1: entryLo1.raw = value & ENTRY_LO_MASK; break;
     case COP0_REG_CONTEXT:
-      context.raw = (((s64)(s32)value) & 0xFFFFFFFFFF800000) | (context.raw & 0x7FFFFF);
+      context.raw = (value & 0xFFFFFFFFFF800000) | (context.raw & 0x7FFFFF);
       break;
     case COP0_REG_XCONTEXT:
-      context.raw = (((s64)(s32)value) & 0xFFFFFFFE00000000) | (xcontext.raw & 0x1FFFFFFFF);
+      xcontext.raw = (value & 0xFFFFFFFE00000000) | (xcontext.raw & 0x1FFFFFFFF);
       break;
     case COP0_REG_ENTRYHI: entryHi.raw = value & ENTRY_HI_MASK; break;
     case COP0_REG_STATUS: status.raw = value; break;

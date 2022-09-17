@@ -321,7 +321,7 @@ void Cpu::sc(Mem& mem, u32 instr) {
     mem.Write<u32>(regs, address, regs.gpr[RT(instr)], regs.oldPC);
   }
 
-  regs.gpr[RT(instr)] = (s64)((u64)regs.cop0.llbit);
+  regs.gpr[RT(instr)] = (u64)regs.cop0.llbit;
   regs.cop0.llbit = false;
 }
 

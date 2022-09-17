@@ -102,8 +102,8 @@ struct Registers;
 
 #define DE(x) (((x) >> 11) & 0x1F)
 #define CLEAR_SET(val, clear, set) do { \
-  if(clear) (val) = 0; \
-  if(set) (val) = 1; \
+  if(clear && !set) (val) = 0; \
+  if(set && !clear) (val) = 1; \
 } while(0)
 
 struct RSP {

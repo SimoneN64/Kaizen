@@ -53,4 +53,4 @@ target_include_directories(core PUBLIC
   ../../../external/imgui/imgui/backends
   mmio)
 
-target_link_libraries(core PUBLIC capstone SDL2main SDL2 fmt cpu parallel-rdp)
+target_link_libraries(core PUBLIC capstone fmt cpu parallel-rdp)

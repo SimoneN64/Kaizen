@@ -17,5 +17,12 @@ add_library(imgui
   imgui/backends/imgui_impl_vulkan.h
   imgui/backends/imgui_impl_vulkan.cpp)
 
+if(WIN32)
+	target_compile_options(imgui PUBLIC -mwindows)
+	set(LIBRARIES -static z stdc++ user32 gdi32 winmm Imm32 ole32 oleaut32 shell32 setupapi version uuid)
+else()
+	set(LIBRARIES )
+endif()
+
 target_include_directories(imgui PUBLIC ${SDL2_INCLUDE_DIRS} imgui imgui/backends)
-target_link_libraries(imgui PUBLIC SDL2main SDL2)
+target_link_libraries(imgui PUBLIC SDL2main SDL2 ${LIBRARIES} )

@@ -26,4 +26,12 @@ target_include_directories(frontend-imgui PUBLIC
   ../../../external/parallel-rdp/parallel-rdp-standalone/vulkan
   ../../../external/parallel-rdp/parallel-rdp-standalone/util
   ../../../external/parallel-rdp/parallel-rdp-standalone/volk)
-target_link_libraries(frontend-imgui PUBLIC SDL2main SDL2 imgui nfd fmt)
+  
+if(WIN32)
+	target_compile_options(frontend-imgui PUBLIC -mwindows)
+	set(LIBRARIES -static z stdc++ user32 gdi32 winmm Imm32 ole32 oleaut32 shell32 setupapi version uuid)
+else()
+	set(LIBRARIES )
+endif()
+
+target_link_libraries(frontend-imgui PUBLIC SDL2main SDL2 ${LIBRARIES} imgui nfd fmt)

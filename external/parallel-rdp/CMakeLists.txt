@@ -74,7 +74,14 @@ target_include_directories(parallel-rdp PUBLIC
   .
 )
 
-target_link_libraries(parallel-rdp SDL2main SDL2)
+if(WIN32)
+	target_compile_options(parallel-rdp PUBLIC -mwindows)
+	set(LIBRARIES -static z stdc++ user32 gdi32 winmm Imm32 ole32 oleaut32 shell32 setupapi version uuid)
+else()
+	set(LIBRARIES )
+endif()
+
+target_link_libraries(parallel-rdp SDL2main SDL2 ${LIBRARIES})
 
 if(WIN32)
   target_compile_definitions(parallel-rdp PUBLIC VK_USE_PLATFORM_WIN32_KHR)

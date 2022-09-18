@@ -1,6 +1,5 @@
 *.toml
 *.ini
-*.json
 *build*/
 .idea/
 roms/

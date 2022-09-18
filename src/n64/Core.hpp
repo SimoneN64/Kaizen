@@ -10,9 +10,8 @@ struct Core {
   ~Core() { Stop(); }
   Core();
   void Stop();
-  void Reset();
-  void LoadROM(const std::string&);
-  void Run(Window&);
+  u32 LoadROM(const std::string&);
+  void Run(Window&, float volumeL, float volumeR);
   void UpdateController(const u8*);
   void TogglePause() { pause = !pause; }
   VI& GetVI() { return mem.mmio.vi; }

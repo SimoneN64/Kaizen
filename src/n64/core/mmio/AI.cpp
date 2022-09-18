@@ -72,7 +72,7 @@ void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
   }
 }
 
-void AI::Step(Mem& mem, Registers& regs, int cpuCycles) {
+void AI::Step(Mem& mem, Registers& regs, int cpuCycles, float volumeL, float volumeR) {
   cycles += cpuCycles;
   while(cycles > dac.period) {
     if (dmaCount == 0) {
@@ -85,7 +85,7 @@ void AI::Step(Mem& mem, Registers& regs, int cpuCycles) {
 
     s16 left  = (s16)(data >> 16);
     s16 right = (s16)data;
-    PushSample(left, right);
+    PushSample((float)left / INT16_MAX, volumeL, volumeR, (float)right / INT16_MAX);
 
     u32 address_lo = (dmaAddr[0] + 4) & 0x1fff;
     dmaAddr[0] = (dmaAddr[0] & ~0x1fff) | address_lo;

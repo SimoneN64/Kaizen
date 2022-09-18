@@ -10,7 +10,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y build-essential libgtk-3-dev libsdl2-dev libfmt-dev git ninja-build
+          sudo apt-get install -y build-essential libgtk-3-dev libsdl2-dev libfmt-dev git ninja-build nlohmann-json3-dev
           sudo apt-get install -y vulkan-tools libvulkan1 libvulkan-dev vulkan-validationlayers-dev spirv-tools
       - name: Build natsukashii
         run: |
@@ -44,7 +44,10 @@ jobs:
           submodules: recursive
       - uses: msys2/setup-msys2@v2
         with:
-          install: make git mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-SDL2 mingw-w64-x86_64-vulkan-devel mingw-w64-x86_64-fmt mingw-w64-x86_64-ninja
+          install:
+            make git mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-SDL2
+            mingw-w64-x86_64-vulkan-devel mingw-w64-x86_64-fmt mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-nlohmann-json
       - name: Build natsukashii
         run: |
           cmake \

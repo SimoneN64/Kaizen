@@ -3,7 +3,7 @@
 #include <n64/core/RDP.hpp>
 #include <n64/memory_regions.hpp>
 
-#define RSP_BYTE(addr) (dmem[BYTE_ADDRESS(addr) & 0xfff])
+#define RSP_BYTE(addr) (dmem[BYTE_ADDRESS(addr) & 0xFFF])
 #define GET_RSP_HALF(addr) ((RSP_BYTE(addr) << 8) | RSP_BYTE((addr) + 1))
 #define SET_RSP_HALF(addr, value) do { RSP_BYTE(addr) = ((value) >> 8) & 0xFF; RSP_BYTE((addr) + 1) = (value) & 0xFF;} while(0)
 #define GET_RSP_WORD(addr) ((GET_RSP_HALF(addr) << 16) | GET_RSP_HALF((addr) + 2))
@@ -117,7 +117,7 @@ struct RSP {
   u16 oldPC{}, pc{}, nextPC{};
   SPDMASPAddr spDMASPAddr{};
   SPDMADRAMAddr spDMADRAMAddr{};
-  SPDMALen spDMARDLen{}, spDMAWRLen{};
+  SPDMALen spDMALen{};
   u8 dmem[DMEM_SIZE]{}, imem[IMEM_SIZE]{};
   VPR vpr[32]{};
   s32 gpr[32]{};

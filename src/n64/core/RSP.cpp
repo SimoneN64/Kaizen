@@ -16,8 +16,7 @@ void RSP::Reset() {
   nextPC = 0;
   spDMASPAddr.raw = 0;
   spDMADRAMAddr.raw = 0;
-  spDMARDLen.raw = 0;
-  spDMAWRLen.raw = 0;
+  spDMALen.raw = 0;
   memset(dmem, 0, DMEM_SIZE);
   memset(imem, 0, IMEM_SIZE);
   memset(vpr, 0, 32 * sizeof(VPR));
@@ -44,8 +43,8 @@ auto RSP::Read(u32 addr) -> u32{
   switch (addr) {
     case 0x04040000: return spDMASPAddr.raw & 0xFFFFF8;
     case 0x04040004: return spDMADRAMAddr.raw & 0x1FF8;
-    case 0x04040008: return spDMARDLen.raw;
-    case 0x0404000C: return spDMAWRLen.raw;
+    case 0x04040008:
+    case 0x0404000C: return spDMALen.raw;
     case 0x04040010: return spStatus.raw;
     case 0x04040018: return 0;
     case 0x0404001C: return AcquireSemaphore();
@@ -61,20 +60,22 @@ inline void DMA(SPDMALen len, RSP& rsp, u8* dst, u8* src) {
 
   length = (length + 0x7) & ~0x7;
 
-  u32 last_addr = rsp.spDMASPAddr.address + length;
-  if (last_addr > 0x1000) {
-    u32 overshoot = last_addr - 0x1000;
-    length -= overshoot;
-  }
-
   u32 dram_address = rsp.spDMADRAMAddr.address & 0xFFFFF8;
-  u32 mem_address = rsp.spDMASPAddr.address & 0x1FF8;
+  u32 mem_address = rsp.spDMASPAddr.address & 0xFF8;
 
   for (int i = 0; i < len.count + 1; i++) {
-    if(isDRAMdest) {
+    /*if(isDRAMdest) {
       memcpy(&dst[dram_address], &src[mem_address], length);
     } else {
       memcpy(&dst[mem_address], &src[dram_address], length);
+    }*/
+
+    for(int j = 0; j < length; j++) {
+      if constexpr (isDRAMdest) {
+        dst[dram_address + j] = src[(mem_address + j) & 0xFFF];
+      } else {
+        dst[(mem_address + j) & 0xFFF] = src[dram_address + j];
+      }
     }
 
     int skip = i == len.count ? 0 : len.skip;
@@ -82,6 +83,9 @@ inline void DMA(SPDMALen len, RSP& rsp, u8* dst, u8* src) {
     dram_address += (length + skip) & 0xFFFFF8;
     mem_address += length;
   }
+
+  rsp.spDMADRAMAddr.address = dram_address;
+  rsp.spDMASPAddr.address = mem_address;
 }
 
 void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
@@ -90,14 +94,14 @@ void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
     case 0x04040000: spDMASPAddr.raw = value & 0x1FF8; break;
     case 0x04040004: spDMADRAMAddr.raw = value & 0xFFFFF8; break;
     case 0x04040008: {
-      spDMARDLen.raw = value;
-      DMA<false>(spDMARDLen, *this, spDMASPAddr.bank ? imem : dmem, mem.GetRDRAM());
-      spDMARDLen.raw = 0xFF8 | (spDMARDLen.skip << 20);
+      spDMALen.raw = value;
+      DMA<false>(spDMALen, *this, spDMASPAddr.bank ? imem : dmem, mem.GetRDRAM());
+      spDMALen.raw = 0xFF8 | (spDMALen.skip << 20);
     } break;
     case 0x0404000C: {
-      spDMAWRLen.raw = value;
-      DMA<true>(spDMAWRLen, *this, mem.GetRDRAM(), spDMASPAddr.bank ? imem : dmem);
-      spDMAWRLen.raw = 0xFF8 | (spDMAWRLen.skip << 20);
+      spDMALen.raw = value;
+      DMA<true>(spDMALen, *this, mem.GetRDRAM(), spDMASPAddr.bank ? imem : dmem);
+      spDMALen.raw = 0xFF8 | (spDMALen.skip << 20);
     } break;
     case 0x04040010: {
       auto write = SPStatusWrite{.raw = value};

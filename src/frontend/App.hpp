@@ -6,7 +6,7 @@ struct App {
   ~App() = default;
   void Run();
   inline void LoadROM(const std::string& path) {
-    core.LoadROM(path);
+    window.LoadROM(core, path);
   }
 private:
   n64::Core core;

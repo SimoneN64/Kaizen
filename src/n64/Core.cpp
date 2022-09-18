@@ -14,29 +14,18 @@ void Core::Stop() {
   mem.Reset();
   pause = true;
   romLoaded = false;
-  rom.clear();
 }
 
-void Core::Reset() {
-  cpu.Reset();
-  mem.Reset();
-  pause = true;
-  romLoaded = false;
-  if(!rom.empty()) {
-    LoadROM(rom);
-  }
-}
-
-void Core::LoadROM(const std::string& rom_) {
+u32 Core::LoadROM(const std::string& rom_) {
   rom = rom_;
   cpu.Reset();
   mem.Reset();
-  mem.LoadROM(rom);
   pause = false;
   romLoaded = true;
+  return mem.LoadROM(rom);
 }
 
-void Core::Run(Window& window) {
+void Core::Run(Window& window, float volumeL, float volumeR) {
   MMIO& mmio = mem.mmio;
   Controller& controller = mmio.si.controller;
   int cycles = 0;
@@ -54,7 +43,7 @@ void Core::Run(Window& window) {
           cpu.Step(mem);
           mmio.rsp.Step(mmio.mi, cpu.regs, mmio.rdp);
 
-          mmio.ai.Step(mem, cpu.regs, 1);
+          mmio.ai.Step(mem, cpu.regs, 1, volumeL, volumeR);
         }
 
         cycles -= mmio.vi.cyclesPerHalfline;
@@ -67,7 +56,7 @@ void Core::Run(Window& window) {
       UpdateScreenParallelRdp(*this, window, GetVI());
 
       int missedCycles = N64_CYCLES_PER_FRAME - frameCycles;
-      mmio.ai.Step(mem, cpu.regs, missedCycles);
+      mmio.ai.Step(mem, cpu.regs, missedCycles, volumeL, volumeR);
     } else if(pause && romLoaded) {
       UpdateScreenParallelRdp(*this, window, GetVI());
     } else if(pause && !romLoaded) {

@@ -20,8 +20,8 @@ inline auto GetCop0Reg(RSP& rsp, RDP& rdp, u8 index) -> u32{
   switch(index) {
     case 0: return rsp.spDMASPAddr.raw;
     case 1: return rsp.spDMADRAMAddr.raw;
-    case 2: return rsp.spDMARDLen.raw;
-    case 3: return rsp.spDMAWRLen.raw;
+    case 2:
+    case 3: return rsp.spDMALen.raw;
     case 4: return rsp.spStatus.raw;
     case 5: return rsp.spStatus.dmaFull;
     case 6: return 0;
@@ -36,8 +36,8 @@ inline void SetCop0Reg(MI& mi, Registers& regs, RSP& rsp, RDP& rdp, u8 index, u3
   switch(index) {
     case 0: rsp.spDMASPAddr.raw = val; break;
     case 1: rsp.spDMADRAMAddr.raw = val; break;
-    case 2: rsp.spDMARDLen.raw = val; break;
-    case 3: rsp.spDMAWRLen.raw = val; break;
+    case 2:
+    case 3: rsp.spDMALen.raw = val; break;
     case 4: rsp.spStatus.raw = val; break;
     case 7:
       if(val == 0) {
@@ -227,12 +227,14 @@ void RSP::sqv(u32 instr) {
 
 void RSP::sllv(u32 instr) {
   u8 sa = gpr[RS(instr)] & 0x1F;
-  gpr[RD(instr)] = gpr[RT(instr)] << sa;
+  s32 rt = gpr[RT(instr)];
+  gpr[RD(instr)] = rt << sa;
 }
 
 void RSP::srlv(u32 instr) {
   u8 sa = gpr[RS(instr)] & 0x1F;
-  gpr[RD(instr)] = (u32)gpr[RT(instr)] >> sa;
+  u32 rt = gpr[RT(instr)];
+  gpr[RD(instr)] = rt >> sa;
 }
 
 void RSP::srav(u32 instr) {

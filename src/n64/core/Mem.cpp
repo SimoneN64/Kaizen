@@ -16,7 +16,7 @@ void Mem::Reset() {
   mmio.Reset();
 }
 
-void Mem::LoadROM(const std::string& filename) {
+u32 Mem::LoadROM(const std::string& filename) {
   std::ifstream file(filename, std::ios::binary);
   file.unsetf(std::ios::skipws);
 
@@ -35,8 +35,12 @@ void Mem::LoadROM(const std::string& filename) {
   cart.insert(cart.begin(), std::istream_iterator<u8>(file), std::istream_iterator<u8>());
 
   file.close();
-  util::SwapN64Rom(sizeAdjusted, cart.data());
+
+  u32 crc = 0;
+  util::SwapN64Rom(crc, sizeAdjusted, cart.data());
   memcpy(mmio.rsp.dmem, cart.data(), 0x1000);
+
+  return crc;
 }
 
 template <bool tlb>

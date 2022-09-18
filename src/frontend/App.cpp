@@ -6,7 +6,7 @@ void App::Run() {
   // Main loop
   const u8* state = SDL_GetKeyboardState(nullptr);
   while (!core.done) {
-    core.Run(window);
+    core.Run(window, window.volumeL, window.volumeR);
     core.UpdateController(state);
 
     SDL_Event event;
@@ -33,7 +33,7 @@ void App::Run() {
               const nfdu8filteritem_t filter {"Nintendo 64 roms", "n64,z64,v64,N64,Z64,V64"};
               nfdresult_t result = NFD_OpenDialog(&outpath, &filter, 1, nullptr);
               if(result == NFD_OKAY) {
-                core.LoadROM(outpath);
+                LoadROM(outpath);
                 NFD_FreePath(outpath);
               }
             } break;

@@ -4,8 +4,11 @@
 #include <Core.hpp>
 #include <utility>
 #include <Audio.hpp>
+#include <nlohmann/json.hpp>
+#include <filesystem>
 
 VkInstance instance{};
+using json = nlohmann::json;
 
 Window::Window(n64::Core& core) {
   InitSDL();
@@ -142,9 +145,30 @@ ImDrawData* Window::Present(n64::Core& core) {
   return ImGui::GetDrawData();
 }
 
+void Window::LoadROM(n64::Core& core, const std::string &path) {
+  if(!path.empty()) {
+    u32 crc = core.LoadROM(path);
+    std::ifstream gameDbFile("resources/game_db.json");
+    json gameDb = json::parse(gameDbFile);
+    auto entry = gameDb[fmt::format("{:08x}", crc)]["name"];
+    std::string name{};
+    if(!entry.empty()) {
+      name = entry.get<std::string>();
+    } else {
+      name = std::filesystem::path(path).stem().string();
+    }
+
+    windowTitle = "natsukashii - " + name;
+
+    SDL_SetWindowTitle(window, windowTitle.c_str());
+  }
+}
+
 void Window::Render(n64::Core& core) {
   ImGui::PushFont(uiFont);
-  if(windowID == SDL_GetWindowID(SDL_GetMouseFocus())) {
+  static bool showSettings = false;
+  bool showMainMenuBar = windowID == SDL_GetWindowID(SDL_GetMouseFocus());
+  if(showMainMenuBar) {
     ImGui::BeginMainMenuBar();
     if (ImGui::BeginMenu("File")) {
       if (ImGui::MenuItem("Open", "O")) {
@@ -152,7 +176,7 @@ void Window::Render(n64::Core& core) {
         const nfdu8filteritem_t filter{"Nintendo 64 roms", "n64,z64,v64,N64,Z64,V64"};
         nfdresult_t result = NFD_OpenDialog(&outpath, &filter, 1, nullptr);
         if (result == NFD_OKAY) {
-          core.LoadROM(outpath);
+          LoadROM(core, outpath);
           NFD_FreePath(outpath);
         }
       }
@@ -163,17 +187,51 @@ void Window::Render(n64::Core& core) {
     }
     if (ImGui::BeginMenu("Emulation")) {
       if (ImGui::MenuItem("Reset")) {
-        core.Reset();
+        LoadROM(core, core.rom);
       }
       if (ImGui::MenuItem("Stop")) {
+        windowTitle = "natsukashii";
+        SDL_SetWindowTitle(window, windowTitle.c_str());
         core.Stop();
       }
       if (ImGui::MenuItem(core.pause ? "Resume" : "Pause", nullptr, false, core.romLoaded)) {
         core.TogglePause();
+        std::string paused = "| Paused";
+        if(core.pause) {
+          windowTitle += paused;
+        } else {
+          auto pausedPos = windowTitle.find_first_of(paused);
+          if(pausedPos != std::string::npos) {
+            windowTitle.erase(pausedPos, paused.length());
+          }
+        }
+        SDL_SetWindowTitle(window, windowTitle.c_str());
+      }
+      if (ImGui::MenuItem("Settings")) {
+        showSettings = true;
       }
       ImGui::EndMenu();
     }
     ImGui::EndMainMenuBar();
+  }
+
+  if(showSettings) {
+    ImGui::OpenPopup("Settings");
+    if(ImGui::BeginPopupModal("Settings", &showSettings)) {
+      ImGui::Checkbox("Lock channels", &lockVolume);
+      ImGui::SliderFloat("Volume L", &volumeL, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+      if (!lockVolume) {
+        ImGui::SliderFloat("Volume R", &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+      } else {
+        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, 0x11111111);
+        ImGui::BeginDisabled();
+        ImGui::SliderFloat("Volume R", &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+        ImGui::EndDisabled();
+        ImGui::PopStyleColor();
+        volumeR = volumeL;
+      }
+      ImGui::EndPopup();
+    }
   }
   ImGui::PopFont();
 }

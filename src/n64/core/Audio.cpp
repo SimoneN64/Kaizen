@@ -65,12 +65,12 @@ void InitAudio() {
   }
 }
 
-void PushSample(s16 left, s16 right) {
-  s16 samples[2]{ left, right };
+void PushSample(float left, float volumeL, float volumeR, float right) {
+  float samples[2]{ left * volumeL, right * volumeR };
 
   int availableBytes = SDL_AudioStreamAvailable(audioStream);
   if(availableBytes < BYTES_PER_HALF_SECOND) {
-    SDL_AudioStreamPut(audioStream, samples, 2 * sizeof(16));
+    SDL_AudioStreamPut(audioStream, samples, 2 * sizeof(float));
   }
 }
 
@@ -78,7 +78,7 @@ void AdjustSampleRate(int sampleRate) {
   LockAudioMutex();
   if(audioStream) SDL_FreeAudioStream(audioStream);
 
-  audioStream = SDL_NewAudioStream(AUDIO_S16SYS, 2, sampleRate, SYSTEM_SAMPLE_FORMAT, 2, AUDIO_SAMPLE_RATE);
+  audioStream = SDL_NewAudioStream(AUDIO_F32SYS, 2, sampleRate, SYSTEM_SAMPLE_FORMAT, 2, AUDIO_SAMPLE_RATE);
   UnlockAudioMutex();
 }
 

@@ -131,23 +131,71 @@ inline void SwapBuffer16(size_t size, u8* data) {
   }
 }
 
+inline u32 crc32(u32 crc, const u8 *buf, size_t len) {
+  static u32 table[256];
+  static int have_table = 0;
+  u32 rem;
+  u8 octet;
+  int i, j;
+  const u8 *p, *q;
+
+  if (have_table == 0) {
+    for (i = 0; i < 256; i++) {
+      rem = i;
+      for (j = 0; j < 8; j++) {
+        if (rem & 1) {
+          rem >>= 1;
+          rem ^= 0xedb88320;
+        } else
+          rem >>= 1;
+      }
+      table[i] = rem;
+    }
+    have_table = 1;
+  }
+
+  crc = ~crc;
+  q = buf + len;
+  for (p = buf; p < q; p++) {
+    octet = *p;  /* Cast to unsigned octet. */
+    crc = (crc >> 8) ^ table[(crc & 0xff) ^ octet];
+  }
+  return ~crc;
+}
+
 enum RomTypes {
   Z64 = 0x80371240,
   N64 = 0x40123780,
   V64 = 0x37804012
 };
 
-inline void SwapN64Rom(size_t size, u8* data) {
+inline void SwapN64Rom(u32& crc, size_t size, u8* rom) {
   RomTypes endianness;
-  memcpy(&endianness, data, 4);
+  memcpy(&endianness, rom, 4);
   endianness = static_cast<RomTypes>(be32toh(endianness));
+
   switch(endianness) {
-    case V64:
-      SwapBuffer32(size, data);
-      SwapBuffer16(size, data);
+    case RomTypes::V64: {
+      u8* temp = (u8*)calloc(size, 1);
+      memcpy(temp, rom, size);
+      SwapBuffer16(size, temp);
+      crc = crc32(0, temp, size);
+      free(temp);
+
+      SwapBuffer32(size, rom);
+      SwapBuffer16(size, rom);
+    } break;
+    case RomTypes::N64: {
+      u8* temp = (u8*)calloc(size, 1);
+      memcpy(temp, rom, size);
+      SwapBuffer32(size, temp);
+      crc = crc32(0, temp, size);
+      free(temp);
+    } break;
+    case RomTypes::Z64:
+      crc = crc32(0, rom, size);
+      SwapBuffer32(size, rom);
       break;
-    case N64: break;
-    case Z64: SwapBuffer32(size, data); break;
     default:
       panic("Unrecognized rom format! Make sure this is a valid Nintendo 64 ROM dump!\n");
   }

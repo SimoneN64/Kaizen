@@ -7,6 +7,7 @@ SET(NFD_PORTAL ON CACHE BOOL "Use dbus for native file dialog instead of gtk")
 
 find_package(SDL2 REQUIRED)
 find_package(fmt REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 add_library(frontend-imgui STATIC
   Window.cpp
@@ -34,4 +35,4 @@ else()
 	set(LIBRARIES )
 endif()
 
-target_link_libraries(frontend-imgui PUBLIC SDL2main SDL2 ${LIBRARIES} imgui nfd fmt)
+target_link_libraries(frontend-imgui PUBLIC nlohmann_json::nlohmann_json SDL2main SDL2 ${LIBRARIES} imgui nfd fmt)

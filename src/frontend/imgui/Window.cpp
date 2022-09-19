@@ -223,11 +223,9 @@ void Window::Render(n64::Core& core) {
       if (!lockVolume) {
         ImGui::SliderFloat("Volume R", &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
       } else {
-        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, 0x11111111);
         ImGui::BeginDisabled();
         ImGui::SliderFloat("Volume R", &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
         ImGui::EndDisabled();
-        ImGui::PopStyleColor();
         volumeR = volumeL;
       }
       ImGui::EndPopup();

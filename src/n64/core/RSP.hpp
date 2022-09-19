@@ -3,11 +3,13 @@
 #include <n64/core/RDP.hpp>
 #include <n64/memory_regions.hpp>
 
-#define RSP_BYTE(addr) (dmem[BYTE_ADDRESS(addr) & 0xFFF])
-#define GET_RSP_HALF(addr) ((RSP_BYTE(addr) << 8) | RSP_BYTE((addr) + 1))
-#define SET_RSP_HALF(addr, value) do { RSP_BYTE(addr) = ((value) >> 8) & 0xFF; RSP_BYTE((addr) + 1) = (value) & 0xFF;} while(0)
-#define GET_RSP_WORD(addr) ((GET_RSP_HALF(addr) << 16) | GET_RSP_HALF((addr) + 2))
-#define SET_RSP_WORD(addr, value) do { SET_RSP_HALF(addr, ((value) >> 16) & 0xFFFF); SET_RSP_HALF((addr) + 2, (value) & 0xFFFF);} while(0)
+#define RSP_BYTE(addr, buf) (buf[BYTE_ADDRESS(addr) & 0xFFF])
+#define GET_RSP_HALF(addr, buf) ((RSP_BYTE(addr, buf) << 8) | RSP_BYTE((addr) + 1, buf))
+#define SET_RSP_HALF(addr, buf, value) do { RSP_BYTE(addr, buf) = ((value) >> 8) & 0xFF; RSP_BYTE((addr) + 1, buf) = (value) & 0xFF;} while(0)
+#define GET_RSP_WORD(addr, buf) ((GET_RSP_HALF(addr, buf) << 16) | GET_RSP_HALF((addr) + 2, buf))
+#define SET_RSP_WORD(addr, buf, value) do { SET_RSP_HALF(addr, buf, ((value) >> 16) & 0xFFFF); SET_RSP_HALF((addr) + 2, buf, (value) & 0xFFFF);} while(0)
+#define GET_RSP_DWORD(addr, buf) (((u64)GET_RSP_WORD(addr, buf) << 32) | (u64)GET_RSP_WORD((addr) + 4, buf))
+#define SET_RSP_DWORD(addr, buf, value) do { SET_RSP_WORD(addr, buf, ((value) >> 32) & 0xFFFFFFFF); SET_RSP_WORD((addr) + 4, buf, (value) & 0xFFFFFFFF);} while(0)
 
 namespace n64 {
 union SPStatus {
@@ -160,28 +162,100 @@ struct RSP {
     return val;
   }
 
+  inline u64 ReadDword(u32 addr, bool i) {
+    if (i) {
+      return GET_RSP_DWORD(addr, imem);
+    } else {
+      return GET_RSP_DWORD(addr, dmem);
+    }
+  }
+
+  inline void WriteDword(u32 addr, u64 val, bool i) {
+    if (i) {
+      SET_RSP_DWORD(addr, imem, val);
+    } else {
+      SET_RSP_DWORD(addr, dmem, val);
+    }
+  }
+
+  inline u32 ReadWord(u32 addr, bool i) {
+    if (i) {
+      return GET_RSP_WORD(addr, imem);
+    } else {
+      return GET_RSP_WORD(addr, dmem);
+    }
+  }
+
+  inline void WriteWord(u32 addr, u32 val, bool i) {
+    if (i) {
+      SET_RSP_WORD(addr, imem, val);
+    } else {
+      SET_RSP_WORD(addr, dmem, val);
+    }
+  }
+
+  inline u16 ReadHalf(u32 addr, bool i) {
+    if (i) {
+      return GET_RSP_HALF(addr, imem);
+    } else {
+      return GET_RSP_HALF(addr, dmem);
+    }
+  }
+
+  inline void WriteHalf(u32 addr, u16 val, bool i) {
+    if (i) {
+      SET_RSP_HALF(addr, imem, val);
+    } else {
+      SET_RSP_HALF(addr, dmem, val);
+    }
+  }
+
+  inline u8 ReadByte(u32 addr, bool i) {
+    if (i) {
+      return RSP_BYTE(addr, imem);
+    } else {
+      return RSP_BYTE(addr, dmem);
+    }
+  }
+
+  inline void WriteByte(u32 addr, u8 val, bool i) {
+    if (i) {
+      RSP_BYTE(addr, imem) = val;
+    } else {
+      RSP_BYTE(addr, dmem) = val;
+    }
+  }
+
+  inline u64 ReadDword(u32 addr) {
+    return GET_RSP_DWORD(addr, dmem);
+  }
+
+  inline void WriteDword(u32 addr, u64 val) {
+    SET_RSP_DWORD(addr, dmem, val);
+  }
+
   inline u32 ReadWord(u32 addr) {
-    return GET_RSP_WORD(addr);
+    return GET_RSP_WORD(addr, dmem);
   }
 
   inline void WriteWord(u32 addr, u32 val) {
-    SET_RSP_WORD(addr, val);
+    SET_RSP_WORD(addr, dmem, val);
   }
 
   inline u16 ReadHalf(u32 addr) {
-    return GET_RSP_HALF(addr);
+    return GET_RSP_HALF(addr, dmem);
   }
 
   inline void WriteHalf(u32 addr, u16 val) {
-    SET_RSP_HALF(addr, val);
+    SET_RSP_HALF(addr, dmem, val);
   }
 
   inline u8 ReadByte(u32 addr) {
-    return RSP_BYTE(addr);
+    return RSP_BYTE(addr, dmem);
   }
 
   inline void WriteByte(u32 addr, u8 val) {
-    RSP_BYTE(addr) = val;
+    RSP_BYTE(addr, dmem) = val;
   }
 
   inline bool AcquireSemaphore() {

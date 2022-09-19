@@ -80,21 +80,15 @@ T Mem::Read(Registers& regs, u32 vaddr, s64 pc) {
       } else {
         return util::ReadAccess<T>(mmio.rdp.dram.data(), paddr & RDRAM_DSIZE);
       }
-    case 0x04000000 ... 0x04000FFF:
+    case 0x04000000 ... 0x0403FFFF:
       if constexpr (sizeof(T) == 1) {
-        return util::ReadAccess<T>(mmio.rsp.dmem, BYTE_ADDRESS(paddr) & DMEM_DSIZE);
+        return mmio.rsp.ReadByte(paddr, paddr & 0x1000);
       } else if constexpr (sizeof(T) == 2) {
-        return util::ReadAccess<T>(mmio.rsp.dmem, HALF_ADDRESS(paddr) & DMEM_DSIZE);
+        return mmio.rsp.ReadHalf(paddr, paddr & 0x1000);
+      } else if constexpr (sizeof(T) == 4) {
+        return mmio.rsp.ReadWord(paddr, paddr & 0x1000);
       } else {
-        return util::ReadAccess<T>(mmio.rsp.dmem, paddr & DMEM_DSIZE);
-      }
-    case 0x04001000 ... 0x04001FFF:
-      if constexpr (sizeof(T) == 1) {
-        return util::ReadAccess<T>(mmio.rsp.imem, BYTE_ADDRESS(paddr) & IMEM_DSIZE);
-      } else if constexpr (sizeof(T) == 2) {
-        return util::ReadAccess<T>(mmio.rsp.imem, HALF_ADDRESS(paddr) & IMEM_DSIZE);
-      } else {
-        return util::ReadAccess<T>(mmio.rsp.imem, paddr & IMEM_DSIZE);
+        return mmio.rsp.ReadDword(paddr, paddr & 0x1000);
       }
     case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
     case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: return mmio.Read(paddr);
@@ -122,8 +116,7 @@ T Mem::Read(Registers& regs, u32 vaddr, s64 pc) {
       } else {
         return util::ReadAccess<T>(pifRam, paddr & PIF_RAM_DSIZE);
       }
-    case 0x00800000 ... 0x03FFFFFF: case 0x04002000 ... 0x0403FFFF:
-    case 0x04200000 ... 0x042FFFFF:
+    case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
     case 0x04900000 ... 0x07FFFFFF: case 0x08000000 ... 0x0FFFFFFF:
     case 0x80000000 ... 0xFFFFFFFF: case 0x1FC00800 ... 0x7FFFFFFF: return 0;
     default: util::panic("Unimplemented {}-bit read at address {:08X} (PC = {:016X})\n", sizeof(T) * 8, paddr, (u64)regs.pc);
@@ -166,22 +159,15 @@ void Mem::Write(Registers& regs, u32 vaddr, T val, s64 pc) {
         util::WriteAccess<T>(mmio.rdp.dram.data(), paddr & RDRAM_DSIZE, val);
       }
       break;
-    case 0x04000000 ... 0x04000FFF:
+    case 0x04000000 ... 0x0403FFFF:
       if constexpr (sizeof(T) == 1) {
-        util::WriteAccess<T>(mmio.rsp.dmem, BYTE_ADDRESS(paddr) & DMEM_DSIZE, val);
+        mmio.rsp.WriteByte(paddr, val, paddr & 0x1000);
       } else if constexpr (sizeof(T) == 2) {
-        util::WriteAccess<T>(mmio.rsp.dmem, HALF_ADDRESS(paddr) & DMEM_DSIZE, val);
+        mmio.rsp.WriteHalf(paddr, val, paddr & 0x1000);
+      } else if constexpr (sizeof(T) == 4) {
+        mmio.rsp.WriteWord(paddr, val, paddr & 0x1000);
       } else {
-        util::WriteAccess<T>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
-      }
-      break;
-    case 0x04001000 ... 0x04001FFF:
-      if constexpr (sizeof(T) == 1) {
-        util::WriteAccess<T>(mmio.rsp.imem, BYTE_ADDRESS(paddr) & IMEM_DSIZE, val);
-      } else if constexpr (sizeof(T) == 2) {
-        util::WriteAccess<T>(mmio.rsp.imem, HALF_ADDRESS(paddr) & IMEM_DSIZE, val);
-      } else {
-        util::WriteAccess<T>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
+        mmio.rsp.WriteDword(paddr, val, paddr & 0x1000);
       }
       break;
     case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
@@ -208,9 +194,8 @@ void Mem::Write(Registers& regs, u32 vaddr, T val, s64 pc) {
       }
       ProcessPIFCommands(pifRam, mmio.si.controller, *this);
       break;
-    case 0x00800000 ... 0x03FFFFFF: case 0x04002000 ... 0x0403FFFF:
-    case 0x04200000 ... 0x042FFFFF: case 0x04900000 ... 0x07FFFFFF:
-    case 0x08000000 ... 0x0FFFFFFF:
+    case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
+    case 0x08000000 ... 0x0FFFFFFF: case 0x04900000 ... 0x07FFFFFF:
     case 0x1FC00800 ... 0x7FFFFFFF: case 0x80000000 ... 0xFFFFFFFF: break;
     default: util::panic("Unimplemented {}-bit write at address {:08X} with value {:0X} (PC = {:016X})\n", sizeof(T) * 8, paddr, val, (u64)regs.pc);
   }

@@ -119,6 +119,8 @@ struct RSP {
   u16 oldPC{}, pc{}, nextPC{};
   SPDMASPAddr spDMASPAddr{};
   SPDMADRAMAddr spDMADRAMAddr{};
+  SPDMASPAddr lastSuccessfulSPAddr;
+  SPDMADRAMAddr lastSuccessfulDRAMAddr;
   SPDMALen spDMALen{};
   u8 dmem[DMEM_SIZE]{}, imem[IMEM_SIZE]{};
   VPR vpr[32]{};

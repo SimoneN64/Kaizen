@@ -41,8 +41,8 @@ void RSP::Step(MI& mi, Registers& regs, RDP& rdp) {
 
 auto RSP::Read(u32 addr) -> u32{
   switch (addr) {
-    case 0x04040000: return spDMASPAddr.raw & 0xFFFFF8;
-    case 0x04040004: return spDMADRAMAddr.raw & 0x1FF8;
+    case 0x04040000: return lastSuccessfulSPAddr.raw & 0x1FF8;
+    case 0x04040004: return lastSuccessfulDRAMAddr.raw & 0xFFFFF8;
     case 0x04040008:
     case 0x0404000C: return spDMALen.raw;
     case 0x04040010: return spStatus.raw;
@@ -55,21 +55,24 @@ auto RSP::Read(u32 addr) -> u32{
 }
 
 template <bool isDRAMdest>
-inline void DMA(SPDMALen len, RSP& rsp, u8* dst, u8* src) {
+inline void DMA(SPDMALen len, Mem& mem, RSP& rsp, bool bank) {
   u32 length = len.len + 1;
 
   length = (length + 0x7) & ~0x7;
 
-  u32 dram_address = rsp.spDMADRAMAddr.address & 0xFFFFF8;
+  u8* dst, *src;
+  if constexpr (isDRAMdest) {
+    dst = mem.GetRDRAM();
+    src = bank ? rsp.imem : rsp.dmem;
+  } else {
+    src = mem.GetRDRAM();
+    dst = bank ? rsp.imem : rsp.dmem;
+  }
+
   u32 mem_address = rsp.spDMASPAddr.address & 0xFF8;
+  u32 dram_address = rsp.spDMADRAMAddr.address & 0xFFFFF8;
 
   for (int i = 0; i < len.count + 1; i++) {
-    /*if(isDRAMdest) {
-      memcpy(&dst[dram_address], &src[mem_address], length);
-    } else {
-      memcpy(&dst[mem_address], &src[dram_address], length);
-    }*/
-
     for(int j = 0; j < length; j++) {
       if constexpr (isDRAMdest) {
         dst[dram_address + j] = src[(mem_address + j) & 0xFFF];
@@ -84,8 +87,9 @@ inline void DMA(SPDMALen len, RSP& rsp, u8* dst, u8* src) {
     mem_address += length;
   }
 
-  rsp.spDMADRAMAddr.address = dram_address;
-  rsp.spDMASPAddr.address = mem_address;
+  rsp.lastSuccessfulSPAddr.address = mem_address & 0xFF8;
+  rsp.lastSuccessfulSPAddr.bank = bank;
+  rsp.lastSuccessfulDRAMAddr.address = dram_address & 0xFFFFF8;
 }
 
 void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
@@ -95,12 +99,12 @@ void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
     case 0x04040004: spDMADRAMAddr.raw = value & 0xFFFFF8; break;
     case 0x04040008: {
       spDMALen.raw = value;
-      DMA<false>(spDMALen, *this, spDMASPAddr.bank ? imem : dmem, mem.GetRDRAM());
+      DMA<false>(spDMALen, mem, *this, spDMASPAddr.bank);
       spDMALen.raw = 0xFF8 | (spDMALen.skip << 20);
     } break;
     case 0x0404000C: {
       spDMALen.raw = value;
-      DMA<true>(spDMALen, *this, mem.GetRDRAM(), spDMASPAddr.bank ? imem : dmem);
+      DMA<true>(spDMALen, mem, *this, spDMASPAddr.bank);
       spDMALen.raw = 0xFF8 | (spDMALen.skip << 20);
     } break;
     case 0x04040010: {

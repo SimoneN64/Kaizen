@@ -52,7 +52,6 @@ void ProcessPIFCommands(u8* pifRam, Controller& controller, Mem& mem) {
         }
 
         i += t + rlen;
-        channel++;
       }
     }
   }
@@ -61,11 +60,9 @@ void ProcessPIFCommands(u8* pifRam, Controller& controller, Mem& mem) {
     pifRam[63] &= ~8;
   }
 
-  if(control & 48) {
-    pifRam[63] = 128;
+  if (control & 0x30) {
+    pifRam[63] = 0x80;
   }
-
-  //pifRam[63] &= ~1;
 }
 
 }

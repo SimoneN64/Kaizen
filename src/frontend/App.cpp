@@ -5,9 +5,10 @@
 void App::Run() {
   // Main loop
   const u8* state = SDL_GetKeyboardState(nullptr);
+  SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
   while (!core.done) {
-    core.Run(window, window.volumeL, window.volumeR);
     core.UpdateController(state);
+    core.Run(window, window.volumeL, window.volumeR);
 
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -37,6 +38,13 @@ void App::Run() {
                 NFD_FreePath(outpath);
               }
             } break;
+          } break;
+          case SDL_DROPFILE: {
+            char* droppedDir = event.drop.file;
+            if(droppedDir) {
+              LoadROM(droppedDir);
+            }
+            free(droppedDir);
           } break;
       }
     }

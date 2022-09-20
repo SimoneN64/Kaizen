@@ -70,12 +70,8 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
 
 void Core::UpdateController(const u8* state) {
   Controller& controller = mem.mmio.si.controller;
+  controller.raw = 0;
   if(gamepadConnected) {
-    controller.b1 = 0;
-    controller.b2 = 0;
-    controller.b3 = 0;
-    controller.b4 = 0;
-
     bool A = GET_BUTTON(gamepad, SDL_CONTROLLER_BUTTON_A);
     bool B = GET_BUTTON(gamepad, SDL_CONTROLLER_BUTTON_X);
     bool Z = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_TRIGGERLEFT) == 32767;
@@ -109,11 +105,6 @@ void Core::UpdateController(const u8* state) {
       controller.b4 = 0;
     }
   } else {
-    controller.b1 = 0;
-    controller.b2 = 0;
-    controller.b3 = 0;
-    controller.b4 = 0;
-
     controller.b1 =
       (state[SDL_SCANCODE_X] << 7) |
       (state[SDL_SCANCODE_C] << 6) |
@@ -133,8 +124,19 @@ void Core::UpdateController(const u8* state) {
       (state[SDL_SCANCODE_K] << 1) |
       (state[SDL_SCANCODE_L]);
 
-    s8 xaxis = state[SDL_SCANCODE_LEFT] ? -128 : (state[SDL_SCANCODE_RIGHT] ? 127 : 0);
-    s8 yaxis = state[SDL_SCANCODE_DOWN] ? -128 : (state[SDL_SCANCODE_UP] ? 127 : 0);
+    s8 xaxis = 0;
+    if(state[SDL_SCANCODE_LEFT]) {
+      xaxis = -128;
+    } else if(state[SDL_SCANCODE_RIGHT]) {
+      xaxis = 127;
+    }
+
+    s8 yaxis = 0;
+    if(state[SDL_SCANCODE_DOWN]) {
+      yaxis = -128;
+    } else if(state[SDL_SCANCODE_UP]) {
+      yaxis = 127;
+    }
 
     controller.b3 = xaxis;
     controller.b4 = yaxis;

@@ -211,6 +211,7 @@ struct Cop0 {
   u32 r31{};
   TLBEntry tlb[32]{};
   TLBError tlbError = NONE;
+  s64 openbus{};
   void decode(Registers&, Mem&, u32);
 private:
   inline u32 GetWired() { return wired & 0x3F; }

@@ -46,7 +46,7 @@ u32 Cop0::GetReg32(u8 addr) {
     case COP0_REG_ERROREPC: return ErrorEPC;
     case  7: case 21: case 22:
     case 23: case 24: case 25:
-    case 31: return 0;
+    case 31: return openbus;
     default:
       util::panic("Unsupported word read from COP0 register {}\n", index);
   }
@@ -65,12 +65,16 @@ u64 Cop0::GetReg64(u8 addr) {
     case COP0_REG_LLADDR: return LLAddr;
     case COP0_REG_XCONTEXT: return xcontext.raw & 0xFFFFFFFFFFFFFFF0;
     case COP0_REG_ERROREPC: return ErrorEPC;
+    case  7: case 21: case 22:
+    case 23: case 24: case 25:
+    case 31: return openbus;
     default:
       util::panic("Unsupported word read from COP0 register {}\n", index);
   }
 }
 
 void Cop0::SetReg32(u8 addr, u32 value) {
+  openbus = value & 0xFFFFFFFF;
   switch(addr) {
     case COP0_REG_INDEX: index = value; break;
     case COP0_REG_RANDOM: break;
@@ -132,6 +136,7 @@ void Cop0::SetReg32(u8 addr, u32 value) {
 }
 
 void Cop0::SetReg64(u8 addr, u64 value) {
+  openbus = value;
   switch(addr) {
     case COP0_REG_ENTRYLO0: entryLo0.raw = value & ENTRY_LO_MASK; break;
     case COP0_REG_ENTRYLO1: entryLo1.raw = value & ENTRY_LO_MASK; break;

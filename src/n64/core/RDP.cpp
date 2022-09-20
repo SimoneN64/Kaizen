@@ -41,7 +41,7 @@ auto RDP::Read(u32 addr) const -> u32{
 void RDP::Write(MI& mi, Registers& regs, RSP& rsp, u32 addr, u32 val) {
   switch(addr) {
     case 0x04100000:
-      if(dpc.status.startValid) {
+      if(!dpc.status.startValid) {
         dpc.start = val & 0xFFFFF8;
       }
       dpc.status.startValid = true;
@@ -62,8 +62,8 @@ void RDP::Write(MI& mi, Registers& regs, RSP& rsp, u32 addr, u32 val) {
 void RDP::StatusWrite(MI& mi, Registers& regs, RSP& rsp, u32 val) {
   DPCStatusWrite temp{};
   temp.raw = val;
-  bool rdpUnfrozen = false;
   CLEAR_SET(dpc.status.xbusDmemDma, temp.clearXbusDmemDma, temp.setXbusDmemDma);
+  bool rdpUnfrozen = false;
   if(temp.clearFreeze) {
     dpc.status.freeze = false;
     rdpUnfrozen = true;
@@ -71,6 +71,7 @@ void RDP::StatusWrite(MI& mi, Registers& regs, RSP& rsp, u32 val) {
 
   if(temp.setFreeze) {
     dpc.status.freeze = true;
+    rdpUnfrozen = false;
   }
   CLEAR_SET(dpc.status.flush, temp.clearFlush, temp.setFlush);
   CLEAR_SET(dpc.status.cmdBusy, temp.clearCmd, false);
@@ -85,13 +86,14 @@ void RDP::StatusWrite(MI& mi, Registers& regs, RSP& rsp, u32 val) {
 
 void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
   static int remaining_cmds = 0;
-  dpc.status.freeze = true;
 
   const u32 current = dpc.current & 0xFFFFF8;
   const u32 end = dpc.end & 0xFFFFF8;
 
   int len = end - current;
   if(len <= 0) return;
+
+  dpc.status.freeze = true;
 
   if(len + (remaining_cmds * 4) <= 0xFFFFF) {
     if(dpc.status.xbusDmemDma) {
@@ -149,11 +151,11 @@ void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
     if(processed_all) {
       remaining_cmds = 0;
     }
-
-    dpc.current = end;
-    dpc.status.freeze = false;
-    dpc.status.cbufReady = true;
   }
+
+  dpc.current = end;
+  dpc.status.freeze = false;
+  dpc.status.cbufReady = true;
 }
 
 void RDP::OnFullSync() {

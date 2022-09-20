@@ -26,17 +26,17 @@ union DPCStatusWrite {
 
 union DPCStatus {
   struct {
-    unsigned xbusDmemDma;
-    unsigned freeze;
-    unsigned flush;
-    unsigned startGclk;
-    unsigned tmemBusy;
-    unsigned pipeBusy;
-    unsigned cmdBusy;
-    unsigned cbufReady;
-    unsigned dmaBusy;
-    unsigned endValid;
-    unsigned startValid;
+    unsigned xbusDmemDma:1;
+    unsigned freeze:1;
+    unsigned flush:1;
+    unsigned startGclk:1;
+    unsigned tmemBusy:1;
+    unsigned pipeBusy:1;
+    unsigned cmdBusy:1;
+    unsigned cbufReady:1;
+    unsigned dmaBusy:1;
+    unsigned endValid:1;
+    unsigned startValid:1;
   };
   u32 raw;
 };

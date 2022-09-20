@@ -175,7 +175,7 @@ void Cpu::lui(u32 instr) {
 
 void Cpu::lb(Mem& mem, u32 instr) {
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  regs.gpr[RT(instr)] = mem.Read<s8>(regs, address, regs.oldPC);
+  regs.gpr[RT(instr)] = (s8)mem.Read8(regs, address, regs.oldPC);
 }
 
 void Cpu::lh(Mem& mem, u32 instr) {
@@ -185,7 +185,7 @@ void Cpu::lh(Mem& mem, u32 instr) {
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
 
-  regs.gpr[RT(instr)] = mem.Read<s16>(regs, address, regs.oldPC);
+  regs.gpr[RT(instr)] = (s16)mem.Read16(regs, address, regs.oldPC);
 }
 
 void Cpu::lw(Mem& mem, u32 instr) {
@@ -195,7 +195,7 @@ void Cpu::lw(Mem& mem, u32 instr) {
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
 
-  regs.gpr[RT(instr)] = mem.Read<s32>(regs, address, regs.oldPC);
+  regs.gpr[RT(instr)] = (s32)mem.Read32(regs, address, regs.oldPC);
 }
 
 void Cpu::ll(Mem& mem, u32 instr) {
@@ -205,7 +205,7 @@ void Cpu::ll(Mem& mem, u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   } else {
-    regs.gpr[RT(instr)] = mem.Read<s32, false>(regs, physical, regs.oldPC);
+    regs.gpr[RT(instr)] = (s32)mem.Read32<false>(regs, physical, regs.oldPC);
   }
 
   regs.cop0.llbit = true;
@@ -216,7 +216,7 @@ void Cpu::lwl(Mem& mem, u32 instr) {
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 shift = 8 * ((address ^ 0) & 3);
   u32 mask = 0xFFFFFFFF << shift;
-  u32 data = mem.Read<u32>(regs, address & ~3, regs.oldPC);
+  u32 data = mem.Read32(regs, address & ~3, regs.oldPC);
   s64 rt = regs.gpr[RT(instr)];
   s32 result = (s32)((rt & ~mask) | (data << shift));
   regs.gpr[RT(instr)] = result;
@@ -226,7 +226,7 @@ void Cpu::lwr(Mem& mem, u32 instr) {
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 shift = 8 * ((address ^ 3) & 3);
   u32 mask = 0xFFFFFFFF >> shift;
-  u32 data = mem.Read<u32>(regs, address & ~3, regs.oldPC);
+  u32 data = mem.Read32(regs, address & ~3, regs.oldPC);
   s64 rt = regs.gpr[RT(instr)];
   s32 result = (s32)((rt & ~mask) | (data >> shift));
   regs.gpr[RT(instr)] = result;
@@ -239,7 +239,7 @@ void Cpu::ld(Mem& mem, u32 instr) {
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
 
-  s64 value = mem.Read<s64>(regs, address, regs.oldPC);
+  s64 value = mem.Read64(regs, address, regs.oldPC);
   regs.gpr[RT(instr)] = value;
 }
 
@@ -250,7 +250,7 @@ void Cpu::lld(Mem& mem, u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   } else {
-    regs.gpr[RT(instr)] = mem.Read<s64, false>(regs, physical, regs.oldPC);
+    regs.gpr[RT(instr)] = mem.Read64<false>(regs, physical, regs.oldPC);
   }
 
   regs.cop0.llbit = true;
@@ -261,7 +261,7 @@ void Cpu::ldl(Mem& mem, u32 instr) {
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
   s32 shift = 8 * ((address ^ 0) & 7);
   u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
-  u64 data = mem.Read<u64>(regs, address & ~7, regs.oldPC);
+  u64 data = mem.Read64(regs, address & ~7, regs.oldPC);
   s64 rt = regs.gpr[RT(instr)];
   s64 result = (s64)((rt & ~mask) | (data << shift));
   regs.gpr[RT(instr)] = result;
@@ -271,7 +271,7 @@ void Cpu::ldr(Mem& mem, u32 instr) {
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
   s32 shift = 8 * ((address ^ 7) & 7);
   u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
-  u64 data = mem.Read<u64>(regs, address & ~7, regs.oldPC);
+  u64 data = mem.Read64(regs, address & ~7, regs.oldPC);
   s64 rt = regs.gpr[RT(instr)];
   s64 result = (s64)((rt & ~mask) | (data >> shift));
   regs.gpr[RT(instr)] = result;
@@ -279,7 +279,7 @@ void Cpu::ldr(Mem& mem, u32 instr) {
 
 void Cpu::lbu(Mem& mem, u32 instr) {
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  u8 value = mem.Read<u8>(regs, address, regs.oldPC);
+  u8 value = mem.Read8(regs, address, regs.oldPC);
   regs.gpr[RT(instr)] = value;
 }
 
@@ -290,7 +290,7 @@ void Cpu::lhu(Mem& mem, u32 instr) {
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
 
-  u16 value = mem.Read<u16>(regs, address, regs.oldPC);
+  u16 value = mem.Read16(regs, address, regs.oldPC);
   regs.gpr[RT(instr)] = value;
 }
 
@@ -301,13 +301,13 @@ void Cpu::lwu(Mem& mem, u32 instr) {
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
 
-  u32 value = mem.Read<u32>(regs, address, regs.oldPC);
+  u32 value = mem.Read32(regs, address, regs.oldPC);
   regs.gpr[RT(instr)] = value;
 }
 
 void Cpu::sb(Mem& mem, u32 instr) {
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  mem.Write<u8>(regs, address, regs.gpr[RT(instr)], regs.oldPC);
+  mem.Write8(regs, address, regs.gpr[RT(instr)], regs.oldPC);
 }
 
 void Cpu::sc(Mem& mem, u32 instr) {
@@ -318,7 +318,7 @@ void Cpu::sc(Mem& mem, u32 instr) {
   }
 
   if(regs.cop0.llbit) {
-    mem.Write<u32>(regs, address, regs.gpr[RT(instr)], regs.oldPC);
+    mem.Write32(regs, address, regs.gpr[RT(instr)], regs.oldPC);
   }
 
   regs.gpr[RT(instr)] = (u64)regs.cop0.llbit;
@@ -333,7 +333,7 @@ void Cpu::scd(Mem& mem, u32 instr) {
   }
 
   if(regs.cop0.llbit) {
-    mem.Write<u64>(regs, address, regs.gpr[RT(instr)], regs.oldPC);
+    mem.Write64(regs, address, regs.gpr[RT(instr)], regs.oldPC);
   }
 
   regs.gpr[RT(instr)] = (s64)((u64)regs.cop0.llbit);
@@ -347,7 +347,7 @@ void Cpu::sh(Mem& mem, u32 instr) {
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }
 
-  mem.Write<u16>(regs, address, regs.gpr[RT(instr)], regs.oldPC);
+  mem.Write16(regs, address, regs.gpr[RT(instr)], regs.oldPC);
 }
 
 void Cpu::sw(Mem& mem, u32 instr) {
@@ -357,7 +357,7 @@ void Cpu::sw(Mem& mem, u32 instr) {
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }
 
-  mem.Write<u32>(regs, address, regs.gpr[RT(instr)], regs.oldPC);
+  mem.Write32(regs, address, regs.gpr[RT(instr)], regs.oldPC);
 }
 
 void Cpu::sd(Mem& mem, u32 instr) {
@@ -367,43 +367,43 @@ void Cpu::sd(Mem& mem, u32 instr) {
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }
 
-  mem.Write<u64>(regs, address, regs.gpr[RT(instr)], regs.oldPC);
+  mem.Write64(regs, address, regs.gpr[RT(instr)], regs.oldPC);
 }
 
 void Cpu::sdl(Mem& mem, u32 instr) {
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
   s32 shift = 8 * ((address ^ 0) & 7);
   u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
-  u64 data = mem.Read<u64>(regs, address & ~7, regs.oldPC);
+  u64 data = mem.Read64(regs, address & ~7, regs.oldPC);
   s64 rt = regs.gpr[RT(instr)];
-  mem.Write<u64>(regs, address & ~7, (data & ~mask) | (rt >> shift), regs.oldPC);
+  mem.Write64(regs, address & ~7, (data & ~mask) | (rt >> shift), regs.oldPC);
 }
 
 void Cpu::sdr(Mem& mem, u32 instr) {
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
   s32 shift = 8 * ((address ^ 7) & 7);
   u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
-  u64 data = mem.Read<u64>(regs, address & ~7, regs.oldPC);
+  u64 data = mem.Read64(regs, address & ~7, regs.oldPC);
   s64 rt = regs.gpr[RT(instr)];
-  mem.Write<u64>(regs, address & ~7, (data & ~mask) | (rt << shift), regs.oldPC);
+  mem.Write64(regs, address & ~7, (data & ~mask) | (rt << shift), regs.oldPC);
 }
 
 void Cpu::swl(Mem& mem, u32 instr) {
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 shift = 8 * ((address ^ 0) & 3);
   u32 mask = 0xFFFFFFFF >> shift;
-  u32 data = mem.Read<u32>(regs, address & ~3, regs.oldPC);
+  u32 data = mem.Read32(regs, address & ~3, regs.oldPC);
   u32 rt = regs.gpr[RT(instr)];
-  mem.Write<u32>(regs, address & ~3, (data & ~mask) | (rt >> shift), regs.oldPC);
+  mem.Write32(regs, address & ~3, (data & ~mask) | (rt >> shift), regs.oldPC);
 }
 
 void Cpu::swr(Mem& mem, u32 instr) {
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 shift = 8 * ((address ^ 3) & 3);
   u32 mask = 0xFFFFFFFF << shift;
-  u32 data = mem.Read<u32>(regs, address & ~3, regs.oldPC);
+  u32 data = mem.Read32(regs, address & ~3, regs.oldPC);
   u32 rt = regs.gpr[RT(instr)];
-  mem.Write<u32>(regs, address & ~3, (data & ~mask) | (rt << shift), regs.oldPC);
+  mem.Write32(regs, address & ~3, (data & ~mask) | (rt << shift), regs.oldPC);
 }
 
 void Cpu::ori(u32 instr) {

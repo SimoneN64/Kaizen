@@ -415,18 +415,18 @@ void Cop1::floorwd(Registers& regs, u32 instr) {
 
 void Cop1::lwc1(Registers& regs, Mem& mem, u32 instr) {
   u32 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
-  u32 data = mem.Read<u32>(regs, addr, regs.oldPC);
+  u32 data = mem.Read32(regs, addr, regs.oldPC);
   SetReg<u32>(regs.cop0, FT(instr), data);
 }
 
 void Cop1::swc1(Registers& regs, Mem& mem, u32 instr) {
   u32 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
-  mem.Write<u32>(regs, addr, GetReg<u32>(regs.cop0, FT(instr)), regs.oldPC);
+  mem.Write32(regs, addr, GetReg<u32>(regs.cop0, FT(instr)), regs.oldPC);
 }
 
 void Cop1::ldc1(Registers& regs, Mem& mem, u32 instr) {
   u32 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
-  u64 data = mem.Read<u64>(regs, addr, regs.oldPC);
+  u64 data = mem.Read64(regs, addr, regs.oldPC);
   SetReg<u64>(regs.cop0, FT(instr), data);
 }
 
@@ -456,7 +456,7 @@ void Cop1::truncld(Registers& regs, u32 instr) {
 
 void Cop1::sdc1(Registers& regs, Mem& mem, u32 instr) {
   u32 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
-  mem.Write<u64>(regs, addr, GetReg<u64>(regs.cop0, FT(instr)), regs.oldPC);
+  mem.Write64(regs, addr, GetReg<u64>(regs.cop0, FT(instr)), regs.oldPC);
 }
 
 void Cop1::mfc1(Registers& regs, u32 instr) {

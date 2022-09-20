@@ -81,7 +81,7 @@ void AI::Step(Mem& mem, Registers& regs, int cpuCycles, float volumeL, float vol
 
     u32 address_hi = ((dmaAddr[0] >> 13) + dmaAddrCarry) & 0x7ff;
     dmaAddr[0] = (address_hi << 13) | dmaAddr[0] & 0x1fff;
-    u32 data = mem.Read<u32, false>(regs, dmaAddr[0], regs.pc);
+    u32 data = mem.Read32<false>(regs, dmaAddr[0], regs.pc);
 
     s16 left  = (s16)(data >> 16);
     s16 right = (s16)data;

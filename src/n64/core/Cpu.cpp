@@ -94,7 +94,7 @@ void Cpu::Step(Mem& mem) {
   CheckCompareInterrupt(mem.mmio.mi, regs);
   HandleInterrupt(regs);
 
-  u32 instruction = mem.Read<u32>(regs, regs.pc, regs.pc);
+  u32 instruction = mem.Read32(regs, regs.pc, regs.pc);
 
   regs.oldPC = regs.pc;
   regs.pc = regs.nextPC;

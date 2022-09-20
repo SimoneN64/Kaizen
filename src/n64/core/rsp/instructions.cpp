@@ -227,14 +227,12 @@ void RSP::sqv(u32 instr) {
 
 void RSP::sllv(u32 instr) {
   u8 sa = gpr[RS(instr)] & 0x1F;
-  s32 rt = gpr[RT(instr)];
-  gpr[RD(instr)] = rt << sa;
+  gpr[RD(instr)] = (u32)gpr[RT(instr)] << sa;
 }
 
 void RSP::srlv(u32 instr) {
   u8 sa = gpr[RS(instr)] & 0x1F;
-  u32 rt = gpr[RT(instr)];
-  gpr[RD(instr)] = rt >> sa;
+  gpr[RD(instr)] = (u32)gpr[RT(instr)] >> sa;
 }
 
 void RSP::srav(u32 instr) {
@@ -244,7 +242,7 @@ void RSP::srav(u32 instr) {
 
 void RSP::sll(u32 instr) {
   u8 sa = (instr >> 6) & 0x1f;
-  gpr[RD(instr)] = gpr[RT(instr)] << sa;
+  gpr[RD(instr)] = (u32)gpr[RT(instr)] << sa;
 }
 
 void RSP::srl(u32 instr) {

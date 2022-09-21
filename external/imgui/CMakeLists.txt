@@ -25,4 +25,4 @@ else()
 endif()
 
 target_include_directories(imgui PUBLIC ${SDL2_INCLUDE_DIRS} imgui imgui/backends)
-target_link_libraries(imgui PUBLIC SDL2main SDL2 ${LIBRARIES} )
+target_link_libraries(imgui PUBLIC ${SDL2_LIBRARIES} ${LIBRARIES})

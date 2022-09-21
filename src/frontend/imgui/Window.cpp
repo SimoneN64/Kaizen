@@ -6,6 +6,7 @@
 #include <Audio.hpp>
 #include <nlohmann/json.hpp>
 #include <filesystem>
+#include <SDL.h>
 
 VkInstance instance{};
 using json = nlohmann::json;

@@ -1,27 +1,50 @@
 cmake_minimum_required(VERSION 3.20)
 project(natsukashii)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED true)
 
-#add_compile_definitions(VULKAN_DEBUG)
-file(COPY ${CMAKE_SOURCE_DIR}/../resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(GLOB_RECURSE CORE_SOURCES n64/*.cpp)
+file(GLOB_RECURSE CORE_HEADERS n64/*.hpp)
+file(GLOB_RECURSE FRONTEND_SOURCES frontend/*.cpp)
+file(GLOB_RECURSE FRONTEND_HEADERS frontend/*.hpp)
 
-add_subdirectory(n64)
-add_subdirectory(frontend)
-
+find_package(SDL2 REQUIRED)
 find_package(fmt REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
-add_executable(natsukashii main.cpp)
+add_subdirectory(../external/capstone capstone)
+add_subdirectory(../external/parallel-rdp prdp)
+add_subdirectory(../external/imgui imgui)
+add_subdirectory(../external/nativefiledialog-extended nfd)
 
-if (CMAKE_BUILD_TYPE MATCHES Debug)
-  set(OPTIMIZATIONS -g -O0
-    #-fsanitize=address -fsanitize=undefined
-    )
-  #target_link_libraries(natsukashii PUBLIC -fsanitize=address -fsanitize=undefined)
-elseif(CMAKE_BUILD_TYPE MATCHES Release)
-  set(OPTIMIZATIONS -O3)
+add_executable(natsukashii
+  ${CORE_SOURCES}
+  ${CORE_HEADERS}
+  ${FRONTEND_SOURCES}
+  ${FRONTEND_HEADERS}
+  main.cpp
+)
+
+target_include_directories(natsukashii PRIVATE
+  .
+  n64
+  n64/core
+  n64/core/cpu/
+  n64/core/cpu/registers
+  n64/core/mmio
+  n64/core/rsp
+  frontend
+  frontend/imgui
+  ../external
+  ../external/imgui/imgui
+  ../external/parallel-rdp/
+  ../external/nativefiledialog-extended/src/include
+  ../external/capstone/include
+)
+
+if(WIN32)
+  target_compile_options(natsukashii PRIVATE -mwindows)
+  set(LIBRARIES -static z stdc++ user32 gdi32 winmm Imm32 ole32 oleaut32 shell32 setupapi version uuid)
+else()
+  set(LIBRARIES )
 endif()
 
-target_link_libraries(natsukashii PUBLIC frontend n64 fmt)
-target_include_directories(natsukashii PUBLIC . ../external)
-target_compile_options(natsukashii PUBLIC ${OPTIMIZATIONS})
+target_link_libraries(natsukashii PRIVATE ${SDL2_LIBRARIES} ${LIBRARIES} capstone-static nfd parallel-rdp imgui fmt::fmt nlohmann_json::nlohmann_json)

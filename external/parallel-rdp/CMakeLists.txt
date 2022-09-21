@@ -3,6 +3,7 @@ project(parallel-rdp)
 
 file(GLOB_RECURSE parallel-rdp-cpp parallel-rdp-standalone/parallel-rdp/*.cpp)
 
+find_package(PkgConfig REQUIRED)
 find_package(SDL2 REQUIRED)
 
 add_library(parallel-rdp
@@ -51,6 +52,7 @@ add_library(parallel-rdp
 target_compile_definitions(parallel-rdp PUBLIC GRANITE_VULKAN_MT)
 
 target_include_directories(parallel-rdp PUBLIC
+  ${SDL2_INCLUDE_DIRS}
   parallel-rdp-standalone/parallel-rdp
   parallel-rdp-standalone/volk
   parallel-rdp-standalone/spirv-cross
@@ -63,11 +65,11 @@ target_include_directories(parallel-rdp PUBLIC
   ../../src/n64/core/cpu/registers
   parallel-rdp-standalone
   ..
+	../capstone/include
   ../../src/frontend
   ../../src/frontend/imgui
   ../../src/frontend/imgui/debugger
   ../../src
-  ../capstone/include
   ../imgui
   ../imgui/imgui
   ../imgui/imgui/backends
@@ -81,7 +83,7 @@ else()
 	set(LIBRARIES )
 endif()
 
-target_link_libraries(parallel-rdp SDL2main SDL2 ${LIBRARIES})
+target_link_libraries(parallel-rdp ${SDL2_LIBRARIES} ${LIBRARIES})
 
 if(WIN32)
   target_compile_definitions(parallel-rdp PUBLIC VK_USE_PLATFORM_WIN32_KHR)

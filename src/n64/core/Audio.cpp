@@ -1,6 +1,6 @@
-#include "Audio.hpp"
-#include <SDL2/SDL.h>
-#include "util.hpp"
+#include <Audio.hpp>
+#include <SDL_audio.h>
+#include <util.hpp>
 
 namespace n64 {
 #define AUDIO_SAMPLE_RATE 48000

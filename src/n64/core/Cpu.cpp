@@ -93,7 +93,6 @@ inline void Cpu::disassembly(u32 instr) const {
   cs_insn *insn;
 
   u8 code[4];
-  //u32 temp = bswap_32(instr);
   memcpy(code, &instr, 4);
 
   count = cs_disasm(handle, code, 4, regs.pc, 0, &insn);
@@ -117,7 +116,7 @@ void Cpu::Step(Mem& mem) {
 
   u32 instruction = mem.Read32(regs, regs.pc, regs.pc);
 
-  disassembly(instruction);
+  //disassembly(instruction);
 
   regs.oldPC = regs.pc;
   regs.pc = regs.nextPC;

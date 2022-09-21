@@ -3,7 +3,7 @@
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
 #include <imgui_impl_vulkan.h>
-#include <SDL2/SDL_video.h>
+#include <SDL.h>
 #include <Core.hpp>
 #include <vector>
 

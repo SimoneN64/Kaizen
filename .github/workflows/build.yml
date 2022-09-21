@@ -26,7 +26,8 @@ jobs:
       - name: Collect artifacts
         run: |
           mkdir upload
-          cp -r build/{natsukashii,resources} upload
+          cp -r resources upload
+          cp build/natsukashii upload
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
@@ -62,7 +63,8 @@ jobs:
       - name: Collect artifacts
         run: |
           mkdir upload
-          cp -r build/{natsukashii.exe,resources} upload
+          cp -r resources upload
+          cp build/natsukashii.exe upload
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:

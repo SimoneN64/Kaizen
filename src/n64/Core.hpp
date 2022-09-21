@@ -1,5 +1,5 @@
 #pragma once
-#include <SDL2/SDL_events.h>
+#include <SDL_events.h>
 #include <Cpu.hpp>
 #include <Mem.hpp>
 #include <string>

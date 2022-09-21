@@ -1,6 +1,6 @@
 [submodule "external/capstone"]
 	path = external/capstone
-	url = https://github.com/capstone-engine/capstone/
+	url = https://github.com/capstone-engine/capstone
 [submodule "external/nativefiledialog-extended"]
 	path = external/nativefiledialog-extended
 	url = https://github.com/btzy/nativefiledialog-extended/

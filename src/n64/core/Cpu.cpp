@@ -88,6 +88,27 @@ inline void HandleInterrupt(Registers& regs) {
   }
 }
 
+inline void Cpu::disassembly(u32 instr) const {
+  size_t count;
+  cs_insn *insn;
+
+  u8 code[4];
+  //u32 temp = bswap_32(instr);
+  memcpy(code, &instr, 4);
+
+  count = cs_disasm(handle, code, 4, regs.pc, 0, &insn);
+
+  if (count > 0) {
+    size_t j;
+    for (j = 0; j < count; j++) {
+      fmt::print("0x{:016X}:\t{}\t\t{}\n", insn[j].address, insn[j].mnemonic, insn[j].op_str);
+    }
+
+    cs_free(insn, count);
+  } else
+    printf("ERROR: Failed to disassemble given code!\n");
+}
+
 void Cpu::Step(Mem& mem) {
   regs.gpr[0] = 0;
 
@@ -95,6 +116,8 @@ void Cpu::Step(Mem& mem) {
   HandleInterrupt(regs);
 
   u32 instruction = mem.Read32(regs, regs.pc, regs.pc);
+
+  disassembly(instruction);
 
   regs.oldPC = regs.pc;
   regs.pc = regs.nextPC;

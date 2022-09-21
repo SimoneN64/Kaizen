@@ -3,12 +3,15 @@ project(n64)
 
 add_subdirectory(core)
 
+find_package(fmt REQUIRED)
+find_package(SDL2 REQUIRED)
+
 add_library(n64
   Core.cpp
   Core.hpp
   memory_regions.hpp)
 
-target_link_libraries(n64 PUBLIC core)
+target_link_libraries(n64 PUBLIC core fmt SDL2main SDL2)
 target_include_directories(n64 PUBLIC
   .
   ..

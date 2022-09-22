@@ -3,6 +3,7 @@
 #include <Mem.hpp>
 #include <util.hpp>
 #include <capstone/capstone.h>
+#include <vector>
 
 namespace n64 {
 struct Cpu {
@@ -21,8 +22,11 @@ struct Cpu {
   Registers regs;
 private:
   csh handle;
-  void disassembly(u32 instr) const;
+
+  void disassembly(u32 instr);
   friend struct Cop1;
+
+  std::vector<u32> instructionsLogged;
 
   void special(Mem&, u32);
   void regimm(u32);

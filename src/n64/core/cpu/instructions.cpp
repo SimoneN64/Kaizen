@@ -2,6 +2,7 @@
 #include <util.hpp>
 
 #define se_imm(x) ((s16)((x) & 0xFFFF))
+#define check_address_error(mask, addr) (((!regs.cop0.is_64bit_addressing) && (s32)(addr) != (addr)) || (((addr) & (mask)) != 0))
 
 namespace n64 {
 
@@ -180,7 +181,7 @@ void Cpu::lb(Mem& mem, u32 instr) {
 
 void Cpu::lh(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (((address & 1) != 0) || (address > 0)) {
+  if (check_address_error(address, 0b1)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
@@ -190,7 +191,7 @@ void Cpu::lh(Mem& mem, u32 instr) {
 
 void Cpu::lw(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (((address & 3) != 0) || (address > 0)) {
+  if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
@@ -234,7 +235,7 @@ void Cpu::lwr(Mem& mem, u32 instr) {
 
 void Cpu::ld(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 7) != 0 || (address > 0)) {
+  if (check_address_error(address, 0b111)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
@@ -285,7 +286,7 @@ void Cpu::lbu(Mem& mem, u32 instr) {
 
 void Cpu::lhu(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 1) != 0 || (address > 0)) {
+  if (check_address_error(address, 0b1)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
@@ -296,7 +297,7 @@ void Cpu::lhu(Mem& mem, u32 instr) {
 
 void Cpu::lwu(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 3) != 0 || (address > 0)) {
+  if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   }
@@ -312,7 +313,7 @@ void Cpu::sb(Mem& mem, u32 instr) {
 
 void Cpu::sc(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 3) != 0 || (address > 0)) {
+  if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }
@@ -327,7 +328,7 @@ void Cpu::sc(Mem& mem, u32 instr) {
 
 void Cpu::scd(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 7) != 0 || (address > 0)) {
+  if (check_address_error(address, 0b111)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }
@@ -342,7 +343,7 @@ void Cpu::scd(Mem& mem, u32 instr) {
 
 void Cpu::sh(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 1) != 0 || (address > 0)) {
+  if (check_address_error(address, 0b1)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }
@@ -352,7 +353,7 @@ void Cpu::sh(Mem& mem, u32 instr) {
 
 void Cpu::sw(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 3) != 0 || (address > 0)) {
+  if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }
@@ -362,7 +363,7 @@ void Cpu::sw(Mem& mem, u32 instr) {
 
 void Cpu::sd(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 7) != 0 || (address > 0)) {
+  if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }
@@ -423,7 +424,7 @@ void Cpu::nor(u32 instr) {
 void Cpu::j(u32 instr) {
   s32 target = (instr & 0x3ffffff) << 2;
   s64 address = (regs.oldPC & ~0xfffffff) | target;
-  if ((address & 3) != 0 || (address > 0)) {
+  if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::DataBusError, 0, regs.oldPC);
   }
@@ -580,7 +581,7 @@ void Cpu::dsra32(u32 instr) {
 
 void Cpu::jr(u32 instr) {
   s64 address = regs.gpr[RS(instr)];
-  if ((address & 3) != 0 || (address > 0)) {
+  if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }

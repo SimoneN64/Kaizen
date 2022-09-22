@@ -55,6 +55,8 @@ void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc) {
   regs.cop0.cause.copError = cop;
   regs.cop0.cause.exceptionCode = code;
 
+  s64 exceptionVector = 0;
+
   if(regs.cop0.status.bev) {
     util::panic("BEV bit set!\n");
   } else {
@@ -88,24 +90,29 @@ inline void HandleInterrupt(Registers& regs) {
   }
 }
 
-inline void Cpu::disassembly(u32 instr) const {
-  size_t count;
-  cs_insn *insn;
+inline void Cpu::disassembly(u32 instr) {
+  auto found = std::find(instructionsLogged.begin(), instructionsLogged.end(), instr);
 
-  u8 code[4];
-  memcpy(code, &instr, 4);
+  if(found == instructionsLogged.end()) {
+    instructionsLogged.push_back(instr);
+    size_t count;
+    cs_insn *insn;
 
-  count = cs_disasm(handle, code, 4, regs.pc, 0, &insn);
+    u8 code[4];
+    memcpy(code, &instr, 4);
 
-  if (count > 0) {
-    size_t j;
-    for (j = 0; j < count; j++) {
-      fmt::print("0x{:016X}:\t{}\t\t{}\n", insn[j].address, insn[j].mnemonic, insn[j].op_str);
-    }
+    count = cs_disasm(handle, code, 4, regs.pc, 0, &insn);
 
-    cs_free(insn, count);
-  } else
-    printf("ERROR: Failed to disassemble given code!\n");
+    if (count > 0) {
+      size_t j;
+      for (j = 0; j < count; j++) {
+        fmt::print("0x{:016X}:\t{}\t\t{}\n", insn[j].address, insn[j].mnemonic, insn[j].op_str);
+      }
+
+      cs_free(insn, count);
+    } else
+      printf("ERROR: Failed to disassemble given code!\n");
+  }
 }
 
 void Cpu::Step(Mem& mem) {

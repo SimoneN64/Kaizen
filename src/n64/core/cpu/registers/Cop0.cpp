@@ -163,13 +163,18 @@ void Cop0::SetReg64(u8 addr, u64 value) {
   }
 }
 
-#define vpn(addr, PageMask) (((((addr) & 0xFFFFFFFFFF) | (((addr) >> 22) & 0x30000000000)) & ~((PageMask) | 0x1FFF)))
+u64 getVPN(u64 addr, u64 pageMask) {
+  u64 mask = pageMask | 0x1fff;
+  u64 vpn = (addr & 0xFFFFFFFFFF) | ((addr >> 22) & 0x30000000000);
+
+  return vpn & ~mask;
+}
 
 TLBEntry* TLBTryMatch(Registers& regs, s64 vaddr, int* match) {
   for(int i = 0; i < 32; i++) {
     TLBEntry *entry = &regs.cop0.tlb[i];
-    u64 entry_vpn = vpn(entry->entryHi.raw, entry->pageMask.raw);
-    u64 vaddr_vpn = vpn(vaddr, entry->pageMask.raw);
+    u64 entry_vpn = getVPN(entry->entryHi.raw, entry->pageMask.raw);
+    u64 vaddr_vpn = getVPN(vaddr, entry->pageMask.raw);
 
     bool vpn_match = entry_vpn == vaddr_vpn;
     bool asid_match = entry->global || (regs.cop0.entryHi.asid == entry->entryHi.asid);

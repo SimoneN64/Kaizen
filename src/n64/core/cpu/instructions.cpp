@@ -3,14 +3,20 @@
 
 #define se_imm(x) ((s16)((x) & 0xFFFF))
 #define check_address_error(mask, addr) (((!regs.cop0.is_64bit_addressing) && (s32)(addr) != (addr)) || (((addr) & (mask)) != 0))
+#define check_signed_overflow(op1, op2, res) (((~((op1) ^ (op2)) & ((op1) ^ (res))) >> ((sizeof(res) * 8) - 1)) & 1)
+#define check_signed_underflow(op1, op2, res) (((((op1) ^ (op2)) & ((op1) ^ (res))) >> ((sizeof(res) * 8) - 1)) & 1)
 
 namespace n64 {
 
 void Cpu::add(u32 instr) {
-  s32 rs = (s32)regs.gpr[RS(instr)];
-  s32 rt = (s32)regs.gpr[RT(instr)];
-  s32 result = rs + rt;
-  regs.gpr[RD(instr)] = result;
+  u32 rs = (s32)regs.gpr[RS(instr)];
+  u32 rt = (s32)regs.gpr[RT(instr)];
+  u32 result = rs + rt;
+  if(check_signed_overflow(rs, rt, result)) {
+    FireException(regs, Overflow, 0, regs.oldPC);
+  } else {
+    regs.gpr[RD(instr)] = s32(result);
+  }
 }
 
 void Cpu::addu(u32 instr) {
@@ -21,10 +27,14 @@ void Cpu::addu(u32 instr) {
 }
 
 void Cpu::addi(u32 instr) {
-  s32 rs = (s32)regs.gpr[RS(instr)];
-  s16 imm = (s16)(instr);
-  s32 result = rs + imm;
-  regs.gpr[RT(instr)] = result;
+  u32 rs = (s32)regs.gpr[RS(instr)];
+  u32 imm = s32(s16(instr));
+  u32 result = rs + imm;
+  if(check_signed_overflow(rs, imm, result)) {
+    FireException(regs, Overflow, 0, regs.oldPC);
+  } else {
+    regs.gpr[RD(instr)] = s32(result);
+  }
 }
 
 void Cpu::addiu(u32 instr) {
@@ -35,9 +45,14 @@ void Cpu::addiu(u32 instr) {
 }
 
 void Cpu::dadd(u32 instr) {
-  s64 rs = regs.gpr[RS(instr)];
-  s64 rt = regs.gpr[RT(instr)];
-  regs.gpr[RD(instr)] = rs + rt;
+  u64 rs = regs.gpr[RS(instr)];
+  u64 rt = regs.gpr[RT(instr)];
+  u64 result = rt + rs;
+  if(check_signed_overflow(rs, rt, result)) {
+    FireException(regs, Overflow, 0, regs.oldPC);
+  } else {
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void Cpu::daddu(u32 instr) {
@@ -47,9 +62,14 @@ void Cpu::daddu(u32 instr) {
 }
 
 void Cpu::daddi(u32 instr) {
-  s16 imm = (s16)(instr);
-  s64 rs = regs.gpr[RS(instr)];
-  regs.gpr[RT(instr)] = rs + imm;
+  u64 imm = s64(s16(instr));
+  u64 rs = regs.gpr[RS(instr)];
+  u64 result = imm + rs;
+  if(check_signed_overflow(rs, imm, result)) {
+    FireException(regs, Overflow, 0, regs.oldPC);
+  } else {
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void Cpu::daddiu(u32 instr) {
@@ -214,23 +234,33 @@ void Cpu::ll(Mem& mem, u32 instr) {
 }
 
 void Cpu::lwl(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 shift = 8 * ((address ^ 0) & 3);
-  u32 mask = 0xFFFFFFFF << shift;
-  u32 data = mem.Read32(regs, address & ~3, regs.oldPC);
-  s64 rt = regs.gpr[RT(instr)];
-  s32 result = (s32)((rt & ~mask) | (data << shift));
-  regs.gpr[RT(instr)] = result;
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
+  u32 paddr = 0;
+  if(!MapVAddr(regs, LOAD, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
+  } else {
+    u32 shift = 8 * ((address ^ 0) & 3);
+    u32 mask = 0xFFFFFFFF << shift;
+    u32 data = mem.Read32<false>(regs, paddr & ~3, regs.oldPC);
+    s32 result = (s32) ((regs.gpr[RT(instr)] & ~mask) | (data << shift));
+    regs.gpr[RT(instr)] = result;
+  }
 }
 
 void Cpu::lwr(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 shift = 8 * ((address ^ 3) & 3);
-  u32 mask = 0xFFFFFFFF >> shift;
-  u32 data = mem.Read32(regs, address & ~3, regs.oldPC);
-  s64 rt = regs.gpr[RT(instr)];
-  s32 result = (s32)((rt & ~mask) | (data >> shift));
-  regs.gpr[RT(instr)] = result;
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
+  u32 paddr = 0;
+  if(!MapVAddr(regs, LOAD, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
+  } else {
+    u32 shift = 8 * ((address ^ 3) & 3);
+    u32 mask = 0xFFFFFFFF >> shift;
+    u32 data = mem.Read32<false>(regs, paddr & ~3, regs.oldPC);
+    s32 result = (s32) ((regs.gpr[RT(instr)] & ~mask) | (data >> shift));
+    regs.gpr[RT(instr)] = result;
+  }
 }
 
 void Cpu::ld(Mem& mem, u32 instr) {
@@ -246,36 +276,46 @@ void Cpu::ld(Mem& mem, u32 instr) {
 
 void Cpu::lld(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 physical;
-  if (!MapVAddr(regs, LOAD, address, physical)) {
+  u32 paddr;
+  if (!MapVAddr(regs, LOAD, address, paddr)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
   } else {
-    regs.gpr[RT(instr)] = mem.Read64<false>(regs, physical, regs.oldPC);
+    regs.gpr[RT(instr)] = mem.Read64<false>(regs, paddr, regs.oldPC);
   }
 
   regs.cop0.llbit = true;
-  regs.cop0.LLAddr = physical >> 4;
+  regs.cop0.LLAddr = paddr >> 4;
 }
 
 void Cpu::ldl(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  s32 shift = 8 * ((address ^ 0) & 7);
-  u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
-  u64 data = mem.Read64(regs, address & ~7, regs.oldPC);
-  s64 rt = regs.gpr[RT(instr)];
-  s64 result = (s64)((rt & ~mask) | (data << shift));
-  regs.gpr[RT(instr)] = result;
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
+  u32 paddr = 0;
+  if (!MapVAddr(regs, LOAD, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+  } else {
+    s32 shift = 8 * ((address ^ 0) & 7);
+    u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
+    u64 data = mem.Read64<false>(regs, paddr & ~7, regs.oldPC);
+    s64 result = (s64) ((regs.gpr[RT(instr)] & ~mask) | (data << shift));
+    regs.gpr[RT(instr)] = result;
+  }
 }
 
 void Cpu::ldr(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  s32 shift = 8 * ((address ^ 7) & 7);
-  u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
-  u64 data = mem.Read64(regs, address & ~7, regs.oldPC);
-  s64 rt = regs.gpr[RT(instr)];
-  s64 result = (s64)((rt & ~mask) | (data >> shift));
-  regs.gpr[RT(instr)] = result;
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
+  u32 paddr;
+  if (!MapVAddr(regs, LOAD, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+  } else {
+    s32 shift = 8 * ((address ^ 7) & 7);
+    u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
+    u64 data = mem.Read64<false>(regs, paddr & ~7, regs.oldPC);
+    s64 result = (s64) ((regs.gpr[RT(instr)] & ~mask) | (data >> shift));
+    regs.gpr[RT(instr)] = result;
+  }
 }
 
 void Cpu::lbu(Mem& mem, u32 instr) {
@@ -372,39 +412,63 @@ void Cpu::sd(Mem& mem, u32 instr) {
 }
 
 void Cpu::sdl(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  s32 shift = 8 * ((address ^ 0) & 7);
-  u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
-  u64 data = mem.Read64(regs, address & ~7, regs.oldPC);
-  s64 rt = regs.gpr[RT(instr)];
-  mem.Write64(regs, address & ~7, (data & ~mask) | (rt >> shift), regs.oldPC);
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
+  u32 paddr;
+  if (!MapVAddr(regs, STORE, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
+  } else {
+    s32 shift = 8 * ((address ^ 0) & 7);
+    u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
+    u64 data = mem.Read64<false>(regs, paddr & ~7, regs.oldPC);
+    s64 rt = regs.gpr[RT(instr)];
+    mem.Write64<false>(regs, paddr & ~7, (data & ~mask) | (rt >> shift), regs.oldPC);
+  }
 }
 
 void Cpu::sdr(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  s32 shift = 8 * ((address ^ 7) & 7);
-  u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
-  u64 data = mem.Read64(regs, address & ~7, regs.oldPC);
-  s64 rt = regs.gpr[RT(instr)];
-  mem.Write64(regs, address & ~7, (data & ~mask) | (rt << shift), regs.oldPC);
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
+  u32 paddr;
+  if (!MapVAddr(regs, STORE, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
+  } else {
+    s32 shift = 8 * ((address ^ 7) & 7);
+    u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
+    u64 data = mem.Read64<false>(regs, paddr & ~7, regs.oldPC);
+    s64 rt = regs.gpr[RT(instr)];
+    mem.Write64<false>(regs, paddr & ~7, (data & ~mask) | (rt << shift), regs.oldPC);
+  }
 }
 
 void Cpu::swl(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 shift = 8 * ((address ^ 0) & 3);
-  u32 mask = 0xFFFFFFFF >> shift;
-  u32 data = mem.Read32(regs, address & ~3, regs.oldPC);
-  u32 rt = regs.gpr[RT(instr)];
-  mem.Write32(regs, address & ~3, (data & ~mask) | (rt >> shift), regs.oldPC);
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
+  u32 paddr;
+  if (!MapVAddr(regs, STORE, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
+  } else {
+    u32 shift = 8 * ((address ^ 0) & 3);
+    u32 mask = 0xFFFFFFFF >> shift;
+    u32 data = mem.Read32<false>(regs, paddr & ~3, regs.oldPC);
+    u32 rt = regs.gpr[RT(instr)];
+    mem.Write32<false>(regs, paddr & ~3, (data & ~mask) | (rt >> shift), regs.oldPC);
+  }
 }
 
 void Cpu::swr(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 shift = 8 * ((address ^ 3) & 3);
-  u32 mask = 0xFFFFFFFF << shift;
-  u32 data = mem.Read32(regs, address & ~3, regs.oldPC);
-  u32 rt = regs.gpr[RT(instr)];
-  mem.Write32(regs, address & ~3, (data & ~mask) | (rt << shift), regs.oldPC);
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
+  u32 paddr;
+  if (!MapVAddr(regs, STORE, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
+  } else {
+    u32 shift = 8 * ((address ^ 3) & 3);
+    u32 mask = 0xFFFFFFFF << shift;
+    u32 data = mem.Read32<false>(regs, paddr & ~3, regs.oldPC);
+    u32 rt = regs.gpr[RT(instr)];
+    mem.Write32<false>(regs, paddr & ~3, (data & ~mask) | (rt << shift), regs.oldPC);
+  }
 }
 
 void Cpu::ori(u32 instr) {
@@ -593,7 +657,11 @@ void Cpu::dsub(u32 instr) {
   s64 rt = regs.gpr[RT(instr)];
   s64 rs = regs.gpr[RS(instr)];
   s64 result = rs - rt;
-  regs.gpr[RD(instr)] = result;
+  if(check_signed_underflow(rs, rt, result)) {
+    FireException(regs, Overflow, 0, regs.oldPC);
+  } else {
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void Cpu::dsubu(u32 instr) {
@@ -607,7 +675,11 @@ void Cpu::sub(u32 instr) {
   s32 rt = regs.gpr[RT(instr)];
   s32 rs = regs.gpr[RS(instr)];
   s32 result = rs - rt;
-  regs.gpr[RD(instr)] = (s64)result;
+  if(check_signed_underflow(rs, rt, result)) {
+    FireException(regs, Overflow, 0, regs.oldPC);
+  } else {
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void Cpu::subu(u32 instr) {

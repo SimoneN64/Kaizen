@@ -232,6 +232,63 @@ bool ProbeTLB(Registers& regs, TLBAccessType access_type, s64 vaddr, u32& paddr,
   return true;
 }
 
+inline bool Is64BitAddressing(Cop0& cp0, u64 addr) {
+  u8 region = (addr >> 62) & 3;
+  switch(region) {
+    case 0b00: return cp0.status.ux;
+    case 0b01: return cp0.status.sx;
+    case 0b11: return cp0.status.kx;
+    default: return false;
+  }
+}
+
+void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc) {
+  bool old_exl = regs.cop0.status.exl;
+
+  if(!regs.cop0.status.exl) {
+    if(regs.prevDelaySlot) {
+      regs.cop0.cause.branchDelay = true;
+      pc -= 4;
+    } else {
+      regs.cop0.cause.branchDelay = false;
+    }
+
+    regs.cop0.status.exl = true;
+    regs.cop0.EPC = pc;
+  }
+
+  regs.cop0.cause.copError = cop;
+  regs.cop0.cause.exceptionCode = static_cast<u8>(code);
+
+  s64 exceptionVector = 0;
+
+  if(regs.cop0.status.bev) {
+    util::panic("BEV bit set!\n");
+  } else {
+    switch(code) {
+      case ExceptionCode::Interrupt: case ExceptionCode::TLBModification:
+      case ExceptionCode::AddressErrorLoad: case ExceptionCode::AddressErrorStore:
+      case ExceptionCode::InstructionBusError: case ExceptionCode::DataBusError:
+      case ExceptionCode::Syscall: case ExceptionCode::Breakpoint:
+      case ExceptionCode::ReservedInstruction: case ExceptionCode::CoprocessorUnusable:
+      case ExceptionCode::Overflow: case ExceptionCode::Trap:
+      case ExceptionCode::FloatingPointError: case ExceptionCode::Watch:
+        regs.SetPC(s64(s32(0x80000180)));
+        break;
+      case ExceptionCode::TLBLoad: case ExceptionCode::TLBStore:
+        if(old_exl || regs.cop0.tlbError == INVALID) {
+          regs.SetPC(s64(s32(0x80000180)));
+        } else if(Is64BitAddressing(regs.cop0, regs.cop0.badVaddr)) {
+          regs.SetPC(s64(s32(0x80000080)));
+        } else {
+          regs.SetPC(s64(s32(0x80000000)));
+        }
+        break;
+      default: util::panic("Unhandled exception! {}\n", static_cast<u8>(code));
+    }
+  }
+}
+
 void HandleTLBException(Registers& regs, u64 vaddr) {
   u64 vpn2 = (vaddr >> 13) & 0x7FFFF;
   u64 xvpn2 = (vaddr >> 13) & 0x7FFFFFF;

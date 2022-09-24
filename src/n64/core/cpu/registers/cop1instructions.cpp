@@ -6,13 +6,13 @@
 
 namespace n64 {
 void Cop1::absd(Registers& regs, u32 instr) {
-  double fs = GetCop1RegDouble(regs.cop0, FS(instr));
-  SetCop1RegDouble(regs.cop0, FD(instr), fabs(fs));
+  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
+  SetCop1Reg<double>(regs.cop0, FD(instr), fabs(fs));
 }
 
 void Cop1::abss(Registers& regs, u32 instr) {
-  float fs = GetCop1RegFloat(regs.cop0, FS(instr));
-  SetCop1RegFloat(regs.cop0, FD(instr), fabsf(fs));
+  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
+  SetCop1Reg<float>(regs.cop0, FD(instr), fabsf(fs));
 }
 
 void Cop1::absw(Registers& regs, u32 instr) {
@@ -26,44 +26,44 @@ void Cop1::absl(Registers& regs, u32 instr) {
 }
 
 void Cop1::adds(Registers& regs, u32 instr) {
-  float fs = GetCop1RegFloat(regs.cop0, FS(instr));
-  float ft = GetCop1RegFloat(regs.cop0, FT(instr));
+  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
+  float ft = GetCop1Reg<float>(regs.cop0, FT(instr));
   float result = fs + ft;
-  SetCop1RegFloat(regs.cop0, FD(instr), result);
+  SetCop1Reg<float>(regs.cop0, FD(instr), result);
 }
 
 void Cop1::addd(Registers& regs, u32 instr) {
-  double fs = GetCop1RegDouble(regs.cop0, FS(instr));
-  double ft = GetCop1RegDouble(regs.cop0, FT(instr));
+  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
+  double ft = GetCop1Reg<double>(regs.cop0, FT(instr));
   double result = fs + ft;
-  SetCop1RegDouble(regs.cop0, FD(instr), result);
+  SetCop1Reg<double>(regs.cop0, FD(instr), result);
 }
 
 void Cop1::ceills(Registers& regs, u32 instr) {
-  float fs = GetCop1RegFloat(regs.cop0, FS(instr));
+  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
   s64 result = ceilf(fs);
   SetReg<u64>(regs.cop0, FD(instr), result);
 }
 
 void Cop1::ceilws(Registers& regs, u32 instr) {
-  float fs = GetCop1RegFloat(regs.cop0, FS(instr));
+  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
   s32 result = ceilf(fs);
   SetReg<u32>(regs.cop0, FD(instr), result);
 }
 
 void Cop1::ceilld(Registers& regs, u32 instr) {
-  double fs = GetCop1RegDouble(regs.cop0, FS(instr));
+  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
   s64 result = ceil(fs);
   SetReg<u64>(regs.cop0, FD(instr), result);
 }
 
 void Cop1::ceilwd(Registers& regs, u32 instr) {
-  double fs = GetCop1RegDouble(regs.cop0, FS(instr));
+  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
   s32 result = ceil(fs);
   SetReg<u32>(regs.cop0, FD(instr), result);
 }
 
-void Cop1::cfc1(Registers& regs, u32 instr) {
+void Cop1::cfc1(Registers& regs, u32 instr) const {
   u8 fd = FD(instr);
   s32 val = 0;
   switch(fd) {
@@ -78,7 +78,7 @@ void Cop1::ctc1(Registers& regs, u32 instr) {
   u8 fs = FS(instr);
   u32 val = regs.gpr[RT(instr)];
   switch(fs) {
-    case 0: util::panic("CTC1 attempt to write to FCR0 which is read only!\n");
+    case 0: break;
     case 31: {
       val &= 0x183ffff;
       fcr31.raw = val;
@@ -88,10 +88,10 @@ void Cop1::ctc1(Registers& regs, u32 instr) {
 }
 
 void Cop1::cvtds(Registers& regs, u32 instr) {
-  SetCop1RegDouble(
+  SetCop1Reg<double>(
         regs.cop0,
     FD(instr),
-    GetCop1RegFloat(
+    GetCop1Reg<float>(
             regs.cop0,
       FS(instr)
     )
@@ -99,10 +99,10 @@ void Cop1::cvtds(Registers& regs, u32 instr) {
 }
 
 void Cop1::cvtsd(Registers& regs, u32 instr) {
-  SetCop1RegFloat(
+  SetCop1Reg<float>(
         regs.cop0,
     FD(instr),
-    GetCop1RegDouble(
+    GetCop1Reg<double>(
             regs.cop0,
       FS(instr)
     )
@@ -113,7 +113,7 @@ void Cop1::cvtwd(Registers& regs, u32 instr) {
   SetReg<u32>(
         regs.cop0,
     FD(instr),
-    GetCop1RegDouble(
+    GetCop1Reg<double>(
             regs.cop0,
       FS(instr)
     )
@@ -124,7 +124,7 @@ void Cop1::cvtws(Registers& regs, u32 instr) {
   SetReg<u32>(
         regs.cop0,
     FD(instr),
-    GetCop1RegFloat(
+    GetCop1Reg<float>(
             regs.cop0,
       FS(instr)
     )
@@ -135,7 +135,7 @@ void Cop1::cvtls(Registers& regs, u32 instr) {
   SetReg<u64>(
         regs.cop0,
     FD(instr),
-    GetCop1RegFloat(
+    GetCop1Reg<float>(
             regs.cop0,
       FS(instr)
     )
@@ -143,7 +143,7 @@ void Cop1::cvtls(Registers& regs, u32 instr) {
 }
 
 void Cop1::cvtsl(Registers& regs, u32 instr) {
-  SetCop1RegFloat(
+  SetCop1Reg<float>(
         regs.cop0,
     FD(instr),
     (s64)GetReg<u64>(
@@ -154,7 +154,7 @@ void Cop1::cvtsl(Registers& regs, u32 instr) {
 }
 
 void Cop1::cvtdw(Registers& regs, u32 instr) {
-  SetCop1RegDouble(
+  SetCop1Reg<double>(
     regs.cop0,
     FD(instr),
     (s32)GetReg<u32>(
@@ -165,7 +165,7 @@ void Cop1::cvtdw(Registers& regs, u32 instr) {
 }
 
 void Cop1::cvtsw(Registers& regs, u32 instr) {
-  SetCop1RegFloat(
+  SetCop1Reg<float>(
         regs.cop0,
     FD(instr),
     (s32)GetReg<u32>(
@@ -176,7 +176,7 @@ void Cop1::cvtsw(Registers& regs, u32 instr) {
 }
 
 void Cop1::cvtdl(Registers& regs, u32 instr) {
-  SetCop1RegDouble(
+  SetCop1Reg<double>(
         regs.cop0,
     FD(instr),
     (s64)GetReg<u64>(
@@ -188,77 +188,62 @@ void Cop1::cvtdl(Registers& regs, u32 instr) {
 
 void Cop1::cvtld(Registers& regs, u32 instr) {
   SetReg<u64>(
-        regs.cop0,
+    regs.cop0,
     FD(instr),
-    GetCop1RegDouble(
-            regs.cop0,
+    GetCop1Reg<double>(
+      regs.cop0,
       FS(instr)
     )
   );
 }
 
-void Cop1::ccondd(Registers& regs, u32 instr, CompConds cond) {
-  double fs = GetCop1RegDouble(regs.cop0, FS(instr));
-  double ft = GetCop1RegDouble(regs.cop0, FT(instr));
-
-  bool less, equal, unordered;
-  if(std::isnan(fs) || std::isnan(ft)) {
-    less = false;
-    equal = false;
-    unordered = true;
-  } else {
-    less = fs < ft;
-    equal = fs == ft;
-    unordered = false;
+template <typename T>
+inline bool CalculateCondition(T fs, T ft, u8 cond) {
+  switch(cond) {
+    case F: return false;
+    case UN: return std::isnan(fs) || std::isnan(ft);
+    case EQ: return fs == ft;
+    case UEQ: return (std::isnan(fs) || std::isnan(ft)) || (fs == ft);
+    case OLT: return (!std::isnan(fs) && !std::isnan(ft)) && (fs < ft);
+    case ULT: return (std::isnan(fs) || std::isnan(ft)) || (fs < ft);
+    case OLE: return (!std::isnan(fs) && !std::isnan(ft)) && (fs <= ft);
+    default: return CalculateCondition(fs, ft, cond - 8);
   }
-
-  bool condition = ((cond >> 2) && less) || ((cond >> 1) && equal) || ((cond & 1) && unordered);
-
-  fcr31.compare = condition;
 }
 
-void Cop1::cconds(Registers& regs, u32 instr, CompConds cond) {
-  float fs = GetCop1RegFloat(regs.cop0, FS(instr));
-  float ft = GetCop1RegFloat(regs.cop0, FT(instr));
+template <typename T>
+void Cop1::ccond(Registers& regs, u32 instr, CompConds cond) {
+  T fs = GetCop1Reg<T>(regs.cop0, FS(instr));
+  T ft = GetCop1Reg<T>(regs.cop0, FT(instr));
 
-  bool less, equal, unordered;
-  if(std::isnan(fs) || std::isnan(ft)) {
-    less = false;
-    equal = false;
-    unordered = true;
-  } else {
-    less = fs < ft;
-    equal = fs == ft;
-    unordered = false;
-  }
-
-  bool condition = ((cond >> 2) && less) || ((cond >> 1) && equal) || ((cond & 1) && unordered);
-
-  fcr31.compare = condition;
+  fcr31.compare = CalculateCondition(fs, ft, cond);
 }
+
+template void Cop1::ccond<float>(Registers& regs, u32 instr, CompConds cond);
+template void Cop1::ccond<double>(Registers& regs, u32 instr, CompConds cond);
 
 void Cop1::divs(Registers &regs, u32 instr) {
-  float fs = GetCop1RegFloat(regs.cop0, FS(instr));
-  float ft = GetCop1RegFloat(regs.cop0, FT(instr));
-  SetCop1RegFloat(regs.cop0, FD(instr), fs / ft);
+  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
+  float ft = GetCop1Reg<float>(regs.cop0, FT(instr));
+  SetCop1Reg<float>(regs.cop0, FD(instr), fs / ft);
 }
 
 void Cop1::divd(Registers &regs, u32 instr) {
-  double fs = GetCop1RegDouble(regs.cop0, FS(instr));
-  double ft = GetCop1RegDouble(regs.cop0, FT(instr));
-  SetCop1RegDouble(regs.cop0, FD(instr), fs / ft);
+  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
+  double ft = GetCop1Reg<double>(regs.cop0, FT(instr));
+  SetCop1Reg<double>(regs.cop0, FD(instr), fs / ft);
 }
 
 void Cop1::muls(Registers &regs, u32 instr) {
-  float fs = GetCop1RegFloat(regs.cop0, FS(instr));
-  float ft = GetCop1RegFloat(regs.cop0, FT(instr));
-  SetCop1RegFloat(regs.cop0, FD(instr), fs * ft);
+  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
+  float ft = GetCop1Reg<float>(regs.cop0, FT(instr));
+  SetCop1Reg<float>(regs.cop0, FD(instr), fs * ft);
 }
 
 void Cop1::muld(Registers& regs, u32 instr) {
-  double fs = GetCop1RegDouble(regs.cop0, FS(instr));
-  double ft = GetCop1RegDouble(regs.cop0, FT(instr));
-  SetCop1RegDouble(regs.cop0, FD(instr), fs * ft);
+  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
+  double ft = GetCop1Reg<double>(regs.cop0, FT(instr));
+  SetCop1Reg<double>(regs.cop0, FD(instr), fs * ft);
 }
 
 void Cop1::mulw(Registers &regs, u32 instr) {
@@ -274,15 +259,15 @@ void Cop1::mull(Registers &regs, u32 instr) {
 }
 
 void Cop1::subs(Registers &regs, u32 instr) {
-  float fs = GetCop1RegFloat(regs.cop0, FS(instr));
-  float ft = GetCop1RegFloat(regs.cop0, FT(instr));
-  SetCop1RegFloat(regs.cop0, FD(instr), fs - ft);
+  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
+  float ft = GetCop1Reg<float>(regs.cop0, FT(instr));
+  SetCop1Reg<float>(regs.cop0, FD(instr), fs - ft);
 }
 
 void Cop1::subd(Registers &regs, u32 instr) {
-  double fs = GetCop1RegDouble(regs.cop0, FS(instr));
-  double ft = GetCop1RegDouble(regs.cop0, FT(instr));
-  SetCop1RegDouble(regs.cop0, FD(instr), fs - ft);
+  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
+  double ft = GetCop1Reg<double>(regs.cop0, FT(instr));
+  SetCop1Reg<double>(regs.cop0, FD(instr), fs - ft);
 }
 
 void Cop1::subw(Registers &regs, u32 instr) {
@@ -298,10 +283,10 @@ void Cop1::subl(Registers &regs, u32 instr) {
 }
 
 void Cop1::movs(Registers& regs, u32 instr) {
-  SetCop1RegFloat(
+  SetCop1Reg<float>(
     regs.cop0,
     FD(instr),
-    GetCop1RegFloat(
+    GetCop1Reg<float>(
       regs.cop0,
       FS(instr)
     )
@@ -309,10 +294,10 @@ void Cop1::movs(Registers& regs, u32 instr) {
 }
 
 void Cop1::movd(Registers& regs, u32 instr) {
-  SetCop1RegDouble(
+  SetCop1Reg<double>(
     regs.cop0,
     FD(instr),
-    GetCop1RegDouble(
+    GetCop1Reg<double>(
       regs.cop0,
       FS(instr)
     )
@@ -342,10 +327,10 @@ void Cop1::movl(Registers& regs, u32 instr) {
 }
 
 void Cop1::negs(Registers &regs, u32 instr) {
-  SetCop1RegFloat(
+  SetCop1Reg<float>(
     regs.cop0,
     FD(instr),
-    -GetCop1RegFloat(
+    -GetCop1Reg<float>(
       regs.cop0,
       FS(instr)
     )
@@ -353,10 +338,10 @@ void Cop1::negs(Registers &regs, u32 instr) {
 }
 
 void Cop1::negd(Registers &regs, u32 instr) {
-  SetCop1RegDouble(
+  SetCop1Reg<double>(
     regs.cop0,
     FD(instr),
-    -GetCop1RegDouble(
+    -GetCop1Reg<double>(
       regs.cop0,
       FS(instr)
     )
@@ -364,99 +349,159 @@ void Cop1::negd(Registers &regs, u32 instr) {
 }
 
 void Cop1::sqrts(Registers &regs, u32 instr) {
-  float fs = GetCop1RegFloat(regs.cop0, FS(instr));
-  SetCop1RegFloat(regs.cop0, FD(instr), sqrtf(fs));
+  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
+  SetCop1Reg<float>(regs.cop0, FD(instr), sqrtf(fs));
 }
 
 void Cop1::sqrtd(Registers &regs, u32 instr) {
-  double fs = GetCop1RegDouble(regs.cop0, FS(instr));
-  SetCop1RegDouble(regs.cop0, FD(instr), sqrt(fs));
+  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
+  SetCop1Reg<double>(regs.cop0, FD(instr), sqrt(fs));
 }
 
 void Cop1::roundls(Registers& regs, u32 instr) {
-  float fs = GetCop1RegFloat(regs.cop0, FS(instr));
+  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
   SetReg<u64>(regs.cop0, FD(instr), (s32)roundf(fs));
 }
 
 void Cop1::roundld(Registers& regs, u32 instr) {
-  double fs = GetCop1RegDouble(regs.cop0, FS(instr));
+  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
   SetReg<u64>(regs.cop0, FD(instr), (s64)round(fs));
 }
 
 void Cop1::roundws(Registers& regs, u32 instr) {
-  float fs = GetCop1RegFloat(regs.cop0, FS(instr));
+  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
   SetReg<u32>(regs.cop0, FD(instr), (s32)roundf(fs));
 }
 
 void Cop1::roundwd(Registers& regs, u32 instr) {
-  double fs = GetCop1RegDouble(regs.cop0, FS(instr));
+  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
   SetReg<u32>(regs.cop0, FD(instr), (s64)round(fs));
 }
 
 void Cop1::floorls(Registers& regs, u32 instr) {
-  float fs = GetCop1RegFloat(regs.cop0, FS(instr));
+  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
   SetReg<u64>(regs.cop0, FD(instr), (s64)floorf(fs));
 }
 
 void Cop1::floorld(Registers& regs, u32 instr) {
-  double fs = GetCop1RegDouble(regs.cop0, FS(instr));
+  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
   SetReg<u64>(regs.cop0, FD(instr), (s64)floor(fs));
 }
 
 void Cop1::floorws(Registers& regs, u32 instr) {
-  float fs = GetCop1RegFloat(regs.cop0, FS(instr));
+  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
   SetReg<u32>(regs.cop0, FD(instr), (s64)floorf(fs));
 }
 
 void Cop1::floorwd(Registers& regs, u32 instr) {
-  double fs = GetCop1RegDouble(regs.cop0, FS(instr));
+  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
   SetReg<u32>(regs.cop0, FD(instr), (s64)floor(fs));
 }
 
 void Cop1::lwc1(Registers& regs, Mem& mem, u32 instr) {
-  u32 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
-  u32 data = mem.Read32(regs, addr, regs.oldPC);
-  SetReg<u32>(regs.cop0, FT(instr), data);
+  if(!regs.cop0.status.cu1) {
+    FireException(regs, ExceptionCode::CoprocessorUnusable, 1, regs.oldPC);
+    return;
+  }
+
+  u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
+  if(addr & 3) {
+    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+  }
+
+  u32 physical;
+  if(!MapVAddr(regs, LOAD, addr, physical)) {
+    HandleTLBException(regs, addr);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
+  } else {
+    u32 data = mem.Read32<false>(regs, physical, regs.oldPC);
+    SetReg<u32>(regs.cop0, FT(instr), data);
+  }
 }
 
 void Cop1::swc1(Registers& regs, Mem& mem, u32 instr) {
-  u32 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
-  mem.Write32(regs, addr, GetReg<u32>(regs.cop0, FT(instr)), regs.oldPC);
+  if(!regs.cop0.status.cu1) {
+    FireException(regs, ExceptionCode::CoprocessorUnusable, 1, regs.oldPC);
+    return;
+  }
+
+  u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
+  if(addr & 3) {
+    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+  }
+
+  u32 physical;
+  if(!MapVAddr(regs, STORE, addr, physical)) {
+    HandleTLBException(regs, addr);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
+  } else {
+    mem.Write32<false>(regs, physical, GetReg<u32>(regs.cop0, FT(instr)), regs.oldPC);
+  }
 }
 
 void Cop1::ldc1(Registers& regs, Mem& mem, u32 instr) {
-  u32 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
-  u64 data = mem.Read64(regs, addr, regs.oldPC);
-  SetReg<u64>(regs.cop0, FT(instr), data);
+  if(!regs.cop0.status.cu1) {
+    FireException(regs, ExceptionCode::CoprocessorUnusable, 1, regs.oldPC);
+    return;
+  }
+
+  u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
+  if(addr & 7) {
+    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+  }
+
+  u32 physical;
+  if(!MapVAddr(regs, LOAD, addr, physical)) {
+    HandleTLBException(regs, addr);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
+  } else {
+    u64 data = mem.Read64<false>(regs, physical, regs.oldPC);
+    SetReg<u64>(regs.cop0, FT(instr), data);
+  }
+}
+
+void Cop1::sdc1(Registers& regs, Mem& mem, u32 instr) {
+  if(!regs.cop0.status.cu1) {
+    FireException(regs, ExceptionCode::CoprocessorUnusable, 1, regs.oldPC);
+    return;
+  }
+
+  u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
+  if(addr & 7) {
+    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+  }
+
+  u32 physical;
+  if(!MapVAddr(regs, STORE, addr, physical)) {
+    HandleTLBException(regs, addr);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
+  } else {
+    mem.Write64<false>(regs, physical, GetReg<u64>(regs.cop0, FT(instr)), regs.oldPC);
+  }
 }
 
 void Cop1::truncws(Registers& regs, u32 instr) {
-  float fs = GetCop1RegFloat(regs.cop0, FS(instr));
+  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
   s32 result = (s32)truncf(fs);
   SetReg<u32>(regs.cop0, FD(instr), result);
 }
 
 void Cop1::truncwd(Registers& regs, u32 instr) {
-  double fs = GetCop1RegDouble(regs.cop0, FS(instr));
+  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
   s32 result = (s32)trunc(fs);
   SetReg<u32>(regs.cop0, FD(instr), result);
 }
 
 void Cop1::truncls(Registers& regs, u32 instr) {
-  float fs = GetCop1RegFloat(regs.cop0, FS(instr));
+  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
   s64 result = (s64)truncf(fs);
   SetReg<u64>(regs.cop0, FD(instr), result);
 }
 
 void Cop1::truncld(Registers& regs, u32 instr) {
-  double fs = GetCop1RegDouble(regs.cop0, FS(instr));
+  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
   s64 result = (s64)trunc(fs);
   SetReg<u64>(regs.cop0, FD(instr), result);
-}
-
-void Cop1::sdc1(Registers& regs, Mem& mem, u32 instr) {
-  u32 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
-  mem.Write64(regs, addr, GetReg<u64>(regs.cop0, FT(instr)), regs.oldPC);
 }
 
 void Cop1::mfc1(Registers& regs, u32 instr) {

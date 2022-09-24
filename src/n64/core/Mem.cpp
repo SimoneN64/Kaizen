@@ -50,7 +50,7 @@ bool MapVAddr(Registers& regs, TLBAccessType accessType, u32 vaddr, u32& paddr) 
 
   switch(vaddr >> 29) {
     case 0 ... 3: case 7:
-      return ProbeTLB(regs, accessType, s64(s32(vaddr)), paddr, nullptr);
+      return ProbeTLB(regs, accessType, vaddr, paddr, nullptr);
     case 4 ... 5: return true;
     case 6: util::panic("Unimplemented virtual mapping in KSSEG! ({:08X})\n", vaddr);
     default:

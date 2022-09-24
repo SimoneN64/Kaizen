@@ -117,25 +117,4 @@ private:
   void xor_(u32);
   void xori(u32);
 };
-
-enum ExceptionCode : u8 {
-  Interrupt,
-  TLBModification,
-  TLBLoad,
-  TLBStore,
-  AddressErrorLoad,
-  AddressErrorStore,
-  InstructionBusError,
-  DataBusError,
-  Syscall,
-  Breakpoint,
-  ReservedInstruction,
-  CoprocessorUnusable,
-  Overflow,
-  Trap,
-  FloatingPointError = 15,
-  Watch = 23
-};
-
-void FireException(Registers& regs_, ExceptionCode code, int cop, s64 pc);
 }

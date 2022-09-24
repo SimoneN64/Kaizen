@@ -37,6 +37,13 @@ union FCR31 {
   u32 raw;
 };
 
+enum CompConds {
+  F, UN, EQ, UEQ,
+  OLT, ULT, OLE, ULE,
+  SF, NGLE, SEQ, NGL,
+  LT, NGE, LE, NGT
+};
+
 union FGR {
   struct {
     s32 lo:32;
@@ -100,42 +107,31 @@ private:
     }
   }
 
-  inline void SetCop1RegDouble(Cop0& cop0, u8 index, double value) {
-    u64 raw;
-    memcpy(&raw, &value, sizeof(double));
-    SetReg<u64>(cop0, index, raw);
+  template <typename T>
+  inline void SetCop1Reg(Cop0& cop0, u8 index, T value) {
+    if constexpr (sizeof(T) == 4) {
+      u32 raw;
+      memcpy(&raw, &value, sizeof(T));
+      SetReg<u32>(cop0, index, raw);
+    } else if constexpr (sizeof(T) == 8) {
+      u64 raw;
+      memcpy(&raw, &value, sizeof(T));
+      SetReg<u64>(cop0, index, raw);
+    }
   }
 
-  inline double GetCop1RegDouble(Cop0& cop0, u8 index) {
-    double doublevalue;
-    u64 raw = GetReg<u64>(cop0, index);
-    memcpy(&doublevalue, &raw, sizeof(double));
-    return doublevalue;
+  template <typename T>
+  inline T GetCop1Reg(Cop0& cop0, u8 index) {
+    T value;
+    if constexpr (sizeof(T) == 4) {
+      u32 raw = GetReg<u32>(cop0, index);
+      memcpy(&value, &raw, sizeof(T));
+    } else if constexpr (sizeof(T) == 8) {
+      u64 raw = GetReg<u64>(cop0, index);
+      memcpy(&value, &raw, sizeof(T));
+    }
+    return value;
   }
-
-  inline void SetCop1RegFloat(Cop0& cop0, u8 index, float value) {
-    u32 raw;
-    memcpy(&raw, &value, sizeof(float));
-    SetReg<u32>(cop0, index, raw);
-  }
-
-  inline float GetCop1RegFloat(Cop0& cop0, u8 index) {
-    u32 raw = GetReg<u32>(cop0, index);
-    float floatvalue;
-    memcpy(&floatvalue, &raw, sizeof(float));
-    return floatvalue;
-  }
-
-  enum CompConds {
-    T,   UN,   EQ,  UEQ,
-    OLT, ULT,  OLE, ULE,
-    SF,  NGLE, SEQ, NGL,
-    LT,  NGE,  LE,  NGT,
-    F,   OR,   NEQ, OLG,
-    UGE, OGE,  UGT, OGT,
-    ST,  GLE,  SNE, GL,
-    NLT, GE,   NLE, GT
-  };
 
   void absd(Registers&, u32 instr);
   void abss(Registers&, u32 instr);
@@ -151,7 +147,7 @@ private:
   void ceilws(Registers&, u32 instr);
   void ceilld(Registers&, u32 instr);
   void ceilwd(Registers&, u32 instr);
-  void cfc1(Registers&, u32 instr);
+  void cfc1(Registers&, u32 instr) const;
   void ctc1(Registers&, u32 instr);
   void roundls(Registers&, u32 instr);
   void roundld(Registers&, u32 instr);
@@ -171,8 +167,8 @@ private:
   void cvtld(Registers&, u32 instr);
   void cvtdl(Registers&, u32 instr);
   void cvtsl(Registers&, u32 instr);
-  void ccondd(Registers&, u32 instr, CompConds);
-  void cconds(Registers&, u32 instr, CompConds);
+  template <typename T>
+  void ccond(Registers&, u32 instr, CompConds);
   void divs(Registers&, u32 instr);
   void divd(Registers&, u32 instr);
   void muls(Registers&, u32 instr);

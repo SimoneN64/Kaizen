@@ -7,13 +7,12 @@
 #define check_signed_underflow(op1, op2, res) (((((op1) ^ (op2)) & ((op1) ^ (res))) >> ((sizeof(res) * 8) - 1)) & 1)
 
 namespace n64 {
-
 void Cpu::add(u32 instr) {
   u32 rs = (s32)regs.gpr[RS(instr)];
   u32 rt = (s32)regs.gpr[RT(instr)];
   u32 result = rs + rt;
   if(check_signed_overflow(rs, rt, result)) {
-    FireException(regs, Overflow, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::Overflow, 0, regs.oldPC);
   } else {
     regs.gpr[RD(instr)] = s32(result);
   }
@@ -27,13 +26,13 @@ void Cpu::addu(u32 instr) {
 }
 
 void Cpu::addi(u32 instr) {
-  u32 rs = (s32)regs.gpr[RS(instr)];
+  u32 rs = regs.gpr[RS(instr)];
   u32 imm = s32(s16(instr));
   u32 result = rs + imm;
   if(check_signed_overflow(rs, imm, result)) {
-    FireException(regs, Overflow, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::Overflow, 0, regs.oldPC);
   } else {
-    regs.gpr[RD(instr)] = s32(result);
+    regs.gpr[RT(instr)] = s32(result);
   }
 }
 
@@ -49,7 +48,7 @@ void Cpu::dadd(u32 instr) {
   u64 rt = regs.gpr[RT(instr)];
   u64 result = rt + rs;
   if(check_signed_overflow(rs, rt, result)) {
-    FireException(regs, Overflow, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::Overflow, 0, regs.oldPC);
   } else {
     regs.gpr[RD(instr)] = result;
   }
@@ -66,9 +65,9 @@ void Cpu::daddi(u32 instr) {
   u64 rs = regs.gpr[RS(instr)];
   u64 result = imm + rs;
   if(check_signed_overflow(rs, imm, result)) {
-    FireException(regs, Overflow, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::Overflow, 0, regs.oldPC);
   } else {
-    regs.gpr[RD(instr)] = result;
+    regs.gpr[RT(instr)] = result;
   }
 }
 
@@ -658,7 +657,7 @@ void Cpu::dsub(u32 instr) {
   s64 rs = regs.gpr[RS(instr)];
   s64 result = rs - rt;
   if(check_signed_underflow(rs, rt, result)) {
-    FireException(regs, Overflow, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::Overflow, 0, regs.oldPC);
   } else {
     regs.gpr[RD(instr)] = result;
   }
@@ -676,7 +675,7 @@ void Cpu::sub(u32 instr) {
   s32 rs = regs.gpr[RS(instr)];
   s32 result = rs - rt;
   if(check_signed_underflow(rs, rt, result)) {
-    FireException(regs, Overflow, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::Overflow, 0, regs.oldPC);
   } else {
     regs.gpr[RD(instr)] = result;
   }

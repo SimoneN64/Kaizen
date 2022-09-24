@@ -27,63 +27,6 @@ inline void CheckCompareInterrupt(MI& mi, Registers& regs) {
   }
 }
 
-inline bool Is64BitAddressing(Cop0& cp0, u64 addr) {
-  u8 region = (addr >> 62) & 3;
-  switch(region) {
-    case 0b00: return cp0.status.ux;
-    case 0b01: return cp0.status.sx;
-    case 0b11: return cp0.status.kx;
-    default: return false;
-  }
-}
-
-void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc) {
-  bool old_exl = regs.cop0.status.exl;
-
-  if(!regs.cop0.status.exl) {
-    if(regs.prevDelaySlot) {
-      regs.cop0.cause.branchDelay = true;
-      pc -= 4;
-    } else {
-      regs.cop0.cause.branchDelay = false;
-    }
-
-    regs.cop0.status.exl = true;
-    regs.cop0.EPC = pc;
-  }
-
-  regs.cop0.cause.copError = cop;
-  regs.cop0.cause.exceptionCode = code;
-
-  s64 exceptionVector = 0;
-
-  if(regs.cop0.status.bev) {
-    util::panic("BEV bit set!\n");
-  } else {
-    switch(code) {
-      case Interrupt: case TLBModification:
-      case AddressErrorLoad: case AddressErrorStore:
-      case InstructionBusError: case DataBusError:
-      case Syscall: case Breakpoint:
-      case ReservedInstruction: case CoprocessorUnusable:
-      case Overflow: case Trap:
-      case FloatingPointError: case Watch:
-        regs.SetPC(s64(s32(0x80000180)));
-        break;
-      case TLBLoad: case TLBStore:
-        if(old_exl || regs.cop0.tlbError == INVALID) {
-          regs.SetPC(s64(s32(0x80000180)));
-        } else if(Is64BitAddressing(regs.cop0, regs.cop0.badVaddr)) {
-          regs.SetPC(s64(s32(0x80000080)));
-        } else {
-          regs.SetPC(s64(s32(0x80000000)));
-        }
-        break;
-      default: util::panic("Unhandled exception! {}\n", code);
-    }
-  }
-}
-
 inline void HandleInterrupt(Registers& regs) {
   if(ShouldServiceInterrupt(regs)) {
     FireException(regs, ExceptionCode::Interrupt, 0, regs.pc);

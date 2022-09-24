@@ -157,6 +157,27 @@ enum TLBError : u8 {
   DISALLOWED_ADDRESS
 };
 
+enum class ExceptionCode : u8 {
+  Interrupt,
+  TLBModification,
+  TLBLoad,
+  TLBStore,
+  AddressErrorLoad,
+  AddressErrorStore,
+  InstructionBusError,
+  DataBusError,
+  Syscall,
+  Breakpoint,
+  ReservedInstruction,
+  CoprocessorUnusable,
+  Overflow,
+  Trap,
+  FloatingPointError = 15,
+  Watch = 23
+};
+
+void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc);
+
 union Cop0Context {
   u64 raw;
   struct {
@@ -244,7 +265,7 @@ private:
 };
 
 struct Registers;
-enum ExceptionCode : u8;
+enum class ExceptionCode : u8;
 
 TLBEntry* TLBTryMatch(Registers& regs, s64 vaddr, int* match);
 bool ProbeTLB(Registers& regs, TLBAccessType access_type, s64 vaddr, u32& paddr, int* match);

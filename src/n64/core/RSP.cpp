@@ -46,10 +46,10 @@ auto RSP::Read(u32 addr) -> u32{
     case 0x04040008:
     case 0x0404000C: return spDMALen.raw;
     case 0x04040010: return spStatus.raw;
+    case 0x04040014: return spStatus.dmaFull;
     case 0x04040018: return 0;
     case 0x0404001C: return AcquireSemaphore();
-    case 0x04080000:
-      return pc & 0xFFC;
+    case 0x04080000: return pc & 0xFFC;
     default: util::panic("Unimplemented SP register read {:08X}\n", addr);
   }
 }
@@ -133,7 +133,8 @@ void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
         pc = value & 0xFFC;
         nextPC = value & 0xFFC;
       } break;
-    default: util::panic("Unimplemented SP register write {:08X}, val: {:08X}\n", addr, value);
+    default:
+      util::panic("Unimplemented SP register write {:08X}, val: {:08X}\n", addr, value);
   }
 }
 

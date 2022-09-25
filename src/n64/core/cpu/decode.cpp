@@ -148,7 +148,7 @@ void Cpu::Exec(Mem& mem, u32 instr) {
     case 0x3D: regs.cop1.sdc1(regs, mem, instr); break;
     case 0x3F: sd(mem, instr); break;
     default:
-      util::panic("Unimplemented instruction {} {} ({:08X}) (pc: {:016X})\n", (mask >> 3) & 7, mask & 7, instr, (u64)regs.oldPC);
+      util::panic("Unimplemented instruction {:02X} ({:08X}) (pc: {:016X})\n", mask, instr, (u64)regs.oldPC);
   }
 }
 }

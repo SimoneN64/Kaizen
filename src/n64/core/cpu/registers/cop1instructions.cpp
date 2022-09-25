@@ -198,7 +198,7 @@ void Cop1::cvtld(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-inline bool CalculateCondition(T fs, T ft, u8 cond) {
+inline bool CalculateCondition(Registers& regs, T fs, T ft, CompConds cond) {
   switch(cond) {
     case F: return false;
     case UN: return std::isnan(fs) || std::isnan(ft);
@@ -207,7 +207,15 @@ inline bool CalculateCondition(T fs, T ft, u8 cond) {
     case OLT: return (!std::isnan(fs) && !std::isnan(ft)) && (fs < ft);
     case ULT: return (std::isnan(fs) || std::isnan(ft)) || (fs < ft);
     case OLE: return (!std::isnan(fs) && !std::isnan(ft)) && (fs <= ft);
-    default: return CalculateCondition(fs, ft, cond - 8);
+    case ULE: return (std::isnan(fs) || std::isnan(ft)) || (fs <= ft);
+    default:
+      if(std::isnan(fs) || std::isnan(ft)) {
+        regs.cop1.fcr31.flag_invalid_operation = true;
+        regs.cop1.fcr31.cause_invalid_operation = true;
+        FireException(regs, ExceptionCode::FloatingPointError, 0, regs.oldPC);
+      }
+
+      return CalculateCondition(regs, fs, ft, static_cast<CompConds>(cond - 8));
   }
 }
 
@@ -216,7 +224,7 @@ void Cop1::ccond(Registers& regs, u32 instr, CompConds cond) {
   T fs = GetCop1Reg<T>(regs.cop0, FS(instr));
   T ft = GetCop1Reg<T>(regs.cop0, FT(instr));
 
-  fcr31.compare = CalculateCondition(fs, ft, cond);
+  fcr31.compare = CalculateCondition(regs, fs, ft, cond);
 }
 
 template void Cop1::ccond<float>(Registers& regs, u32 instr, CompConds cond);

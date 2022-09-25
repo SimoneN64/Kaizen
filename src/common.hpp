@@ -39,10 +39,10 @@ using m128 = __m128i;
 #define BASE(x) RS(x)
 #define VT(x) (((x) >> 16) & 0x1F)
 #define VS(x) (((x) >> 11) & 0x1F)
-#define VD(x) (((x) >> 6) & 0x1F)
-#define E(x) BASE(x)
+#define VD(x) (((x) >>  6) & 0x1F)
+#define E(x) (((x) >>   7) & 0x0F)
 #define ELEMENT_INDEX(i) (7 - (i))
-#define BYTE_INDEX(i) (15 - (i))
+#define BYTE_INDEX(i)   (15 - (i))
 
 
 enum TLBAccessType {

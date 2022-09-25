@@ -1,6 +1,7 @@
 #include <RSP.hpp>
 #include <util.hpp>
 #include <n64/core/cpu/Registers.hpp>
+#include <Mem.hpp>
 
 namespace n64 {
 inline bool AcquireSemaphore(RSP& rsp) {
@@ -16,28 +17,49 @@ inline void ReleaseSemaphore(RSP& rsp) {
   rsp.semaphore = false;
 }
 
+inline int SignExt7bit(u8 val, int sa) {
+  s8 sval = ((val << 1) & 0x80) | val;
+
+  s32 sval32 = sval;
+  u32 val32 = sval32;
+  return val32 << sa;
+}
+
 inline auto GetCop0Reg(RSP& rsp, RDP& rdp, u8 index) -> u32{
   switch(index) {
-    case 0: return rsp.spDMASPAddr.raw;
-    case 1: return rsp.spDMADRAMAddr.raw;
+    case 0: return rsp.lastSuccessfulSPAddr.raw;
+    case 1: return rsp.lastSuccessfulDRAMAddr.raw;
     case 2:
     case 3: return rsp.spDMALen.raw;
     case 4: return rsp.spStatus.raw;
     case 5: return rsp.spStatus.dmaFull;
-    case 6: return 0;
+    case 6: return rsp.spStatus.dmaBusy;
     case 7: return AcquireSemaphore(rsp);
+    case 9: return rdp.dpc.end;
+    case 10: return rdp.dpc.current;
     case 11: return rdp.dpc.status.raw;
+    case 12: return 0;
     default: util::panic("Unhandled RSP COP0 register read at index {}\n", index);
   }
   return 0;
 }
 
-inline void SetCop0Reg(MI& mi, Registers& regs, RSP& rsp, RDP& rdp, u8 index, u32 val) {
+inline void SetCop0Reg(Registers& regs, Mem& mem, u8 index, u32 val) {
+  MMIO& mmio = mem.mmio;
+  RSP& rsp = mmio.rsp;
+  RDP& rdp = mmio.rdp;
+  MI& mi = mmio.mi;
   switch(index) {
     case 0: rsp.spDMASPAddr.raw = val; break;
     case 1: rsp.spDMADRAMAddr.raw = val; break;
     case 2:
-    case 3: rsp.spDMALen.raw = val; break;
+      rsp.spDMALen.raw = val;
+      rsp.DMA<false>(rsp.spDMALen, mem.GetRDRAM(), rsp, rsp.spDMASPAddr.bank);
+      break;
+    case 3:
+      rsp.spDMALen.raw = val;
+      rsp.DMA<true>(rsp.spDMALen, mem.GetRDRAM(), rsp, rsp.spDMASPAddr.bank);
+      break;
     case 4: rsp.spStatus.raw = val; break;
     case 7:
       if(val == 0) {
@@ -110,7 +132,37 @@ void RSP::andi(u32 instr) {
 }
 
 void RSP::cfc2(u32 instr) {
+  s16 value = 0;
+  switch(RD(instr) & 3) {
+    case 0: value = VCOasU16(); break;
+    case 1: value = VCCasU16(); break;
+    case 2 ... 3: value = GetVCE(); break;
+  }
 
+  gpr[RT(instr)] = s32(value);
+}
+
+void RSP::ctc2(u32 instr) {
+  u16 value = gpr[RT(instr)];
+  switch(RD(instr) & 3) {
+    case 0:
+      for(int i = 0; i < 8; i++) {
+        vco.h.element[7 - i] = ((value >> (i + 8)) & 1) == 1 ? 0xFFFF : 0;
+        vco.l.element[7 - i] = ((value >> i) & 1) == 1 ? 0xFFFF : 0;
+      }
+      break;
+    case 1:
+      for(int i = 0; i < 8; i++) {
+        vcc.h.element[7 - i] = ((value >> (i + 8)) & 1) == 1 ? 0xFFFF : 0;
+        vcc.l.element[7 - i] = ((value >> i) & 1) == 1 ? 0xFFFF : 0;
+      }
+      break;
+    case 2: case 3:
+      for(int i = 0; i < 8; i++) {
+        vce.element[7 - i] = ((value >> i) & 1) == 1 ? 0xFFFF : 0;
+      }
+      break;
+  }
 }
 
 void RSP::b(u32 instr, bool cond) {
@@ -154,7 +206,13 @@ void RSP::lui(u32 instr) {
 }
 
 void RSP::lqv(u32 instr) {
+  int e = E(instr);
+  u32 addr = gpr[BASE(instr)] + SignExt7bit(instr & 0x7F, 4);
+  u32 end = ((addr & ~15) + 15);
 
+  for(int i = 0; addr + i <= end && i + e < 16; i++) {
+    vpr[VT(instr)].byte[BYTE_INDEX(i + e)] = ReadByte(addr + i);
+  }
 }
 
 void RSP::j(u32 instr) {
@@ -222,7 +280,13 @@ void RSP::sub(u32 instr) {
 }
 
 void RSP::sqv(u32 instr) {
+  int e = E(instr);
+  u32 addr = gpr[BASE(instr)] + SignExt7bit(instr & 0x7F, 4);
+  u32 end = ((addr & ~15) + 15);
 
+  for(int i = 0; addr + i <= end; i++) {
+    WriteByte(addr + i, vpr[VT(instr)].byte[BYTE_INDEX((i + e) & 15)]);
+  }
 }
 
 void RSP::sllv(u32 instr) {
@@ -303,7 +367,24 @@ void RSP::mfc0(RDP& rdp, u32 instr) {
   gpr[RT(instr)] = GetCop0Reg(*this, rdp, RD(instr));
 }
 
-void RSP::mtc0(MI& mi, Registers& regs, RDP& rdp, u32 instr) {
-  SetCop0Reg(mi, regs, *this, rdp, RD(instr), gpr[RT(instr)]);
+void RSP::mtc0(Registers& regs, Mem& mem, u32 instr) {
+  SetCop0Reg(regs, mem, RD(instr), gpr[RT(instr)]);
+}
+
+void RSP::mfc2(u32 instr) {
+  u8 hi = vpr[RD(instr)].byte[BYTE_INDEX(E(instr))];
+  u8 lo = vpr[RD(instr)].byte[BYTE_INDEX((E(instr) + 1) & 0xF)];
+  s16 elem = (hi << 8) | lo;
+  gpr[RT(instr)] = s32(elem);
+}
+
+void RSP::mtc2(u32 instr) {
+  u16 element = gpr[RT(instr)];
+  u8 lo = element;
+  u8 hi = element >> 8;
+  vpr[RD(instr)].byte[BYTE_INDEX(E(instr))] = hi;
+  if(E(instr) < 15) {
+    vpr[RD(instr)].byte[BYTE_INDEX(E(instr) + 1)] = lo;
+  }
 }
 }

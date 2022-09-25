@@ -111,10 +111,10 @@ struct Registers;
 struct RSP {
   RSP();
   void Reset();
-  void Step(MI& mi, Registers& regs, RDP& rdp);
+  void Step(Registers& regs, Mem& mem);
   auto Read(u32 addr) -> u32;
   void Write(Mem& mem, Registers& regs, u32 addr, u32 value);
-  void Exec(MI& mi, Registers& regs, RDP& rdp, u32 instr);
+  void Exec(Registers& regs, Mem& mem, u32 instr);
   SPStatus spStatus;
   u16 oldPC{}, pc{}, nextPC{};
   SPDMASPAddr spDMASPAddr{};
@@ -125,7 +125,7 @@ struct RSP {
   u8 dmem[DMEM_SIZE]{}, imem[IMEM_SIZE]{};
   VPR vpr[32]{};
   s32 gpr[32]{};
-  u8 vce{};
+  VPR vce{};
 
   struct {
     VPR h{}, m{}, l{};
@@ -162,6 +162,15 @@ struct RSP {
       val |= mask;
     }
     return val;
+  }
+
+  inline u8 GetVCE() {
+    u8 value = 0;
+    for(int i = 0; i < 8; i++) {
+      bool l = vce.element[7 - i] != 0;
+      value |= (l << i);
+    }
+    return value;
   }
 
   inline u64 ReadDword(u32 addr, bool i) {
@@ -277,9 +286,10 @@ struct RSP {
   void addi(u32 instr);
   void and_(u32 instr);
   void andi(u32 instr);
-  void cfc2(u32 instr);
   void b(u32 instr, bool cond);
   void bl(u32 instr, bool cond);
+  void cfc2(u32 instr);
+  void ctc2(u32 instr);
   void lb(u32 instr);
   void lh(u32 instr);
   void lw(u32 instr);
@@ -317,7 +327,48 @@ struct RSP {
   void vne(u32 instr);
   void vsar(u32 instr);
   void mfc0(RDP& rdp, u32 instr);
-  void mtc0(MI& mi, Registers& regs, RDP& rdp, u32 instr);
+  void mtc0(Registers& regs, Mem& mem, u32 instr);
+  void mfc2(u32 instr);
+  void mtc2(u32 instr);
+
+  template <bool isDRAMdest>
+  inline void DMA(SPDMALen len, u8* rdram, RSP& rsp, bool bank) {
+    u32 length = len.len + 1;
+
+    length = (length + 0x7) & ~0x7;
+
+    u8* dst, *src;
+    if constexpr (isDRAMdest) {
+      dst = rdram;
+      src = bank ? rsp.imem : rsp.dmem;
+    } else {
+      src = rdram;
+      dst = bank ? rsp.imem : rsp.dmem;
+    }
+
+    u32 mem_address = rsp.spDMASPAddr.address & 0xFF8;
+    u32 dram_address = rsp.spDMADRAMAddr.address & 0xFFFFF8;
+
+    for (int i = 0; i < len.count + 1; i++) {
+      for(int j = 0; j < length; j++) {
+        if constexpr (isDRAMdest) {
+          dst[dram_address + j] = src[(mem_address + j) & 0xFFF];
+        } else {
+          dst[(mem_address + j) & 0xFFF] = src[dram_address + j];
+        }
+      }
+
+      int skip = i == len.count ? 0 : len.skip;
+
+      dram_address += (length + skip) & 0xFFFFF8;
+      mem_address += length;
+    }
+
+    rsp.lastSuccessfulSPAddr.address = mem_address & 0xFF8;
+    rsp.lastSuccessfulSPAddr.bank = bank;
+    rsp.lastSuccessfulDRAMAddr.address = dram_address & 0xFFFFF8;
+    rsp.spDMALen.raw = 0xFF8 | (rsp.spDMALen.skip << 20);
+  }
 private:
   inline void branch(u16 address, bool cond) {
     if(cond) {

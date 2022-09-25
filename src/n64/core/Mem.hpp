@@ -33,6 +33,7 @@ struct Mem {
   template <bool tlb = true>
   void Write64(Registers&, u32, u64, s64);
 
+  MMIO mmio;
   u8 pifRam[PIF_RAM_SIZE]{};
 private:
   friend struct SI;
@@ -41,7 +42,6 @@ private:
   friend struct Cpu;
   friend struct RSP;
   friend struct Core;
-  MMIO mmio;
   std::vector<u8> cart, sram;
   u8 pifBootrom[PIF_BOOTROM_SIZE]{};
   u8 isviewer[ISVIEWER_SIZE]{};

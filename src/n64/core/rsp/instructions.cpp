@@ -60,7 +60,7 @@ inline void SetCop0Reg(Registers& regs, Mem& mem, u8 index, u32 val) {
       rsp.spDMALen.raw = val;
       rsp.DMA<true>(rsp.spDMALen, mem.GetRDRAM(), rsp, rsp.spDMASPAddr.bank);
       break;
-    case 4: rsp.spStatus.raw = val; break;
+    case 4: rsp.WriteStatus(mi, regs, val); break;
     case 7:
       if(val == 0) {
         ReleaseSemaphore(rsp);
@@ -337,7 +337,7 @@ void RSP::srlv(u32 instr) {
 }
 
 void RSP::srav(u32 instr) {
-  u8 sa = (gpr[RS(instr)]) & 0x1F;
+  u8 sa = gpr[RS(instr)] & 0x1F;
   s32 rt = gpr[RT(instr)];
   s32 result = rt >> sa;
   gpr[RD(instr)] = result;

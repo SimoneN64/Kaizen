@@ -20,7 +20,6 @@ inline void special(MI& mi, Registers& regs, RSP& rsp, u32 instr) {
     case 0x07: rsp.srav(instr); break;
     case 0x08: rsp.jr(instr); break;
     case 0x09: rsp.jalr(instr); break;
-    case 0x0C:
     case 0x0D:
       rsp.spStatus.halt = true;
       rsp.spStatus.broke = true;

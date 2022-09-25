@@ -67,25 +67,7 @@ void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
       spDMALen.raw = value;
       DMA<true>(spDMALen, mem.GetRDRAM(), *this, spDMASPAddr.bank);
     } break;
-    case 0x04040010: {
-      auto write = SPStatusWrite{.raw = value};
-      CLEAR_SET(spStatus.halt, write.clearHalt, write.setHalt);
-      if(write.clearBroke) spStatus.broke = false;
-      if(write.clearIntr && !write.setIntr)
-        InterruptLower(mi, regs, Interrupt::SP);
-      if(write.setIntr && !write.clearIntr)
-        InterruptRaise(mi, regs, Interrupt::SP);
-      CLEAR_SET(spStatus.singleStep, write.clearSstep, write.setSstep);
-      CLEAR_SET(spStatus.interruptOnBreak, write.clearIntrOnBreak, write.setIntrOnBreak);
-      CLEAR_SET(spStatus.signal0Set, write.clearSignal0, write.setSignal0);
-      CLEAR_SET(spStatus.signal1Set, write.clearSignal1, write.setSignal1);
-      CLEAR_SET(spStatus.signal2Set, write.clearSignal2, write.setSignal2);
-      CLEAR_SET(spStatus.signal3Set, write.clearSignal3, write.setSignal3);
-      CLEAR_SET(spStatus.signal4Set, write.clearSignal4, write.setSignal4);
-      CLEAR_SET(spStatus.signal5Set, write.clearSignal5, write.setSignal5);
-      CLEAR_SET(spStatus.signal6Set, write.clearSignal6, write.setSignal6);
-      CLEAR_SET(spStatus.signal7Set, write.clearSignal7, write.setSignal7);
-    } break;
+    case 0x04040010: WriteStatus(mi, regs, value); break;
     case 0x0404001C: ReleaseSemaphore(); break;
     case 0x04080000:
       if(spStatus.halt) {

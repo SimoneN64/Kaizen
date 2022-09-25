@@ -126,14 +126,14 @@ void Core::UpdateController(const u8* state) {
 
     s8 xaxis = 0;
     if(state[SDL_SCANCODE_LEFT]) {
-      xaxis = -128;
+      xaxis = -127;
     } else if(state[SDL_SCANCODE_RIGHT]) {
       xaxis = 127;
     }
 
     s8 yaxis = 0;
     if(state[SDL_SCANCODE_DOWN]) {
-      yaxis = -128;
+      yaxis = -127;
     } else if(state[SDL_SCANCODE_UP]) {
       yaxis = 127;
     }

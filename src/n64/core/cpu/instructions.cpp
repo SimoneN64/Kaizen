@@ -242,7 +242,7 @@ void Cpu::lwl(Mem& mem, u32 instr) {
     u32 shift = 8 * ((address ^ 0) & 3);
     u32 mask = 0xFFFFFFFF << shift;
     u32 data = mem.Read32<false>(regs, paddr & ~3, regs.oldPC);
-    s32 result = (s32) ((regs.gpr[RT(instr)] & ~mask) | (data << shift));
+    s32 result = s32((regs.gpr[RT(instr)] & ~mask) | (data << shift));
     regs.gpr[RT(instr)] = result;
   }
 }
@@ -257,7 +257,7 @@ void Cpu::lwr(Mem& mem, u32 instr) {
     u32 shift = 8 * ((address ^ 3) & 3);
     u32 mask = 0xFFFFFFFF >> shift;
     u32 data = mem.Read32<false>(regs, paddr & ~3, regs.oldPC);
-    s32 result = (s32) ((regs.gpr[RT(instr)] & ~mask) | (data >> shift));
+    s32 result = s32((regs.gpr[RT(instr)] & ~mask) | (data >> shift));
     regs.gpr[RT(instr)] = result;
   }
 }
@@ -420,7 +420,7 @@ void Cpu::sdl(Mem& mem, u32 instr) {
     s32 shift = 8 * ((address ^ 0) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
     u64 data = mem.Read64<false>(regs, paddr & ~7, regs.oldPC);
-    s64 rt = regs.gpr[RT(instr)];
+    u64 rt = regs.gpr[RT(instr)];
     mem.Write64<false>(regs, paddr & ~7, (data & ~mask) | (rt >> shift), regs.oldPC);
   }
 }
@@ -435,7 +435,7 @@ void Cpu::sdr(Mem& mem, u32 instr) {
     s32 shift = 8 * ((address ^ 7) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
     u64 data = mem.Read64<false>(regs, paddr & ~7, regs.oldPC);
-    s64 rt = regs.gpr[RT(instr)];
+    u64 rt = regs.gpr[RT(instr)];
     mem.Write64<false>(regs, paddr & ~7, (data & ~mask) | (rt << shift), regs.oldPC);
   }
 }

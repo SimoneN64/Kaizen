@@ -2,6 +2,7 @@
 #include <n64/core/mmio/MI.hpp>
 #include <n64/core/RDP.hpp>
 #include <n64/memory_regions.hpp>
+#include <Interrupt.hpp>
 
 #define RSP_BYTE(addr, buf) (buf[BYTE_ADDRESS(addr) & 0xFFF])
 #define GET_RSP_HALF(addr, buf) ((RSP_BYTE(addr, buf) << 8) | RSP_BYTE((addr) + 1, buf))
@@ -22,14 +23,14 @@ union SPStatus {
     unsigned ioFull:1;
     unsigned singleStep:1;
     unsigned interruptOnBreak:1;
-    unsigned signal0Set:1;
-    unsigned signal1Set:1;
-    unsigned signal2Set:1;
-    unsigned signal3Set:1;
-    unsigned signal4Set:1;
-    unsigned signal5Set:1;
-    unsigned signal6Set:1;
-    unsigned signal7Set:1;
+    unsigned signal0:1;
+    unsigned signal1:1;
+    unsigned signal2:1;
+    unsigned signal3:1;
+    unsigned signal4:1;
+    unsigned signal5:1;
+    unsigned signal6:1;
+    unsigned signal7:1;
     unsigned:17;
   };
 };
@@ -167,6 +168,26 @@ struct RSP {
       val |= mask;
     }
     return val;
+  }
+
+  inline void WriteStatus(MI& mi, Registers& regs, u32 value) {
+    auto write = SPStatusWrite{.raw = value};
+    CLEAR_SET(spStatus.halt, write.clearHalt, write.setHalt);
+    if(write.clearBroke) spStatus.broke = false;
+    if(write.clearIntr && !write.setIntr)
+      InterruptLower(mi, regs, Interrupt::SP);
+    if(write.setIntr && !write.clearIntr)
+      InterruptRaise(mi, regs, Interrupt::SP);
+    CLEAR_SET(spStatus.singleStep, write.clearSstep, write.setSstep);
+    CLEAR_SET(spStatus.interruptOnBreak, write.clearIntrOnBreak, write.setIntrOnBreak);
+    CLEAR_SET(spStatus.signal0, write.clearSignal0, write.setSignal0);
+    CLEAR_SET(spStatus.signal1, write.clearSignal1, write.setSignal1);
+    CLEAR_SET(spStatus.signal2, write.clearSignal2, write.setSignal2);
+    CLEAR_SET(spStatus.signal3, write.clearSignal3, write.setSignal3);
+    CLEAR_SET(spStatus.signal4, write.clearSignal4, write.setSignal4);
+    CLEAR_SET(spStatus.signal5, write.clearSignal5, write.setSignal5);
+    CLEAR_SET(spStatus.signal6, write.clearSignal6, write.setSignal6);
+    CLEAR_SET(spStatus.signal7, write.clearSignal7, write.setSignal7);
   }
 
   inline u16 VCCasU16() {

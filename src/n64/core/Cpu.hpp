@@ -26,8 +26,6 @@ private:
   void disassembly(u32 instr);
   friend struct Cop1;
 
-  std::vector<u32> instructionsLogged;
-
   void special(Mem&, u32);
   void regimm(u32);
   void Exec(Mem&, u32);

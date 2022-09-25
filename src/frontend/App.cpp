@@ -43,8 +43,8 @@ void App::Run() {
             char* droppedDir = event.drop.file;
             if(droppedDir) {
               LoadROM(droppedDir);
+              free(droppedDir);
             }
-            free(droppedDir);
           } break;
       }
     }

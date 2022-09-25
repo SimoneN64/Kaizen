@@ -34,28 +34,23 @@ inline void HandleInterrupt(Registers& regs) {
 }
 
 inline void Cpu::disassembly(u32 instr) {
-  auto found = std::find(instructionsLogged.begin(), instructionsLogged.end(), instr);
+  size_t count;
+  cs_insn *insn;
 
-  if(found == instructionsLogged.end()) {
-    instructionsLogged.push_back(instr);
-    size_t count;
-    cs_insn *insn;
+  u8 code[4];
+  memcpy(code, &instr, 4);
 
-    u8 code[4];
-    memcpy(code, &instr, 4);
+  count = cs_disasm(handle, code, 4, regs.pc, 0, &insn);
 
-    count = cs_disasm(handle, code, 4, regs.pc, 0, &insn);
+  if (count > 0) {
+    size_t j;
+    for (j = 0; j < count; j++) {
+      fmt::print("0x{:016X}:\t{}\t\t{}\n", insn[j].address, insn[j].mnemonic, insn[j].op_str);
+    }
 
-    if (count > 0) {
-      size_t j;
-      for (j = 0; j < count; j++) {
-        fmt::print("0x{:016X}:\t{}\t\t{}\n", insn[j].address, insn[j].mnemonic, insn[j].op_str);
-      }
-
-      cs_free(insn, count);
-    } else
-      printf("ERROR: Failed to disassemble given code!\n");
-  }
+    cs_free(insn, count);
+  } else
+    printf("ERROR: Failed to disassemble given code!\n");
 }
 
 void Cpu::Step(Mem& mem) {

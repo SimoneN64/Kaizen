@@ -61,6 +61,7 @@ target_include_directories(parallel-rdp PUBLIC
   parallel-rdp-standalone/util
   ../../src/n64
   ../../src/n64/core/
+	../../src/n64/core/mmio
   ../../src/n64/core/cpu/
   ../../src/n64/core/cpu/registers
   parallel-rdp-standalone

@@ -205,13 +205,26 @@ void RSP::lui(u32 instr) {
   gpr[RT(instr)] = imm;
 }
 
+#define OFFSET(x) ((x) & 0x7F)
+
 void RSP::lqv(u32 instr) {
   int e = E(instr);
-  u32 addr = gpr[BASE(instr)] + SignExt7bit(instr & 0x7F, 4);
+  u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 4);
   u32 end = ((addr & ~15) + 15);
 
   for(int i = 0; addr + i <= end && i + e < 16; i++) {
     vpr[VT(instr)].byte[BYTE_INDEX(i + e)] = ReadByte(addr + i);
+  }
+}
+
+void RSP::ldv(u32 instr) {
+  int e = E(instr);
+  u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 3);
+  u32 end = e + 8 > 16 ? 16 : e + 8;
+
+  for(int i = e; i < end; i++) {
+    vpr[VT(instr)].byte[BYTE_INDEX(i)] = ReadByte(addr);
+    addr++;
   }
 }
 
@@ -281,12 +294,32 @@ void RSP::sub(u32 instr) {
 
 void RSP::sqv(u32 instr) {
   int e = E(instr);
-  u32 addr = gpr[BASE(instr)] + SignExt7bit(instr & 0x7F, 4);
+  u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 4);
   u32 end = ((addr & ~15) + 15);
 
   for(int i = 0; addr + i <= end; i++) {
     WriteByte(addr + i, vpr[VT(instr)].byte[BYTE_INDEX((i + e) & 15)]);
   }
+}
+
+void RSP::sdv(u32 instr) {
+  int e = E(instr);
+  u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 3);
+
+  for(int i = 0; i < 8; i++) {
+    WriteByte(addr + i, vpr[VT(instr)].byte[BYTE_INDEX((i + e) & 0xF)]);
+  }
+}
+
+void RSP::ssv(u32 instr) {
+  int e = E(instr);
+  u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 1);
+
+  u8 hi = vpr[VT(instr)].byte[BYTE_INDEX(e & 15)];
+  u8 lo = vpr[VT(instr)].byte[BYTE_INDEX((e + 1) & 15)];
+  u16 val = (u16)hi << 8 | lo;
+
+  WriteHalf(addr, val);
 }
 
 void RSP::sllv(u32 instr) {
@@ -343,12 +376,34 @@ void RSP::sltiu(u32 instr) {
   gpr[RT(instr)] = (u32)gpr[RS(instr)] < imm;
 }
 
+inline s16 clamp_signed(s64 val) {
+  if(val > 32767) return 32767;
+  if(val < -32768) return -32768;
+  return val;
+}
+
 void RSP::vabs(u32 instr) {
 
 }
 
 void RSP::vmov(u32 instr) {
 
+}
+
+void RSP::vmacf(u32 instr) {
+  VPR& vd = vpr[VD(instr)];
+  VPR& vs = vpr[VS(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], E(instr));
+
+  for(int i = 0; i < 8; i++) {
+    s32 prod = vs.selement[i] * vte.selement[i];
+    s64 accDelta = prod * 2;
+    s64 accum = GetACC(i) + accDelta;
+    SetACC(i, accum);
+
+    s16 result = clamp_signed(accum >> 16);
+    vd.element[i] = result;
+  }
 }
 
 void RSP::veq(u32 instr) {
@@ -361,6 +416,18 @@ void RSP::vne(u32 instr) {
 
 void RSP::vsar(u32 instr) {
 
+}
+
+void RSP::vzero(u32 instr) {
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], E(instr));
+
+  for(int i = 0; i < 8; i++) {
+    acc.l.element[i] = vte.element[i] + vs.element[i];
+  }
+
+  memset(&vd, 0, sizeof(VPR));
 }
 
 void RSP::mfc0(RDP& rdp, u32 instr) {

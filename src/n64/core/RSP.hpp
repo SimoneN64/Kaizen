@@ -142,6 +142,22 @@ struct RSP {
     nextPC = val += 4;
   }
 
+  inline s64 GetACC(int e) {
+    s64 val = s64(acc.h.element[e]) << 32;
+    val |= s64(acc.m.element[e]) << 16;
+    val |= s64(acc.l.element[e]);
+    if((val & 0x800000000000) != 0) {
+      val |= 0xFFFF000000000000;
+    }
+    return val;
+  }
+
+  inline void SetACC(int e, s64 val) {
+    acc.h.element[e] = val >> 32;
+    acc.m.element[e] = val >> 16;
+    acc.l.element[e] = val;
+  }
+
   inline u16 VCOasU16() {
     u16 val = 0;
     for(int i = 0; i < 8; i++) {
@@ -296,6 +312,7 @@ struct RSP {
   void lbu(u32 instr);
   void lhu(u32 instr);
   void lui(u32 instr);
+  void ldv(u32 instr);
   void lqv(u32 instr);
   void j(u32 instr);
   void jal(u32 instr);
@@ -311,6 +328,8 @@ struct RSP {
   void sw(u32 instr);
   void sub(u32 instr);
   void sqv(u32 instr);
+  void sdv(u32 instr);
+  void ssv(u32 instr);
   void sllv(u32 instr);
   void srlv(u32 instr);
   void srav(u32 instr);
@@ -323,9 +342,11 @@ struct RSP {
   void sltiu(u32 instr);
   void vabs(u32 instr);
   void vmov(u32 instr);
+  void vmacf(u32 instr);
   void veq(u32 instr);
   void vne(u32 instr);
   void vsar(u32 instr);
+  void vzero(u32 instr);
   void mfc0(RDP& rdp, u32 instr);
   void mtc0(Registers& regs, Mem& mem, u32 instr);
   void mfc2(u32 instr);

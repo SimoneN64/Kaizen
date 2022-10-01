@@ -40,15 +40,18 @@ u32 Mem::LoadROM(const std::string& filename) {
   util::SwapN64Rom(crc, sizeAdjusted, cart.data());
   memcpy(mmio.rsp.dmem, cart.data(), 0x1000);
 
+  u32 rdram_size = RDRAM_SIZE;
+  memcpy(&mmio.rdp.dram[0x318], &rdram_size, sizeof(u32));
+
   return crc;
 }
 
 template <bool tlb>
-bool MapVAddr(Registers& regs, TLBAccessType accessType, u32 vaddr, u32& paddr) {
+bool MapVAddr(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr) {
   paddr = vaddr & 0x1FFFFFFF;
   if constexpr(!tlb) return true;
 
-  switch(vaddr >> 29) {
+  switch(u32(vaddr) >> 29) {
     case 0 ... 3: case 7:
       return ProbeTLB(regs, accessType, vaddr, paddr, nullptr);
     case 4 ... 5: return true;
@@ -60,11 +63,11 @@ bool MapVAddr(Registers& regs, TLBAccessType accessType, u32 vaddr, u32& paddr) 
   return false;
 }
 
-template bool MapVAddr<true>(Registers& regs, TLBAccessType accessType, u32 vaddr, u32& paddr);
-template bool MapVAddr<false>(Registers& regs, TLBAccessType accessType, u32 vaddr, u32& paddr);
+template bool MapVAddr<true>(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr);
+template bool MapVAddr<false>(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr);
 
 template <bool tlb>
-u8 Mem::Read8(n64::Registers &regs, u32 vaddr, s64 pc) {
+u8 Mem::Read8(n64::Registers &regs, u64 vaddr, s64 pc) {
   u32 paddr = vaddr;
   if(!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
     HandleTLBException(regs, vaddr);
@@ -97,7 +100,7 @@ u8 Mem::Read8(n64::Registers &regs, u32 vaddr, s64 pc) {
 }
 
 template <bool tlb>
-u16 Mem::Read16(n64::Registers &regs, u32 vaddr, s64 pc) {
+u16 Mem::Read16(n64::Registers &regs, u64 vaddr, s64 pc) {
   u32 paddr = vaddr;
   if(!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
     HandleTLBException(regs, vaddr);
@@ -130,7 +133,7 @@ u16 Mem::Read16(n64::Registers &regs, u32 vaddr, s64 pc) {
 }
 
 template <bool tlb>
-u32 Mem::Read32(n64::Registers &regs, u32 vaddr, s64 pc) {
+u32 Mem::Read32(n64::Registers &regs, u64 vaddr, s64 pc) {
   u32 paddr = vaddr;
   if(!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
     HandleTLBException(regs, vaddr);
@@ -162,7 +165,7 @@ u32 Mem::Read32(n64::Registers &regs, u32 vaddr, s64 pc) {
 }
 
 template <bool tlb>
-u64 Mem::Read64(n64::Registers &regs, u32 vaddr, s64 pc) {
+u64 Mem::Read64(n64::Registers &regs, u64 vaddr, s64 pc) {
   u32 paddr = vaddr;
   if(!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
     HandleTLBException(regs, vaddr);
@@ -193,17 +196,17 @@ u64 Mem::Read64(n64::Registers &regs, u32 vaddr, s64 pc) {
   }
 }
 
-template u8 Mem::Read8<false>(n64::Registers &regs, u32 vaddr, s64 pc);
-template u8 Mem::Read8<true>(n64::Registers &regs, u32 vaddr, s64 pc);
-template u16 Mem::Read16<false>(n64::Registers &regs, u32 vaddr, s64 pc);
-template u16 Mem::Read16<true>(n64::Registers &regs, u32 vaddr, s64 pc);
-template u32 Mem::Read32<false>(n64::Registers &regs, u32 vaddr, s64 pc);
-template u32 Mem::Read32<true>(n64::Registers &regs, u32 vaddr, s64 pc);
-template u64 Mem::Read64<false>(n64::Registers &regs, u32 vaddr, s64 pc);
-template u64 Mem::Read64<true>(n64::Registers &regs, u32 vaddr, s64 pc);
+template u8 Mem::Read8<false>(n64::Registers &regs, u64 vaddr, s64 pc);
+template u8 Mem::Read8<true>(n64::Registers &regs, u64 vaddr, s64 pc);
+template u16 Mem::Read16<false>(n64::Registers &regs, u64 vaddr, s64 pc);
+template u16 Mem::Read16<true>(n64::Registers &regs, u64 vaddr, s64 pc);
+template u32 Mem::Read32<false>(n64::Registers &regs, u64 vaddr, s64 pc);
+template u32 Mem::Read32<true>(n64::Registers &regs, u64 vaddr, s64 pc);
+template u64 Mem::Read64<false>(n64::Registers &regs, u64 vaddr, s64 pc);
+template u64 Mem::Read64<true>(n64::Registers &regs, u64 vaddr, s64 pc);
 
 template <bool tlb>
-void Mem::Write8(Registers& regs, u32 vaddr, u32 val, s64 pc) {
+void Mem::Write8(Registers& regs, u64 vaddr, u32 val, s64 pc) {
   u32 paddr = vaddr;
   if(!MapVAddr<tlb>(regs, STORE, vaddr, paddr)) {
     HandleTLBException(regs, vaddr);
@@ -239,7 +242,7 @@ void Mem::Write8(Registers& regs, u32 vaddr, u32 val, s64 pc) {
 }
 
 template <bool tlb>
-void Mem::Write16(Registers& regs, u32 vaddr, u32 val, s64 pc) {
+void Mem::Write16(Registers& regs, u64 vaddr, u32 val, s64 pc) {
   u32 paddr = vaddr;
   if(!MapVAddr<tlb>(regs, STORE, vaddr, paddr)) {
     HandleTLBException(regs, vaddr);
@@ -275,12 +278,9 @@ void Mem::Write16(Registers& regs, u32 vaddr, u32 val, s64 pc) {
 }
 
 template <bool tlb>
-void Mem::Write32(Registers& regs, u32 vaddr, u32 val, s64 pc) {
+void Mem::Write32(Registers& regs, u64 vaddr, u32 val, s64 pc) {
   u32 paddr = vaddr;
   if(!MapVAddr<tlb>(regs, STORE, vaddr, paddr)) {
-    if(pc == 0xFFFFFFFF80002C14) {
-      printf("\n");
-    }
     HandleTLBException(regs, vaddr);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, pc);
   }
@@ -321,7 +321,7 @@ void Mem::Write32(Registers& regs, u32 vaddr, u32 val, s64 pc) {
 }
 
 template <bool tlb>
-void Mem::Write64(Registers& regs, u32 vaddr, u64 val, s64 pc) {
+void Mem::Write64(Registers& regs, u64 vaddr, u64 val, s64 pc) {
   u32 paddr = vaddr;
   if(!MapVAddr<tlb>(regs, STORE, vaddr, paddr)) {
     HandleTLBException(regs, vaddr);
@@ -353,12 +353,12 @@ void Mem::Write64(Registers& regs, u32 vaddr, u64 val, s64 pc) {
   }
 }
 
-template void Mem::Write8<false>(Registers& regs, u32 vaddr, u32 val, s64 pc);
-template void Mem::Write8<true>(Registers& regs, u32 vaddr, u32 val, s64 pc);
-template void Mem::Write16<false>(Registers& regs, u32 vaddr, u32 val, s64 pc);
-template void Mem::Write16<true>(Registers& regs, u32 vaddr, u32 val, s64 pc);
-template void Mem::Write32<false>(Registers& regs, u32 vaddr, u32 val, s64 pc);
-template void Mem::Write32<true>(Registers& regs, u32 vaddr, u32 val, s64 pc);
-template void Mem::Write64<false>(Registers& regs, u32 vaddr, u64 val, s64 pc);
-template void Mem::Write64<true>(Registers& regs, u32 vaddr, u64 val, s64 pc);
+template void Mem::Write8<false>(Registers& regs, u64 vaddr, u32 val, s64 pc);
+template void Mem::Write8<true>(Registers& regs, u64 vaddr, u32 val, s64 pc);
+template void Mem::Write16<false>(Registers& regs, u64 vaddr, u32 val, s64 pc);
+template void Mem::Write16<true>(Registers& regs, u64 vaddr, u32 val, s64 pc);
+template void Mem::Write32<false>(Registers& regs, u64 vaddr, u32 val, s64 pc);
+template void Mem::Write32<true>(Registers& regs, u64 vaddr, u32 val, s64 pc);
+template void Mem::Write64<false>(Registers& regs, u64 vaddr, u64 val, s64 pc);
+template void Mem::Write64<true>(Registers& regs, u64 vaddr, u64 val, s64 pc);
 }

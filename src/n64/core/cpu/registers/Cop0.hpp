@@ -267,8 +267,8 @@ private:
 struct Registers;
 enum class ExceptionCode : u8;
 
-TLBEntry* TLBTryMatch(Registers& regs, s64 vaddr, int* match);
-bool ProbeTLB(Registers& regs, TLBAccessType access_type, s64 vaddr, u32& paddr, int* match);
+TLBEntry* TLBTryMatch(Registers& regs, u64 vaddr, int* match);
+bool ProbeTLB(Registers& regs, TLBAccessType access_type, u64 vaddr, u32& paddr, int* match);
 void HandleTLBException(Registers& regs, u64 vaddr);
 ExceptionCode GetTLBExceptionCode(TLBError error, TLBAccessType access_type);
 }

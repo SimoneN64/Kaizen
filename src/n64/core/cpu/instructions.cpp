@@ -209,7 +209,7 @@ void Cpu::lh(Mem& mem, u32 instr) {
 }
 
 void Cpu::lw(Mem& mem, u32 instr) {
-  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
@@ -391,7 +391,7 @@ void Cpu::sh(Mem& mem, u32 instr) {
 }
 
 void Cpu::sw(Mem& mem, u32 instr) {
-  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);

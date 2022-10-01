@@ -170,7 +170,7 @@ u64 getVPN(u64 addr, u64 pageMask) {
   return vpn & ~mask;
 }
 
-TLBEntry* TLBTryMatch(Registers& regs, s64 vaddr, int* match) {
+TLBEntry* TLBTryMatch(Registers& regs, u64 vaddr, int* match) {
   for(int i = 0; i < 32; i++) {
     TLBEntry *entry = &regs.cop0.tlb[i];
     u64 entry_vpn = getVPN(entry->entryHi.raw, entry->pageMask.raw);
@@ -190,7 +190,7 @@ TLBEntry* TLBTryMatch(Registers& regs, s64 vaddr, int* match) {
   return nullptr;
 }
 
-bool ProbeTLB(Registers& regs, TLBAccessType access_type, s64 vaddr, u32& paddr, int* match) {
+bool ProbeTLB(Registers& regs, TLBAccessType access_type, u64 vaddr, u32& paddr, int* match) {
   TLBEntry* entry = TLBTryMatch(regs, vaddr, match);
   if(!entry) {
     regs.cop0.tlbError = MISS;

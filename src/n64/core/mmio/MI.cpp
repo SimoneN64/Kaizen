@@ -3,7 +3,7 @@
 #include <util.hpp>
 #include <n64/core/mmio/Interrupt.hpp>
 
-#define MI_VERSION_REG 0x02020102
+#define MI_VERSION_REG 0x01010101
 
 namespace n64 {
 MI::MI() {

@@ -16,13 +16,17 @@ void Core::Stop() {
   romLoaded = false;
 }
 
-u32 Core::LoadROM(const std::string& rom_) {
+CartInfo Core::LoadROM(const std::string& rom_) {
   rom = rom_;
   cpu.Reset();
   mem.Reset();
   pause = false;
   romLoaded = true;
-  return mem.LoadROM(rom);
+  
+  CartInfo cartInfo = mem.LoadROM(rom);
+  DoPIFHLE(mem, cpu.regs, cartInfo);
+
+  return cartInfo;
 }
 
 void Core::Run(Window& window, float volumeL, float volumeR) {

@@ -148,10 +148,10 @@ ImDrawData* Window::Present(n64::Core& core) {
 
 void Window::LoadROM(n64::Core& core, const std::string &path) {
   if(!path.empty()) {
-    u32 crc = core.LoadROM(path);
+    n64::CartInfo cartInfo = core.LoadROM(path);
     std::ifstream gameDbFile("resources/game_db.json");
     json gameDb = json::parse(gameDbFile);
-    auto entry = gameDb[fmt::format("{:08x}", crc)]["name"];
+    auto entry = gameDb[fmt::format("{:08x}", cartInfo.crc)]["name"];
     std::string name{};
     if(!entry.empty()) {
       name = entry.get<std::string>();

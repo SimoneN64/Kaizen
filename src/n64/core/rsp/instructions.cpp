@@ -103,9 +103,9 @@ inline VPR GetVTE(VPR vt, u8 e) {
       vte = Broadcast(vt, e - 4, e - 4, e - 4, e - 4, e, e, e, e);
       break;
     case 8 ... 15: {
-      int index = e - 8;
-      for (u16& i : vte.element) {
-        i = vt.element[index];
+      int index = ELEMENT_INDEX(e - 8);
+      for (u16& vteE : vte.element) {
+        vteE = vt.element[index];
       }
     } break;
   }
@@ -407,7 +407,19 @@ void RSP::vabs(u32 instr) {
 }
 
 void RSP::vadd(u32 instr) {
-  util::panic("VADD!\n");
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
+
+  for(int i = 0; i < 8; i++) {
+    s16 vsE = vs.selement[i];
+    s16 vteE = vte.selement[i];
+    s32 result = vsE + vteE + (vco.l.element[i] != 0);
+    acc.l.element[i] = result;
+    vd.element[i] = clamp_signed(result);
+    vco.l.element[i] = 0;
+    vco.h.element[i] = 0;
+  }
 }
 
 void RSP::vmov(u32 instr) {

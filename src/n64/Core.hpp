@@ -5,12 +5,13 @@
 #include <string>
 
 struct Window;
+
 namespace n64 {
 struct Core {
   ~Core() { Stop(); }
   Core();
   void Stop();
-  u32 LoadROM(const std::string&);
+  CartInfo LoadROM(const std::string&);
   void Run(Window&, float volumeL, float volumeR);
   void UpdateController(const u8*);
   void TogglePause() { pause = !pause; }

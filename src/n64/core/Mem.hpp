@@ -7,11 +7,18 @@
 
 namespace n64 {
 struct Registers;
+
+struct CartInfo {
+  bool isPAL;
+  u32 cicType;
+  u32 crc;
+};
+
 struct Mem {
   ~Mem() = default;
   Mem();
   void Reset();
-  u32 LoadROM(const std::string&);
+  CartInfo LoadROM(const std::string&);
   [[nodiscard]] auto GetRDRAM() -> u8* {
     return mmio.rdp.dram.data();
   }
@@ -46,6 +53,47 @@ private:
   u8 pifBootrom[PIF_BOOTROM_SIZE]{};
   u8 isviewer[ISVIEWER_SIZE]{};
   size_t romMask;
+
+  void SetCICType(u32& cicType, u32 checksum) {
+    switch(checksum) {
+      case 0xEC8B1325: // 7102
+        cicType = CIC_NUS_7102;
+      case 0x1DEB51A9: // 6101
+        cicType = CIC_NUS_6101;
+        break;
+
+      case 0xC08E5BD6:
+        cicType = CIC_NUS_6102_7101;
+        break;
+
+      case 0x03B8376A:
+        cicType = CIC_NUS_6103_7103;
+        break;
+
+      case 0xCF7F41DC:
+        cicType = CIC_NUS_6105_7105;
+        break;
+
+      case 0xD1059C6A:
+        cicType = CIC_NUS_6106_7106;
+        break;
+
+      default:
+        util::warn("Could not determine CIC TYPE! Checksum: {:08X} is unknown!\n", checksum);
+        cicType = UNKNOWN_CIC_TYPE;
+        break;
+    }
+  }
+
+  bool IsROMPAL() {
+    static const char pal_codes[] = {'D', 'F', 'I', 'P', 'S', 'U', 'X', 'Y'};
+    for (int i = 0; i < 8; i++) {
+      if (cart[0x3e] == pal_codes[i]) {
+        return true;
+      }
+    }
+    return false;
+  }
 };
 
 template <bool tlb = true>

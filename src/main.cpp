@@ -9,6 +9,9 @@ int main(int argc, char** argv) {
   if(argc > 1) {
     app->LoadROM(argv[1]);
   }
+
   app->Run();
+
+  delete app;
   return 0;
 }

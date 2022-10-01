@@ -194,12 +194,12 @@ void Cpu::lui(u32 instr) {
 }
 
 void Cpu::lb(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
   regs.gpr[RT(instr)] = (s8)mem.Read8(regs, address, regs.oldPC);
 }
 
 void Cpu::lh(Mem& mem, u32 instr) {
-  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b1)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
@@ -318,7 +318,7 @@ void Cpu::ldr(Mem& mem, u32 instr) {
 }
 
 void Cpu::lbu(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u8 value = mem.Read8(regs, address, regs.oldPC);
   regs.gpr[RT(instr)] = value;
 }
@@ -506,11 +506,11 @@ void Cpu::jalr(u32 instr) {
 }
 
 void Cpu::slti(u32 instr) {
-  regs.gpr[RT(instr)] = regs.gpr[RS(instr)] < se_imm((s64)instr);
+  regs.gpr[RT(instr)] = regs.gpr[RS(instr)] < se_imm(instr);
 }
 
 void Cpu::sltiu(u32 instr) {
-  regs.gpr[RT(instr)] = (u64)regs.gpr[RS(instr)] < se_imm((s64)instr);
+  regs.gpr[RT(instr)] = (u64)regs.gpr[RS(instr)] < se_imm(instr);
 }
 
 void Cpu::slt(u32 instr) {

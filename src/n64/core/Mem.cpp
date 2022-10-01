@@ -83,6 +83,7 @@ u8 Mem::Read8(n64::Registers &regs, u32 vaddr, s64 pc) {
     case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF:
       return mmio.Read(paddr);
     case 0x10000000 ... 0x1FBFFFFF:
+      paddr = (paddr + 2) & ~2;
       return cart[BYTE_ADDRESS(paddr) & romMask];
     case 0x1FC00000 ... 0x1FC007BF:
       return pifBootrom[BYTE_ADDRESS(paddr) & PIF_BOOTROM_DSIZE];
@@ -115,6 +116,7 @@ u16 Mem::Read16(n64::Registers &regs, u32 vaddr, s64 pc) {
     case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF:
       return mmio.Read(paddr);
     case 0x10000000 ... 0x1FBFFFFF:
+      paddr = (paddr + 2) & ~3;
       return util::ReadAccess<u16>(cart.data(), HALF_ADDRESS(paddr) & romMask);
     case 0x1FC00000 ... 0x1FC007BF:
       return util::ReadAccess<u16>(pifBootrom, HALF_ADDRESS(paddr) & PIF_BOOTROM_DSIZE);
@@ -276,6 +278,9 @@ template <bool tlb>
 void Mem::Write32(Registers& regs, u32 vaddr, u32 val, s64 pc) {
   u32 paddr = vaddr;
   if(!MapVAddr<tlb>(regs, STORE, vaddr, paddr)) {
+    if(pc == 0xFFFFFFFF80002C14) {
+      printf("\n");
+    }
     HandleTLBException(regs, vaddr);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, pc);
   }

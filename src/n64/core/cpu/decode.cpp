@@ -99,7 +99,10 @@ void Cpu::Exec(Mem& mem, u32 instr) {
     case 0x02: j(instr); break;
     case 0x03: jal(instr); break;
     case 0x04: b(instr, regs.gpr[RS(instr)] == regs.gpr[RT(instr)]); break;
-    case 0x05: b(instr, regs.gpr[RS(instr)] != regs.gpr[RT(instr)]); break;
+    case 0x05: {
+      //fmt::print("RS: {:016X}, RT: {:016X}\n", (u64)regs.gpr[RS(instr)], (u64)regs.gpr[RT(instr)]);
+      b(instr, regs.gpr[RS(instr)] != regs.gpr[RT(instr)]);
+    } break;
     case 0x06: b(instr, regs.gpr[RS(instr)] <= 0); break;
     case 0x07: b(instr, regs.gpr[RS(instr)] > 0); break;
     case 0x08: addi(instr); break;

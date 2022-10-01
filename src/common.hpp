@@ -40,7 +40,8 @@ using m128 = __m128i;
 #define VT(x) (((x) >> 16) & 0x1F)
 #define VS(x) (((x) >> 11) & 0x1F)
 #define VD(x) (((x) >>  6) & 0x1F)
-#define E(x) (((x) >>   7) & 0x0F)
+#define E1(x) (((x) >>  7) & 0x0F)
+#define E2(x) (((x) >> 21) & 0x0F)
 #define ELEMENT_INDEX(i) (7 - (i))
 #define BYTE_INDEX(i)   (15 - (i))
 

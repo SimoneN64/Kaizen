@@ -362,6 +362,7 @@ struct RSP {
   void slti(u32 instr);
   void sltiu(u32 instr);
   void vabs(u32 instr);
+  void vadd(u32 instr);
   void vmov(u32 instr);
   void vmacf(u32 instr);
   void veq(u32 instr);

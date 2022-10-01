@@ -88,8 +88,9 @@ inline void cop2(RSP& rsp, u32 instr) {
       }
       break;
     case 0x08: rsp.vmacf(instr); break;
-    //case 0x13: rsp.vabs(instr); break;
-    //case 0x1D: rsp.vsar(instr); break;
+    case 0x10: rsp.vadd(instr); break;
+    case 0x13: rsp.vabs(instr); break;
+    case 0x1D: rsp.vsar(instr); break;
     //case 0x21: rsp.veq(instr); break;
     //case 0x22: rsp.vne(instr); break;
     //case 0x33: rsp.vmov(instr); break;

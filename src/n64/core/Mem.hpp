@@ -58,6 +58,8 @@ private:
     switch(checksum) {
       case 0xEC8B1325: // 7102
         cicType = CIC_NUS_7102;
+        break;
+
       case 0x1DEB51A9: // 6101
         cicType = CIC_NUS_6101;
         break;

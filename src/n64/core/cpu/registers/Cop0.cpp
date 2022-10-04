@@ -103,10 +103,10 @@ void Cop0::SetReg32(u8 addr, u32 value) {
       status.raw |= (value & STATUS_MASK);
       break;
     case COP0_REG_CAUSE: {
-      Cop0Cause temp{};
-      temp.raw = value;
-      cause.ip0 = temp.ip0;
-      cause.ip1 = temp.ip1;
+      Cop0Cause tmp{};
+      tmp.raw = value;
+      cause.ip0 = tmp.ip0;
+      cause.ip1 = tmp.ip1;
     } break;
     case COP0_REG_EPC:
       EPC = s64(s32(value));
@@ -259,8 +259,6 @@ void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc) {
 
   regs.cop0.cause.copError = cop;
   regs.cop0.cause.exceptionCode = static_cast<u8>(code);
-
-  s64 exceptionVector = 0;
 
   if(regs.cop0.status.bev) {
     util::panic("BEV bit set!\n");

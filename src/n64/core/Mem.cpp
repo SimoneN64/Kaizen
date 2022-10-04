@@ -304,7 +304,7 @@ void Mem::Write32(Registers& regs, u64 vaddr, u32 val, s64 pc) {
       if(val < ISVIEWER_SIZE) {
         char* message = (char*)calloc(val + 1, 1);
         memcpy(message, isviewer, val);
-        printf("%s", message);
+        fmt::print("{}", message);
         free(message);
       }
     } break;

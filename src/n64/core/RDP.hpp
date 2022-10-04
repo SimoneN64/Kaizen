@@ -62,6 +62,6 @@ struct RDP {
   void Write(MI& mi, Registers& regs, RSP& rsp, u32 addr, u32 val);
   void StatusWrite(MI& mi, Registers& regs, RSP& rsp, u32 val);
   void RunCommand(MI& mi, Registers& regs, RSP& rsp);
-  void OnFullSync();
+  void OnFullSync(MI& mi, Registers& regs);
 };
 } // natsukashii

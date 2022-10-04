@@ -50,7 +50,7 @@ inline void regimm(RSP& rsp, u32 instr) {
     case 0x01: rsp.b(instr, (s32)rsp.gpr[RS(instr)] >= 0); break;
     case 0x10: rsp.bl(instr, (s32)rsp.gpr[RS(instr)] < 0); break;
     case 0x11: rsp.bl(instr, (s32)rsp.gpr[RS(instr)] >= 0); break;
-    default: util::panic("Unhandled RSP regimm instruction ({:06b})\n", mask);
+    default: util::panic("Unhandled RSP regimm instruction ({:05b})\n", mask);
   }
 }
 
@@ -59,17 +59,18 @@ inline void lwc2(RSP& rsp, u32 instr) {
   switch(mask) {
     case 0x03: rsp.ldv(instr); break;
     case 0x04: rsp.lqv(instr); break;
-    default: util::panic("Unhandled RSP LWC2 {:06b}\n", mask);
+    default: util::panic("Unhandled RSP LWC2 {:05b}\n", mask);
   }
 }
 
 inline void swc2(RSP& rsp, u32 instr) {
   u8 mask = (instr >> 11) & 0x1F;
   switch(mask) {
+    case 0x00: rsp.sbv(instr); break;
     case 0x01: rsp.ssv(instr); break;
     case 0x03: rsp.sdv(instr); break;
     case 0x04: rsp.sqv(instr); break;
-    default: util::panic("Unhandled RSP SWC2 {:06b}\n", mask);
+    default: util::panic("Unhandled RSP SWC2 {:05b}\n", mask);
   }
 }
 
@@ -87,7 +88,9 @@ inline void cop2(RSP& rsp, u32 instr) {
         default: util::panic("Unhandled RSP COP2 sub ({:05b})\n", mask_sub);
       }
       break;
+    case 0x07: rsp.vmudh(instr); break;
     case 0x08: rsp.vmacf(instr); break;
+    case 0x0C: rsp.vmadl(instr); break;
     case 0x10: rsp.vadd(instr); break;
     case 0x13: rsp.vabs(instr); break;
     case 0x1D: rsp.vsar(instr); break;
@@ -106,7 +109,7 @@ inline void cop0(Registers& regs, Mem& mem, u32 instr) {
   switch(mask) {
     case 0x00: rsp.mfc0(rdp, instr); break;
     case 0x04: rsp.mtc0(regs, mem, instr); break;
-    default: util::panic("Unhandled RSP COP0 ({:06b})\n", mask);
+    default: util::panic("Unhandled RSP COP0 ({:05b})\n", mask);
   }
 }
 

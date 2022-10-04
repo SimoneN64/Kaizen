@@ -172,7 +172,12 @@ struct RSP {
 
   inline void WriteStatus(MI& mi, Registers& regs, u32 value) {
     auto write = SPStatusWrite{.raw = value};
-    CLEAR_SET(spStatus.halt, write.clearHalt, write.setHalt);
+    if(write.clearHalt && !write.setHalt) {
+      spStatus.halt = false;
+    }
+    if(write.setHalt && !write.clearHalt) {
+      spStatus.halt = true;
+    }
     if(write.clearBroke) spStatus.broke = false;
     if(write.clearIntr && !write.setIntr)
       InterruptLower(mi, regs, Interrupt::SP);
@@ -348,8 +353,9 @@ struct RSP {
   void sh(u32 instr);
   void sw(u32 instr);
   void sub(u32 instr);
-  void sqv(u32 instr);
+  void sbv(u32 instr);
   void sdv(u32 instr);
+  void sqv(u32 instr);
   void ssv(u32 instr);
   void sllv(u32 instr);
   void srlv(u32 instr);
@@ -363,8 +369,10 @@ struct RSP {
   void sltiu(u32 instr);
   void vabs(u32 instr);
   void vadd(u32 instr);
-  void vmov(u32 instr);
   void vmacf(u32 instr);
+  void vmadl(u32 instr);
+  void vmov(u32 instr);
+  void vmudh(u32 instr);
   void veq(u32 instr);
   void vne(u32 instr);
   void vsar(u32 instr);

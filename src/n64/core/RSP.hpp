@@ -127,6 +127,8 @@ struct RSP {
   VPR vpr[32]{};
   s32 gpr[32]{};
   VPR vce{};
+  u16 divIn{}, divOut{};
+  bool divInLoaded = false;
 
   struct {
     VPR h{}, m{}, l{};
@@ -339,6 +341,9 @@ struct RSP {
   void lhu(u32 instr);
   void lui(u32 instr);
   void ldv(u32 instr);
+  void lsv(u32 instr);
+  void llv(u32 instr);
+  void lrv(u32 instr);
   void lqv(u32 instr);
   void j(u32 instr);
   void jal(u32 instr);
@@ -357,6 +362,7 @@ struct RSP {
   void sdv(u32 instr);
   void sqv(u32 instr);
   void ssv(u32 instr);
+  void slv(u32 instr);
   void sllv(u32 instr);
   void srlv(u32 instr);
   void srav(u32 instr);
@@ -369,13 +375,30 @@ struct RSP {
   void sltiu(u32 instr);
   void vabs(u32 instr);
   void vadd(u32 instr);
+  void vand(u32 instr);
+  void vch(u32 instr);
+  void vcl(u32 instr);
   void vmacf(u32 instr);
+  void vmadh(u32 instr);
   void vmadl(u32 instr);
+  void vmadm(u32 instr);
+  void vmadn(u32 instr);
   void vmov(u32 instr);
+  void vmudl(u32 instr);
   void vmudh(u32 instr);
+  void vmudm(u32 instr);
+  void vmudn(u32 instr);
+  void vmrg(u32 instr);
+  void vlt(u32 instr);
   void veq(u32 instr);
   void vne(u32 instr);
+  void vge(u32 instr);
+  void vrcpl(u32 instr);
+  void vrcph(u32 instr);
   void vsar(u32 instr);
+  void vsub(u32 instr);
+  void vsubc(u32 instr);
+  void vxor(u32 instr);
   void vzero(u32 instr);
   void mfc0(RDP& rdp, u32 instr);
   void mtc0(Registers& regs, Mem& mem, u32 instr);

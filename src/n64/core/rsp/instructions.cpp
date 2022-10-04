@@ -2,6 +2,7 @@
 #include <util.hpp>
 #include <n64/core/cpu/Registers.hpp>
 #include <Mem.hpp>
+#include <rcp_rsq.hpp>
 
 namespace n64 {
 inline bool AcquireSemaphore(RSP& rsp) {
@@ -217,6 +218,17 @@ void RSP::lqv(u32 instr) {
   }
 }
 
+void RSP::lrv(u32 instr) {
+  int e = E1(instr);
+  u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 4);
+  int start = 16 - ((addr & 0xf) - e);
+  addr &= 0xFFFFFFF0;
+
+  for(int i = start; i < 16; i++) {
+    vpr[VT(instr)].byte[BYTE_INDEX(i & 0xf)] = ReadByte(addr++);
+  }
+}
+
 void RSP::ldv(u32 instr) {
   int e = E1(instr);
   u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 3);
@@ -225,6 +237,30 @@ void RSP::ldv(u32 instr) {
   for(int i = e; i < end; i++) {
     vpr[VT(instr)].byte[BYTE_INDEX(i)] = ReadByte(addr);
     addr++;
+  }
+}
+
+void RSP::lsv(u32 instr) {
+  int e = E1(instr);
+  u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 1);
+  u16 val = ReadHalf(addr);
+  vpr[VT(instr)].byte[BYTE_INDEX(e)] = val >> 8;
+  if(e < 15) {
+    vpr[VT(instr)].byte[BYTE_INDEX(e + 1)] = val;
+  }
+}
+
+void RSP::llv(u32 instr) {
+  int e = E1(instr);
+  u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 2);
+
+  for(int i = 0; i < 4; i++) {
+    int elem = i + e;
+    if(elem > 15) {
+      break;
+    }
+
+    vpr[VT(instr)].byte[BYTE_INDEX(elem)] = ReadByte(addr + i);
   }
 }
 
@@ -329,6 +365,15 @@ void RSP::ssv(u32 instr) {
   WriteHalf(addr, val);
 }
 
+void RSP::slv(u32 instr) {
+  int e = E1(instr);
+  u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 2);
+
+  for(int i = 0; i < 4; i++) {
+    WriteByte(addr + i, vpr[VT(instr)].byte[BYTE_INDEX((i + e) & 0xF)]);
+  }
+}
+
 void RSP::sllv(u32 instr) {
   u8 sa = (gpr[RS(instr)]) & 0x1F;
   u32 rt = gpr[RT(instr)];
@@ -429,6 +474,77 @@ void RSP::vadd(u32 instr) {
   }
 }
 
+void RSP::vch(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+
+  for(int i = 0; i < 8; i++) {
+    s16 vsElem = vs.selement[i];
+    s16 vteElem = vte.selement[i];
+
+    if((vsElem ^ vteElem) < 0) {
+      s16 result = vsElem + vteElem;
+
+      acc.l.selement[i] = (result <= 0) ? -vteElem : vsElem;
+      vcc.l.element[i] = result <= 0 ? 0xffff : 0;
+      vcc.h.element[i] = vteElem < 0 ? 0xffff : 0;
+      vco.l.element[i] = 0xffff;
+      vco.h.element[i] = result != 0 && (u16)vsElem != ((u16)vteElem ^ 0xffff);
+      vce.element[i] = result == -1;
+    } else {
+      s16 result = vsElem - vteElem;
+      acc.l.selement[i] = (result >= 0) ? vteElem : vsElem;
+      vcc.l.element[i] = vteElem < 0 ? 0xffff : 0;
+      vcc.h.element[i] = result >= 0 ? 0xffff : 0;
+      vco.l.element[i] = 0;
+      vco.h.element[i] = result != 0 && (u16)vsElem != ((u16)vteElem ^ 0xffff);
+      vce.element[i] = 0;
+    }
+
+    vd.element[i] = acc.l.element[i];
+  }
+}
+
+void RSP::vcl(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+
+  for(int i = 0; i < 8; i++) {
+    s16 vsElem = vs.selement[i];
+    s16 vteElem = vte.selement[i];
+
+    if(vco.l.element[i]) {
+      if(vco.h.element[i]) {
+        acc.l.element[i] = vcc.l.element[i] ? -vteElem : vsElem;
+      } else {
+        u16 clampSum = vsElem + vteElem;
+        bool overflow = (vsElem + vteElem) != clampSum;
+
+        acc.l.element[i] = vcc.l.element[i] ? -vteElem : vsElem;
+        if(vce.element[i]) {
+          vcc.l.element[i] = !clampSum || !overflow ? 0xffff : 0;
+        } else {
+          vcc.l.element[i] = !clampSum && !overflow ? 0xffff : 0;
+        }
+      }
+    } else {
+      acc.l.element[i] = vcc.l.element[i] ? -vteElem : vsElem;
+      if(!vco.h.element[i]) {
+        vcc.h.element[i] = s32(vsElem) - s32(vteElem) >= 0 ? 0xffff : 0;
+      }
+    }
+
+    vco.l.element[i] = 0;
+    vco.h.element[i] = 0;
+    vce.element[i] = 0;
+    vd.element[i] = acc.l.element[i];
+  }
+}
+
 void RSP::vmov(u32 instr) {
 
 }
@@ -440,6 +556,30 @@ inline bool IsSignExtension(s16 hi, s16 lo) {
     return (lo & 0x8000) == 0x8000;
   }
   return false;
+}
+
+void RSP::vmudl(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+  for(int i = 0; i < 8; i++) {
+    u64 prod = (u64)vs.selement[i] * (u64)vte.selement[i];
+    u64 accum = prod >> 16;
+
+    SetACC(i, accum);
+
+    u16 result;
+    if(IsSignExtension(acc.h.selement[i], acc.m.selement[i])) {
+      result = acc.l.element[i];
+    } else if (acc.h.selement[i] < 0) {
+      result = 0;
+    } else {
+      result = 0xffff;
+    }
+
+    vd.element[i] = result;
+  }
 }
 
 void RSP::vmudh(u32 instr) {
@@ -454,9 +594,64 @@ void RSP::vmudh(u32 instr) {
     s16 result = clamp_signed(accum);
 
     accum <<= 16;
-    SetACC(e, accum);
+    SetACC(i, accum);
 
-    vd.element[e] = result;
+    vd.element[i] = result;
+  }
+}
+
+void RSP::vmudm(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+  for(int i = 0; i < 8; i++) {
+    s32 prod = vs.selement[i] * vte.element[i];
+    s64 accum = prod;
+
+    s16 result = clamp_signed(accum >> 16);
+    SetACC(i, accum);
+
+    vd.element[i] = result;
+  }
+}
+
+void RSP::vmudn(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+  for(int i = 0; i < 8; i++) {
+    s32 prod = vs.element[i] * vte.selement[i];
+    s64 accum = prod;
+    SetACC(i, accum);
+
+    u16 result;
+    if(IsSignExtension(acc.h.selement[i], acc.m.selement[i])) {
+      result = acc.l.element[i];
+    } else if(acc.h.selement[i] < 0) {
+      result = 0;
+    } else {
+      result = 0xffff;
+    }
+
+    vd.element[i] = result;
+  }
+}
+
+void RSP::vmadh(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+  for(int i = 0; i < 8; i++) {
+    s32 prod = vs.selement[i] * vte.selement[i];
+    s64 accum = GetACC(i) + ((u64)prod << 16);
+    SetACC(i, accum);
+
+    s16 result = clamp_signed(accum >> 16);
+
+    vd.element[i] = result;
   }
 }
 
@@ -467,20 +662,62 @@ void RSP::vmadl(u32 instr) {
   VPR vte = GetVTE(vpr[VT(instr)], e);
   for(int i = 0; i < 8; i++) {
     u64 prod = (u64)vs.selement[i] * (u64)vte.selement[i];
-    u64 accum = (prod >> 16) + GetACC(e);
+    u64 accum = (prod >> 16) + GetACC(i);
 
-    SetACC(e, accum);
+    SetACC(i, accum);
 
     u16 result;
-    if(IsSignExtension(acc.h.selement[e], acc.m.selement[e])) {
-      result = acc.l.element[e];
-    } else if (acc.h.selement[e] < 0) {
+    if(IsSignExtension(acc.h.selement[i], acc.m.selement[i])) {
+      result = acc.l.element[i];
+    } else if (acc.h.selement[i] < 0) {
       result = 0;
     } else {
       result = 0xffff;
     }
 
-    vd.element[e] = result;
+    vd.element[i] = result;
+  }
+}
+
+void RSP::vmadm(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+  for(int i = 0; i < 8; i++) {
+    s32 prod = vs.selement[i] * vte.element[i];
+    s64 accum = GetACC(i);
+    accum += prod;
+    SetACC(i, accum);
+    accum = GetACC(i);
+
+    s16 result = clamp_signed(accum >> 16);
+
+    vd.element[i] = result;
+  }
+}
+
+void RSP::vmadn(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+  for(int i = 0; i < 8; i++) {
+    s32 prod = vs.element[i] * vte.selement[i];
+    s64 accum = GetACC(i) + prod;
+
+    SetACC(i, accum);
+
+    u16 result;
+    if(IsSignExtension(acc.h.selement[i], acc.m.selement[i])) {
+      result = acc.l.element[i];
+    } else if (acc.h.selement[i] < 0) {
+      result = 0;
+    } else {
+      result = 0xffff;
+    }
+
+    vd.element[i] = result;
   }
 }
 
@@ -508,6 +745,102 @@ void RSP::vne(u32 instr) {
 
 }
 
+void RSP::vge(u32 instr) {
+  int e = E2(instr);
+  VPR& vd = vpr[VD(instr)];
+  VPR& vs = vpr[VS(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+
+  for(int i = 0; i < 8; i++) {
+    bool eql = vs.element[i] == vte.element[i];
+    bool neg = !(vco.h.element[i] & vco.l.element[i]) & eql;
+    vcc.l.element[i] = (neg | (vs.element[i] > vte.element[i])) ? 0xffff : 0;
+    acc.l.element[i] = vcc.l.element[i] ? vs.element[i] : vte.element[i];
+    vd.element[i] = acc.l.element[i];
+    vcc.h.element[i] = vco.h.element[i] = vco.l.element[i] = 0;
+  }
+}
+
+void RSP::vlt(u32 instr) {
+  int e = E2(instr);
+  VPR& vd = vpr[VD(instr)];
+  VPR& vs = vpr[VS(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+
+  for(int i = 0; i < 8; i++) {
+    bool eql = vs.element[i] == vte.element[i];
+    bool neg = vco.h.element[i] & vco.l.element[i] & eql;
+    vcc.l.element[i] = (neg | (vs.element[i] < vte.element[i])) ? 0xffff : 0;
+    acc.l.element[i] = vcc.l.element[i] ? vs.element[i] : vte.element[i];
+    vd.element[i] = acc.l.element[i];
+    vcc.h.element[i] = vco.h.element[i] = vco.l.element[i] = 0;
+  }
+}
+
+inline u32 rcp(s32 sinput) {
+  s32 mask = sinput >> 31;
+  s32 input = sinput ^ mask;
+  if (sinput > INT16_MIN) {
+    input -= mask;
+  }
+  if (input == 0) {
+    return 0x7FFFFFFF;
+  } else if (sinput == INT16_MIN) {
+    return 0xFFFF0000;
+  }
+
+  u32 shift = __builtin_clz(input);
+  u64 dinput = (u64)input;
+  u32 index = ((dinput << shift) & 0x7FC00000) >> 22;
+
+  s32 result = rcp_rom[index];
+  result = (0x10000 | result) << 14;
+  result = (result >> (31 - shift)) ^ mask;
+  return result;
+}
+
+void RSP::vrcpl(u32 instr) {
+  VPR& vd = vpr[VD(instr)];
+  VPR& vt = vpr[VT(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
+  int e = E2(instr) & 7;
+  int de = DE(instr) & 7;
+
+  s32 input;
+  if(divInLoaded) {
+    input = (s32(divIn) << 16) | vt.element[ELEMENT_INDEX(e)];
+  } else {
+    input = vt.selement[ELEMENT_INDEX(e)];
+  }
+
+  s32 result = rcp(input);
+  divOut = result >> 16;
+  divIn = 0;
+  divInLoaded = false;
+
+  for(int i = 0; i < 8; i++) {
+    acc.l.element[i] = vte.element[i];
+  }
+
+  vd.element[ELEMENT_INDEX(de)] = result;
+}
+
+void RSP::vrcph(u32 instr) {
+  int e = E2(instr);
+  int de = DE(instr);
+  VPR& vd = vpr[VD(instr)];
+  VPR& vt = vpr[VT(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+
+  for(int i = 0; i < 8; i++) {
+    acc.l.element[i] = vte.element[i];
+  }
+
+  vd.element[ELEMENT_INDEX(de)] = divOut;
+  divIn = vt.element[ELEMENT_INDEX(e)];
+  divInLoaded = true;
+}
+
 void RSP::vsar(u32 instr) {
   u8 e = E2(instr);
   switch(e) {
@@ -531,6 +864,74 @@ void RSP::vsar(u32 instr) {
         vpr[VD(instr)].element[i] = 0;
       }
       break;
+  }
+}
+
+void RSP::vsubc(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+
+  for(int i = 0; i < 8; i++) {
+    u32 result = vs.element[i] - vte.element[i];
+    acc.l.element[i] = result;
+    vd.element[i] = result;
+
+    vco.l.element[i] = (result >> 16) & 1 ? 0xffff : 0;
+    vco.h.element[i] = result != 0 ? 0xffff : 0;
+  }
+}
+
+void RSP::vsub(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+
+  for(int i = 0; i < 8; i++) {
+    u32 result = vs.element[i] - vte.element[i] - vco.l.element[i];
+    acc.l.element[i] = result;
+    vd.element[i] = clamp_signed(s32(result) & 0x1FFFF);
+
+    vco.l.element[i] = 0;
+    vco.h.element[i] = 0;
+  }
+}
+
+void RSP::vmrg(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+
+  for(int i = 0; i < 8; i++) {
+    acc.l.element[i] = vcc.l.element[i] ? vs.element[i] : vte.element[i];
+    vd.element[i] = acc.l.element[i];
+  }
+}
+
+void RSP::vxor(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+
+  for(int i = 0; i < 8; i++) {
+    acc.l.element[i] = vte.element[i] ^ vs.element[i];
+    vd.element[i] = acc.l.element[i];
+  }
+}
+
+void RSP::vand(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+
+  for(int i = 0; i < 8; i++) {
+    acc.l.element[i] = vte.element[i] & vs.element[i];
+    vd.element[i] = acc.l.element[i];
   }
 }
 

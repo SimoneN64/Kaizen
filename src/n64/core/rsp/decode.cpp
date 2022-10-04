@@ -57,8 +57,11 @@ inline void regimm(RSP& rsp, u32 instr) {
 inline void lwc2(RSP& rsp, u32 instr) {
   u8 mask = (instr >> 11) & 0x1F;
   switch(mask) {
+    case 0x01: rsp.lsv(instr); break;
+    case 0x02: rsp.llv(instr); break;
     case 0x03: rsp.ldv(instr); break;
     case 0x04: rsp.lqv(instr); break;
+    case 0x05: rsp.lrv(instr); break;
     default: util::panic("Unhandled RSP LWC2 {:05b}\n", mask);
   }
 }
@@ -67,7 +70,8 @@ inline void swc2(RSP& rsp, u32 instr) {
   u8 mask = (instr >> 11) & 0x1F;
   switch(mask) {
     case 0x00: rsp.sbv(instr); break;
-    case 0x01: rsp.ssv(instr); break;
+    case 0x01: rsp.slv(instr); break;
+    case 0x02: rsp.ssv(instr); break;
     case 0x03: rsp.sdv(instr); break;
     case 0x04: rsp.sqv(instr); break;
     default: util::panic("Unhandled RSP SWC2 {:05b}\n", mask);
@@ -88,14 +92,31 @@ inline void cop2(RSP& rsp, u32 instr) {
         default: util::panic("Unhandled RSP COP2 sub ({:05b})\n", mask_sub);
       }
       break;
+    case 0x04: rsp.vmudl(instr); break;
+    case 0x05: rsp.vmudm(instr); break;
+    case 0x06: rsp.vmudn(instr); break;
     case 0x07: rsp.vmudh(instr); break;
     case 0x08: rsp.vmacf(instr); break;
     case 0x0C: rsp.vmadl(instr); break;
+    case 0x0D: rsp.vmadm(instr); break;
+    case 0x0E: rsp.vmadn(instr); break;
+    case 0x0F: rsp.vmadh(instr); break;
     case 0x10: rsp.vadd(instr); break;
+    case 0x11: rsp.vsub(instr); break;
     case 0x13: rsp.vabs(instr); break;
+    case 0x15: rsp.vsubc(instr); break;
     case 0x1D: rsp.vsar(instr); break;
+    case 0x20: rsp.vlt(instr); break;
     //case 0x21: rsp.veq(instr); break;
     //case 0x22: rsp.vne(instr); break;
+    case 0x23: rsp.vge(instr); break;
+    case 0x24: rsp.vcl(instr); break;
+    case 0x25: rsp.vch(instr); break;
+    case 0x27: rsp.vmrg(instr); break;
+    case 0x28: rsp.vand(instr); break;
+    case 0x2C: rsp.vxor(instr); break;
+    case 0x31: rsp.vrcpl(instr); break;
+    case 0x32: rsp.vrcph(instr); break;
     //case 0x33: rsp.vmov(instr); break;
     default: util::panic("Unhandled RSP COP2 ({:06b})\n", mask);
   }

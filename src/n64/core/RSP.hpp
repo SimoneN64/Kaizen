@@ -383,6 +383,7 @@ struct RSP {
   void vadd(u32 instr);
   void vaddc(u32 instr);
   void vand(u32 instr);
+  void vnand(u32 instr);
   void vch(u32 instr);
   void vcr(u32 instr);
   void vcl(u32 instr);
@@ -402,6 +403,7 @@ struct RSP {
   void vne(u32 instr);
   void vge(u32 instr);
   void vrcp(u32 instr);
+  void vrsq(u32 instr);
   void vrcpl(u32 instr);
   void vrsql(u32 instr);
   void vrcph(u32 instr);

@@ -2,7 +2,6 @@
 #include <ParallelRDPWrapper.hpp>
 #include <Window.hpp>
 #include <algorithm>
-#include <util.hpp>
 
 namespace n64 {
 Core::Core() {

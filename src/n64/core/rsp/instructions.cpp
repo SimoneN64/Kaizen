@@ -1062,6 +1062,23 @@ void RSP::vrcp(u32 instr) {
   }
 }
 
+void RSP::vrsq(u32 instr) {
+  VPR& vd = vpr[VD(instr)];
+  VPR& vt = vpr[VT(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
+  int e = E2(instr) & 7;
+  int de = DE(instr) & 7;
+  s32 input = vt.selement[ELEMENT_INDEX(e)];
+  s32 result = rsq(input);
+  vd.element[ELEMENT_INDEX(de)] = result;
+  divOut = result >> 16;
+  divInLoaded = false;
+
+  for (int i = 0; i < 8; i++) {
+    acc.l.element[i] = vte.element[i];
+  }
+}
+
 void RSP::vrsql(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR& vt = vpr[VT(instr)];
@@ -1205,6 +1222,18 @@ void RSP::vand(u32 instr) {
 
   for(int i = 0; i < 8; i++) {
     acc.l.element[i] = vte.element[i] & vs.element[i];
+    vd.element[i] = acc.l.element[i];
+  }
+}
+
+void RSP::vnand(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+
+  for(int i = 0; i < 8; i++) {
+    acc.l.element[i] = ~(vte.element[i] & vs.element[i]);
     vd.element[i] = acc.l.element[i];
   }
 }

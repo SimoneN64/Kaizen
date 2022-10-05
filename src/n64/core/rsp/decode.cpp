@@ -7,6 +7,7 @@
 namespace n64 {
 inline void special(MI& mi, Registers& regs, RSP& rsp, u32 instr) {
   u8 mask = instr & 0x3f;
+  //util::print("rsp special {:02X}\n", mask);
   switch(mask) {
     case 0x00:
       if(instr != 0) {
@@ -45,6 +46,7 @@ inline void special(MI& mi, Registers& regs, RSP& rsp, u32 instr) {
 
 inline void regimm(RSP& rsp, u32 instr) {
   u8 mask = ((instr >> 16) & 0x1F);
+  //util::print("rsp regimm {:02X}\n", mask);
   switch(mask) {
     case 0x00: rsp.b(instr, (s32)rsp.gpr[RS(instr)] < 0); break;
     case 0x01: rsp.b(instr, (s32)rsp.gpr[RS(instr)] >= 0); break;
@@ -56,6 +58,7 @@ inline void regimm(RSP& rsp, u32 instr) {
 
 inline void lwc2(RSP& rsp, u32 instr) {
   u8 mask = (instr >> 11) & 0x1F;
+  //util::print("lwc2 {:02X}\n", mask);
   switch(mask) {
     case 0x01: rsp.lsv(instr); break;
     case 0x02: rsp.llv(instr); break;
@@ -71,6 +74,7 @@ inline void lwc2(RSP& rsp, u32 instr) {
 
 inline void swc2(RSP& rsp, u32 instr) {
   u8 mask = (instr >> 11) & 0x1F;
+  //util::print("swc2 {:02X}\n", mask);
   switch(mask) {
     case 0x00: rsp.sbv(instr); break;
     case 0x01: rsp.slv(instr); break;
@@ -87,15 +91,17 @@ inline void swc2(RSP& rsp, u32 instr) {
 inline void cop2(RSP& rsp, u32 instr) {
   u8 mask = instr & 0x3F;
   u8 mask_sub = (instr >> 21) & 0x1F;
+  //util::print("Cop2 {:02X}\n", mask);
   switch(mask) {
     case 0x00:
+      //util::print("Cop2 sub {:02X}\n", mask_sub);
       switch(mask_sub) {
         case 0x00: rsp.mfc2(instr); break;
         case 0x02: rsp.cfc2(instr); break;
         case 0x04: rsp.mtc2(instr); break;
         case 0x06: rsp.ctc2(instr); break;
         case 0x10: case 0x1C: case 0x1E:
-        case 0x1F: case 0x14: rsp.vzero(instr); break;
+        case 0x1F: case 0x14: break; //rsp.vzero(instr); break;
         default: util::panic("Unhandled RSP COP2 sub ({:05b})\n", mask_sub);
       }
       break;
@@ -123,6 +129,7 @@ inline void cop2(RSP& rsp, u32 instr) {
     case 0x26: rsp.vcr(instr); break;
     case 0x27: rsp.vmrg(instr); break;
     case 0x28: rsp.vand(instr); break;
+    case 0x29: rsp.vnand(instr); break;
     case 0x2A: rsp.vnor(instr); break;
     case 0x2C: rsp.vxor(instr); break;
     case 0x2D: rsp.vxnor(instr); break;
@@ -133,6 +140,7 @@ inline void cop2(RSP& rsp, u32 instr) {
       break;
     case 0x30: rsp.vrcp(instr); break;
     case 0x33: rsp.vmov(instr); break;
+    case 0x34: rsp.vrsq(instr); break;
     default: util::panic("Unhandled RSP COP2 ({:06b})\n", mask);
   }
 }
@@ -142,6 +150,7 @@ inline void cop0(Registers& regs, Mem& mem, u32 instr) {
   MMIO& mmio = mem.mmio;
   RSP& rsp = mmio.rsp;
   RDP& rdp = mmio.rdp;
+  //util::print("Cop0 {:02X}\n", mask);
   switch(mask) {
     case 0x00: rsp.mfc0(rdp, instr); break;
     case 0x04: rsp.mtc0(regs, mem, instr); break;
@@ -154,6 +163,7 @@ void RSP::Exec(Registers &regs, Mem& mem, u32 instr) {
   MMIO& mmio = mem.mmio;
   RDP& rdp = mmio.rdp;
   MI& mi = mmio.mi;
+  //util::print("RSP {:02X}\n", mask);
   switch(mask) {
     case 0x00: special(mi, regs, *this, instr); break;
     case 0x01: regimm(*this, instr); break;

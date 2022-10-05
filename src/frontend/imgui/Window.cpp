@@ -168,6 +168,7 @@ void Window::LoadROM(n64::Core& core, const std::string &path) {
 void Window::Render(n64::Core& core) {
   ImGui::PushFont(uiFont);
   static bool showSettings = false;
+  static std::string windowTitleCache = windowTitle;
   bool showMainMenuBar = windowID == SDL_GetWindowID(SDL_GetMouseFocus());
   if(showMainMenuBar) {
     ImGui::BeginMainMenuBar();
@@ -197,14 +198,12 @@ void Window::Render(n64::Core& core) {
       }
       if (ImGui::MenuItem(core.pause ? "Resume" : "Pause", nullptr, false, core.romLoaded)) {
         core.TogglePause();
-        std::string paused = "| Paused";
+        std::string paused = "  | Paused";
         if(core.pause) {
+          windowTitleCache = windowTitle;
           windowTitle += paused;
         } else {
-          auto pausedPos = windowTitle.find_first_of(paused);
-          if(pausedPos != std::string::npos) {
-            windowTitle.erase(pausedPos, paused.length());
-          }
+          windowTitle = windowTitleCache;
         }
         SDL_SetWindowTitle(window, windowTitle.c_str());
       }

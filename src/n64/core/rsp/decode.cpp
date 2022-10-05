@@ -62,6 +62,9 @@ inline void lwc2(RSP& rsp, u32 instr) {
     case 0x03: rsp.ldv(instr); break;
     case 0x04: rsp.lqv(instr); break;
     case 0x05: rsp.lrv(instr); break;
+    case 0x06: rsp.lpv(instr); break;
+    case 0x07: rsp.luv(instr); break;
+    case 0x0B: rsp.ltv(instr); break;
     default: util::panic("Unhandled RSP LWC2 {:05b}\n", mask);
   }
 }
@@ -74,6 +77,9 @@ inline void swc2(RSP& rsp, u32 instr) {
     case 0x02: rsp.ssv(instr); break;
     case 0x03: rsp.sdv(instr); break;
     case 0x04: rsp.sqv(instr); break;
+    case 0x06: rsp.spv(instr); break;
+    case 0x07: rsp.suv(instr); break;
+    case 0x0B: rsp.stv(instr); break;
     default: util::panic("Unhandled RSP SWC2 {:05b}\n", mask);
   }
 }
@@ -88,7 +94,8 @@ inline void cop2(RSP& rsp, u32 instr) {
         case 0x02: rsp.cfc2(instr); break;
         case 0x04: rsp.mtc2(instr); break;
         case 0x06: rsp.ctc2(instr); break;
-        case 0x1E: rsp.vzero(instr); break;
+        case 0x10: case 0x1C: case 0x1E:
+        case 0x1F: case 0x14: break;
         default: util::panic("Unhandled RSP COP2 sub ({:05b})\n", mask_sub);
       }
       break;
@@ -104,20 +111,28 @@ inline void cop2(RSP& rsp, u32 instr) {
     case 0x10: rsp.vadd(instr); break;
     case 0x11: rsp.vsub(instr); break;
     case 0x13: rsp.vabs(instr); break;
+    case 0x14: rsp.vaddc(instr); break;
     case 0x15: rsp.vsubc(instr); break;
     case 0x1D: rsp.vsar(instr); break;
     case 0x20: rsp.vlt(instr); break;
-    //case 0x21: rsp.veq(instr); break;
-    //case 0x22: rsp.vne(instr); break;
+    case 0x21: rsp.veq(instr); break;
+    case 0x22: rsp.vne(instr); break;
     case 0x23: rsp.vge(instr); break;
     case 0x24: rsp.vcl(instr); break;
     case 0x25: rsp.vch(instr); break;
+    case 0x26: rsp.vcr(instr); break;
     case 0x27: rsp.vmrg(instr); break;
     case 0x28: rsp.vand(instr); break;
+    case 0x2A: rsp.vnor(instr); break;
     case 0x2C: rsp.vxor(instr); break;
+    case 0x2D: rsp.vxnor(instr); break;
     case 0x31: rsp.vrcpl(instr); break;
-    case 0x32: rsp.vrcph(instr); break;
-    //case 0x33: rsp.vmov(instr); break;
+    case 0x35: rsp.vrsql(instr); break;
+    case 0x32: case 0x36:
+      rsp.vrcph(instr);
+      break;
+    case 0x30: rsp.vrcp(instr); break;
+    case 0x33: rsp.vmov(instr); break;
     default: util::panic("Unhandled RSP COP2 ({:06b})\n", mask);
   }
 }

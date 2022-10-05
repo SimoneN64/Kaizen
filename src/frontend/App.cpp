@@ -7,7 +7,6 @@ void App::Run() {
   const u8* state = SDL_GetKeyboardState(nullptr);
   SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
   while (!core.done) {
-    core.UpdateController(state);
     core.Run(window, window.volumeL, window.volumeR);
 
     SDL_Event event;
@@ -54,6 +53,8 @@ void App::Run() {
             }
           } break;
       }
+
+      core.UpdateController(state);
     }
   }
 }

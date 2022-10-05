@@ -18,6 +18,7 @@ struct Core {
   VI& GetVI() { return mem.mmio.vi; }
 
   u32 breakpoint = 0;
+  int cycles = 0;
 
   bool pause = true;
   bool romLoaded = false;

@@ -32,7 +32,6 @@ CartInfo Core::LoadROM(const std::string& rom_) {
 void Core::Run(Window& window, float volumeL, float volumeR) {
   MMIO& mmio = mem.mmio;
   Controller& controller = mmio.si.controller;
-  int cycles = 0;
   for(int field = 0; field < mmio.vi.numFields; field++) {
     int frameCycles = 0;
     if(!pause && romLoaded) {

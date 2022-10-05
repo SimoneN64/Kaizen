@@ -95,7 +95,7 @@ inline void cop2(RSP& rsp, u32 instr) {
         case 0x04: rsp.mtc2(instr); break;
         case 0x06: rsp.ctc2(instr); break;
         case 0x10: case 0x1C: case 0x1E:
-        case 0x1F: case 0x14: break;
+        case 0x1F: case 0x14: rsp.vzero(instr); break;
         default: util::panic("Unhandled RSP COP2 sub ({:05b})\n", mask_sub);
       }
       break;

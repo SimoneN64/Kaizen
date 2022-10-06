@@ -182,6 +182,20 @@ void Window::Render(n64::Core& core) {
           NFD_FreePath(outpath);
         }
       }
+      if (ImGui::MenuItem("Dump RDRAM")) {
+        FILE *fp = fopen("rdram.dump", "wb");
+        u8 *temp = core.mem.GetRDRAM();
+        util::SwapBuffer32(RDRAM_SIZE, temp);
+        fwrite(temp, 1, RDRAM_SIZE, fp);
+        fclose(fp);
+      }
+      if (ImGui::MenuItem("Dump IMEM")) {
+        FILE *fp = fopen("imem.dump", "wb");
+        u8 *temp = core.mem.mmio.rsp.imem;
+        util::SwapBuffer32(IMEM_SIZE, temp);
+        fwrite(temp, 1, IMEM_SIZE, fp);
+        fclose(fp);
+      }
       if (ImGui::MenuItem("Exit")) {
         core.done = true;
       }

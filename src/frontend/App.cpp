@@ -13,14 +13,9 @@ void App::Run() {
     while (SDL_PollEvent(&event)) {
       ImGui_ImplSDL2_ProcessEvent(&event);
       switch(event.type) {
-        case SDL_QUIT: {
+        case SDL_QUIT:
           core.done = true;
-          FILE *fp = fopen("rdram.dump", "wb");
-          u8 *temp = core.mem.GetRDRAM();
-          util::SwapBuffer32(RDRAM_SIZE, temp);
-          fwrite(temp, 1, RDRAM_SIZE, fp);
-          fclose(fp);
-        } break;
+          break;
         case SDL_WINDOWEVENT:
           core.done = window.gotClosed(event);
           break;

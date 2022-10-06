@@ -97,11 +97,23 @@ inline VPR GetVTE(VPR vt, u8 e) {
   VPR vte{};
   switch(e & 0xf) {
     case 0 ... 1: return vt;
-    case 2 ... 3:
-      vte = Broadcast(vt, e - 2, e - 2, e, e, e + 2, e + 2, e + 4, e + 4);
+    case 2:
+      vte = Broadcast(vt, 0, 0, 2, 2, 4, 4, 6, 6);
       break;
-    case 4 ... 7:
-      vte = Broadcast(vt, e - 4, e - 4, e - 4, e - 4, e, e, e, e);
+    case 3:
+      vte = Broadcast(vt, 1, 1, 3, 3, 5, 5, 7, 7);
+      break;
+    case 4:
+      vte = Broadcast(vt, 0, 0, 0, 0, 4, 4, 4, 4);
+      break;
+    case 5:
+      vte = Broadcast(vt, 1, 1, 1, 1, 5, 5, 5, 5);
+      break;
+    case 6:
+      vte = Broadcast(vt, 2, 2, 2, 2, 6, 6, 6, 6);
+      break;
+    case 7:
+      vte = Broadcast(vt, 3, 3, 3, 3, 7, 7, 7, 7);
       break;
     case 8 ... 15: {
       int index = ELEMENT_INDEX(e - 8);
@@ -289,7 +301,7 @@ void RSP::ldv(u32 instr) {
 }
 
 void RSP::lsv(u32 instr) {
-  int e = E1(instr);
+  u8 e = E1(instr);
   u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 1);
   u16 val = ReadHalf(addr);
   vpr[VT(instr)].byte[BYTE_INDEX(e)] = val >> 8;
@@ -404,7 +416,7 @@ void RSP::spv(u32 instr) {
 
 void RSP::sbv(u32 instr) {
   int e = E1(instr);
-  u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 3);
+  u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 0);
 
   WriteByte(addr, vpr[VT(instr)].byte[BYTE_INDEX(e & 0xF)]);
 }
@@ -583,7 +595,7 @@ void RSP::vaddc(u32 instr) {
   VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
 
   for(int i = 0; i < 8; i++) {
-    s32 result = vs.selement[i] + vte.selement[i];
+    u32 result = vs.element[i] + vte.element[i];
     acc.l.element[i] = result;
     vd.element[i] = result;
     vco.l.element[i] = (result >> 16) & 1 ? 0xffff : 0;
@@ -663,17 +675,15 @@ void RSP::vcl(u32 instr) {
   VPR vte = GetVTE(vpr[VT(instr)], e);
 
   for(int i = 0; i < 8; i++) {
-    s16 vsElem = vs.selement[i];
-    s16 vteElem = vte.selement[i];
+    u16 vsElem = vs.element[i];
+    u16 vteElem = vte.element[i];
 
+    acc.l.element[i] = vcc.l.element[i] ? -vteElem : vsElem;
     if(vco.l.element[i]) {
-      if(vco.h.element[i]) {
-        acc.l.element[i] = vcc.l.element[i] ? -vteElem : vsElem;
-      } else {
+      if(!vco.h.element[i]) {
         u16 clampSum = vsElem + vteElem;
         bool overflow = (vsElem + vteElem) != clampSum;
 
-        acc.l.element[i] = vcc.l.element[i] ? -vteElem : vsElem;
         if(vce.element[i]) {
           vcc.l.element[i] = !clampSum || !overflow ? 0xffff : 0;
         } else {
@@ -681,9 +691,8 @@ void RSP::vcl(u32 instr) {
         }
       }
     } else {
-      acc.l.element[i] = vcc.l.element[i] ? -vteElem : vsElem;
       if(!vco.h.element[i]) {
-        vcc.h.element[i] = s32(vsElem) - s32(vteElem) >= 0 ? 0xffff : 0;
+        vcc.h.element[i] = (s32(vsElem) - s32(vteElem) >= 0) ? 0xffff : 0;
       }
     }
 
@@ -699,7 +708,7 @@ void RSP::vmov(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR vte = GetVTE(vpr[VT(instr)], e);
 
-  u32 se;
+  /*u8 se;
 
   switch (e) {
     case 0 ... 1:
@@ -716,11 +725,11 @@ void RSP::vmov(u32 instr) {
       break;
     default:
       util::panic("VMOV: This should be unreachable!\n");
-  }
+  }*/
 
   u8 de = VS(instr) & 7;
 
-  vd.element[ELEMENT_INDEX(de)] = vte.element[ELEMENT_INDEX(se)];
+  vd.element[ELEMENT_INDEX(de)] = vte.element[ELEMENT_INDEX(de)];
   for(int i = 0; i < 8; i++) {
     acc.l.element[i] = vte.element[i];
   }
@@ -950,7 +959,7 @@ void RSP::vge(u32 instr) {
 
   for(int i = 0; i < 8; i++) {
     bool eql = vs.element[i] == vte.element[i];
-    bool neg = !(vco.h.element[i] & vco.l.element[i]) & eql;
+    bool neg = !(vco.h.element[i] && vco.l.element[i]) && eql;
     vcc.l.element[i] = (neg || (vs.element[i] > vte.element[i])) ? 0xffff : 0;
     acc.l.element[i] = vcc.l.element[i] ? vs.element[i] : vte.element[i];
     vd.element[i] = acc.l.element[i];
@@ -966,8 +975,8 @@ void RSP::vlt(u32 instr) {
 
   for(int i = 0; i < 8; i++) {
     bool eql = vs.element[i] == vte.element[i];
-    bool neg = vco.h.element[i] & vco.l.element[i] & eql;
-    vcc.l.element[i] = (neg || (vs.element[i] < vte.element[i])) ? 0xffff : 0;
+    bool neg = vco.h.element[i] && vco.l.element[i] && eql;
+    vcc.l.element[i] = (neg || (vs.selement[i] < vte.selement[i])) ? 0xffff : 0;
     acc.l.element[i] = vcc.l.element[i] ? vs.element[i] : vte.element[i];
     vd.element[i] = acc.l.element[i];
     vcc.h.element[i] = vco.h.element[i] = vco.l.element[i] = 0;
@@ -1105,11 +1114,11 @@ void RSP::vrsql(u32 instr) {
 }
 
 void RSP::vrcph(u32 instr) {
-  int e = E2(instr);
-  int de = DE(instr);
+  int e = E2(instr) & 7;
+  int de = DE(instr) & 7;
   VPR& vd = vpr[VD(instr)];
   VPR& vt = vpr[VT(instr)];
-  VPR vte = GetVTE(vpr[VT(instr)], e);
+  VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
 
   for(int i = 0; i < 8; i++) {
     acc.l.element[i] = vte.element[i];
@@ -1169,9 +1178,9 @@ void RSP::vsub(u32 instr) {
   VPR vte = GetVTE(vpr[VT(instr)], e);
 
   for(int i = 0; i < 8; i++) {
-    u32 result = vs.element[i] - vte.element[i] - vco.l.element[i];
+    s32 result = vs.selement[i] - vte.selement[i] - (vco.l.element[i] != 0);
     acc.l.element[i] = result;
-    vd.element[i] = clamp_signed(s32(result) & 0x1FFFF);
+    vd.element[i] = clamp_signed(result);
 
     vco.l.element[i] = 0;
     vco.h.element[i] = 0;
@@ -1202,7 +1211,7 @@ void RSP::vxor(u32 instr) {
   }
 }
 
-void RSP::vxnor(u32 instr) {
+void RSP::vnxor(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
   VPR& vd = vpr[VD(instr)];
@@ -1246,6 +1255,18 @@ void RSP::vnor(u32 instr) {
 
   for(int i = 0; i < 8; i++) {
     acc.l.element[i] = ~(vte.element[i] | vs.element[i]);
+    vd.element[i] = acc.l.element[i];
+  }
+}
+
+void RSP::vor(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+
+  for(int i = 0; i < 8; i++) {
+    acc.l.element[i] = vte.element[i] | vs.element[i];
     vd.element[i] = acc.l.element[i];
   }
 }

@@ -77,8 +77,8 @@ inline void swc2(RSP& rsp, u32 instr) {
   //util::print("swc2 {:02X}\n", mask);
   switch(mask) {
     case 0x00: rsp.sbv(instr); break;
-    case 0x01: rsp.slv(instr); break;
-    case 0x02: rsp.ssv(instr); break;
+    case 0x01: rsp.ssv(instr); break;
+    case 0x02: rsp.slv(instr); break;
     case 0x03: rsp.sdv(instr); break;
     case 0x04: rsp.sqv(instr); break;
     case 0x06: rsp.spv(instr); break;
@@ -100,8 +100,10 @@ inline void cop2(RSP& rsp, u32 instr) {
         case 0x02: rsp.cfc2(instr); break;
         case 0x04: rsp.mtc2(instr); break;
         case 0x06: rsp.ctc2(instr); break;
-        case 0x10: case 0x1C: case 0x1E:
-        case 0x1F: case 0x14: break; //rsp.vzero(instr); break;
+        case 0x10: case 0x14:
+        case 0x1C: case 0x1E: case 0x1F:
+          util::print("Invalid COP2 SUB {:05b} at PC: {:016X}\n", mask_sub, rsp.oldPC);
+          break;
         default: util::panic("Unhandled RSP COP2 sub ({:05b})\n", mask_sub);
       }
       break;
@@ -130,9 +132,10 @@ inline void cop2(RSP& rsp, u32 instr) {
     case 0x27: rsp.vmrg(instr); break;
     case 0x28: rsp.vand(instr); break;
     case 0x29: rsp.vnand(instr); break;
-    case 0x2A: rsp.vnor(instr); break;
+    case 0x2A: rsp.vor(instr); break;
+    case 0x2B: rsp.vnor(instr); break;
     case 0x2C: rsp.vxor(instr); break;
-    case 0x2D: rsp.vxnor(instr); break;
+    case 0x2D: rsp.vnxor(instr); break;
     case 0x31: rsp.vrcpl(instr); break;
     case 0x35: rsp.vrsql(instr); break;
     case 0x32: case 0x36:
@@ -141,6 +144,8 @@ inline void cop2(RSP& rsp, u32 instr) {
     case 0x30: rsp.vrcp(instr); break;
     case 0x33: rsp.vmov(instr); break;
     case 0x34: rsp.vrsq(instr); break;
+    case 0x37: break;
+    case 0x3F: break;
     default: util::panic("Unhandled RSP COP2 ({:06b})\n", mask);
   }
 }

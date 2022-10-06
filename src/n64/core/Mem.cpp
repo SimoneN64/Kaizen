@@ -80,7 +80,7 @@ u8 Mem::Read8(n64::Registers &regs, u64 vaddr, s64 pc) {
     case 0x00000000 ... 0x007FFFFF:
       return mmio.rdp.dram[BYTE_ADDRESS(paddr) & RDRAM_DSIZE];
     case 0x04000000 ... 0x0403FFFF:
-      if(paddr & 0x1000)
+      if((paddr >> 12) & 1)
         return mmio.rsp.imem[BYTE_ADDRESS(paddr) & IMEM_DSIZE];
       else
         return mmio.rsp.dmem[BYTE_ADDRESS(paddr) & DMEM_DSIZE];
@@ -113,7 +113,7 @@ u16 Mem::Read16(n64::Registers &regs, u64 vaddr, s64 pc) {
     case 0x00000000 ... 0x007FFFFF:
       return util::ReadAccess<u16>(mmio.rdp.dram.data(), HALF_ADDRESS(paddr) & RDRAM_DSIZE);
     case 0x04000000 ... 0x0403FFFF:
-      if(paddr & 0x1000)
+      if((paddr >> 12) & 1)
         return util::ReadAccess<u16>(mmio.rsp.imem, HALF_ADDRESS(paddr) & IMEM_DSIZE);
       else
         return util::ReadAccess<u16>(mmio.rsp.dmem, HALF_ADDRESS(paddr) & DMEM_DSIZE);
@@ -146,7 +146,7 @@ u32 Mem::Read32(n64::Registers &regs, u64 vaddr, s64 pc) {
     case 0x00000000 ... 0x007FFFFF:
       return util::ReadAccess<u32>(mmio.rdp.dram.data(), paddr & RDRAM_DSIZE);
     case 0x04000000 ... 0x0403FFFF:
-      if(paddr & 0x1000)
+      if((paddr >> 12) & 1)
         return util::ReadAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE);
       else
         return util::ReadAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE);
@@ -178,7 +178,7 @@ u64 Mem::Read64(n64::Registers &regs, u64 vaddr, s64 pc) {
     case 0x00000000 ... 0x007FFFFF:
       return util::ReadAccess<u64>(mmio.rdp.dram.data(), paddr & RDRAM_DSIZE);
     case 0x04000000 ... 0x0403FFFF:
-      if(paddr & 0x1000)
+      if((paddr >> 12) & 1)
         return util::ReadAccess<u64>(mmio.rsp.imem, paddr & IMEM_DSIZE);
       else
         return util::ReadAccess<u64>(mmio.rsp.dmem, paddr & DMEM_DSIZE);
@@ -222,7 +222,7 @@ void Mem::Write8(Registers& regs, u64 vaddr, u32 val, s64 pc) {
     case 0x04000000 ... 0x0403FFFF:
       val = val << (8 * (3 - (paddr & 3)));
       paddr = (paddr & DMEM_DSIZE) & ~3;
-      if(paddr & 0x1000)
+      if((paddr >> 12) & 1)
         util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
       else
         util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
@@ -258,7 +258,7 @@ void Mem::Write16(Registers& regs, u64 vaddr, u32 val, s64 pc) {
     case 0x04000000 ... 0x0403FFFF:
       val = val << (16 * !(paddr & 2));
       paddr &= ~3;
-      if(paddr & 0x1000)
+      if((paddr >> 12) & 1)
         util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
       else
         util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
@@ -292,7 +292,7 @@ void Mem::Write32(Registers& regs, u64 vaddr, u32 val, s64 pc) {
       util::WriteAccess<u32>(mmio.rdp.dram.data(), paddr & RDRAM_DSIZE, val);
       break;
     case 0x04000000 ... 0x0403FFFF:
-      if(paddr & 0x1000)
+      if((paddr >> 12) & 1)
         util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
       else
         util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
@@ -336,7 +336,7 @@ void Mem::Write64(Registers& regs, u64 vaddr, u64 val, s64 pc) {
       break;
     case 0x04000000 ... 0x0403FFFF:
       val >>= 32;
-      if(paddr & 0x1000)
+      if((paddr >> 12) & 1)
         util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
       else
         util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);

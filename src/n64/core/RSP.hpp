@@ -218,6 +218,7 @@ struct RSP {
   }
 
   inline u64 ReadDword(u32 addr, bool i) {
+    addr &= 0xfff;
     if (i) {
       return GET_RSP_DWORD(addr, imem);
     } else {
@@ -226,6 +227,7 @@ struct RSP {
   }
 
   inline void WriteDword(u32 addr, u64 val, bool i) {
+    addr &= 0xfff;
     if (i) {
       SET_RSP_DWORD(addr, imem, val);
     } else {
@@ -234,6 +236,7 @@ struct RSP {
   }
 
   inline u32 ReadWord(u32 addr, bool i) {
+    addr &= 0xfff;
     if (i) {
       return GET_RSP_WORD(addr, imem);
     } else {
@@ -242,6 +245,7 @@ struct RSP {
   }
 
   inline void WriteWord(u32 addr, u32 val, bool i) {
+    addr &= 0xfff;
     if (i) {
       SET_RSP_WORD(addr, imem, val);
     } else {
@@ -250,6 +254,7 @@ struct RSP {
   }
 
   inline u16 ReadHalf(u32 addr, bool i) {
+    addr &= 0xfff;
     if (i) {
       return GET_RSP_HALF(addr, imem);
     } else {
@@ -258,6 +263,7 @@ struct RSP {
   }
 
   inline void WriteHalf(u32 addr, u16 val, bool i) {
+    addr &= 0xfff;
     if (i) {
       SET_RSP_HALF(addr, imem, val);
     } else {
@@ -266,6 +272,7 @@ struct RSP {
   }
 
   inline u8 ReadByte(u32 addr, bool i) {
+    addr &= 0xfff;
     if (i) {
       return RSP_BYTE(addr, imem);
     } else {
@@ -274,6 +281,7 @@ struct RSP {
   }
 
   inline void WriteByte(u32 addr, u8 val, bool i) {
+    addr &= 0xfff;
     if (i) {
       RSP_BYTE(addr, imem) = val;
     } else {
@@ -282,34 +290,42 @@ struct RSP {
   }
 
   inline u64 ReadDword(u32 addr) {
+    addr &= 0xfff;
     return GET_RSP_DWORD(addr, dmem);
   }
 
   inline void WriteDword(u32 addr, u64 val) {
+    addr &= 0xfff;
     SET_RSP_DWORD(addr, dmem, val);
   }
 
   inline u32 ReadWord(u32 addr) {
+    addr &= 0xfff;
     return GET_RSP_WORD(addr, dmem);
   }
 
   inline void WriteWord(u32 addr, u32 val) {
+    addr &= 0xfff;
     SET_RSP_WORD(addr, dmem, val);
   }
 
   inline u16 ReadHalf(u32 addr) {
+    addr &= 0xfff;
     return GET_RSP_HALF(addr, dmem);
   }
 
   inline void WriteHalf(u32 addr, u16 val) {
+    addr &= 0xfff;
     SET_RSP_HALF(addr, dmem, val);
   }
 
   inline u8 ReadByte(u32 addr) {
+    addr &= 0xfff;
     return RSP_BYTE(addr, dmem);
   }
 
   inline void WriteByte(u32 addr, u8 val) {
+    addr &= 0xfff;
     RSP_BYTE(addr, dmem) = val;
   }
 
@@ -411,7 +427,8 @@ struct RSP {
   void vsub(u32 instr);
   void vsubc(u32 instr);
   void vxor(u32 instr);
-  void vxnor(u32 instr);
+  void vnxor(u32 instr);
+  void vor(u32 instr);
   void vnor(u32 instr);
   void vzero(u32 instr);
   void mfc0(RDP& rdp, u32 instr);

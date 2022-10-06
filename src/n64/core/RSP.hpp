@@ -431,7 +431,6 @@ struct RSP {
   void vnxor(u32 instr);
   void vor(u32 instr);
   void vnor(u32 instr);
-  void vzero(u32 instr);
   void mfc0(RDP& rdp, u32 instr);
   void mtc0(Registers& regs, Mem& mem, u32 instr);
   void mfc2(u32 instr);

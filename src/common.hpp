@@ -1,7 +1,6 @@
 #pragma once
 #include <cstdint>
 #include <bitset>
-#include <emmintrin.h>
 #include <fmt/format.h>
 #include <fmt/color.h>
 
@@ -15,7 +14,6 @@ using s32 = int32_t;
 using s64 = int64_t;
 using u128 = __uint128_t;
 using s128 = __int128_t;
-using m128 = __m128i;
 
 #define UINT128_MAX (((u128)0xFFFF'FFFF'FFFF'FFFF << 64) | 0xFFFF'FFFF'FFFF'FFFF)
 #define UINT128_MIN 0

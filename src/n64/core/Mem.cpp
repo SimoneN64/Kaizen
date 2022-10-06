@@ -309,7 +309,7 @@ void Mem::Write32(Registers& regs, u64 vaddr, u32 val, s64 pc) {
       }
     } break;
     case 0x13FF0020 ... 0x13FFFFFF:
-      util::WriteAccess<u32>(isviewer, paddr & ISVIEWER_DSIZE, htobe32(val));
+      util::WriteAccess<u32>(isviewer, paddr - 0x13FF0020, htobe32(val));
       break;
     case 0x1FC007C0 ... 0x1FC007FF:
       util::WriteAccess<u32>(pifRam, paddr & PIF_RAM_DSIZE, htobe32(val));

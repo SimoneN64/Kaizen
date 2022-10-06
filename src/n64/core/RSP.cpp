@@ -26,6 +26,9 @@ void RSP::Reset() {
   memset(&vcc, 0, 2 * sizeof(VPR));
   memset(&vco, 0, 2 * sizeof(VPR));
   semaphore = false;
+  divIn = 0;
+  divOut = 0;
+  divInLoaded = false;
 }
 
 void RSP::Step(Registers& regs, Mem& mem) {

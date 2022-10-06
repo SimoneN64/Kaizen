@@ -409,6 +409,7 @@ struct RSP {
   void vmadm(u32 instr);
   void vmadn(u32 instr);
   void vmov(u32 instr);
+  void vmulf(u32 instr);
   void vmudl(u32 instr);
   void vmudh(u32 instr);
   void vmudm(u32 instr);

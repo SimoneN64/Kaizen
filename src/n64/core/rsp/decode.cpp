@@ -94,17 +94,16 @@ inline void cop2(RSP& rsp, u32 instr) {
   //util::print("Cop2 {:02X}\n", mask);
   switch(mask) {
     case 0x00:
-      //util::print("Cop2 sub {:02X}\n", mask_sub);
-      switch(mask_sub) {
-        case 0x00: rsp.mfc2(instr); break;
-        case 0x02: rsp.cfc2(instr); break;
-        case 0x04: rsp.mtc2(instr); break;
-        case 0x06: rsp.ctc2(instr); break;
-        case 0x10: case 0x14:
-        case 0x1C: case 0x1E: case 0x1F:
-          util::print("Invalid COP2 SUB {:05b} at PC: {:016X}\n", mask_sub, rsp.oldPC);
-          break;
-        default: util::panic("Unhandled RSP COP2 sub ({:05b})\n", mask_sub);
+      if((instr >> 25) & 1) {
+        rsp.vmulf(instr);
+      } else {
+        switch (mask_sub) {
+          case 0x00: rsp.mfc2(instr); break;
+          case 0x02: rsp.cfc2(instr); break;
+          case 0x04: rsp.mtc2(instr); break;
+          case 0x06: rsp.ctc2(instr); break;
+          default: util::panic("Unhandled RSP COP2 sub ({:05b})\n", mask_sub);
+        }
       }
       break;
     case 0x04: rsp.vmudl(instr); break;

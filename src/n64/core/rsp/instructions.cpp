@@ -402,14 +402,14 @@ void RSP::spv(u32 instr) {
   int e = E1(instr);
   u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 3);
 
-  int start = E1(instr);
+  int start = e;
   int end = start + 8;
 
   for(int offset = start; offset < end; offset++) {
     if((offset & 15) < 8) {
       WriteByte(addr++, vpr[VT(instr)].byte[BYTE_INDEX((offset & 7) << 1)]);
     } else {
-      WriteByte(addr++, vpr[VT(instr)].byte[ELEMENT_INDEX(offset & 7)] >> 7);
+      WriteByte(addr++, vpr[VT(instr)].element[ELEMENT_INDEX(offset & 7)] >> 7);
     }
   }
 }
@@ -581,7 +581,10 @@ void RSP::vadd(u32 instr) {
   VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
 
   for(int i = 0; i < 8; i++) {
-    s32 result = vs.selement[i] + vte.selement[i] + (vco.l.element[i] != 0);
+    s16 vsE = vs.selement[i];
+    s16 vteE = vte.selement[i];
+
+    s32 result = vsE + vteE + (vco.l.element[i] != 0);
     acc.l.element[i] = result;
     vd.element[i] = clamp_signed(result);
     vco.l.element[i] = 0;
@@ -595,7 +598,7 @@ void RSP::vaddc(u32 instr) {
   VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
 
   for(int i = 0; i < 8; i++) {
-    u32 result = vs.element[i] + vte.element[i];
+    s32 result = vs.element[i] + vte.element[i];
     acc.l.element[i] = result;
     vd.element[i] = result;
     vco.l.element[i] = (result >> 16) & 1 ? 0xffff : 0;
@@ -742,6 +745,23 @@ inline bool IsSignExtension(s16 hi, s16 lo) {
     return (lo & 0x8000) == 0x8000;
   }
   return false;
+}
+
+void RSP::vmulf(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+
+  for(int i = 0; i < 8; i++) {
+    s32 prod = vs.selement[i] * vte.selement[i];
+    s64 accum = (prod * 2) + 0x8000;
+
+    SetACC(i, accum);
+
+    s16 result = clamp_signed(accum >> 16);
+    vd.element[i] = result;
+  }
 }
 
 void RSP::vmudl(u32 instr) {

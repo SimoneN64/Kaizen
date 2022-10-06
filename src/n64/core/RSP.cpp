@@ -20,11 +20,11 @@ void RSP::Reset() {
   memset(dmem, 0, DMEM_SIZE);
   memset(imem, 0, IMEM_SIZE);
   memset(vpr, 0, 32 * sizeof(VPR));
-  memset(gpr, 0, 32);
+  memset(gpr, 0, 32 * sizeof(u32));
   memset(&vce, 0, sizeof(VPR));
-  acc = {.h={}, .m={}, .l={}};
-  vcc = {.l = {}, .h = {}};
-  vco = {.l = {}, .h = {}};
+  memset(&acc, 0, 3 * sizeof(VPR));
+  memset(&vcc, 0, 2 * sizeof(VPR));
+  memset(&vco, 0, 2 * sizeof(VPR));
   semaphore = false;
 }
 

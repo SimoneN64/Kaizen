@@ -31,6 +31,7 @@ CartInfo Core::LoadROM(const std::string& rom_) {
 void Core::Run(Window& window, float volumeL, float volumeR) {
   MMIO& mmio = mem.mmio;
   Controller& controller = mmio.si.controller;
+  int cpuSteps = 0;
   for(int field = 0; field < mmio.vi.numFields; field++) {
     int frameCycles = 0;
     if(!pause && romLoaded) {
@@ -43,7 +44,21 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
 
         for(;cycles <= mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
           cpu.Step(mem);
-          mmio.rsp.Step(cpu.regs, mem);
+          cpuSteps++;
+          if(mmio.rsp.spStatus.halt) {
+            mmio.rsp.steps = 0;
+            cpuSteps = 0;
+          } else {
+            if(cpuSteps > 2) {
+              mmio.rsp.steps += 2;
+              cpuSteps -= 3;
+            }
+
+            while(mmio.rsp.steps > 0) {
+              mmio.rsp.steps--;
+              mmio.rsp.Step(cpu.regs, mem);
+            }
+          }
 
           mmio.ai.Step(mem, cpu.regs, 1, volumeL, volumeR);
         }
@@ -71,8 +86,10 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
 #define GET_AXIS(gamepad, axis) SDL_GameControllerGetAxis(gamepad, axis)
 
 void Core::UpdateController(const u8* state) {
-  Controller& controller = mem.mmio.si.controller;
+  Controller &controller = mem.mmio.si.controller;
   controller.raw = 0;
+  s8 xaxis = 0, yaxis = 0;
+
   if(gamepadConnected) {
     bool A = GET_BUTTON(gamepad, SDL_CONTROLLER_BUTTON_A);
     bool B = GET_BUTTON(gamepad, SDL_CONTROLLER_BUTTON_X);
@@ -85,23 +102,23 @@ void Core::UpdateController(const u8* state) {
     bool L = GET_BUTTON(gamepad, SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
     bool R = GET_BUTTON(gamepad, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
     bool CUP = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_RIGHTY) == 32767;
-    bool CDOWN = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_RIGHTY) == -32768;
-    bool CLEFT = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_RIGHTX) == -32768;
+    bool CDOWN = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_RIGHTY) == -32767;
+    bool CLEFT = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_RIGHTX) == -32767;
     bool CRIGHT = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_RIGHTX) == 32767;
 
     controller.b1 = (A << 7) | (B << 6) | (Z << 5) | (START << 4) |
-                     (DUP << 3) | (DDOWN << 2) | (DLEFT << 1) | DRIGHT;
+                    (DUP << 3) | (DDOWN << 2) | (DLEFT << 1) | DRIGHT;
 
     controller.b2 = ((START && L && R) << 7) | (0 << 6) | (L << 5) | (R << 4) |
-                     (CUP << 3) | (CDOWN << 2) | (CLEFT << 1) | CRIGHT;
+                    (CUP << 3) | (CDOWN << 2) | (CLEFT << 1) | CRIGHT;
 
-    s8 xaxis = (s8)std::clamp((GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_LEFTX) >> 8), -127, 127);
-    s8 yaxis = (s8)std::clamp(-(GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_LEFTY) >> 8), -127, 127);
+    xaxis = (s8) std::clamp((GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_LEFTX) >> 8), -86, 86);
+    yaxis = (s8) std::clamp(-(GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_LEFTY) >> 8), -86, 86);
 
     controller.b3 = xaxis;
     controller.b4 = yaxis;
 
-    if((controller.b2 >> 7) & 1) {
+    if ((controller.b2 >> 7) & 1) {
       controller.b1 &= ~0x10;
       controller.b3 = 0;
       controller.b4 = 0;
@@ -126,24 +143,22 @@ void Core::UpdateController(const u8* state) {
       (state[SDL_SCANCODE_K] << 1) |
       (state[SDL_SCANCODE_L]);
 
-    s8 xaxis = 0;
-    if(state[SDL_SCANCODE_LEFT]) {
-      xaxis = -127;
-    } else if(state[SDL_SCANCODE_RIGHT]) {
-      xaxis = 127;
+    if (state[SDL_SCANCODE_LEFT]) {
+      xaxis = -86;
+    } else if (state[SDL_SCANCODE_RIGHT]) {
+      xaxis = 86;
     }
 
-    s8 yaxis = 0;
-    if(state[SDL_SCANCODE_DOWN]) {
-      yaxis = -127;
-    } else if(state[SDL_SCANCODE_UP]) {
-      yaxis = 127;
+    if (state[SDL_SCANCODE_DOWN]) {
+      yaxis = -86;
+    } else if (state[SDL_SCANCODE_UP]) {
+      yaxis = 86;
     }
 
     controller.b3 = xaxis;
     controller.b4 = yaxis;
 
-    if((controller.b2 >> 7) & 1) {
+    if ((controller.b2 >> 7) & 1) {
       controller.b1 &= ~0x10;
       controller.b3 = 0;
       controller.b4 = 0;

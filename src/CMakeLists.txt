@@ -47,4 +47,10 @@ else()
   set(LIBRARIES )
 endif()
 
+if(${CMAKE_BUILD_TYPE} MATCHES Release)
+  target_compile_options(natsukashii PRIVATE -march=native -Ofast)
+elseif(${CMAKE_BUILD_TYPE} MATCHES Debug)
+  target_compile_options(natsukashii PRIVATE -march=native -g)
+endif()
+
 target_link_libraries(natsukashii PRIVATE ${SDL2_LIBRARIES} ${LIBRARIES} capstone-static nfd parallel-rdp imgui fmt::fmt nlohmann_json::nlohmann_json)

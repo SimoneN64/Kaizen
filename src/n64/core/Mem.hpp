@@ -59,27 +59,21 @@ private:
       case 0xEC8B1325: // 7102
         cicType = CIC_NUS_7102;
         break;
-
       case 0x1DEB51A9: // 6101
         cicType = CIC_NUS_6101;
         break;
-
       case 0xC08E5BD6:
         cicType = CIC_NUS_6102_7101;
         break;
-
       case 0x03B8376A:
         cicType = CIC_NUS_6103_7103;
         break;
-
       case 0xCF7F41DC:
         cicType = CIC_NUS_6105_7105;
         break;
-
       case 0xD1059C6A:
         cicType = CIC_NUS_6106_7106;
         break;
-
       default:
         util::warn("Could not determine CIC TYPE! Checksum: {:08X} is unknown!\n", checksum);
         cicType = UNKNOWN_CIC_TYPE;

@@ -3,7 +3,7 @@
 #include <util.hpp>
 
 namespace n64 {
-#define AUDIO_SAMPLE_RATE 48000
+#define AUDIO_SAMPLE_RATE 44100
 #define SYSTEM_SAMPLE_FORMAT AUDIO_F32SYS
 #define SYSTEM_SAMPLE_SIZE 4
 #define BYTES_PER_HALF_SECOND ((AUDIO_SAMPLE_RATE / 2) * SYSTEM_SAMPLE_SIZE)
@@ -65,11 +65,13 @@ void InitAudio() {
   }
 }
 
-void PushSample(float left, float volumeL, float volumeR, float right) {
-  float samples[2]{ left * volumeL, right * volumeR };
+void PushSample(float left, float volumeL, float right, float volumeR) {
+  float adjustedL = left * volumeL;
+  float adjustedR = right * volumeR;
+  float samples[2]{ adjustedL, adjustedR };
 
   int availableBytes = SDL_AudioStreamAvailable(audioStream);
-  if(availableBytes < BYTES_PER_HALF_SECOND) {
+  if(availableBytes <= BYTES_PER_HALF_SECOND) {
     SDL_AudioStreamPut(audioStream, samples, 2 * sizeof(float));
   }
 }

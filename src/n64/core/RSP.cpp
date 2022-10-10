@@ -13,7 +13,7 @@ void RSP::Reset() {
   spStatus.halt = true;
   oldPC = 0;
   pc = 0;
-  nextPC = 0;
+  nextPC = 4;
   spDMASPAddr.raw = 0;
   spDMADRAMAddr.raw = 0;
   spDMALen.raw = 0;
@@ -32,14 +32,44 @@ void RSP::Reset() {
 }
 
 void RSP::Step(Registers& regs, Mem& mem) {
-  if(!spStatus.halt) {
-   gpr[0] = 0;
-   u32 instr = util::ReadAccess<u32>(imem, pc & IMEM_DSIZE);
-   oldPC = pc & 0xFFC;
-   pc = nextPC & 0xFFC;
-   nextPC += 4;
-   Exec(regs, mem, instr);
+  gpr[0] = 0;
+  u32 instr = util::ReadAccess<u32>(imem, pc & IMEM_DSIZE);
+  oldPC = pc & 0xFFC;
+  pc = nextPC & 0xFFC;
+  nextPC += 4;
+  Exec(regs, mem, instr);
+/*
+  util::print("{:04X} {:08X} ", oldPC, instr);
+  for (int i = 0; i < 32; i++) {
+    util::print("{:08X} ", (u32)gpr[i]);
   }
+
+  for (int i = 0; i < 32; i++) {
+    for (int e = 0; e < 8; e++) {
+      util::print("{:04X}", vpr[i].element[e]);
+    }
+    util::print(" ");
+  }
+
+  for (int e = 0; e < 8; e++) {
+    util::print("{:04X}", acc.h.element[e]);
+  }
+  util::print(" ");
+
+  for (int e = 0; e < 8; e++) {
+    util::print("{:04X}", acc.m.element[e]);
+  }
+  util::print(" ");
+
+  for (int e = 0; e < 8; e++) {
+    util::print("{:04X}", acc.l.element[e]);
+  }
+  util::print(" ");
+
+  util::print("{:04X} {:04X} {:02X}", GetVCC(), GetVCO(), GetVCE());
+
+  util::print("\n");
+  */
 }
 
 auto RSP::Read(u32 addr) -> u32{
@@ -74,9 +104,7 @@ void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
     case 0x0404001C: ReleaseSemaphore(); break;
     case 0x04080000:
       if(spStatus.halt) {
-        oldPC = pc & 0xFFC;
-        pc = value & 0xFFC;
-        nextPC = value & 0xFFC;
+        SetPC(value);
       } break;
     default:
       util::panic("Unimplemented SP register write {:08X}, val: {:08X}\n", addr, value);

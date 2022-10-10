@@ -18,20 +18,18 @@ void AI::Reset() {
 }
 
 auto AI::Read(u32 addr) const -> u32 {
-  switch(addr) {
-    case 0x04500004: return dmaLen[0];
-    case 0x0450000C: {
-      u32 val = 0;
-      val |= (dmaCount > 1);
-      val |= 1 << 20;
-      val |= 1 << 24;
-      val |= (dmaCount > 0) << 30;
-      val |= (dmaCount > 1) << 31;
-      return val;
-    }
-    default: util::panic("Unhandled AI read at addr {:08X}\n", addr);
+  if(addr == 0x0450000C) {
+    u32 val = 0;
+    val |= (dmaCount > 1);
+    val |= 1 << 20;
+    val |= 1 << 24;
+    val |= (dmaEnable << 25);
+    val |= (dmaCount > 0) << 30;
+    val |= (dmaCount > 1) << 31;
+    return val;
   }
-  return 0;
+
+  return dmaLen[0];
 }
 
 #define max(x, y) ((x) > (y) ? (x) : (y))
@@ -46,6 +44,7 @@ void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
     case 0x04500004: {
       u32 len = (val & 0x3FFFF) & ~7;
       if((dmaCount < 2) && len) {
+        if(dmaCount == 0) InterruptRaise(mem.mmio.mi, regs, Interrupt::AI);
         dmaLen[dmaCount] = len;
         dmaCount++;
       }
@@ -67,6 +66,7 @@ void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
     } break;
     case 0x04500014:
       bitrate = val & 0xF;
+      dac.precision = bitrate + 1;
       break;
     default: util::panic("Unhandled AI write at addr {:08X} with val {:08X}\n", addr, val);
   }
@@ -79,24 +79,26 @@ void AI::Step(Mem& mem, Registers& regs, int cpuCycles, float volumeL, float vol
       return;
     }
 
-    u32 address_hi = ((dmaAddr[0] >> 13) + dmaAddrCarry) & 0x7ff;
-    dmaAddr[0] = (address_hi << 13) | dmaAddr[0] & 0x1fff;
-    u32 data = mem.Read32<false>(regs, dmaAddr[0], regs.pc);
+    if(dmaLen[0] && dmaEnable) {
+      u32 addrHi = ((dmaAddr[0] >> 13) + dmaAddrCarry) & 0x7FF;
+      dmaAddr[0] = (addrHi << 13) | (dmaAddr[0] & 0x1FFF);
+      u32 data = util::ReadAccess<u32>(mem.mmio.rdp.dram.data(), dmaAddr[0] & RDRAM_DSIZE);
+      s16 l = s16(data >> 16);
+      s16 r = s16(data);
 
-    s16 left  = (s16)(data >> 16);
-    s16 right = (s16)data;
-    PushSample((float)left / INT16_MAX, volumeL, volumeR, (float)right / INT16_MAX);
+      PushSample((float)l / INT16_MAX, volumeL, (float)r / INT16_MAX, volumeR);
 
-    u32 address_lo = (dmaAddr[0] + 4) & 0x1fff;
-    dmaAddr[0] = (dmaAddr[0] & ~0x1fff) | address_lo;
-    dmaAddrCarry = (address_lo == 0);
-    dmaLen[0] -= 4;
+      u32 addrLo = (dmaAddr[0] + 4) & 0x1FFF;
+      dmaAddr[0] = (dmaAddr[0] & ~0x1FFF) | addrLo;
+      dmaAddrCarry = addrLo == 0;
+      dmaLen[0] -= 4;
+    }
 
     if(!dmaLen[0]) {
-      InterruptRaise(mem.mmio.mi, regs, Interrupt::AI);
-      if(--dmaCount > 0) { // If we have another DMA pending, start on that one.
+      if(--dmaCount > 0) {
+        InterruptRaise(mem.mmio.mi, regs, Interrupt::AI);
         dmaAddr[0] = dmaAddr[1];
-        dmaLen[0]  = dmaLen[1];
+        dmaLen[0] = dmaLen[1];
       }
     }
 

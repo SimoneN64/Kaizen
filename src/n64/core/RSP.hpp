@@ -129,6 +129,7 @@ struct RSP {
   VPR vce{};
   s16 divIn{}, divOut{};
   bool divInLoaded = false;
+  int steps = 0;
 
   struct {
     VPR h{}, m{}, l{};
@@ -141,16 +142,17 @@ struct RSP {
   bool semaphore = false;
 
   inline void SetPC(u16 val) {
-    pc = val;
-    nextPC = val += 4;
+    oldPC = pc & 0xFFC;
+    pc = val & 0xFFC;
+    nextPC = pc + 4;
   }
 
   inline s64 GetACC(int e) {
     s64 val = s64(acc.h.element[e]) << 32;
-    val |= s64(acc.m.element[e]) << 16;
-    val |= s64(acc.l.element[e]);
-    if((val & 0x800000000000) != 0) {
-      val |= 0xFFFF000000000000;
+    val    |= s64(acc.m.element[e]) << 16;
+    val    |= s64(acc.l.element[e]) << 00;
+    if((val & 0x0000800000000000) != 0) {
+      val  |= 0xFFFF000000000000;
     }
     return val;
   }
@@ -161,16 +163,37 @@ struct RSP {
     acc.l.element[e] = val;
   }
 
-  inline u16 VCOasU16() {
-    u16 val = 0;
-    for(int i = 0; i < 8; i++) {
+  inline u16 GetVCO() {
+    u16 value = 0;
+    for (int i = 0; i < 8; i++) {
       bool h = vco.h.element[7 - i] != 0;
       bool l = vco.l.element[7 - i] != 0;
       u32 mask = (l << i) | (h << (i + 8));
-      val |= mask;
+      value |= mask;
     }
-    return val;
+    return value;
   }
+
+  inline u16 GetVCC() {
+    u16 value = 0;
+    for (int i = 0; i < 8; i++) {
+      bool h = vcc.h.element[7 - i] != 0;
+      bool l = vcc.l.element[7 - i] != 0;
+      u32 mask = (l << i) | (h << (i + 8));
+      value |= mask;
+    }
+    return value;
+  }
+
+  inline u8 GetVCE() {
+    u8 value = 0;
+    for(int i = 0; i < 8; i++) {
+      bool l = vce.element[ELEMENT_INDEX(i)] != 0;
+      value |= (l << i);
+    }
+    return value;
+  }
+
 
   inline void WriteStatus(MI& mi, Registers& regs, u32 value) {
     auto write = SPStatusWrite{.raw = value};
@@ -195,26 +218,6 @@ struct RSP {
     CLEAR_SET(spStatus.signal5, write.clearSignal5, write.setSignal5);
     CLEAR_SET(spStatus.signal6, write.clearSignal6, write.setSignal6);
     CLEAR_SET(spStatus.signal7, write.clearSignal7, write.setSignal7);
-  }
-
-  inline u16 VCCasU16() {
-    u16 val = 0;
-    for(int i = 0; i < 8; i++) {
-      bool h = vcc.h.element[7 - i] != 0;
-      bool l = vcc.l.element[7 - i] != 0;
-      u32 mask = (l << i) | (h << (i + 8));
-      val |= mask;
-    }
-    return val;
-  }
-
-  inline u8 GetVCE() {
-    u8 value = 0;
-    for(int i = 0; i < 8; i++) {
-      bool l = vce.element[7 - i] != 0;
-      value |= (l << i);
-    }
-    return value;
   }
 
   inline u64 ReadDword(u32 addr, bool i) {
@@ -347,7 +350,7 @@ struct RSP {
   void and_(u32 instr);
   void andi(u32 instr);
   void b(u32 instr, bool cond);
-  void bl(u32 instr, bool cond);
+  void blink(u32 instr, bool cond);
   void cfc2(u32 instr);
   void ctc2(u32 instr);
   void lb(u32 instr);
@@ -376,6 +379,7 @@ struct RSP {
   void sb(u32 instr);
   void sh(u32 instr);
   void sw(u32 instr);
+  void swv(u32 instr);
   void sub(u32 instr);
   void sbv(u32 instr);
   void sdv(u32 instr);
@@ -404,12 +408,14 @@ struct RSP {
   void vcr(u32 instr);
   void vcl(u32 instr);
   void vmacf(u32 instr);
+  void vmacu(u32 instr);
   void vmadh(u32 instr);
   void vmadl(u32 instr);
   void vmadm(u32 instr);
   void vmadn(u32 instr);
   void vmov(u32 instr);
   void vmulf(u32 instr);
+  void vmulu(u32 instr);
   void vmudl(u32 instr);
   void vmudh(u32 instr);
   void vmudm(u32 instr);

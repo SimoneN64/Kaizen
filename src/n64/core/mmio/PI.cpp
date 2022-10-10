@@ -42,7 +42,7 @@ auto PI::Read(MI& mi, u32 addr) const -> u32 {
 void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
   MI& mi = mem.mmio.mi;
   switch(addr) {
-    case 0x04600000: dramAddr = val; break;
+    case 0x04600000: dramAddr = val & 0xFFFFFF; break;
     case 0x04600004: cartAddr = val; break;
     case 0x04600008: {
       u32 len = (val & 0x00FFFFFF) + 1;
@@ -58,7 +58,6 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       dramAddr = dram_addr + len;
       cartAddr = cart_addr + len;
       InterruptRaise(mi, regs, Interrupt::PI);
-      status &= 0xFFFFFFFE;
       util::logdebug("PI DMA from RDRAM to CARTRIDGE (size: {} KiB, {:08X} to {:08X})\n", len, dramAddr, cartAddr);
     } break;
     case 0x0460000C: {

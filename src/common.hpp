@@ -15,10 +15,6 @@ using s64 = int64_t;
 using u128 = __uint128_t;
 using s128 = __int128_t;
 
-#define UINT128_MAX (((u128)0xFFFF'FFFF'FFFF'FFFF << 64) | 0xFFFF'FFFF'FFFF'FFFF)
-#define UINT128_MIN 0
-#define INT128_MAX (((u128)0x7FFF'FFFF'FFFF'FFFF << 64) | 0xFFFF'FFFF'FFFF'FFFF)
-#define INT128_MIN (-(INT128_MAX) - 1LL)
 #define KiB * 1024
 #define MiB ((KiB) * 1024)
 #define GiB ((MiB) * 1024)
@@ -26,7 +22,6 @@ using s128 = __int128_t;
 #define N64_CYCLES_PER_FRAME ((N64_CPU_FREQ) / 60)
 #define HALF_ADDRESS(addr) ((addr) ^ 2)
 #define BYTE_ADDRESS(addr) ((addr) ^ 3)
-#define ASPECT_RATIO ((float)4/3)
 
 #define RD(x) (((x) >> 11) & 0x1F)
 #define RT(x) (((x) >> 16) & 0x1F)

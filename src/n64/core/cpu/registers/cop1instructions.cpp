@@ -3,8 +3,24 @@
 #include <n64/core/Mem.hpp>
 #include <util.hpp>
 #include <cmath>
+#include <cfenv>
 
 namespace n64 {
+inline int PushRoundingMode(const FCR31& fcr31) {
+  int og = fegetround();
+  switch(fcr31.rounding_mode) {
+    case 0: fesetround(FE_TONEAREST); break;
+    case 1: fesetround(FE_TOWARDZERO); break;
+    case 2: fesetround(FE_UPWARD); break;
+    case 3: fesetround(FE_DOWNWARD); break;
+  }
+
+  return og;
+}
+
+#define PUSHROUNDINGMODE int og = PushRoundingMode(fcr31)
+#define POPROUNDINGMODE fesetround(og)
+
 void Cop1::absd(Registers& regs, u32 instr) {
   double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
   SetCop1Reg<double>(regs.cop0, FD(instr), fabs(fs));
@@ -368,22 +384,30 @@ void Cop1::sqrtd(Registers &regs, u32 instr) {
 
 void Cop1::roundls(Registers& regs, u32 instr) {
   float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
-  SetReg<u64>(regs.cop0, FD(instr), (s32)roundf(fs));
+  PUSHROUNDINGMODE;
+  SetReg<u64>(regs.cop0, FD(instr), (s32)nearbyintf(fs));
+  POPROUNDINGMODE;
 }
 
 void Cop1::roundld(Registers& regs, u32 instr) {
   double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
-  SetReg<u64>(regs.cop0, FD(instr), (s64)round(fs));
+  PUSHROUNDINGMODE;
+  SetReg<u64>(regs.cop0, FD(instr), (s64)nearbyint(fs));
+  POPROUNDINGMODE;
 }
 
 void Cop1::roundws(Registers& regs, u32 instr) {
   float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
-  SetReg<u32>(regs.cop0, FD(instr), (s32)roundf(fs));
+  PUSHROUNDINGMODE;
+  SetReg<u32>(regs.cop0, FD(instr), (s32)nearbyintf(fs));
+  POPROUNDINGMODE;
 }
 
 void Cop1::roundwd(Registers& regs, u32 instr) {
   double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
-  SetReg<u32>(regs.cop0, FD(instr), (s64)round(fs));
+  PUSHROUNDINGMODE;
+  SetReg<u32>(regs.cop0, FD(instr), (s32)nearbyint(fs));
+  POPROUNDINGMODE;
 }
 
 void Cop1::floorls(Registers& regs, u32 instr) {

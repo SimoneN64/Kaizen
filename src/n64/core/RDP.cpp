@@ -40,26 +40,14 @@ auto RDP::Read(u32 addr) const -> u32{
 
 void RDP::Write(MI& mi, Registers& regs, RSP& rsp, u32 addr, u32 val) {
   switch(addr) {
-    case 0x04100000:
-      if(!dpc.status.startValid) {
-        dpc.start = val & 0xFFFFF8;
-      }
-      dpc.status.startValid = true;
-      break;
-    case 0x04100004:
-      dpc.end = val & 0xFFFFF8;
-      if(dpc.status.startValid) {
-        dpc.current = dpc.start;
-        dpc.status.startValid = false;
-      }
-      RunCommand(mi, regs, rsp);
-      break;
-    case 0x0410000C: StatusWrite(mi, regs, rsp, val); break;
+    case 0x04100000: WriteStart(val); break;
+    case 0x04100004: WriteEnd(mi, regs, rsp, val); break;
+    case 0x0410000C: WriteStatus(mi, regs, rsp, val); break;
     default: util::panic("Unhandled DP Command Registers write (addr: {:08X}, val: {:08X})\n", addr, val);
   }
 }
 
-void RDP::StatusWrite(MI& mi, Registers& regs, RSP& rsp, u32 val) {
+void RDP::WriteStatus(MI& mi, Registers& regs, RSP& rsp, u32 val) {
   bool rdpUnfrozen = false;
 
   DPCStatusWrite temp{};
@@ -85,9 +73,53 @@ void RDP::StatusWrite(MI& mi, Registers& regs, RSP& rsp, u32 val) {
   }
 }
 
+inline void logCommand(u8 cmd) {
+  switch(cmd) {
+    case 0x08: util::print("Fill triangle\n"); break;
+    case 0x09: util::print("Fill, zbuf triangle\n"); break;
+    case 0x0a: util::print("Texture triangle\n"); break;
+    case 0x0b: util::print("Texture, zbuf triangle\n"); break;
+    case 0x0c: util::print("Shade triangle\n"); break;
+    case 0x0d: util::print("Shade, zbuf triangle\n"); break;
+    case 0x0e: util::print("Shade, texture triangle\n"); break;
+    case 0x0f: util::print("Shade, texture, zbuf triangle\n"); break;
+    case 0x24: util::print("Texture rectangle\n"); break;
+    case 0x25: util::print("Texture rectangle flip\n"); break;
+    case 0x26: util::print("Sync load\n"); break;
+    case 0x27: util::print("Sync pipe\n"); break;
+    case 0x28: util::print("Sync tile\n"); break;
+    case 0x29: util::print("Sync full\n"); break;
+    case 0x2a: util::print("Set key gb\n"); break;
+    case 0x2b: util::print("Set key r\n"); break;
+    case 0x2c: util::print("Set convert\n"); break;
+    case 0x2d: util::print("Set scissor\n"); break;
+    case 0x2e: util::print("Set prim depth\n"); break;
+    case 0x2f: util::print("Set other modes\n"); break;
+    case 0x30: util::print("Load TLUT\n"); break;
+    case 0x32: util::print("Set tile size\n"); break;
+    case 0x33: util::print("Load block\n"); break;
+    case 0x34: util::print("Load tile\n"); break;
+    case 0x35: util::print("Set tile\n"); break;
+    case 0x36: util::print("Fill rectangle\n"); break;
+    case 0x37: util::print("Set fill color\n"); break;
+    case 0x38: util::print("Set fog color\n"); break;
+    case 0x39: util::print("Set blend color\n"); break;
+    case 0x3a: util::print("Set prim color\n"); break;
+    case 0x3b: util::print("Set env color\n"); break;
+    case 0x3c: util::print("Set combine\n"); break;
+    case 0x3d: util::print("Set texture image\n"); break;
+    case 0x3e: util::print("Set mask image\n"); break;
+    case 0x3f: util::print("Set color image\n"); break;
+  }
+}
+
 void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
+  //if (dpc.status.freeze) {
+  //  return;
+  //}
   dpc.status.pipeBusy = true;
   dpc.status.startGclk = true;
+  dpc.status.freeze = true;
 
   static int remaining_cmds = 0;
 
@@ -96,7 +128,6 @@ void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
 
   int len = end - current;
   if(len <= 0) return;
-
 
   if(len + (remaining_cmds * 4) > 0xFFFFF) {
     return;
@@ -108,7 +139,7 @@ void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
       cmd_buf[remaining_cmds + (i >> 2)] = cmd;
     }
   } else {
-    if(end > 0x7FFFFF || current > 0x7FFFFF) {
+    if(end > RDRAM_DSIZE || current > RDRAM_DSIZE) {
       return;
     }
     for(int i = 0; i < len; i += 4) {
@@ -124,6 +155,7 @@ void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
 
   while(buf_index < word_len) {
     u8 cmd = (cmd_buf[buf_index] >> 24) & 0x3F;
+   // logCommand(cmd);
 
     int cmd_len = cmd_lens[cmd];
     if((buf_index + cmd_len) * 4 > len + (remaining_cmds * 4)) {
@@ -159,8 +191,8 @@ void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
 
   dpc.current = end;
   dpc.end = end;
-  dpc.status.freeze = false;
   dpc.status.cbufReady = true;
+  dpc.status.freeze = false;
 }
 
 void RDP::OnFullSync(MI& mi, Registers& regs) {

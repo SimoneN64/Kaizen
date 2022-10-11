@@ -23,6 +23,7 @@ inline void special(MI& mi, Registers& regs, RSP& rsp, u32 instr) {
     case 0x09: rsp.jalr(instr); break;
     case 0x0D:
       rsp.spStatus.halt = true;
+      rsp.steps = 0;
       rsp.spStatus.broke = true;
       if(rsp.spStatus.interruptOnBreak) {
         InterruptRaise(mi, regs, Interrupt::SP);
@@ -160,10 +161,14 @@ inline void cop0(Registers& regs, Mem& mem, u32 instr) {
   RSP& rsp = mmio.rsp;
   RDP& rdp = mmio.rdp;
   //util::print("Cop0 {:02X}\n", mask);
-  switch(mask) {
-    case 0x00: rsp.mfc0(rdp, instr); break;
-    case 0x04: rsp.mtc0(regs, mem, instr); break;
-    default: util::panic("Unhandled RSP COP0 ({:05b})\n", mask);
+  if((instr & 0x7FF) == 0) {
+    switch (mask) {
+      case 0x00: rsp.mfc0(rdp, instr); break;
+      case 0x04: rsp.mtc0(regs, mem, instr); break;
+      default: util::panic("Unhandled RSP COP0 ({:05b})\n", mask);
+    }
+  } else {
+    util::panic("RSP COP0 unknown {:08X}\n", instr);
   }
 }
 

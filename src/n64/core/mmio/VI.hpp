@@ -88,7 +88,9 @@ struct Registers;
 struct VI {
   VI();
   void Reset();
+  template <bool crashOnUnimplemented = true>
   [[nodiscard]] u32 Read(u32) const;
+  template <bool crashOnUnimplemented = true>
   void Write(MI&, Registers&, u32, u32);
   AxisScale xscale{}, yscale{};
   VIHsyncLeap hsyncLeap{};

@@ -9,8 +9,6 @@
 #define SET_RSP_HALF(addr, buf, value) do { RSP_BYTE(addr, buf) = ((value) >> 8) & 0xFF; RSP_BYTE((addr) + 1, buf) = (value) & 0xFF;} while(0)
 #define GET_RSP_WORD(addr, buf) ((GET_RSP_HALF(addr, buf) << 16) | GET_RSP_HALF((addr) + 2, buf))
 #define SET_RSP_WORD(addr, buf, value) do { SET_RSP_HALF(addr, buf, ((value) >> 16) & 0xFFFF); SET_RSP_HALF((addr) + 2, buf, (value) & 0xFFFF);} while(0)
-#define GET_RSP_DWORD(addr, buf) (((u64)GET_RSP_WORD(addr, buf) << 32) | (u64)GET_RSP_WORD((addr) + 4, buf))
-#define SET_RSP_DWORD(addr, buf, value) do { SET_RSP_WORD(addr, buf, ((value) >> 32) & 0xFFFFFFFF); SET_RSP_WORD((addr) + 4, buf, (value) & 0xFFFFFFFF);} while(0)
 
 namespace n64 {
 union SPStatus {
@@ -98,7 +96,9 @@ union VPR {
   u16 element[8];
   u8 byte[16];
   u32 word[4];
-};
+} __attribute__((packed));
+
+static_assert(sizeof(VPR) == 16);
 
 struct Mem;
 struct Registers;
@@ -113,7 +113,9 @@ struct RSP {
   RSP();
   void Reset();
   void Step(Registers& regs, Mem& mem);
+  template <bool crashOnUnimplemented = true>
   auto Read(u32 addr) -> u32;
+  template <bool crashOnUnimplemented = true>
   void Write(Mem& mem, Registers& regs, u32 addr, u32 value);
   void Exec(Registers& regs, Mem& mem, u32 instr);
   SPStatus spStatus;
@@ -147,7 +149,7 @@ struct RSP {
     nextPC = pc + 4;
   }
 
-  inline s64 GetACC(int e) {
+  inline s64 GetACC(int e) const {
     s64 val = s64(acc.h.element[e]) << 32;
     val    |= s64(acc.m.element[e]) << 16;
     val    |= s64(acc.l.element[e]) << 00;
@@ -163,7 +165,7 @@ struct RSP {
     acc.l.element[e] = val;
   }
 
-  inline u16 GetVCO() {
+  inline u16 GetVCO() const {
     u16 value = 0;
     for (int i = 0; i < 8; i++) {
       bool h = vco.h.element[7 - i] != 0;
@@ -174,7 +176,7 @@ struct RSP {
     return value;
   }
 
-  inline u16 GetVCC() {
+  inline u16 GetVCC() const {
     u16 value = 0;
     for (int i = 0; i < 8; i++) {
       bool h = vcc.h.element[7 - i] != 0;
@@ -185,7 +187,7 @@ struct RSP {
     return value;
   }
 
-  inline u8 GetVCE() {
+  inline u8 GetVCE() const {
     u8 value = 0;
     for(int i = 0; i < 8; i++) {
       bool l = vce.element[ELEMENT_INDEX(i)] != 0;
@@ -193,7 +195,6 @@ struct RSP {
     }
     return value;
   }
-
 
   inline void WriteStatus(MI& mi, Registers& regs, u32 value) {
     auto write = SPStatusWrite{.raw = value};
@@ -218,88 +219,6 @@ struct RSP {
     CLEAR_SET(spStatus.signal5, write.clearSignal5, write.setSignal5);
     CLEAR_SET(spStatus.signal6, write.clearSignal6, write.setSignal6);
     CLEAR_SET(spStatus.signal7, write.clearSignal7, write.setSignal7);
-  }
-
-  inline u64 ReadDword(u32 addr, bool i) {
-    addr &= 0xfff;
-    if (i) {
-      return GET_RSP_DWORD(addr, imem);
-    } else {
-      return GET_RSP_DWORD(addr, dmem);
-    }
-  }
-
-  inline void WriteDword(u32 addr, u64 val, bool i) {
-    addr &= 0xfff;
-    if (i) {
-      SET_RSP_DWORD(addr, imem, val);
-    } else {
-      SET_RSP_DWORD(addr, dmem, val);
-    }
-  }
-
-  inline u32 ReadWord(u32 addr, bool i) {
-    addr &= 0xfff;
-    if (i) {
-      return GET_RSP_WORD(addr, imem);
-    } else {
-      return GET_RSP_WORD(addr, dmem);
-    }
-  }
-
-  inline void WriteWord(u32 addr, u32 val, bool i) {
-    addr &= 0xfff;
-    if (i) {
-      SET_RSP_WORD(addr, imem, val);
-    } else {
-      SET_RSP_WORD(addr, dmem, val);
-    }
-  }
-
-  inline u16 ReadHalf(u32 addr, bool i) {
-    addr &= 0xfff;
-    if (i) {
-      return GET_RSP_HALF(addr, imem);
-    } else {
-      return GET_RSP_HALF(addr, dmem);
-    }
-  }
-
-  inline void WriteHalf(u32 addr, u16 val, bool i) {
-    addr &= 0xfff;
-    if (i) {
-      SET_RSP_HALF(addr, imem, val);
-    } else {
-      SET_RSP_HALF(addr, dmem, val);
-    }
-  }
-
-  inline u8 ReadByte(u32 addr, bool i) {
-    addr &= 0xfff;
-    if (i) {
-      return RSP_BYTE(addr, imem);
-    } else {
-      return RSP_BYTE(addr, dmem);
-    }
-  }
-
-  inline void WriteByte(u32 addr, u8 val, bool i) {
-    addr &= 0xfff;
-    if (i) {
-      RSP_BYTE(addr, imem) = val;
-    } else {
-      RSP_BYTE(addr, dmem) = val;
-    }
-  }
-
-  inline u64 ReadDword(u32 addr) {
-    addr &= 0xfff;
-    return GET_RSP_DWORD(addr, dmem);
-  }
-
-  inline void WriteDword(u32 addr, u64 val) {
-    addr &= 0xfff;
-    SET_RSP_DWORD(addr, dmem, val);
   }
 
   inline u32 ReadWord(u32 addr) {

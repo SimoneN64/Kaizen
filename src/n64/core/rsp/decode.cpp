@@ -148,9 +148,7 @@ inline void cop2(RSP& rsp, u32 instr) {
     case 0x30: rsp.vrcp(instr); break;
     case 0x33: rsp.vmov(instr); break;
     case 0x34: rsp.vrsq(instr); break;
-    case 0x37: case 0x3F:
-      printf("RSP VNULL or VNOP\n");
-      break;
+    case 0x37: case 0x3F: break;
     default: util::panic("Unhandled RSP COP2 ({:06b})\n", mask);
   }
 }

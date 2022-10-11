@@ -14,6 +14,8 @@ void Mem::Reset() {
   std::fill(sram.begin(), sram.end(), 0);
   romMask = 0;
   mmio.Reset();
+  cart.resize(0xFC00000);
+  std::fill(cart.begin(), cart.end(), 0);
 }
 
 CartInfo Mem::LoadROM(const std::string& filename) {
@@ -68,7 +70,7 @@ bool MapVAddr(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr) 
 template bool MapVAddr<true>(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr);
 template bool MapVAddr<false>(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr);
 
-template <bool tlb>
+template <bool tlb, bool crashOnUnimplemented>
 u8 Mem::Read8(n64::Registers &regs, u64 vaddr, s64 pc) {
   u32 paddr = vaddr;
   if(!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
@@ -86,7 +88,7 @@ u8 Mem::Read8(n64::Registers &regs, u64 vaddr, s64 pc) {
         return mmio.rsp.dmem[BYTE_ADDRESS(paddr) & DMEM_DSIZE];
     case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
     case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF:
-      return mmio.Read(paddr);
+      return mmio.Read<crashOnUnimplemented>(paddr);
     case 0x10000000 ... 0x1FBFFFFF:
       paddr = (paddr + 2) & ~2;
       return cart[BYTE_ADDRESS(paddr) & romMask];
@@ -95,9 +97,12 @@ u8 Mem::Read8(n64::Registers &regs, u64 vaddr, s64 pc) {
     case 0x1FC007C0 ... 0x1FC007FF:
       return pifRam[paddr & PIF_RAM_DSIZE];
     case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
-    case 0x04900000 ... 0x07FFFFFF: case 0x08000000 ... 0x0FFFFFFF:
-    case 0x80000000 ... 0xFFFFFFFF: case 0x1FC00800 ... 0x7FFFFFFF: return 0;
-    default: util::panic("Unimplemented 8-bit read at address {:08X} (PC = {:016X})\n", paddr, (u64)regs.pc);
+    case 0x04900000 ... 0x0FFFFFFF: case 0x1FC00800 ... 0xFFFFFFFF: return 0;
+    default:
+      if constexpr (crashOnUnimplemented) {
+        util::panic("Unimplemented 8-bit read at address {:08X} (PC = {:016X})\n", paddr, (u64)regs.pc);
+      }
+      return 0;
   }
 }
 
@@ -128,8 +133,7 @@ u16 Mem::Read16(n64::Registers &regs, u64 vaddr, s64 pc) {
     case 0x1FC007C0 ... 0x1FC007FF:
       return be16toh(util::ReadAccess<u16>(pifRam, paddr & PIF_RAM_DSIZE));
     case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
-    case 0x04900000 ... 0x07FFFFFF: case 0x08000000 ... 0x0FFFFFFF:
-    case 0x80000000 ... 0xFFFFFFFF: case 0x1FC00800 ... 0x7FFFFFFF: return 0;
+    case 0x04900000 ... 0x0FFFFFFF: case 0x1FC00800 ... 0xFFFFFFFF: return 0;
     default: util::panic("Unimplemented 16-bit read at address {:08X} (PC = {:016X})\n", paddr, (u64)regs.pc);
   }
 }
@@ -160,9 +164,9 @@ u32 Mem::Read32(n64::Registers &regs, u64 vaddr, s64 pc) {
     case 0x1FC007C0 ... 0x1FC007FF:
       return be32toh(util::ReadAccess<u32>(pifRam, paddr & PIF_RAM_DSIZE));
     case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
-    case 0x04900000 ... 0x07FFFFFF: case 0x08000000 ... 0x0FFFFFFF:
-    case 0x80000000 ... 0xFFFFFFFF: case 0x1FC00800 ... 0x7FFFFFFF: return 0;
-    default: util::panic("Unimplemented 32-bit read at address {:08X} (PC = {:016X})\n", paddr, (u64)regs.pc);
+    case 0x04900000 ... 0x0FFFFFFF: case 0x1FC00800 ... 0xFFFFFFFF: return 0;
+    default:
+      util::panic("Unimplemented 32-bit read at address {:08X} (PC = {:016X})\n", paddr, (u64) regs.pc);
   }
 }
 
@@ -192,14 +196,15 @@ u64 Mem::Read64(n64::Registers &regs, u64 vaddr, s64 pc) {
     case 0x1FC007C0 ... 0x1FC007FF:
       return be64toh(util::ReadAccess<u64>(pifRam, paddr & PIF_RAM_DSIZE));
     case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
-    case 0x04900000 ... 0x07FFFFFF: case 0x08000000 ... 0x0FFFFFFF:
-    case 0x80000000 ... 0xFFFFFFFF: case 0x1FC00800 ... 0x7FFFFFFF: return 0;
+    case 0x04900000 ... 0x0FFFFFFF: case 0x1FC00800 ... 0xFFFFFFFF: return 0;
     default: util::panic("Unimplemented 32-bit read at address {:08X} (PC = {:016X})\n", paddr, (u64)regs.pc);
   }
 }
 
-template u8 Mem::Read8<false>(n64::Registers &regs, u64 vaddr, s64 pc);
-template u8 Mem::Read8<true>(n64::Registers &regs, u64 vaddr, s64 pc);
+template u8 Mem::Read8<false, false>(n64::Registers &regs, u64 vaddr, s64 pc);
+template u8 Mem::Read8<false, true>(n64::Registers &regs, u64 vaddr, s64 pc);
+template u8 Mem::Read8<true, false>(n64::Registers &regs, u64 vaddr, s64 pc);
+template u8 Mem::Read8<true, true>(n64::Registers &regs, u64 vaddr, s64 pc);
 template u16 Mem::Read16<false>(n64::Registers &regs, u64 vaddr, s64 pc);
 template u16 Mem::Read16<true>(n64::Registers &regs, u64 vaddr, s64 pc);
 template u32 Mem::Read32<false>(n64::Registers &regs, u64 vaddr, s64 pc);
@@ -207,7 +212,7 @@ template u32 Mem::Read32<true>(n64::Registers &regs, u64 vaddr, s64 pc);
 template u64 Mem::Read64<false>(n64::Registers &regs, u64 vaddr, s64 pc);
 template u64 Mem::Read64<true>(n64::Registers &regs, u64 vaddr, s64 pc);
 
-template <bool tlb>
+template <bool tlb, bool crashOnUnimplemented>
 void Mem::Write8(Registers& regs, u64 vaddr, u32 val, s64 pc) {
   u32 paddr = vaddr;
   if(!MapVAddr<tlb>(regs, STORE, vaddr, paddr)) {
@@ -228,7 +233,7 @@ void Mem::Write8(Registers& regs, u64 vaddr, u32 val, s64 pc) {
         util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
       break;
     case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
-    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(*this, regs, paddr, val); break;
+    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write<crashOnUnimplemented>(*this, regs, paddr, val); break;
     case 0x10000000 ... 0x13FFFFFF: break;
     case 0x1FC007C0 ... 0x1FC007FF:
       val = val << (8 * (3 - (paddr & 3)));
@@ -239,7 +244,10 @@ void Mem::Write8(Registers& regs, u64 vaddr, u32 val, s64 pc) {
     case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
     case 0x08000000 ... 0x0FFFFFFF: case 0x04900000 ... 0x07FFFFFF:
     case 0x1FC00800 ... 0x7FFFFFFF: case 0x80000000 ... 0xFFFFFFFF: break;
-    default: util::panic("Unimplemented 8-bit write at address {:08X} with value {:0X} (PC = {:016X})\n", paddr, val, (u64)regs.pc);
+    default:
+      if constexpr (crashOnUnimplemented) {
+        util::panic("Unimplemented 8-bit write at address {:08X} with value {:0X} (PC = {:016X})\n", paddr, val, (u64)regs.pc);
+      }
   }
 }
 
@@ -355,8 +363,10 @@ void Mem::Write64(Registers& regs, u64 vaddr, u64 val, s64 pc) {
   }
 }
 
-template void Mem::Write8<false>(Registers& regs, u64 vaddr, u32 val, s64 pc);
-template void Mem::Write8<true>(Registers& regs, u64 vaddr, u32 val, s64 pc);
+template void Mem::Write8<false, false>(Registers& regs, u64 vaddr, u32 val, s64 pc);
+template void Mem::Write8<false, true>(Registers& regs, u64 vaddr, u32 val, s64 pc);
+template void Mem::Write8<true, false>(Registers& regs, u64 vaddr, u32 val, s64 pc);
+template void Mem::Write8<true, true>(Registers& regs, u64 vaddr, u32 val, s64 pc);
 template void Mem::Write16<false>(Registers& regs, u64 vaddr, u32 val, s64 pc);
 template void Mem::Write16<true>(Registers& regs, u64 vaddr, u32 val, s64 pc);
 template void Mem::Write32<false>(Registers& regs, u64 vaddr, u32 val, s64 pc);

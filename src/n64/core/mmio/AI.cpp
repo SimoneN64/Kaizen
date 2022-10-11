@@ -34,6 +34,7 @@ auto AI::Read(u32 addr) const -> u32 {
 
 #define max(x, y) ((x) > (y) ? (x) : (y))
 
+template <bool crashOnUnimplemented>
 void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
   switch(addr) {
     case 0x04500000:
@@ -68,9 +69,15 @@ void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       bitrate = val & 0xF;
       dac.precision = bitrate + 1;
       break;
-    default: util::panic("Unhandled AI write at addr {:08X} with val {:08X}\n", addr, val);
+    default:
+      if constexpr (crashOnUnimplemented) {
+        util::panic("Unhandled AI write at addr {:08X} with val {:08X}\n", addr, val);
+      }
   }
 }
+
+template void AI::Write<true>(Mem&, Registers&, u32, u32);
+template void AI::Write<false>(Mem&, Registers&, u32, u32);
 
 void AI::Step(Mem& mem, Registers& regs, int cpuCycles, float volumeL, float volumeR) {
   cycles += cpuCycles;

@@ -24,7 +24,9 @@ struct MMIO {
   RSP rsp;
   RDP rdp;
 
+  template <bool crashOnUnimplemented = true>
   u32 Read(u32);
-  void Write(Mem&, Registers& regs, u32, u32);
+  template <bool crashOnUnimplemented = true>
+  void Write(Mem&, Registers&, u32, u32);
 };
 }

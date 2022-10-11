@@ -22,6 +22,7 @@ void VI::Reset() {
   cyclesPerHalfline = 1000;
 }
 
+template <bool crashOnUnimplemented>
 u32 VI::Read(u32 paddr) const {
   switch(paddr) {
     case 0x04400000: return status.raw;
@@ -39,10 +40,17 @@ u32 VI::Read(u32 paddr) const {
     case 0x04400030: return xscale.raw;
     case 0x04400034: return yscale.raw;
     default:
-      util::panic("Unimplemented VI[%08X] read\n", paddr);
+      if constexpr (crashOnUnimplemented) {
+        util::panic("Unimplemented VI[%08X] read\n", paddr);
+      }
+      return 0;
   }
 }
 
+template u32 VI::Read<true>(u32 paddr) const;
+template u32 VI::Read<false>(u32 paddr) const;
+
+template <bool crashOnUnimplemented>
 void VI::Write(MI& mi, Registers& regs, u32 paddr, u32 val) {
   switch(paddr) {
     case 0x04400000:
@@ -81,7 +89,12 @@ void VI::Write(MI& mi, Registers& regs, u32 paddr, u32 val) {
     case 0x04400030: xscale.raw = val; break;
     case 0x04400034: yscale.raw = val; break;
     default:
-      util::panic("Unimplemented VI[%08X] write (%08X)\n", paddr, val);
+      if constexpr (crashOnUnimplemented) {
+        util::panic("Unimplemented VI[%08X] write (%08X)\n", paddr, val);
+      }
   }
 }
+
+template void VI::Write<true>(n64::MI &mi, n64::Registers &regs, u32 paddr, u32 val);
+template void VI::Write<false>(n64::MI &mi, n64::Registers &regs, u32 paddr, u32 val);
 }

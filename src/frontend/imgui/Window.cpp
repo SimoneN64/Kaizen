@@ -14,7 +14,7 @@ using json = nlohmann::json;
 Window::Window(n64::Core& core) {
   InitSDL();
   InitParallelRDP(core.mem.GetRDRAM(), window);
-  InitImgui();
+  InitImgui(core);
   NFD::Init();
 }
 
@@ -27,6 +27,7 @@ void Window::InitSDL() {
   SDL_Init(SDL_INIT_EVERYTHING);
   n64::InitAudio();
 
+  windowTitle = "natsukashii";
   window = SDL_CreateWindow(
     "natsukashii",
     SDL_WINDOWPOS_CENTERED,
@@ -48,7 +49,19 @@ static void check_vk_result(VkResult err) {
   }
 }
 
-void Window::InitImgui() {
+inline ImU8 readHandler(const ImU8* core_, size_t offset) {
+  auto* core = reinterpret_cast<n64::Core*>(const_cast<ImU8*>(core_));
+  auto& mem = core->mem;
+  return mem.Read8<false, false>(core->cpu.regs, offset, core->cpu.regs.oldPC);
+}
+
+inline void writeHandler(ImU8* core_, size_t offset, ImU8 value) {
+  auto* core = reinterpret_cast<n64::Core*>(const_cast<ImU8*>(core_));
+  auto& mem = core->mem;
+  mem.Write8<false, false>(core->cpu.regs, offset, value, core->cpu.regs.oldPC);
+}
+
+void Window::InitImgui(const n64::Core& core) {
   VkResult err;
 
   IMGUI_CHECKVERSION();
@@ -122,6 +135,9 @@ void Window::InitImgui() {
     ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
     SubmitRequestedVkCommandBuffer();
   }
+
+  memoryEditor.ReadFn = readHandler;
+  memoryEditor.WriteFn = writeHandler;
 }
 
 Window::~Window() {
@@ -160,6 +176,7 @@ void Window::LoadROM(n64::Core& core, const std::string &path) {
     }
 
     windowTitle = "natsukashii - " + name;
+    shadowWindowTitle = windowTitle;
 
     SDL_SetWindowTitle(window, windowTitle.c_str());
   }
@@ -167,9 +184,18 @@ void Window::LoadROM(n64::Core& core, const std::string &path) {
 
 void Window::Render(n64::Core& core) {
   ImGui::PushFont(uiFont);
+
+  u32 ticks = SDL_GetTicks();
+  if(!core.pause && lastFrame < ticks - 1000) {
+    lastFrame = ticks;
+    windowTitle += fmt::format("  | {:02d} In-Game FPS", core.mem.mmio.vi.swaps);
+    core.mem.mmio.vi.swaps = 0;
+    SDL_SetWindowTitle(window, windowTitle.c_str());
+    windowTitle = shadowWindowTitle;
+  }
   static bool showSettings = false;
-  static std::string windowTitleCache = windowTitle;
   bool showMainMenuBar = windowID == SDL_GetWindowID(SDL_GetMouseFocus());
+  memoryEditor.DrawWindow("Memory viewer", &core, 0x80000000);
   if(showMainMenuBar) {
     ImGui::BeginMainMenuBar();
     if (ImGui::BeginMenu("File")) {
@@ -183,18 +209,10 @@ void Window::Render(n64::Core& core) {
         }
       }
       if (ImGui::MenuItem("Dump RDRAM")) {
-        FILE *fp = fopen("rdram.dump", "wb");
-        u8 *temp = core.mem.GetRDRAM();
-        util::SwapBuffer32(RDRAM_SIZE, temp);
-        fwrite(temp, 1, RDRAM_SIZE, fp);
-        fclose(fp);
+        core.mem.DumpRDRAM();
       }
       if (ImGui::MenuItem("Dump IMEM")) {
-        FILE *fp = fopen("imem.dump", "wb");
-        u8 *temp = core.mem.mmio.rsp.imem;
-        util::SwapBuffer32(IMEM_SIZE, temp);
-        fwrite(temp, 1, IMEM_SIZE, fp);
-        fclose(fp);
+        core.mem.DumpIMEM();
       }
       if (ImGui::MenuItem("Exit")) {
         core.done = true;
@@ -212,12 +230,11 @@ void Window::Render(n64::Core& core) {
       }
       if (ImGui::MenuItem(core.pause ? "Resume" : "Pause", nullptr, false, core.romLoaded)) {
         core.TogglePause();
-        std::string paused = "  | Paused";
         if(core.pause) {
-          windowTitleCache = windowTitle;
-          windowTitle += paused;
+          shadowWindowTitle = windowTitle;
+          windowTitle += "  | Paused";
         } else {
-          windowTitle = windowTitleCache;
+          windowTitle = shadowWindowTitle;
         }
         SDL_SetWindowTitle(window, windowTitle.c_str());
       }
@@ -237,10 +254,10 @@ void Window::Render(n64::Core& core) {
       if (!lockVolume) {
         ImGui::SliderFloat("Volume R", &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
       } else {
+        volumeR = volumeL;
         ImGui::BeginDisabled();
         ImGui::SliderFloat("Volume R", &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
         ImGui::EndDisabled();
-        volumeR = volumeL;
       }
       ImGui::EndPopup();
     }

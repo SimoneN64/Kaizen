@@ -23,7 +23,7 @@ struct Mem {
     return mmio.rdp.dram.data();
   }
 
-  template <bool tlb = true>
+  template <bool tlb = true, bool crashOnUnimplemented = true>
   u8 Read8(Registers&, u64, s64);
   template <bool tlb = true>
   u16 Read16(Registers&, u64, s64);
@@ -31,7 +31,7 @@ struct Mem {
   u32 Read32(Registers&, u64, s64);
   template <bool tlb = true>
   u64 Read64(Registers&, u64, s64);
-  template <bool tlb = true>
+  template <bool tlb = true, bool crashOnUnimplemented = true>
   void Write8(Registers&, u64, u32, s64);
   template <bool tlb = true>
   void Write16(Registers&, u64, u32, s64);
@@ -42,6 +42,26 @@ struct Mem {
 
   MMIO mmio;
   u8 pifRam[PIF_RAM_SIZE]{};
+
+  inline void DumpRDRAM() const {
+    FILE *fp = fopen("rdram.dump", "wb");
+    u8 *temp = (u8*)calloc(RDRAM_SIZE, 1);
+    memcpy(temp, mmio.rdp.dram.data(), RDRAM_SIZE);
+    util::SwapBuffer32(RDRAM_SIZE, temp);
+    fwrite(temp, 1, RDRAM_SIZE, fp);
+    free(temp);
+    fclose(fp);
+  }
+
+  inline void DumpIMEM() const {
+    FILE *fp = fopen("imem.dump", "wb");
+    u8 *temp = (u8*)calloc(IMEM_SIZE, 1);
+    memcpy(temp, mmio.rsp.imem, IMEM_SIZE);
+    util::SwapBuffer32(IMEM_SIZE, temp);
+    fwrite(temp, 1, IMEM_SIZE, fp);
+    free(temp);
+    fclose(fp);
+  }
 private:
   friend struct SI;
   friend struct PI;

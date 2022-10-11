@@ -139,7 +139,7 @@ WSI* LoadWSIPlatform(Vulkan::WSIPlatform* wsi_platform, std::unique_ptr<Parallel
   return wsi;
 }
 
-void LoadParallelRDP(u8* rdram) {
+void LoadParallelRDP(const u8* rdram, SDL_Window* window) {
   ResourceLayout vertLayout;
   ResourceLayout fragLayout;
 
@@ -181,10 +181,10 @@ void LoadParallelRDP(u8* rdram) {
   }
 }
 
-void InitParallelRDP(u8* rdram, SDL_Window* window) {
+void InitParallelRDP(const u8* rdram, SDL_Window* window) {
   g_Window = window;
   LoadWSIPlatform(new SDLWSIPlatform(), std::make_unique<SDLParallelRdpWindowInfo>());
-  LoadParallelRDP(rdram);
+  LoadParallelRDP(rdram, window);
 }
 
 void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image, Util::IntrusivePtr<CommandBuffer> cmd) {

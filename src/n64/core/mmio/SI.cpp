@@ -12,6 +12,7 @@ void SI::Reset() {
   controller.raw = 0;
 }
 
+template<bool crashOnUnimplemented>
 auto SI::Read(MI& mi, u32 addr) const -> u32 {
   switch(addr) {
     case 0x04800000: return dramAddr;
@@ -24,10 +25,18 @@ auto SI::Read(MI& mi, u32 addr) const -> u32 {
       val |= (status.intr << 12);
       return val;
     }
-    default: return 0xFFFFFFFF;
+    default:
+      if constexpr (crashOnUnimplemented) {
+        util::panic("Unhandled SI[{:08X}] read\n", addr);
+      }
+      return 0;
   }
 }
 
+template auto SI::Read<true>(MI &mi, u32 addr) const -> u32;
+template auto SI::Read<false>(MI &mi, u32 addr) const -> u32;
+
+template<bool crashOnUnimplemented>
 void SI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
   switch(addr) {
     case 0x04800000:
@@ -56,8 +65,13 @@ void SI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       InterruptLower(mem.mmio.mi, regs, Interrupt::SI);
       status.intr = 0;
       break;
-    default: util::panic("Unhandled SI[%08X] write (%08X)\n", addr, val);
+    default:
+      if constexpr (crashOnUnimplemented) {
+        util::panic("Unhandled SI[%08X] write (%08X)\n", addr, val);
+      }
   }
 }
 
+template void SI::Write<true>(Mem &mem, Registers &regs, u32 addr, u32 val);
+template void SI::Write<false>(Mem &mem, Registers &regs, u32 addr, u32 val);
 }

@@ -1,7 +1,6 @@
 #include <n64/core/RSP.hpp>
 #include <util.hpp>
 #include <n64/core/Mem.hpp>
-#include <n64/core/mmio/Interrupt.hpp>
 
 namespace n64 {
 RSP::RSP() {
@@ -31,47 +30,54 @@ void RSP::Reset() {
   divInLoaded = false;
 }
 
+inline void logRSP(const RSP& rsp, const u32 instr) {
+  util::print("{:04X} {:08X} ", rsp.oldPC, instr);
+  for (int i = 0; i < 32; i++) {
+    util::print("{:08X} ", (u32)rsp.gpr[i]);
+  }
+
+  for (int i = 0; i < 32; i++) {
+    for (int e = 0; e < 8; e++) {
+      util::print("{:04X}", rsp.vpr[i].element[e]);
+    }
+    util::print(" ");
+  }
+
+  for (int e = 0; e < 8; e++) {
+    util::print("{:04X}", rsp.acc.h.element[e]);
+  }
+  util::print(" ");
+
+  for (int e = 0; e < 8; e++) {
+    util::print("{:04X}", rsp.acc.m.element[e]);
+  }
+  util::print(" ");
+
+  for (int e = 0; e < 8; e++) {
+    util::print("{:04X}", rsp.acc.l.element[e]);
+  }
+  util::print(" ");
+
+  util::print("{:04X} {:04X} {:02X}", rsp.GetVCC(), rsp.GetVCO(), rsp.GetVCE());
+
+  util::print("\n");
+}
+
 void RSP::Step(Registers& regs, Mem& mem) {
   gpr[0] = 0;
   u32 instr = util::ReadAccess<u32>(imem, pc & IMEM_DSIZE);
   oldPC = pc & 0xFFC;
   pc = nextPC & 0xFFC;
   nextPC += 4;
+  if(oldPC == 0x00E4 && gpr[1] == 0x18) {
+    printf("\n");
+  }
   Exec(regs, mem, instr);
-/*
-  util::print("{:04X} {:08X} ", oldPC, instr);
-  for (int i = 0; i < 32; i++) {
-    util::print("{:08X} ", (u32)gpr[i]);
-  }
 
-  for (int i = 0; i < 32; i++) {
-    for (int e = 0; e < 8; e++) {
-      util::print("{:04X}", vpr[i].element[e]);
-    }
-    util::print(" ");
-  }
-
-  for (int e = 0; e < 8; e++) {
-    util::print("{:04X}", acc.h.element[e]);
-  }
-  util::print(" ");
-
-  for (int e = 0; e < 8; e++) {
-    util::print("{:04X}", acc.m.element[e]);
-  }
-  util::print(" ");
-
-  for (int e = 0; e < 8; e++) {
-    util::print("{:04X}", acc.l.element[e]);
-  }
-  util::print(" ");
-
-  util::print("{:04X} {:04X} {:02X}", GetVCC(), GetVCO(), GetVCE());
-
-  util::print("\n");
-  */
+  // logRSP(*this, instr);
 }
 
+template <bool crashOnUnimplemented>
 auto RSP::Read(u32 addr) -> u32{
   switch (addr) {
     case 0x04040000: return lastSuccessfulSPAddr.raw & 0x1FF8;
@@ -83,10 +89,18 @@ auto RSP::Read(u32 addr) -> u32{
     case 0x04040018: return 0;
     case 0x0404001C: return AcquireSemaphore();
     case 0x04080000: return pc & 0xFFC;
-    default: util::panic("Unimplemented SP register read {:08X}\n", addr);
+    default:
+      if constexpr (crashOnUnimplemented) {
+        util::panic("Unimplemented SP register read {:08X}\n", addr);
+      }
+      return 0;
   }
 }
 
+template auto RSP::Read<true>(u32 addr) -> u32;
+template auto RSP::Read<false>(u32 addr) -> u32;
+
+template <bool crashOnUnimplemented>
 void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
   MI& mi = mem.mmio.mi;
   switch (addr) {
@@ -107,8 +121,12 @@ void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
         SetPC(value);
       } break;
     default:
-      util::panic("Unimplemented SP register write {:08X}, val: {:08X}\n", addr, value);
+      if constexpr (crashOnUnimplemented) {
+        util::panic("Unimplemented SP register write {:08X}, val: {:08X}\n", addr, value);
+      }
   }
 }
 
+template void RSP::Write<true>(n64::Mem &mem, n64::Registers &regs, u32 addr, u32 value);
+template void RSP::Write<false>(n64::Mem &mem, n64::Registers &regs, u32 addr, u32 value);
 }

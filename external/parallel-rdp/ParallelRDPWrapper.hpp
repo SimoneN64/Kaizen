@@ -33,7 +33,7 @@ uint32_t GetVkGraphicsQueueFamily();
 VkFormat GetVkFormat();
 VkCommandBuffer GetVkCommandBuffer();
 void SubmitRequestedVkCommandBuffer();
-void InitParallelRDP(u8* rdram, SDL_Window*);
+void InitParallelRDP(const u8* rdram, SDL_Window* window);
 void UpdateScreenParallelRdp(n64::Core& core, Window& imguiWindow, n64::VI& vi);
 void ParallelRdpEnqueueCommand(int command_length, u32* buffer);
 void ParallelRdpOnFullSync();

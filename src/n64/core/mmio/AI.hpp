@@ -10,6 +10,7 @@ struct AI {
   AI() = default;
   void Reset();
   auto Read(u32) const -> u32;
+  template <bool crashOnUnimplemented = true>
   void Write(Mem&, Registers&, u32, u32);
   void Step(Mem&, Registers&, int, float, float);
   bool dmaEnable{};

@@ -98,8 +98,8 @@ inline VPR GetVTE(const VPR& vt, u8 e) {
       break;
     case 8 ... 15: {
       int index = ELEMENT_INDEX(e - 8);
-      for (u16& vteE : vte.element) {
-        vteE = vt.element[index];
+      for (int i = 0; i < 8; i++) {
+        vte.element[i] = vt.element[index];
       }
     } break;
   }
@@ -581,7 +581,7 @@ void RSP::vadd(u32 instr) {
   for(int i = 0; i < 8; i++) {
     s32 result = vs.selement[i] + vte.selement[i] + (vco.l.selement[i] != 0);
     acc.l.element[i] = result;
-    vd.element[i] = signedClamp(result);
+    vd.element[i] = (u16)signedClamp(result);
     vco.l.element[i] = 0;
     vco.h.element[i] = 0;
   }
@@ -611,22 +611,21 @@ void RSP::vch(u32 instr) {
     s16 vsElem = vs.selement[i];
     s16 vteElem = vte.selement[i];
 
-    if((vsElem ^ vteElem) < 0) {
+    vco.l.element[i] = ((vsElem ^ vteElem) < 0) ? 0xffff : 0;
+    if(vco.l.element[i]) {
       s16 result = vsElem + vteElem;
 
       acc.l.selement[i] = (result <= 0) ? -vteElem : vsElem;
       vcc.l.element[i] = result <= 0 ? 0xffff : 0;
       vcc.h.element[i] = vteElem < 0 ? 0xffff : 0;
-      vco.l.element[i] = 0xffff;
-      vco.h.element[i] = (result != 0 && (u16)vsElem != ((u16)vteElem ^ 0xffff)) ? 0xffff : 0;
+      vco.h.element[i] = (result != 0 && (vteElem != ~vsElem)) ? 0xffff : 0;
       vce.element[i] = result == -1 ? 0xffff : 0;
     } else {
       s16 result = vsElem - vteElem;
       acc.l.element[i] = (result >= 0) ? vteElem : vsElem;
       vcc.l.element[i] = vteElem < 0 ? 0xffff : 0;
       vcc.h.element[i] = result >= 0 ? 0xffff : 0;
-      vco.l.element[i] = 0;
-      vco.h.element[i] = (result != 0 && (u16)vsElem != ((u16)vteElem ^ 0xffff)) ? 0xffff : 0;
+      vco.h.element[i] = result != 0 ? 0xffff : 0;
       vce.element[i] = 0;
     }
 

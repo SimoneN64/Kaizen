@@ -3,6 +3,7 @@
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
 #include <imgui_impl_vulkan.h>
+#include <imgui_memory_editor.h>
 #include <SDL.h>
 #include <Core.hpp>
 #include <vector>
@@ -19,11 +20,12 @@ struct Window {
   void LoadROM(n64::Core& core, const std::string& path);
 private:
   bool lockVolume = true;
-  bool showSettings = false;
   SDL_Window* window;
   std::string windowTitle;
+  std::string shadowWindowTitle;
+  u32 lastFrame = 0;
   void InitSDL();
-  void InitImgui();
+  void InitImgui(const n64::Core& core);
   void Render(n64::Core& core);
 
   VkPhysicalDevice physicalDevice{};
@@ -33,6 +35,8 @@ private:
   VkPipelineCache pipelineCache{};
   VkDescriptorPool descriptorPool{};
   VkAllocationCallbacks* allocator{};
+
+  MemoryEditor memoryEditor;
 
   u32 minImageCount = 2;
   bool rebuildSwapchain = false;

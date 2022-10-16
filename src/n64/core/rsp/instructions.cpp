@@ -36,10 +36,14 @@ inline auto GetCop0Reg(RSP& rsp, RDP& rdp, u8 index) -> u32{
     case 5: return rsp.spStatus.dmaFull;
     case 6: return rsp.spStatus.dmaBusy;
     case 7: return AcquireSemaphore(rsp);
+    case 8: return rdp.dpc.start;
     case 9: return rdp.dpc.end;
     case 10: return rdp.dpc.current;
     case 11: return rdp.dpc.status.raw;
     case 12: return rdp.dpc.clock;
+    case 13: return rdp.dpc.status.cmdBusy;
+    case 14: return rdp.dpc.status.pipeBusy;
+    case 15: return rdp.dpc.status.tmemBusy;
     default: util::panic("Unhandled RSP COP0 register read at index {}\n", index);
   }
 }
@@ -75,14 +79,14 @@ inline void SetCop0Reg(Registers& regs, Mem& mem, u8 index, u32 val) {
 
 inline VPR Broadcast(const VPR& vt, int l0, int l1, int l2, int l3, int l4, int l5, int l6, int l7) {
   VPR vte{};
-  vte.element[ELEMENT_INDEX(0)] = vt.element[l0];
-  vte.element[ELEMENT_INDEX(1)] = vt.element[l1];
-  vte.element[ELEMENT_INDEX(2)] = vt.element[l2];
-  vte.element[ELEMENT_INDEX(3)] = vt.element[l3];
-  vte.element[ELEMENT_INDEX(4)] = vt.element[l4];
-  vte.element[ELEMENT_INDEX(5)] = vt.element[l5];
-  vte.element[ELEMENT_INDEX(6)] = vt.element[l6];
-  vte.element[ELEMENT_INDEX(7)] = vt.element[l7];
+  vte.element[ELEMENT_INDEX(0)] = vt.element[ELEMENT_INDEX(l0)];
+  vte.element[ELEMENT_INDEX(1)] = vt.element[ELEMENT_INDEX(l1)];
+  vte.element[ELEMENT_INDEX(2)] = vt.element[ELEMENT_INDEX(l2)];
+  vte.element[ELEMENT_INDEX(3)] = vt.element[ELEMENT_INDEX(l3)];
+  vte.element[ELEMENT_INDEX(4)] = vt.element[ELEMENT_INDEX(l4)];
+  vte.element[ELEMENT_INDEX(5)] = vt.element[ELEMENT_INDEX(l5)];
+  vte.element[ELEMENT_INDEX(6)] = vt.element[ELEMENT_INDEX(l6)];
+  vte.element[ELEMENT_INDEX(7)] = vt.element[ELEMENT_INDEX(l7)];
   return vte;
 }
 
@@ -841,7 +845,9 @@ void RSP::vmudn(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR vte = GetVTE(vpr[VT(instr)], e);
   for(int i = 0; i < 8; i++) {
-    s32 prod = vs.element[i] * vte.selement[i];
+    s16 op1 = vte.element[i];
+    u16 op2 = vs.element[i];
+    s32 prod = op1 * op2;
     s64 accum = prod;
     SetACC(i, accum);
 
@@ -864,9 +870,15 @@ void RSP::vmadh(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR vte = GetVTE(vpr[VT(instr)], e);
   for(int i = 0; i < 8; i++) {
-    s32 prod = vs.selement[i] * vte.selement[i];
-    s64 accum = GetACC(i) + ((u64)prod << 16);
+    s16 op1 = vte.element[i];
+    s16 op2 = vs.element[i];
+    s32 prod = op1 * op2;
+    u32 unsProd = prod;
+
+    u64 accumDelta = (u64)unsProd << 16;
+    s64 accum = GetACC(i) + accumDelta;
     SetACC(i, accum);
+    accum = GetACC(i);
 
     s16 result = signedClamp(accum >> 16);
 
@@ -885,7 +897,7 @@ void RSP::vmadl(u32 instr) {
     u64 op2 = vs.element[i];
     u64 prod = op1 * op2;
     u64 accDelta = prod >> 16;
-    u16 accum = GetACC(i) + accDelta;
+    u64 accum = GetACC(i) + accDelta;
 
     SetACC(i, accum);
 
@@ -1064,7 +1076,7 @@ inline u32 rcp(s32 sinput) {
   return result;
 }
 
-inline u32 rsq(s32 input) {
+inline u32 rsq(u32 input) {
   if (input == 0) {
     return 0x7FFFFFFF;
   } else if (input == 0xFFFF8000) {
@@ -1135,10 +1147,10 @@ void RSP::vrsq(u32 instr) {
   VPR& vt = vpr[VT(instr)];
   VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
   int e = E2(instr) & 7;
-  int de = DE(instr) & 7;
+  int de = VS(instr) & 7;
   s32 input = vt.selement[ELEMENT_INDEX(e)];
-  s32 result = rsq(input);
-  vd.element[ELEMENT_INDEX(de)] = result;
+  u32 result = rsq(input);
+  vd.element[ELEMENT_INDEX(de)] = result & 0xFFFF;
   divOut = result >> 16;
   divInLoaded = false;
 

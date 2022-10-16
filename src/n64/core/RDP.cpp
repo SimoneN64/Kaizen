@@ -170,7 +170,7 @@ void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
 
     while (buf_index < word_len) {
       u8 cmd = (cmd_buf[buf_index] >> 24) & 0x3F;
-      logCommand(cmd);
+      //logCommand(cmd);
 
       int cmd_len = cmd_lens[cmd];
       if ((buf_index + cmd_len) * 4 > len + (remaining_cmds * 4)) {

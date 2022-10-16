@@ -171,7 +171,7 @@ void LoadParallelRDP(const u8* rdram, SDL_Window* window) {
     aligned_rdram -= offset;
   }
 
-  CommandProcessorFlags flags = COMMAND_PROCESSOR_FLAG_UPSCALING_4X_BIT;
+  CommandProcessorFlags flags = COMMAND_PROCESSOR_FLAG_UPSCALING_2X_BIT;
 
   command_processor = new CommandProcessor(wsi->get_device(), reinterpret_cast<void *>(aligned_rdram),
                                            offset, 8 * 1024 * 1024, 4 * 1024 * 1024, flags);

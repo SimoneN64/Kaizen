@@ -15,6 +15,7 @@ void Registers::Reset() {
 }
 
 void Registers::SetPC(s64 val) {
+  oldPC = pc;
   pc = val;
   nextPC = pc + 4;
 }

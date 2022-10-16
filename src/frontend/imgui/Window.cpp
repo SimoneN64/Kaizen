@@ -138,6 +138,7 @@ void Window::InitImgui(const n64::Core& core) {
 
   memoryEditor.ReadFn = readHandler;
   memoryEditor.WriteFn = writeHandler;
+  memoryEditor.Cols = 32;
 }
 
 Window::~Window() {
@@ -194,8 +195,13 @@ void Window::Render(n64::Core& core) {
     windowTitle = shadowWindowTitle;
   }
   static bool showSettings = false;
+  static bool showMemEditor = false;
   bool showMainMenuBar = windowID == SDL_GetWindowID(SDL_GetMouseFocus());
-  memoryEditor.DrawWindow("Memory viewer", &core, 0x80000000);
+  if(showMemEditor) {
+    ImGui::PushFont(codeFont);
+    memoryEditor.DrawWindow("Memory viewer", &core, 0x80000000);
+    ImGui::PopFont();
+  }
   if(showMainMenuBar) {
     ImGui::BeginMainMenuBar();
     if (ImGui::BeginMenu("File")) {
@@ -213,6 +219,9 @@ void Window::Render(n64::Core& core) {
       }
       if (ImGui::MenuItem("Dump IMEM")) {
         core.mem.DumpIMEM();
+      }
+      if (ImGui::MenuItem("Dump DMEM")) {
+        core.mem.DumpDMEM();
       }
       if (ImGui::MenuItem("Exit")) {
         core.done = true;
@@ -241,6 +250,7 @@ void Window::Render(n64::Core& core) {
       if (ImGui::MenuItem("Settings")) {
         showSettings = true;
       }
+      ImGui::Checkbox("Show memory editor", &showMemEditor);
       ImGui::EndMenu();
     }
     ImGui::EndMainMenuBar();

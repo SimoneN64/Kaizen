@@ -28,9 +28,7 @@ inline void CheckCompareInterrupt(MI& mi, Registers& regs) {
 }
 
 inline void HandleInterrupt(Registers& regs) {
-  if(ShouldServiceInterrupt(regs)) {
-    FireException(regs, ExceptionCode::Interrupt, 0, regs.pc);
-  }
+
 }
 
 inline void Cpu::disassembly(u32 instr) {
@@ -57,19 +55,21 @@ void Cpu::Step(Mem& mem) {
   regs.gpr[0] = 0;
 
   CheckCompareInterrupt(mem.mmio.mi, regs);
-  HandleInterrupt(regs);
+
+  regs.prevDelaySlot = regs.delaySlot;
+  regs.delaySlot = false;
 
   u32 instruction = mem.Read32(regs, regs.pc, regs.pc);
 
-  //disassembly(instruction);
+  if(ShouldServiceInterrupt(regs)) {
+    FireException(regs, ExceptionCode::Interrupt, 0, regs.pc);
+    return;
+  }
 
   regs.oldPC = regs.pc;
   regs.pc = regs.nextPC;
   regs.nextPC += 4;
 
   Exec(mem, instruction);
-
-  regs.prevDelaySlot = regs.delaySlot;
-  regs.delaySlot = false;
 }
 }

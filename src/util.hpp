@@ -253,7 +253,7 @@ inline auto ReadFileBinary(const std::string& path, u32** buf) {
   std::ifstream file(path, std::ios::binary);
   file.unsetf(std::ios::skipws);
   if(!file.is_open()) {
-    panic("Could not load file!\n");
+    panic("Could not load file '{}'!\n", path);
   }
 
   file.seekg(0, std::ios::end);

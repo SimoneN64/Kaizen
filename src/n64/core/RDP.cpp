@@ -24,12 +24,13 @@ static const int cmd_lens[64] = {
 };
 
 template <bool crashOnUnimplemented>
-auto RDP::Read(u32 addr) const -> u32{
+auto RDP::Read(u32 addr) const -> u32 {
   switch(addr) {
     case 0x04100000: return dpc.start;
     case 0x04100004: return dpc.end;
     case 0x04100008: return dpc.current;
-    case 0x0410000C: return dpc.status.raw;
+    case 0x0410000C:
+      return dpc.status.raw;
     case 0x04100010: return dpc.clock;
     case 0x04100014: return dpc.status.cmdBusy;
     case 0x04100018: return dpc.status.pipeBusy;
@@ -62,15 +63,12 @@ template void RDP::Write<true>(MI&, Registers&, RSP&, u32, u32);
 template void RDP::Write<false>(MI&, Registers&, RSP&, u32, u32);
 
 void RDP::WriteStatus(MI& mi, Registers& regs, RSP& rsp, u32 val) {
-  bool rdpUnfrozen = false;
-
   DPCStatusWrite temp{};
   temp.raw = val;
 
   CLEAR_SET(dpc.status.xbusDmemDma, temp.clearXbusDmemDma, temp.setXbusDmemDma);
   if(temp.clearFreeze) {
     dpc.status.freeze = false;
-    rdpUnfrozen = true;
   }
 
   if(temp.setFreeze) {
@@ -82,7 +80,7 @@ void RDP::WriteStatus(MI& mi, Registers& regs, RSP& rsp, u32 val) {
   CLEAR_SET(dpc.status.pipeBusy, temp.clearPipe, false);
   CLEAR_SET(dpc.status.tmemBusy, temp.clearTmem, false);
 
-  if(rdpUnfrozen) {
+  if(!dpc.status.freeze) {
     RunCommand(mi, regs, rsp);
   }
 }
@@ -128,85 +126,89 @@ inline void logCommand(u8 cmd) {
 }
 
 void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
-  //if (dpc.status.freeze) {
-  //  return;
-  //}
-  dpc.status.pipeBusy = true;
-  dpc.status.startGclk = true;
-  dpc.status.freeze = true;
-
-  static int remaining_cmds = 0;
-
-  const u32 current = dpc.current & 0xFFFFF8;
-  const u32 end = dpc.end & 0xFFFFF8;
-
-  int len = end - current;
-  if(len <= 0) return;
-
-  if(len + (remaining_cmds * 4) > 0xFFFFF) {
+  if (dpc.status.freeze) {
     return;
   }
+  dpc.status.pipeBusy = true;
+  dpc.status.startGclk = true;
+  if(dpc.end > dpc.current) {
+    dpc.status.freeze = true;
 
-  if(dpc.status.xbusDmemDma) {
-    for(int i = 0; i < len; i += 4) {
-      u32 cmd = util::ReadAccess<u32>(rsp.dmem, (current + i) & 0xFFF);
-      cmd_buf[remaining_cmds + (i >> 2)] = cmd;
-    }
-  } else {
-    if(end > RDRAM_DSIZE || current > RDRAM_DSIZE) {
+    static int remaining_cmds = 0;
+
+    const u32 current = dpc.current & 0xFFFFF8;
+    const u32 end = dpc.end & 0xFFFFF8;
+
+    int len = end - current;
+    if (len <= 0) return;
+
+    if (len + (remaining_cmds * 4) > 0xFFFFF) {
+      util::panic("Too many RDP commands\n");
       return;
     }
-    for(int i = 0; i < len; i += 4) {
-      u32 cmd = util::ReadAccess<u32>(dram.data(), current + i);
-      cmd_buf[remaining_cmds + (i >> 2)] = cmd;
+
+    if (dpc.status.xbusDmemDma) {
+      for (int i = 0; i < len; i += 4) {
+        u32 cmd = util::ReadAccess<u32>(rsp.dmem, (current + i) & 0xFFF);
+        cmd_buf[remaining_cmds + (i >> 2)] = cmd;
+      }
+    } else {
+      if (end > 0x7FFFFFF || current > 0x7FFFFFF) {
+        util::panic("Not running RDP commands past end of RDRAM\n");
+        return;
+      }
+      for (int i = 0; i < len; i += 4) {
+        u32 cmd = util::ReadAccess<u32>(dram.data(), current + i);
+        cmd_buf[remaining_cmds + (i >> 2)] = cmd;
+      }
     }
-  }
 
-  int word_len = (len >> 2) + remaining_cmds;
-  int buf_index = 0;
+    int word_len = (len >> 2) + remaining_cmds;
+    int buf_index = 0;
 
-  bool processed_all = true;
+    bool processed_all = true;
 
-  while(buf_index < word_len) {
-    u8 cmd = (cmd_buf[buf_index] >> 24) & 0x3F;
-   // logCommand(cmd);
+    while (buf_index < word_len) {
+      u8 cmd = (cmd_buf[buf_index] >> 24) & 0x3F;
+      logCommand(cmd);
 
-    int cmd_len = cmd_lens[cmd];
-    if((buf_index + cmd_len) * 4 > len + (remaining_cmds * 4)) {
-      remaining_cmds = word_len - buf_index;
+      int cmd_len = cmd_lens[cmd];
+      if ((buf_index + cmd_len) * 4 > len + (remaining_cmds * 4)) {
+        remaining_cmds = word_len - buf_index;
 
-      u32 tmp[remaining_cmds];
-      for(int i = 0; i < remaining_cmds; i++) {
-        tmp[i] = cmd_buf[buf_index + i];
+        u32 tmp[remaining_cmds];
+        for (int i = 0; i < remaining_cmds; i++) {
+          tmp[i] = cmd_buf[buf_index + i];
+        }
+
+        for (int i = 0; i < remaining_cmds; i++) {
+          cmd_buf[i] = tmp[i];
+        }
+
+        processed_all = false;
+        break;
       }
 
-      for(int i = 0; i < remaining_cmds; i++) {
-        cmd_buf[buf_index + i] = tmp[i];
+      if (cmd >= 8) {
+        ParallelRdpEnqueueCommand(cmd_len, &cmd_buf[buf_index]);
       }
 
-      processed_all = false;
-      break;
+      if (cmd == 0x29) {
+        OnFullSync(mi, regs);
+      }
+
+      buf_index += cmd_len;
     }
 
-    if(cmd >= 8) {
-      ParallelRdpEnqueueCommand(cmd_len, &cmd_buf[buf_index]);
+    if (processed_all) {
+      remaining_cmds = 0;
     }
 
-    if (cmd == 0x29) {
-      OnFullSync(mi, regs);
-    }
-
-    buf_index += cmd_len;
+    dpc.current = end;
+    dpc.end = end;
+    dpc.status.freeze = false;
   }
-
-  if(processed_all) {
-    remaining_cmds = 0;
-  }
-
-  dpc.current = end;
-  dpc.end = end;
   dpc.status.cbufReady = true;
-  dpc.status.freeze = false;
 }
 
 void RDP::OnFullSync(MI& mi, Registers& regs) {

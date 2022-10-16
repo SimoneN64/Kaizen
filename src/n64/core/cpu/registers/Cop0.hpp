@@ -132,6 +132,7 @@ union PageMask {
 };
 
 struct TLBEntry {
+  bool initialized;
   union {
     u32 raw;
     struct {

@@ -67,6 +67,7 @@ void Cop0::tlbwi(Registers& regs) {
   tlb[Index].pageMask.raw = page_mask.raw;
 
   tlb[Index].global = entryLo0.g && entryLo1.g;
+  tlb[Index].initialized = true;
 }
 
 void Cop0::tlbp(Registers& regs) {

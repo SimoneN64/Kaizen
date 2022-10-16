@@ -62,6 +62,16 @@ struct Mem {
     free(temp);
     fclose(fp);
   }
+
+  inline void DumpDMEM() const {
+    FILE *fp = fopen("dmem.dump", "wb");
+    u8 *temp = (u8*)calloc(DMEM_SIZE, 1);
+    memcpy(temp, mmio.rsp.dmem, DMEM_SIZE);
+    util::SwapBuffer32(DMEM_SIZE, temp);
+    fwrite(temp, 1, DMEM_SIZE, fp);
+    free(temp);
+    fclose(fp);
+  }
 private:
   friend struct SI;
   friend struct PI;

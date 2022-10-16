@@ -56,11 +56,9 @@ inline void logRSP(const RSP& rsp, const u32 instr) {
   for (int e = 0; e < 8; e++) {
     util::print("{:04X}", rsp.acc.l.element[e]);
   }
-  util::print(" ");
 
-  util::print("{:04X} {:04X} {:02X}", rsp.GetVCC(), rsp.GetVCO(), rsp.GetVCE());
-
-  util::print("\n");
+  util::print(" {:04X} {:04X} {:02X}\n", rsp.GetVCC(), rsp.GetVCO(), rsp.GetVCE());
+  util::print("DMEM: {:02X}{:02X}\n", rsp.dmem[0x3c4], rsp.dmem[0x3c5]);
 }
 
 void RSP::Step(Registers& regs, Mem& mem) {
@@ -69,12 +67,10 @@ void RSP::Step(Registers& regs, Mem& mem) {
   oldPC = pc & 0xFFC;
   pc = nextPC & 0xFFC;
   nextPC += 4;
-  if(oldPC == 0x00E4 && gpr[1] == 0x18) {
-    printf("\n");
-  }
+
   Exec(regs, mem, instr);
 
-  // logRSP(*this, instr);
+  //logRSP(*this, instr);
 }
 
 template <bool crashOnUnimplemented>
@@ -87,7 +83,11 @@ auto RSP::Read(u32 addr) -> u32{
     case 0x04040010: return spStatus.raw;
     case 0x04040014: return spStatus.dmaFull;
     case 0x04040018: return 0;
-    case 0x0404001C: return AcquireSemaphore();
+    case 0x0404001C:
+      if constexpr (crashOnUnimplemented) {
+        return semaphore;
+      }
+      return AcquireSemaphore();
     case 0x04080000: return pc & 0xFFC;
     default:
       if constexpr (crashOnUnimplemented) {

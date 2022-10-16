@@ -390,13 +390,15 @@ struct RSP {
 
       int skip = i == len.count ? 0 : len.skip;
 
-      dram_address += (length + skip) & 0xFFFFF8;
+      dram_address += (length + skip);
+      dram_address &= 0xFFFFF8;
       mem_address += length;
+      mem_address &= 0xFF8;
     }
 
-    rsp.lastSuccessfulSPAddr.address = mem_address & 0xFF8;
+    rsp.lastSuccessfulSPAddr.address = mem_address;
     rsp.lastSuccessfulSPAddr.bank = bank;
-    rsp.lastSuccessfulDRAMAddr.address = dram_address & 0xFFFFF8;
+    rsp.lastSuccessfulDRAMAddr.address = dram_address;
     rsp.spDMALen.raw = 0xFF8 | (rsp.spDMALen.skip << 20);
   }
 private:

@@ -44,7 +44,7 @@ if(WIN32)
   target_compile_options(natsukashii PRIVATE -mwindows)
   set(LIBRARIES -static z stdc++ user32 gdi32 winmm Imm32 ole32 oleaut32 shell32 setupapi version uuid)
 else()
-  set(LIBRARIES )
+  set(LIBRARIES -static)
 endif()
 
 if(${CMAKE_BUILD_TYPE} MATCHES Release)

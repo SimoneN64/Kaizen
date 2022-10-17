@@ -53,4 +53,7 @@ elseif(${CMAKE_BUILD_TYPE} MATCHES Debug)
   target_compile_options(natsukashii PRIVATE -march=native -g)
 endif()
 
+file(COPY ${PROJECT_SOURCE_DIR}/../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)
+file(REMOVE ${PROJECT_BINARY_DIR}/resources/mario.png ${PROJECT_BINARY_DIR}/resources/shader.frag ${PROJECT_BINARY_DIR}/resources/shader.vert)
+
 target_link_libraries(natsukashii PRIVATE ${SDL2_LIBRARIES} ${LIBRARIES} capstone-static nfd parallel-rdp imgui fmt::fmt nlohmann_json::nlohmann_json)

@@ -964,10 +964,15 @@ void RSP::vmacf(u32 instr) {
   VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
 
   for(int i = 0; i < 8; i++) {
-    s32 prod = vs.selement[i] * vte.selement[i];
-    s64 accDelta = prod * 2;
+    s16 op1 = vte.element[i];
+    s16 op2 = vs.element[i];
+    s32 prod = op1 * op2;
+
+    s64 accDelta = prod;
+    accDelta *= 2;
     s64 accum = GetACC(i) + accDelta;
     SetACC(i, accum);
+    accum = GetACC(i);
 
     s16 result = signedClamp(accum >> 16);
     vd.element[i] = result;
@@ -1001,7 +1006,7 @@ void RSP::veq(u32 instr) {
   VPR vte = GetVTE(vpr[VT(instr)], e);
 
   for(int i = 0; i < 8; i++) {
-    vcc.l.element[i] = vco.h.element[i] || (vs.element[i] == vte.element[i]) ? 0xffff : 0;
+    vcc.l.element[i] = (vco.h.element[i] == 0) && (vs.element[i] == vte.element[i]) ? 0xffff : 0;
     acc.l.element[i] = vcc.l.element[i] ? vs.element[i] : vte.element[i];
     vd.element[i] = acc.l.element[i];
     vcc.h.element[i] = vco.h.element[i] = vco.l.element[i] = 0;
@@ -1267,6 +1272,8 @@ void RSP::vmrg(u32 instr) {
   for(int i = 0; i < 8; i++) {
     acc.l.element[i] = vcc.l.element[i] ? vs.element[i] : vte.element[i];
     vd.element[i] = acc.l.element[i];
+
+    vco.l.element[i] = vco.h.element[i] = 0;
   }
 }
 

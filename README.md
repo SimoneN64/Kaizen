@@ -6,6 +6,8 @@
 
 Rewrite of my Nintendo 64 emulator "[shibumi](https://github.com/CocoSimone/shibumi)".
 
+![Mario's face](resources/mario.png?raw=true)
+
 Special thanks:
 
 - [Dillonb](https://github.com/Dillonb) and [KieronJ](https://github.com/KieronJ) for bearing with me and my recurring brainfarts, and for the support :heart:

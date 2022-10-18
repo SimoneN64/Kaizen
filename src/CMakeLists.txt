@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 project(natsukashii)
 
+set(BUILD_SHARED_LIBS OFF)
+
 file(GLOB_RECURSE CORE_SOURCES n64/*.cpp)
 file(GLOB_RECURSE CORE_HEADERS n64/*.hpp)
 file(GLOB_RECURSE FRONTEND_SOURCES frontend/*.cpp)
@@ -44,16 +46,19 @@ if(WIN32)
   target_compile_options(natsukashii PRIVATE -mwindows)
   set(LIBRARIES -static z stdc++ user32 gdi32 winmm Imm32 ole32 oleaut32 shell32 setupapi version uuid)
 else()
-  set(LIBRARIES -static)
+  set(LIBRARIES)
 endif()
 
 if(${CMAKE_BUILD_TYPE} MATCHES Release)
-  target_compile_options(natsukashii PRIVATE -march=native -Ofast)
+  target_compile_options(natsukashii PRIVATE -Ofast)
 elseif(${CMAKE_BUILD_TYPE} MATCHES Debug)
-  target_compile_options(natsukashii PRIVATE -march=native -g)
+  target_compile_options(natsukashii PRIVATE -g)
 endif()
 
 file(COPY ${PROJECT_SOURCE_DIR}/../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)
-file(REMOVE ${PROJECT_BINARY_DIR}/resources/mario.png ${PROJECT_BINARY_DIR}/resources/shader.frag ${PROJECT_BINARY_DIR}/resources/shader.vert)
+file(REMOVE
+  ${PROJECT_BINARY_DIR}/resources/mario.png
+  ${PROJECT_BINARY_DIR}/resources/shader.frag
+  ${PROJECT_BINARY_DIR}/resources/shader.vert)
 
-target_link_libraries(natsukashii PRIVATE ${SDL2_LIBRARIES} ${LIBRARIES} capstone-static nfd parallel-rdp imgui fmt::fmt nlohmann_json::nlohmann_json)
+target_link_libraries(natsukashii PRIVATE ${LIBRARIES} SDL2 capstone-static nfd parallel-rdp imgui fmt::fmt nlohmann_json::nlohmann_json)

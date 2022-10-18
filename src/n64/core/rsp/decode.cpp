@@ -68,7 +68,7 @@ inline void lwc2(RSP& rsp, u32 instr) {
     case 0x05: rsp.lrv(instr); break;
     case 0x06: rsp.lpv(instr); break;
     case 0x07: rsp.luv(instr); break;
-    case 0x0A: printf("LWV\n"); break;
+    case 0x0A: break;
     case 0x0B: rsp.ltv(instr); break;
     default: util::panic("Unhandled RSP LWC2 {:05b}\n", mask);
   }

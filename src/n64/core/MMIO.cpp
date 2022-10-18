@@ -34,7 +34,7 @@ u32 MMIO::Read(u32 addr) {
   }
 }
 
-void MMIO::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
+void MMIO::Write(Scheduler& scheduler, Mem& mem, Registers& regs, u32 addr, u32 val) {
   switch (addr) {
     case 0x04040000 ... 0x040FFFFF: rsp.Write(mem, regs, addr, val); break;
     case 0x04100000 ... 0x041FFFFF: rdp.Write(mi, regs, rsp, addr, val); break;
@@ -43,7 +43,7 @@ void MMIO::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
     case 0x04500000 ... 0x045FFFFF: ai.Write(mem, regs, addr, val); break;
     case 0x04600000 ... 0x046FFFFF: pi.Write(mem, regs, addr, val); break;
     case 0x04700000 ... 0x047FFFFF: ri.Write(addr, val); break;
-    case 0x04800000 ... 0x048FFFFF: si.Write(mem, regs, addr, val); break;
+    case 0x04800000 ... 0x048FFFFF: si.Write(scheduler, mem, regs, addr, val); break;
     default:
       util::panic("Unhandled mmio write at addr {:08X} with val {:08X}\n", addr, val);
   }

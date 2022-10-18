@@ -38,6 +38,8 @@ using s128 = __int128_t;
 #define ELEMENT_INDEX(i) (7 - (i))
 #define BYTE_INDEX(i)   (15 - (i))
 
+#define SI_DMA_DELAY (65536 * 2)
+
 
 enum TLBAccessType {
   LOAD, STORE

@@ -23,6 +23,10 @@ add_executable(natsukashii
   ${FRONTEND_SOURCES}
   ${FRONTEND_HEADERS}
   main.cpp
+  Scheduler.cpp
+  Scheduler.hpp
+  common.hpp
+  util.hpp
 )
 
 target_include_directories(natsukashii PRIVATE

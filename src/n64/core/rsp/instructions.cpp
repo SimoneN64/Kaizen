@@ -68,6 +68,8 @@ inline void SetCop0Reg(Registers& regs, Mem& mem, u8 index, u32 val) {
     case 7:
       if(val == 0) {
         ReleaseSemaphore(rsp);
+      } else {
+        util::panic("Write with non-zero value to RSP_COP0_RESERVED ({})\n", val);
       }
       break;
     case 8: rdp.WriteStart(val); break;

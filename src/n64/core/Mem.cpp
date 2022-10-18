@@ -228,7 +228,7 @@ void Mem::Write8(Registers& regs, u64 vaddr, u32 val, s64 pc) {
         util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
       break;
     case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
-    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(*this, regs, paddr, val); break;
+    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(scheduler, *this, regs, paddr, val); break;
     case 0x10000000 ... 0x13FFFFFF: break;
     case 0x1FC007C0 ... 0x1FC007FF:
       val = val << (8 * (3 - (paddr & 3)));
@@ -265,7 +265,7 @@ void Mem::Write16(Registers& regs, u64 vaddr, u32 val, s64 pc) {
         util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
       break;
     case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
-    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(*this, regs, paddr, val); break;
+    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(scheduler, *this, regs, paddr, val); break;
     case 0x10000000 ... 0x13FFFFFF: break;
     case 0x1FC007C0 ... 0x1FC007FF:
       val = val << (16 * !(paddr & 2));
@@ -299,7 +299,7 @@ void Mem::Write32(Registers& regs, u64 vaddr, u32 val, s64 pc) {
         util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
       break;
     case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
-    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(*this, regs, paddr, val); break;
+    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(scheduler, *this, regs, paddr, val); break;
     case 0x10000000 ... 0x13FF0013: break;
     case 0x13FF0014: {
       if(val < ISVIEWER_SIZE) {
@@ -343,7 +343,7 @@ void Mem::Write64(Registers& regs, u64 vaddr, u64 val, s64 pc) {
         util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
       break;
     case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
-    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(*this, regs, paddr, val); break;
+    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(scheduler, *this, regs, paddr, val); break;
     case 0x10000000 ... 0x13FFFFFF: break;
     case 0x1FC007C0 ... 0x1FC007FF:
       util::WriteAccess<u64>(pifRam, paddr & PIF_RAM_DSIZE, htobe64(val));

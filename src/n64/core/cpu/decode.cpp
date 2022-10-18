@@ -30,7 +30,7 @@ void Cpu::special(Mem& mem, u32 instr) {
     case 0x17: dsrav(instr); break;
     case 0x18: mult(instr); break;
     case 0x19: multu(instr); break;
-    case 0x1A: div_(instr); break;
+    case 0x1A: div(instr); break;
     case 0x1B: divu(instr); break;
     case 0x1C: dmult(instr); break;
     case 0x1D: dmultu(instr); break;

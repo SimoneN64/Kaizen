@@ -47,7 +47,7 @@ private:
   void daddiu(u32);
   void ddiv(u32);
   void ddivu(u32);
-  void div_(u32);
+  void div(u32);
   void divu(u32);
   void dmult(u32);
   void dmultu(u32);

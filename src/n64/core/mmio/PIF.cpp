@@ -2,6 +2,7 @@
 #include <n64/core/Mem.hpp>
 #include <n64/core/cpu/Registers.hpp>
 #include <util.hpp>
+#include "m64.hpp"
 
 namespace n64 {
 static int channel = 0;
@@ -43,10 +44,10 @@ void ProcessPIFCommands(u8* pifRam, Controller& controller, Mem& mem) {
             res[2] = 0x01;
             break;
           case 1:
-            res[0] = controller.b1;
-            res[1] = controller.b2;
-            res[2] = controller.b3;
-            res[3] = controller.b4;
+            res[0] = controller.byte1;
+            res[1] = controller.byte2;
+            res[2] = controller.joy_x;
+            res[3] = controller.joy_y;
             break;
           case 2: case 3: res[0] = 0; break;
           default: util::panic("Unimplemented PIF command {}", cmd[2]);

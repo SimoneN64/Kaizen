@@ -42,6 +42,7 @@ struct Mem {
 
   MMIO mmio;
   u8 pifRam[PIF_RAM_SIZE]{};
+  Scheduler scheduler;
 
   inline void DumpRDRAM() const {
     FILE *fp = fopen("rdram.dump", "wb");

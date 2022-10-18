@@ -27,10 +27,6 @@ inline void CheckCompareInterrupt(MI& mi, Registers& regs) {
   }
 }
 
-inline void HandleInterrupt(Registers& regs) {
-
-}
-
 inline void Cpu::disassembly(u32 instr) {
   size_t count;
   cs_insn *insn;

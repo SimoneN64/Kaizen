@@ -77,20 +77,20 @@ void Cpu::daddiu(u32 instr) {
   regs.gpr[RT(instr)] = rs + imm;
 }
 
-void Cpu::div_(u32 instr) {
+void Cpu::div(u32 instr) {
   s64 dividend = (s32)regs.gpr[RS(instr)];
   s64 divisor = (s32)regs.gpr[RT(instr)];
 
   if(divisor == 0) {
     regs.hi = dividend;
     if(dividend >= 0) {
-      regs.lo = -1;
+      regs.lo = s64(-1);
     } else {
-      regs.lo = 1;
+      regs.lo = s64(1);
     }
   } else {
-    s64 quotient = dividend / divisor;
-    s64 remainder = dividend % divisor;
+    s32 quotient = dividend / divisor;
+    s32 remainder = dividend % divisor;
     regs.lo = quotient;
     regs.hi = remainder;
   }

@@ -2,6 +2,7 @@
 #include <ParallelRDPWrapper.hpp>
 #include <Window.hpp>
 #include <algorithm>
+#include "m64.hpp"
 
 namespace n64 {
 Core::Core() {
@@ -61,6 +62,7 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
           }
 
           mmio.ai.Step(mem, cpu.regs, 1, volumeL, volumeR);
+          mem.scheduler.handleEvents(1, mem, cpu.regs);
         }
 
         cycles -= mmio.vi.cyclesPerHalfline;
@@ -87,7 +89,6 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
 
 void Core::UpdateController(const u8* state) {
   Controller &controller = mem.mmio.si.controller;
-  controller.raw = 0;
   s8 xaxis = 0, yaxis = 0;
 
   if(gamepadConnected) {
@@ -106,42 +107,49 @@ void Core::UpdateController(const u8* state) {
     bool CLEFT = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_RIGHTX) <= -128;
     bool CRIGHT = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_RIGHTX) >= 127;
 
-    controller.b1 = (A << 7) | (B << 6) | (Z << 5) | (START << 4) |
-                    (DUP << 3) | (DDOWN << 2) | (DLEFT << 1) | DRIGHT;
-
-    controller.b2 = ((START && L && R) << 7) | (0 << 6) | (L << 5) | (R << 4) |
-                    (CUP << 3) | (CDOWN << 2) | (CLEFT << 1) | CRIGHT;
+    controller.a = A;
+    controller.b = B;
+    controller.z = Z;
+    controller.start = START;
+    controller.dp_up = DUP;
+    controller.dp_down = DDOWN;
+    controller.dp_left = DLEFT;
+    controller.dp_right = DRIGHT;
+    controller.joy_reset = L && R && START;
+    controller.l = L;
+    controller.r = R;
+    controller.c_up = CUP;
+    controller.c_down = CDOWN;
+    controller.c_left = CLEFT;
+    controller.c_right = CRIGHT;
 
     xaxis = (s8) std::clamp((GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_LEFTX) >> 8), -86, 86);
     yaxis = (s8) std::clamp(-(GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_LEFTY) >> 8), -86, 86);
 
-    controller.b3 = xaxis;
-    controller.b4 = yaxis;
+    controller.joy_x = xaxis;
+    controller.joy_y = yaxis;
 
-    if ((controller.b2 >> 7) & 1) {
-      controller.b1 &= ~0x10;
-      controller.b3 = 0;
-      controller.b4 = 0;
+    if (controller.joy_reset) {
+      controller.start = false;
+      controller.joy_x = 0;
+      controller.joy_y = 0;
     }
   } else {
-    controller.b1 =
-      (state[SDL_SCANCODE_X] << 7) |
-      (state[SDL_SCANCODE_C] << 6) |
-      (state[SDL_SCANCODE_Z] << 5) |
-      (state[SDL_SCANCODE_RETURN] << 4) |
-      (state[SDL_SCANCODE_KP_8] << 3) |
-      (state[SDL_SCANCODE_KP_5] << 2) |
-      (state[SDL_SCANCODE_KP_4] << 1) |
-      (state[SDL_SCANCODE_KP_6]);
-    controller.b2 =
-      ((state[SDL_SCANCODE_RETURN] && state[SDL_SCANCODE_A] && state[SDL_SCANCODE_S]) << 7) |
-      (0 << 6) |
-      (state[SDL_SCANCODE_A] << 5) |
-      (state[SDL_SCANCODE_S] << 4) |
-      (state[SDL_SCANCODE_I] << 3) |
-      (state[SDL_SCANCODE_J] << 2) |
-      (state[SDL_SCANCODE_K] << 1) |
-      (state[SDL_SCANCODE_L]);
+    controller.a = state[SDL_SCANCODE_X];
+    controller.b = state[SDL_SCANCODE_C];
+    controller.z = state[SDL_SCANCODE_Z];
+    controller.start = state[SDL_SCANCODE_RETURN];
+    controller.dp_up = state[SDL_SCANCODE_KP_8];
+    controller.dp_down = state[SDL_SCANCODE_KP_5];
+    controller.dp_left = state[SDL_SCANCODE_KP_4];
+    controller.dp_right = state[SDL_SCANCODE_KP_6];
+    controller.joy_reset = state[SDL_SCANCODE_RETURN] && state[SDL_SCANCODE_A] && state[SDL_SCANCODE_S];
+    controller.l = state[SDL_SCANCODE_A];
+    controller.r = state[SDL_SCANCODE_S];
+    controller.c_up = state[SDL_SCANCODE_I];
+    controller.c_down = state[SDL_SCANCODE_J];
+    controller.c_left = state[SDL_SCANCODE_K];
+    controller.c_right = state[SDL_SCANCODE_L];
 
     if (state[SDL_SCANCODE_LEFT]) {
       xaxis = -86;
@@ -155,14 +163,18 @@ void Core::UpdateController(const u8* state) {
       yaxis = 86;
     }
 
-    controller.b3 = xaxis;
-    controller.b4 = yaxis;
+    controller.joy_x = xaxis;
+    controller.joy_y = yaxis;
 
-    if ((controller.b2 >> 7) & 1) {
-      controller.b1 &= ~0x10;
-      controller.b3 = 0;
-      controller.b4 = 0;
+    if (controller.joy_reset) {
+      controller.start = false;
+      controller.joy_x = 0;
+      controller.joy_y = 0;
     }
+  }
+
+  if(tas_movie_loaded()) {
+    controller = tas_next_inputs();
   }
 }
 }

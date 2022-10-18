@@ -58,9 +58,7 @@ struct RDP {
   void Reset();
 
   std::vector<u8> dram;
-  template <bool crashOnUnimplemented = true>
   [[nodiscard]] auto Read(u32 addr) const -> u32;
-  template <bool crashOnUnimplemented = true>
   void Write(MI& mi, Registers& regs, RSP& rsp, u32 addr, u32 val);
   void WriteStatus(MI& mi, Registers& regs, RSP& rsp, u32 val);
   void RunCommand(MI& mi, Registers& regs, RSP& rsp);

@@ -23,7 +23,6 @@ static const int cmd_lens[64] = {
   2, 2, 2, 2, 2, 2, 2, 2, 2, 2,  2,  2,  2,  2,  2,  2
 };
 
-template <bool crashOnUnimplemented>
 auto RDP::Read(u32 addr) const -> u32 {
   switch(addr) {
     case 0x04100000: return dpc.start;
@@ -36,31 +35,19 @@ auto RDP::Read(u32 addr) const -> u32 {
     case 0x04100018: return dpc.status.pipeBusy;
     case 0x0410001C: return dpc.tmem;
     default:
-      if constexpr (crashOnUnimplemented) {
-        util::panic("Unhandled DP Command Registers read (addr: {:08X})\n", addr);
-      }
-      return 0;
+      util::panic("Unhandled DP Command Registers read (addr: {:08X})\n", addr);
   }
 }
 
-template auto RDP::Read<true>(u32 addr) const -> u32;
-template auto RDP::Read<false>(u32 addr) const -> u32;
-
-template <bool crashOnUnimplemented>
 void RDP::Write(MI& mi, Registers& regs, RSP& rsp, u32 addr, u32 val) {
   switch(addr) {
     case 0x04100000: WriteStart(val); break;
     case 0x04100004: WriteEnd(mi, regs, rsp, val); break;
     case 0x0410000C: WriteStatus(mi, regs, rsp, val); break;
     default:
-      if constexpr (crashOnUnimplemented) {
-        util::panic("Unhandled DP Command Registers write (addr: {:08X}, val: {:08X})\n", addr, val);
-      }
+      util::panic("Unhandled DP Command Registers write (addr: {:08X}, val: {:08X})\n", addr, val);
   }
 }
-
-template void RDP::Write<true>(MI&, Registers&, RSP&, u32, u32);
-template void RDP::Write<false>(MI&, Registers&, RSP&, u32, u32);
 
 void RDP::WriteStatus(MI& mi, Registers& regs, RSP& rsp, u32 val) {
   DPCStatusWrite temp{};

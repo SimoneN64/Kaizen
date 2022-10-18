@@ -17,7 +17,6 @@ void PI::Reset() {
   memset(stub, 0, 8);
 }
 
-template <bool crashOnUnimplemented>
 auto PI::Read(MI& mi, u32 addr) const -> u32 {
   switch(addr) {
     case 0x04600000: return dramAddr;
@@ -36,17 +35,10 @@ auto PI::Read(MI& mi, u32 addr) const -> u32 {
     case 0x04600024: case 0x04600028: case 0x0460002C: case 0x04600030:
       return stub[(addr & 0xff) - 5];
     default:
-      if constexpr (crashOnUnimplemented) {
-        util::panic("Unhandled PI[{:08X}] read\n", addr);
-      }
-      return 0;
+      util::panic("Unhandled PI[{:08X}] read\n", addr);
   }
 }
 
-template auto PI::Read<true>(MI&, u32) const -> u32;
-template auto PI::Read<false>(MI&, u32) const -> u32;
-
-template <bool crashOnUnimplemented>
 void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
   MI& mi = mem.mmio.mi;
   switch(addr) {
@@ -94,12 +86,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       stub[(addr & 0xff) - 5] = val & 0xff;
       break;
     default:
-      if constexpr (crashOnUnimplemented) {
-        util::panic("Unhandled PI[{:08X}] write ({:08X})\n", val, addr);
-      }
+      util::panic("Unhandled PI[{:08X}] write ({:08X})\n", val, addr);
   }
 }
-
-template void PI::Write<true>(n64::Mem &mem, n64::Registers &regs, u32 addr, u32 val);
-template void PI::Write<false>(n64::Mem &mem, n64::Registers &regs, u32 addr, u32 val);
 }

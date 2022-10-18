@@ -1,8 +1,6 @@
 #include <Window.hpp>
-#include <util.hpp>
 #include <nfd.hpp>
 #include <Core.hpp>
-#include <utility>
 #include <Audio.hpp>
 #include <nlohmann/json.hpp>
 #include <filesystem>
@@ -47,18 +45,6 @@ static void check_vk_result(VkResult err) {
   if (err) {
     util::panic("[vulkan] Error: VkResult = {}", err);
   }
-}
-
-inline ImU8 readHandler(const ImU8* core_, size_t offset) {
-  auto* core = reinterpret_cast<n64::Core*>(const_cast<ImU8*>(core_));
-  auto& mem = core->mem;
-  return mem.Read8<false, false>(core->cpu.regs, offset, core->cpu.regs.oldPC);
-}
-
-inline void writeHandler(ImU8* core_, size_t offset, ImU8 value) {
-  auto* core = reinterpret_cast<n64::Core*>(const_cast<ImU8*>(core_));
-  auto& mem = core->mem;
-  mem.Write8<false, false>(core->cpu.regs, offset, value, core->cpu.regs.oldPC);
 }
 
 void Window::InitImgui(const n64::Core& core) {
@@ -135,10 +121,6 @@ void Window::InitImgui(const n64::Core& core) {
     ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
     SubmitRequestedVkCommandBuffer();
   }
-
-  memoryEditor.ReadFn = readHandler;
-  memoryEditor.WriteFn = writeHandler;
-  memoryEditor.Cols = 32;
 }
 
 Window::~Window() {
@@ -187,6 +169,7 @@ void Window::Render(n64::Core& core) {
   ImGui::PushFont(uiFont);
 
   u32 ticks = SDL_GetTicks();
+  static u32 lastFrame = 0;
   if(!core.pause && lastFrame < ticks - 1000) {
     lastFrame = ticks;
     windowTitle += fmt::format("  | {:02d} In-Game FPS", core.mem.mmio.vi.swaps);
@@ -195,13 +178,7 @@ void Window::Render(n64::Core& core) {
     windowTitle = shadowWindowTitle;
   }
   static bool showSettings = false;
-  static bool showMemEditor = false;
   bool showMainMenuBar = windowID == SDL_GetWindowID(SDL_GetMouseFocus());
-  if(showMemEditor) {
-    ImGui::PushFont(codeFont);
-    memoryEditor.DrawWindow("Memory viewer", &core, 0x80000000);
-    ImGui::PopFont();
-  }
   if(showMainMenuBar) {
     ImGui::BeginMainMenuBar();
     if (ImGui::BeginMenu("File")) {
@@ -250,7 +227,6 @@ void Window::Render(n64::Core& core) {
       if (ImGui::MenuItem("Settings")) {
         showSettings = true;
       }
-      ImGui::Checkbox("Show memory editor", &showMemEditor);
       ImGui::EndMenu();
     }
     ImGui::EndMainMenuBar();

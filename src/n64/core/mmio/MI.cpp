@@ -16,7 +16,6 @@ void MI::Reset() {
   miMode = 0;
 }
 
-template <bool crashOnUnimplemented>
 auto MI::Read(u32 paddr) const -> u32 {
   switch(paddr & 0xF) {
     case 0x0: return miMode & 0x3FF;
@@ -24,17 +23,10 @@ auto MI::Read(u32 paddr) const -> u32 {
     case 0x8: return miIntr.raw & 0x3F;
     case 0xC: return miIntrMask.raw & 0x3F;
     default:
-      if constexpr (crashOnUnimplemented) {
-        util::panic("Unhandled MI[{:08X}] read\n", paddr);
-      }
-      return 0;
+      util::panic("Unhandled MI[{:08X}] read\n", paddr);
   }
 }
 
-template auto MI::Read<true>(u32 paddr) const -> u32;
-template auto MI::Read<false>(u32 paddr) const -> u32;
-
-template <bool crashOnUnimplemented>
 void MI::Write(Registers& regs, u32 paddr, u32 val) {
   switch(paddr & 0xF) {
     case 0x0:
@@ -86,12 +78,7 @@ void MI::Write(Registers& regs, u32 paddr, u32 val) {
       UpdateInterrupt(*this, regs);
       break;
     default:
-      if(crashOnUnimplemented) {
-        util::panic("Unhandled MI[{:08X}] write ({:08X})\n", val, paddr);
-      }
+      util::panic("Unhandled MI[{:08X}] write ({:08X})\n", val, paddr);
   }
 }
-
-template void MI::Write<true>(Registers&, u32 paddr, u32 val);
-template void MI::Write<false>(Registers&, u32 paddr, u32 val);
 }

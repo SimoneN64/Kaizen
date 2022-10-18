@@ -21,9 +21,7 @@ struct Registers;
 struct MI {
   MI();
   void Reset();
-  template <bool crashOnUnimplemented = true>
   [[nodiscard]] auto Read(u32) const -> u32;
-  template <bool crashOnUnimplemented = true>
   void Write(Registers& regs, u32, u32);
 
   u32 miMode;

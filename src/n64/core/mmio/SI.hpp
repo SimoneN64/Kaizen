@@ -27,9 +27,7 @@ struct SI {
   u32 dramAddr{};
   Controller controller{};
 
-  template<bool crashOnUnimplemented = true>
   auto Read(MI&, u32) const -> u32;
-  template<bool crashOnUnimplemented = true>
   void Write(Mem&, Registers&, u32, u32);
 };
 }

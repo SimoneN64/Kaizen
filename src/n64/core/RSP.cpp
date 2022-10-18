@@ -73,7 +73,6 @@ void RSP::Step(Registers& regs, Mem& mem) {
   //logRSP(*this, instr);
 }
 
-template <bool crashOnUnimplemented>
 auto RSP::Read(u32 addr) -> u32{
   switch (addr) {
     case 0x04040000: return lastSuccessfulSPAddr.raw & 0x1FF8;
@@ -84,23 +83,13 @@ auto RSP::Read(u32 addr) -> u32{
     case 0x04040014: return spStatus.dmaFull;
     case 0x04040018: return 0;
     case 0x0404001C:
-      if constexpr (crashOnUnimplemented) {
-        return semaphore;
-      }
       return AcquireSemaphore();
     case 0x04080000: return pc & 0xFFC;
     default:
-      if constexpr (crashOnUnimplemented) {
-        util::panic("Unimplemented SP register read {:08X}\n", addr);
-      }
-      return 0;
+      util::panic("Unimplemented SP register read {:08X}\n", addr);
   }
 }
 
-template auto RSP::Read<true>(u32 addr) -> u32;
-template auto RSP::Read<false>(u32 addr) -> u32;
-
-template <bool crashOnUnimplemented>
 void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
   MI& mi = mem.mmio.mi;
   switch (addr) {
@@ -121,12 +110,7 @@ void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
         SetPC(value);
       } break;
     default:
-      if constexpr (crashOnUnimplemented) {
-        util::panic("Unimplemented SP register write {:08X}, val: {:08X}\n", addr, value);
-      }
+      util::panic("Unimplemented SP register write {:08X}, val: {:08X}\n", addr, value);
   }
 }
-
-template void RSP::Write<true>(n64::Mem &mem, n64::Registers &regs, u32 addr, u32 value);
-template void RSP::Write<false>(n64::Mem &mem, n64::Registers &regs, u32 addr, u32 value);
 }

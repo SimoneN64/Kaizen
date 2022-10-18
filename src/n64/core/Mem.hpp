@@ -23,7 +23,7 @@ struct Mem {
     return mmio.rdp.dram.data();
   }
 
-  template <bool tlb = true, bool crashOnUnimplemented = true>
+  template <bool tlb = true>
   u8 Read8(Registers&, u64, s64);
   template <bool tlb = true>
   u16 Read16(Registers&, u64, s64);
@@ -31,7 +31,7 @@ struct Mem {
   u32 Read32(Registers&, u64, s64);
   template <bool tlb = true>
   u64 Read64(Registers&, u64, s64);
-  template <bool tlb = true, bool crashOnUnimplemented = true>
+  template <bool tlb = true>
   void Write8(Registers&, u64, u32, s64);
   template <bool tlb = true>
   void Write16(Registers&, u64, u32, s64);

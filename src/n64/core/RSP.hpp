@@ -113,9 +113,7 @@ struct RSP {
   RSP();
   void Reset();
   void Step(Registers& regs, Mem& mem);
-  template <bool crashOnUnimplemented = true>
   auto Read(u32 addr) -> u32;
-  template <bool crashOnUnimplemented = true>
   void Write(Mem& mem, Registers& regs, u32 addr, u32 value);
   void Exec(Registers& regs, Mem& mem, u32 instr);
   SPStatus spStatus;

@@ -543,13 +543,13 @@ void RSP::sltiu(u32 instr) {
 
 inline s16 signedClamp(s64 val) {
   if(val < -32768) return -32768;
-  else if(val > 32767) return 32767;
+  if(val > 32767) return 32767;
   return val;
 }
 
 inline u16 unsignedClamp(s64 val) {
   if(val < 0) return 0;
-  else if(val > 32767) return 65535;
+  if(val > 32767) return 65535;
   return val;
 }
 
@@ -753,11 +753,16 @@ void RSP::vmulf(u32 instr) {
   VPR vte = GetVTE(vpr[VT(instr)], e);
 
   for(int i = 0; i < 8; i++) {
-    s64 prod = (vs.selement[i] * vte.selement[i]) * 2 + 0x8000;
+    s16 op1 = vte.element[i];
+    s16 op2 = vs.element[i];
+    s32 prod = op1 * op2;
 
-    SetACC(i, prod);
+    s64 accum = prod;
+    accum = (accum * 2) + 0x8000;
 
-    s16 result = signedClamp(prod >> 16);
+    SetACC(i, accum);
+
+    s16 result = signedClamp(accum >> 16);
     vd.element[i] = result;
   }
 }
@@ -769,9 +774,13 @@ void RSP::vmulu(u32 instr) {
   VPR vte = GetVTE(vpr[VT(instr)], e);
 
   for(int i = 0; i < 8; i++) {
-    s32 prod = vs.selement[i] * vte.selement[i];
+    s16 op1 = vte.element[i];
+    s16 op2 = vs.element[i];
+    s32 prod = op1 * op2;
 
-    s64 accum = prod * 2 + 0x8000;
+    s64 accum = prod;
+    accum = (accum * 2) + 0x8000;
+
     SetACC(i, accum);
 
     u16 result = unsignedClamp(accum >> 16);

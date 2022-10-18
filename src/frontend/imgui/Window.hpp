@@ -3,7 +3,6 @@
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
 #include <imgui_impl_vulkan.h>
-#include <imgui_memory_editor.h>
 #include <SDL.h>
 #include <Core.hpp>
 #include <vector>
@@ -14,16 +13,15 @@ struct Window {
   ImDrawData* Present(n64::Core& core);
 
   [[nodiscard]] bool gotClosed(SDL_Event event);
-  ImFont *uiFont, *codeFont;
-  u32 windowID;
+  ImFont *uiFont{}, *codeFont{};
+  u32 windowID{};
   float volumeL = 0.5, volumeR = 0.5;
   void LoadROM(n64::Core& core, const std::string& path);
 private:
   bool lockVolume = true;
-  SDL_Window* window;
+  SDL_Window* window{};
   std::string windowTitle;
   std::string shadowWindowTitle;
-  u32 lastFrame = 0;
   void InitSDL();
   void InitImgui(const n64::Core& core);
   void Render(n64::Core& core);
@@ -36,8 +34,5 @@ private:
   VkDescriptorPool descriptorPool{};
   VkAllocationCallbacks* allocator{};
 
-  MemoryEditor memoryEditor;
-
   u32 minImageCount = 2;
-  bool rebuildSwapchain = false;
 };

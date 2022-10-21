@@ -61,6 +61,7 @@ inline void lwc2(RSP& rsp, u32 instr) {
   u8 mask = (instr >> 11) & 0x1F;
   //util::print("lwc2 {:02X}\n", mask);
   switch(mask) {
+    case 0x00: rsp.lbv(instr); break;
     case 0x01: rsp.lsv(instr); break;
     case 0x02: rsp.llv(instr); break;
     case 0x03: rsp.ldv(instr); break;
@@ -206,7 +207,15 @@ void RSP::Exec(Registers &regs, Mem& mem, u32 instr) {
     case 0x2B: sw(instr); break;
     case 0x32: lwc2(*this, instr); break;
     case 0x3A: swc2(*this, instr); break;
-    default: util::panic("Unhandled RSP instruction ({:06b})\n", mask);
+    default:
+      FILE *fp = fopen("imem.bin", "wb");
+      u8 *temp = (u8*)calloc(IMEM_SIZE, 1);
+      memcpy(temp, imem, IMEM_SIZE);
+      util::SwapBuffer32(IMEM_SIZE, temp);
+      fwrite(temp, 1, IMEM_SIZE, fp);
+      free(temp);
+      fclose(fp);
+      util::panic("Unhandled RSP instruction ({:06b})\n", mask);
   }
 }
 }

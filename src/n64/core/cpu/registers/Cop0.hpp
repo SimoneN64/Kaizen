@@ -261,7 +261,7 @@ private:
   void eret(Registers&);
 
   void tlbr(Registers&);
-  void tlbwi(Registers&);
+  void tlbw(int, Registers&);
   void tlbp(Registers&);
 };
 

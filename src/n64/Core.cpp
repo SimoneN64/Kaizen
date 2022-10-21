@@ -3,6 +3,7 @@
 #include <Window.hpp>
 #include <algorithm>
 #include "m64.hpp"
+#include <Scheduler.hpp>
 
 namespace n64 {
 Core::Core() {
@@ -62,7 +63,7 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
           }
 
           mmio.ai.Step(mem, cpu.regs, 1, volumeL, volumeR);
-          mem.scheduler.handleEvents(1, mem, cpu.regs);
+          scheduler.tick(1, mem, cpu.regs);
         }
 
         cycles -= mmio.vi.cyclesPerHalfline;
@@ -171,10 +172,6 @@ void Core::UpdateController(const u8* state) {
       controller.joy_x = 0;
       controller.joy_y = 0;
     }
-  }
-
-  if(tas_movie_loaded()) {
-    controller = tas_next_inputs();
   }
 }
 }

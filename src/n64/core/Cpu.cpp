@@ -1,6 +1,4 @@
 #include <n64/core/Cpu.hpp>
-#include <n64/core/mmio/MI.hpp>
-#include <n64/core/mmio/Interrupt.hpp>
 #include <util.hpp>
 
 namespace n64 {

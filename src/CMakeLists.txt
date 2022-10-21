@@ -23,11 +23,10 @@ add_executable(natsukashii
   ${FRONTEND_SOURCES}
   ${FRONTEND_HEADERS}
   main.cpp
-  Scheduler.cpp
-  Scheduler.hpp
   common.hpp
   util.hpp
-)
+  n64/Scheduler.cpp
+  n64/Scheduler.hpp)
 
 target_include_directories(natsukashii PRIVATE
   .
@@ -65,4 +64,4 @@ file(REMOVE
   ${PROJECT_BINARY_DIR}/resources/shader.frag
   ${PROJECT_BINARY_DIR}/resources/shader.vert)
 
-target_link_libraries(natsukashii PRIVATE ${LIBRARIES} SDL2 capstone-static nfd parallel-rdp imgui fmt::fmt nlohmann_json::nlohmann_json)
+target_link_libraries(natsukashii PRIVATE ${LIBRARIES} ${SDL2_LIBRARIES} capstone-static nfd parallel-rdp imgui fmt::fmt nlohmann_json::nlohmann_json)

@@ -3,7 +3,6 @@
 #include <n64/core/mmio/Interrupt.hpp>
 #include <n64/core/mmio/MI.hpp>
 #include <n64/core/mmio/PIF.hpp>
-#include <Scheduler.hpp>
 
 namespace n64 {
 
@@ -31,7 +30,7 @@ struct SI {
   bool toDram = false;
 
   auto Read(MI&, u32) const -> u32;
-  void Write(Scheduler& scheduler, Mem&, Registers&, u32, u32);
+  void Write(Mem&, Registers&, u32, u32);
 };
 
 static void DMA(Mem& mem, Registers& regs);

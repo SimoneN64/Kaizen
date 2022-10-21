@@ -25,6 +25,6 @@ struct MMIO {
   RDP rdp;
 
   u32 Read(u32);
-  void Write(Scheduler&, Mem&, Registers&, u32, u32);
+  void Write(Mem&, Registers&, u32, u32);
 };
 }

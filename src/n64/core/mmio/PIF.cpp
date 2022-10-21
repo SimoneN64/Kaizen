@@ -44,6 +44,9 @@ void ProcessPIFCommands(u8* pifRam, Controller& controller, Mem& mem) {
             res[2] = 0x01;
             break;
           case 1:
+            if(tas_movie_loaded()) {
+              controller = tas_next_inputs();
+            }
             res[0] = controller.byte1;
             res[1] = controller.byte2;
             res[2] = controller.joy_x;

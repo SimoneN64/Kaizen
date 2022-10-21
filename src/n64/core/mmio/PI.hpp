@@ -14,7 +14,6 @@ struct PI {
   void Write(Mem&, Registers&, u32, u32);
   u32 dramAddr{}, cartAddr{};
   u32 rdLen{}, wrLen{};
-  u32 status{};
   u32 stub[8]{};
 };
 }

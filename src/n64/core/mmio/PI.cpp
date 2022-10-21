@@ -13,7 +13,6 @@ void PI::Reset() {
   cartAddr = 0;
   rdLen = 0;
   wrLen = 0;
-  status = 0;
   memset(stub, 0, 8);
 }
 
@@ -25,8 +24,8 @@ auto PI::Read(MI& mi, u32 addr) const -> u32 {
     case 0x0460000C: return wrLen;
     case 0x04600010: {
       u32 value = 0;
-      value |= (status & 1); // Is PI DMA active?
-      value |= (0 << 1); // Is PI IO busy?
+      value |= (0 << 0); // Is PI DMA active? No, because it's instant
+      value |= (0 << 1); // Is PI IO busy? No, because it's instant
       value |= (0 << 2); // PI IO error?
       value |= (mi.miIntr.pi << 3); // PI interrupt?
       return value;
@@ -74,7 +73,6 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       dramAddr = dram_addr + len;
       cartAddr = cart_addr + len;
       InterruptRaise(mi, regs, Interrupt::PI);
-      status &= 0xFFFFFFFE;
       util::logdebug("PI DMA from CARTRIDGE to RDRAM (size: {} KiB, {:08X} to {:08X})\n", len, cart_addr, dram_addr);
     } break;
     case 0x04600010:

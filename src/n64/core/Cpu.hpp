@@ -1,7 +1,6 @@
 #pragma once
 #include <Registers.hpp>
 #include <Mem.hpp>
-#include <util.hpp>
 #include <capstone/capstone.h>
 #include <vector>
 

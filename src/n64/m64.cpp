@@ -119,6 +119,25 @@ bool tas_movie_loaded() {
   return loaded_tas_movie != nullptr;
 }
 
+inline void LogController(const n64::Controller& controller) {
+  util::print("c_right: {}\n", controller.c_right);
+  util::print("c_left: {}\n", controller.c_left);
+  util::print("c_down: {}\n", controller.c_down);
+  util::print("c_up: {}\n", controller.c_up);
+  util::print("r: {}\n", controller.r);
+  util::print("l: {}\n", controller.l);
+  util::print("dp_right: {}\n", controller.dp_right);
+  util::print("dp_left: {}\n", controller.dp_left);
+  util::print("dp_down: {}\n", controller.dp_down);
+  util::print("dp_up: {}\n", controller.dp_up);
+  util::print("z: {}\n", controller.z);
+  util::print("b: {}\n", controller.b);
+  util::print("a: {}\n", controller.a);
+  util::print("start: {}\n", controller.start);
+  util::print("joy_x: {}\n", controller.joy_x);
+  util::print("joy_y: {}\n\n", controller.joy_y);
+}
+
 n64::Controller tas_next_inputs() {
   if (loaded_tas_movie_index + sizeof(TASMovieControllerData) > loaded_tas_movie_size) {
     loaded_tas_movie = nullptr;
@@ -150,13 +169,12 @@ n64::Controller tas_next_inputs() {
   controller.z = movie_cdata.z;
   controller.b = movie_cdata.b;
   controller.a = movie_cdata.a;
-  if(movie_cdata.start) {
-    printf("\n");
-  }
   controller.start = movie_cdata.start;
 
   controller.joy_x = movie_cdata.analog_x;
   controller.joy_y = movie_cdata.analog_y;
+
+  //LogController(controller);
 
   return controller;
 }

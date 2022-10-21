@@ -297,6 +297,11 @@ void RSP::lsv(u32 instr) {
   }
 }
 
+void RSP::lbv(u32 instr) {
+  u32 address = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 0);
+  vpr[VT(instr)].byte[BYTE_INDEX(E1(instr))] = ReadByte(address);
+}
+
 void RSP::llv(u32 instr) {
   int e = E1(instr);
   u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 2);
@@ -362,7 +367,8 @@ void RSP::sb(u32 instr) {
 }
 
 void RSP::sh(u32 instr) {
-  u32 address = gpr[BASE(instr)] + (s16)instr;
+  s16 imm = s16(instr);
+  u32 address = gpr[RS(instr)] + imm;
   WriteHalf(address, gpr[RT(instr)]);
 }
 

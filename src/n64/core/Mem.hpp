@@ -42,7 +42,6 @@ struct Mem {
 
   MMIO mmio;
   u8 pifRam[PIF_RAM_SIZE]{};
-  Scheduler scheduler;
 
   inline void DumpRDRAM() const {
     FILE *fp = fopen("rdram.dump", "wb");
@@ -55,7 +54,7 @@ struct Mem {
   }
 
   inline void DumpIMEM() const {
-    FILE *fp = fopen("imem.dump", "wb");
+    FILE *fp = fopen("imem.bin", "wb");
     u8 *temp = (u8*)calloc(IMEM_SIZE, 1);
     memcpy(temp, mmio.rsp.imem, IMEM_SIZE);
     util::SwapBuffer32(IMEM_SIZE, temp);

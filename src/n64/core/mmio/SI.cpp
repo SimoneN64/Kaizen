@@ -1,5 +1,6 @@
 #include <n64/core/mmio/SI.hpp>
 #include <n64/core/Mem.hpp>
+#include "Scheduler.hpp"
 
 namespace n64 {
 SI::SI() {
@@ -33,6 +34,9 @@ void DMA(Mem& mem, Registers& regs) {
   MMIO& mmio = mem.mmio;
   SI& si = mmio.si;
   si.status.dmaBusy = false;
+  if(si.status.dmaBusy) {
+    return;
+  }
   if(si.toDram) {
     ProcessPIFCommands(mem.pifRam, si.controller, mem);
     for(int i = 0; i < 64; i++) {
@@ -47,7 +51,7 @@ void DMA(Mem& mem, Registers& regs) {
   InterruptRaise(mem.mmio.mi, regs, Interrupt::SI);
 }
 
-void SI::Write(Scheduler& scheduler, Mem& mem, Registers& regs, u32 addr, u32 val) {
+void SI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
   switch(addr) {
     case 0x04800000:
       dramAddr = val & RDRAM_DSIZE;

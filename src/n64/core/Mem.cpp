@@ -87,15 +87,19 @@ u8 Mem::Read8(n64::Registers &regs, u64 vaddr, s64 pc) {
       else
         return mmio.rsp.dmem[BYTE_ADDRESS(paddr) & DMEM_DSIZE];
     case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
-    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF:
-      return mmio.Read(paddr);
+    case 0x04600000 ... 0x048FFFFF: case 0x04300000 ...	0x044FFFFF: return 0xff;
+    case 0x04500000 ... 0x045FFFFF: {
+      u32 w = mmio.ai.Read(paddr & ~3);
+      int offs = 3 - (paddr & 3);
+      return (w >> (offs * 8)) & 0xff;
+    }
     case 0x10000000 ... 0x1FBFFFFF:
       paddr = (paddr + 2) & ~2;
       return cart[BYTE_ADDRESS(paddr) & romMask];
     case 0x1FC00000 ... 0x1FC007BF:
-      return pifBootrom[BYTE_ADDRESS(paddr) & PIF_BOOTROM_DSIZE];
+      return pifBootrom[BYTE_ADDRESS(paddr) - 0x1FC00000];
     case 0x1FC007C0 ... 0x1FC007FF:
-      return pifRam[paddr & PIF_RAM_DSIZE];
+      return pifRam[paddr - 0x1FC007C0];
     case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
     case 0x04900000 ... 0x0FFFFFFF: case 0x1FC00800 ... 0xFFFFFFFF: return 0;
     default:
@@ -126,9 +130,9 @@ u16 Mem::Read16(n64::Registers &regs, u64 vaddr, s64 pc) {
       paddr = (paddr + 2) & ~3;
       return util::ReadAccess<u16>(cart.data(), HALF_ADDRESS(paddr) & romMask);
     case 0x1FC00000 ... 0x1FC007BF:
-      return util::ReadAccess<u16>(pifBootrom, HALF_ADDRESS(paddr) & PIF_BOOTROM_DSIZE);
+      return util::ReadAccess<u16>(pifBootrom, HALF_ADDRESS(paddr) - 0x1FC00000);
     case 0x1FC007C0 ... 0x1FC007FF:
-      return be16toh(util::ReadAccess<u16>(pifRam, paddr & PIF_RAM_DSIZE));
+      return be16toh(util::ReadAccess<u16>(pifRam, paddr - 0x1FC007C0));
     case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
     case 0x04900000 ... 0x0FFFFFFF: case 0x1FC00800 ... 0xFFFFFFFF: return 0;
     default: util::panic("Unimplemented 16-bit read at address {:08X} (PC = {:016X})\n", paddr, (u64)regs.pc);
@@ -157,9 +161,9 @@ u32 Mem::Read32(n64::Registers &regs, u64 vaddr, s64 pc) {
     case 0x10000000 ... 0x1FBFFFFF:
       return util::ReadAccess<u32>(cart.data(), paddr & romMask);
     case 0x1FC00000 ... 0x1FC007BF:
-      return util::ReadAccess<u32>(pifBootrom, paddr & PIF_BOOTROM_DSIZE);
+      return util::ReadAccess<u32>(pifBootrom, paddr - 0x1FC00000);
     case 0x1FC007C0 ... 0x1FC007FF:
-      return be32toh(util::ReadAccess<u32>(pifRam, paddr & PIF_RAM_DSIZE));
+      return be32toh(util::ReadAccess<u32>(pifRam, paddr - 0x1FC007C0));
     case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
     case 0x04900000 ... 0x0FFFFFFF: case 0x1FC00800 ... 0xFFFFFFFF: return 0;
     default:
@@ -189,9 +193,9 @@ u64 Mem::Read64(n64::Registers &regs, u64 vaddr, s64 pc) {
     case 0x10000000 ... 0x1FBFFFFF:
       return util::ReadAccess<u64>(cart.data(), paddr & romMask);
     case 0x1FC00000 ... 0x1FC007BF:
-      return util::ReadAccess<u64>(pifBootrom, paddr & PIF_BOOTROM_DSIZE);
+      return util::ReadAccess<u64>(pifBootrom, paddr - 0x1FC00000);
     case 0x1FC007C0 ... 0x1FC007FF:
-      return be64toh(util::ReadAccess<u64>(pifRam, paddr & PIF_RAM_DSIZE));
+      return be64toh(util::ReadAccess<u64>(pifRam, paddr - 0x1FC007C0));
     case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
     case 0x04900000 ... 0x0FFFFFFF: case 0x1FC00800 ... 0xFFFFFFFF: return 0;
     default: util::panic("Unimplemented 32-bit read at address {:08X} (PC = {:016X})\n", paddr, (u64)regs.pc);
@@ -222,18 +226,18 @@ void Mem::Write8(Registers& regs, u64 vaddr, u32 val, s64 pc) {
     case 0x04000000 ... 0x0403FFFF:
       val = val << (8 * (3 - (paddr & 3)));
       paddr = (paddr & DMEM_DSIZE) & ~3;
-      if((paddr >> 12) & 1)
+      if(paddr & 0x1000)
         util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
       else
         util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
       break;
     case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
-    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(scheduler, *this, regs, paddr, val); break;
+    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF:
     case 0x10000000 ... 0x13FFFFFF: break;
     case 0x1FC007C0 ... 0x1FC007FF:
       val = val << (8 * (3 - (paddr & 3)));
-      paddr = (paddr & PIF_RAM_DSIZE) & ~3;
-      util::WriteAccess<u32>(pifRam, paddr & PIF_RAM_DSIZE, htobe32(val));
+      paddr = (paddr - 0x1FC007C0) & ~3;
+      util::WriteAccess<u32>(pifRam, paddr, htobe32(val));
       ProcessPIFCommands(pifRam, mmio.si.controller, *this);
       break;
     case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
@@ -259,18 +263,18 @@ void Mem::Write16(Registers& regs, u64 vaddr, u32 val, s64 pc) {
     case 0x04000000 ... 0x0403FFFF:
       val = val << (16 * !(paddr & 2));
       paddr &= ~3;
-      if((paddr >> 12) & 1)
+      if(paddr & 0x1000)
         util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
       else
         util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
       break;
     case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
-    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(scheduler, *this, regs, paddr, val); break;
+    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(*this, regs, paddr, val); break;
     case 0x10000000 ... 0x13FFFFFF: break;
     case 0x1FC007C0 ... 0x1FC007FF:
       val = val << (16 * !(paddr & 2));
       paddr &= ~3;
-      util::WriteAccess<u32>(pifRam, paddr & PIF_RAM_DSIZE, htobe32(val));
+      util::WriteAccess<u32>(pifRam, paddr - 0x1FC007C0, htobe32(val));
       ProcessPIFCommands(pifRam, mmio.si.controller, *this);
       break;
     case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
@@ -293,13 +297,13 @@ void Mem::Write32(Registers& regs, u64 vaddr, u32 val, s64 pc) {
       util::WriteAccess<u32>(mmio.rdp.dram.data(), paddr, val);
       break;
     case 0x04000000 ... 0x0403FFFF:
-      if((paddr >> 12) & 1)
+      if(paddr & 0x1000)
         util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
       else
         util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
       break;
     case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
-    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(scheduler, *this, regs, paddr, val); break;
+    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(*this, regs, paddr, val); break;
     case 0x10000000 ... 0x13FF0013: break;
     case 0x13FF0014: {
       if(val < ISVIEWER_SIZE) {
@@ -313,7 +317,7 @@ void Mem::Write32(Registers& regs, u64 vaddr, u32 val, s64 pc) {
       util::WriteAccess<u32>(isviewer, paddr - 0x13FF0020, htobe32(val));
       break;
     case 0x1FC007C0 ... 0x1FC007FF:
-      util::WriteAccess<u32>(pifRam, paddr & PIF_RAM_DSIZE, htobe32(val));
+      util::WriteAccess<u32>(pifRam, paddr - 0x1FC007C0, htobe32(val));
       ProcessPIFCommands(pifRam, mmio.si.controller, *this);
       break;
     case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
@@ -337,16 +341,16 @@ void Mem::Write64(Registers& regs, u64 vaddr, u64 val, s64 pc) {
       break;
     case 0x04000000 ... 0x0403FFFF:
       val >>= 32;
-      if((paddr >> 12) & 1)
+      if(paddr & 0x1000)
         util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
       else
         util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
       break;
     case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
-    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(scheduler, *this, regs, paddr, val); break;
+    case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(*this, regs, paddr, val); break;
     case 0x10000000 ... 0x13FFFFFF: break;
     case 0x1FC007C0 ... 0x1FC007FF:
-      util::WriteAccess<u64>(pifRam, paddr & PIF_RAM_DSIZE, htobe64(val));
+      util::WriteAccess<u64>(pifRam, paddr - 0x1FC007C0, htobe64(val));
       ProcessPIFCommands(pifRam, mmio.si.controller, *this);
       break;
     case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:

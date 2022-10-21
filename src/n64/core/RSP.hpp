@@ -4,11 +4,11 @@
 #include <n64/memory_regions.hpp>
 #include <Interrupt.hpp>
 
-#define RSP_BYTE(addr, buf) (buf[BYTE_ADDRESS(addr) & 0xFFF])
-#define GET_RSP_HALF(addr, buf) ((RSP_BYTE(addr, buf) << 8) | RSP_BYTE((addr) + 1, buf))
-#define SET_RSP_HALF(addr, buf, value) do { RSP_BYTE(addr, buf) = ((value) >> 8) & 0xFF; RSP_BYTE((addr) + 1, buf) = (value) & 0xFF;} while(0)
-#define GET_RSP_WORD(addr, buf) ((GET_RSP_HALF(addr, buf) << 16) | GET_RSP_HALF((addr) + 2, buf))
-#define SET_RSP_WORD(addr, buf, value) do { SET_RSP_HALF(addr, buf, ((value) >> 16) & 0xFFFF); SET_RSP_HALF((addr) + 2, buf, (value) & 0xFFFF);} while(0)
+#define RSP_BYTE(addr) (dmem[BYTE_ADDRESS(addr) & 0xFFF])
+#define GET_RSP_HALF(addr) ((RSP_BYTE(addr) << 8) | RSP_BYTE((addr) + 1))
+#define SET_RSP_HALF(addr, value) do { RSP_BYTE(addr) = ((value) >> 8) & 0xFF; RSP_BYTE((addr) + 1) = (value) & 0xFF;} while(0)
+#define GET_RSP_WORD(addr) ((GET_RSP_HALF(addr) << 16) | GET_RSP_HALF((addr) + 2))
+#define SET_RSP_WORD(addr, value) do { SET_RSP_HALF(addr, ((value) >> 16) & 0xFFFF); SET_RSP_HALF((addr) + 2, (value) & 0xFFFF);} while(0)
 
 namespace n64 {
 union SPStatus {
@@ -221,32 +221,32 @@ struct RSP {
 
   inline u32 ReadWord(u32 addr) {
     addr &= 0xfff;
-    return GET_RSP_WORD(addr, dmem);
+    return GET_RSP_WORD(addr);
   }
 
   inline void WriteWord(u32 addr, u32 val) {
     addr &= 0xfff;
-    SET_RSP_WORD(addr, dmem, val);
+    SET_RSP_WORD(addr, val);
   }
 
   inline u16 ReadHalf(u32 addr) {
     addr &= 0xfff;
-    return GET_RSP_HALF(addr, dmem);
+    return GET_RSP_HALF(addr);
   }
 
   inline void WriteHalf(u32 addr, u16 val) {
     addr &= 0xfff;
-    SET_RSP_HALF(addr, dmem, val);
+    SET_RSP_HALF(addr, val);
   }
 
   inline u8 ReadByte(u32 addr) {
     addr &= 0xfff;
-    return RSP_BYTE(addr, dmem);
+    return RSP_BYTE(addr);
   }
 
   inline void WriteByte(u32 addr, u8 val) {
     addr &= 0xfff;
-    RSP_BYTE(addr, dmem) = val;
+    RSP_BYTE(addr) = val;
   }
 
   inline bool AcquireSemaphore() {
@@ -277,6 +277,7 @@ struct RSP {
   void lhu(u32 instr);
   void lui(u32 instr);
   void luv(u32 instr);
+  void lbv(u32 instr);
   void ldv(u32 instr);
   void lsv(u32 instr);
   void llv(u32 instr);

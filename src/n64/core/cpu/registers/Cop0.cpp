@@ -204,24 +204,24 @@ bool ProbeTLB(Registers& regs, TLBAccessType access_type, u64 vaddr, u32& paddr,
   u32 pfn;
 
   if(!odd) {
-    if(!(entry->entryLo0.v)) {
+    if(!entry->entryLo0.v) {
       regs.cop0.tlbError = INVALID;
       return false;
     }
 
-    if(access_type == STORE && !(entry->entryLo0.d)) {
+    if(access_type == STORE && !entry->entryLo0.d) {
       regs.cop0.tlbError = MODIFICATION;
       return false;
     }
 
     pfn = entry->entryLo0.pfn;
   } else {
-    if(!(entry->entryLo1.v)) {
+    if(!entry->entryLo1.v) {
       regs.cop0.tlbError = INVALID;
       return false;
     }
 
-    if(access_type == STORE && !(entry->entryLo1.d)) {
+    if(access_type == STORE && !entry->entryLo1.d) {
       regs.cop0.tlbError = MODIFICATION;
       return false;
     }
@@ -327,7 +327,8 @@ void Cop0::decode(Registers& regs, Mem& mem, u32 instr) {
     case 0x10 ... 0x1F:
       switch(mask_cop2) {
         case 0x01: tlbr(regs); break;
-        case 0x02: tlbwi(regs); break;
+        case 0x02: tlbw(index & 0x3F, regs); break;
+        case 0x06: tlbw(GetRandom(), regs); break;
         case 0x08: tlbp(regs); break;
         case 0x18: eret(regs); break;
         default: util::panic("Unimplemented COP0 function {} {} ({:08X}) ({:016lX})", mask_cop2 >> 3, mask_cop2 & 7, instr, regs.oldPC);

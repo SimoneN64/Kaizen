@@ -1,13 +1,10 @@
 #include <App.hpp>
-#include <parallel-rdp/ParallelRDPWrapper.hpp>
 #include <nfd.hpp>
-#include "m64.hpp"
 
 void App::Run() {
-  // Main loop
   const u8* state = SDL_GetKeyboardState(nullptr);
   SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
-  static int count = 0;
+
   while (!core.done) {
     core.Run(window, window.volumeL, window.volumeR);
     core.UpdateController(state);

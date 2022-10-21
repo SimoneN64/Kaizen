@@ -10,13 +10,17 @@ Scheduler::Scheduler() {
   }});
 }
 
-void Scheduler::enqueue(const Event& event) {
+void Scheduler::enqueueRelative(const Event& event) {
   events.push({event.time + ticks, event.event_cb});
+}
+
+void Scheduler::enqueueAbsolute(const Event& event) {
+  events.push({event.time, event.event_cb});
 }
 
 void Scheduler::tick(u64 t, n64::Mem& mem, n64::Registers& regs) {
   ticks += t;
-  while(ticks >= events.top().time) {
+  if(ticks >= events.top().time) {
     events.top().event_cb(mem, regs);
     events.pop();
   }

@@ -10,12 +10,14 @@ SI::SI() {
 void SI::Reset() {
   status.raw = 0;
   dramAddr = 0;
+  pifAddr = 0;
   memset(&controller, 0, sizeof(Controller));
 }
 
 auto SI::Read(MI& mi, u32 addr) const -> u32 {
   switch(addr) {
     case 0x04800000: return dramAddr;
+    case 0x04800004: case 0x04800010: return pifAddr;
     case 0x0480000C: return 0;
     case 0x04800018: {
       u32 val = 0;
@@ -46,6 +48,7 @@ void DMA(Mem& mem, Registers& regs) {
     for(int i = 0; i < 64; i++) {
       mem.pifRam[i] = mem.mmio.rdp.dram[BYTE_ADDRESS(si.dramAddr + i)];
     }
+    util::logdebug("SI DMA from PIF RAM to RDRAM ({:08X} to {:08X})\n", si.pifAddr, si.dramAddr);
     ProcessPIFCommands(mem.pifRam, si.controller, mem);
   }
   InterruptRaise(mem.mmio.mi, regs, Interrupt::SI);
@@ -57,15 +60,16 @@ void SI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       dramAddr = val & RDRAM_DSIZE;
       break;
     case 0x04800004: {
+      pifAddr = val & 0x1FFFFFFF;
       status.dmaBusy = true;
       toDram = true;
-      scheduler.enqueue({SI_DMA_DELAY, DMA});
-      util::logdebug("SI DMA from PIF RAM to RDRAM ({:08X} to {:08X})\n", val & 0x1FFFFFFF, dramAddr);
+      scheduler.enqueueRelative({SI_DMA_DELAY, DMA});
     } break;
     case 0x04800010: {
+      pifAddr = val & 0x1FFFFFFF;
       status.dmaBusy = true;
       toDram = false;
-      scheduler.enqueue({SI_DMA_DELAY, DMA});
+      scheduler.enqueueRelative({SI_DMA_DELAY, DMA});
       util::logdebug("SI DMA from RDRAM to PIF RAM ({:08X} to {:08X})\n", dramAddr, val & 0x1FFFFFFF);
     } break;
     case 0x04800018:

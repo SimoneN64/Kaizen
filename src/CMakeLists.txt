@@ -9,7 +9,9 @@ file(GLOB_RECURSE CORE_HEADERS n64/*.hpp)
 file(GLOB_RECURSE FRONTEND_SOURCES frontend/*.cpp)
 file(GLOB_RECURSE FRONTEND_HEADERS frontend/*.hpp)
 
-find_package(SDL2 REQUIRED)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/modules")
+
+find_package(SDL2 CONFIG REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
 set(FMT_TEST BOOL "" FORCE OFF)
@@ -46,14 +48,9 @@ target_include_directories(natsukashii PRIVATE
   ../external/parallel-rdp/
   ../external/nativefiledialog-extended/src/include
   ../external/capstone/include
+  ../external/fmt/include
+  ${SDL2_INCLUDE_DIR}
 )
-
-if(WIN32)
-  target_compile_options(natsukashii PRIVATE -mwindows)
-  set(LIBRARIES -static z stdc++ user32 gdi32 winmm Imm32 ole32 oleaut32 shell32 setupapi version uuid)
-else()
-  set(LIBRARIES)
-endif()
 
 if(${CMAKE_BUILD_TYPE} MATCHES Release)
   target_compile_options(natsukashii PRIVATE -Ofast)
@@ -67,5 +64,5 @@ file(REMOVE
   ${PROJECT_BINARY_DIR}/resources/shader.frag
   ${PROJECT_BINARY_DIR}/resources/shader.vert)
 
-target_link_libraries(natsukashii PRIVATE ${LIBRARIES} ${SDL2_LIBRARIES} capstone-static nfd parallel-rdp imgui fmt::fmt nlohmann_json::nlohmann_json)
-target_compile_options(natsukashii PRIVATE -msse4.1)
+target_link_libraries(natsukashii PRIVATE ${SDL2_LIBRARY} capstone-static nfd parallel-rdp imgui fmt::fmt nlohmann_json::nlohmann_json)
+target_compile_options(natsukashii PRIVATE -mssse3 -msse4.1)

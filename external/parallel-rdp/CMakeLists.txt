@@ -74,6 +74,7 @@ target_include_directories(parallel-rdp PUBLIC
   ../imgui
   ../imgui/imgui
   ../imgui/imgui/backends
+	../fmt/include
   .
 )
 

@@ -140,8 +140,7 @@ void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
         cmd_buf[remaining_cmds + (i >> 2)] = cmd;
       }
     } else {
-      if (end > 0x7FFFFFF || current > 0x7FFFFFF) {
-        util::panic("Not running RDP commands past end of RDRAM\n");
+      if (end > 0x7FFFFFF || current > 0x7FFFFFF) { // if (end > RDRAM_DSIZE || current > RDRAM_DSIZE)
         return;
       }
       for (int i = 0; i < len; i += 4) {

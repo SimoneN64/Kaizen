@@ -7,3 +7,6 @@
 [submodule "external/parallel-rdp/parallel-rdp-standalone"]
 	path = external/parallel-rdp/parallel-rdp-standalone
 	url = https://github.com/CocoSimone/parallel-rdp-standalone/
+[submodule "external/fmt"]
+	path = external/fmt
+	url = https://github.com/fmtlib/fmt

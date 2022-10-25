@@ -57,14 +57,14 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       dramAddr = dram_addr + len;
       cartAddr = cart_addr + len;
       InterruptRaise(mi, regs, Interrupt::PI);
-      util::logdebug("PI DMA from RDRAM to CARTRIDGE (size: {} KiB, {:08X} to {:08X})\n", len, dramAddr, cartAddr);
+      //util::print("PI DMA from RDRAM to CARTRIDGE (size: {} B, {:08X} to {:08X})\n", len, dramAddr, cartAddr);
     } break;
     case 0x0460000C: {
       u32 len = (val & 0x00FFFFFF) + 1;
       u32 cart_addr = cartAddr & 0xFFFFFFFE;
       u32 dram_addr = dramAddr & 0x007FFFFE;
       if (dram_addr & 0x7) {
-        len -= dram_addr & 0x7;
+        len -= (dram_addr & 0x7);
       }
       wrLen = len;
       for(int i = 0; i < len; i++) {
@@ -73,7 +73,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       dramAddr = dram_addr + len;
       cartAddr = cart_addr + len;
       InterruptRaise(mi, regs, Interrupt::PI);
-      util::logdebug("PI DMA from CARTRIDGE to RDRAM (size: {} KiB, {:08X} to {:08X})\n", len, cart_addr, dram_addr);
+      //util::print("PI DMA from CARTRIDGE to RDRAM (size: {} B, {:08X} to {:08X})\n", len, cart_addr, dram_addr);
     } break;
     case 0x04600010:
       if(val & 2) {

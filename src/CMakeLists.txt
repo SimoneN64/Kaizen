@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(natsukashii)
 
 set(BUILD_SHARED_LIBS OFF)
+set(CMAKE_CXX_STANDARD 17)
 
 file(GLOB_RECURSE CORE_SOURCES n64/*.cpp)
 file(GLOB_RECURSE CORE_HEADERS n64/*.hpp)
@@ -9,9 +10,11 @@ file(GLOB_RECURSE FRONTEND_SOURCES frontend/*.cpp)
 file(GLOB_RECURSE FRONTEND_HEADERS frontend/*.hpp)
 
 find_package(SDL2 REQUIRED)
-find_package(fmt REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
+set(FMT_TEST BOOL "" FORCE OFF)
+
+add_subdirectory(../external/fmt fmt)
 add_subdirectory(../external/capstone capstone)
 add_subdirectory(../external/parallel-rdp prdp)
 add_subdirectory(../external/imgui imgui)
@@ -65,3 +68,4 @@ file(REMOVE
   ${PROJECT_BINARY_DIR}/resources/shader.vert)
 
 target_link_libraries(natsukashii PRIVATE ${LIBRARIES} ${SDL2_LIBRARIES} capstone-static nfd parallel-rdp imgui fmt::fmt nlohmann_json::nlohmann_json)
+target_compile_options(natsukashii PRIVATE -msse4.1)

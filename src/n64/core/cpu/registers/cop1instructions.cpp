@@ -459,7 +459,7 @@ void Cop1::swc1(Registers& regs, Mem& mem, u32 instr) {
 
   u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
   if(addr & 3) {
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }
 
   u32 physical;
@@ -500,7 +500,7 @@ void Cop1::sdc1(Registers& regs, Mem& mem, u32 instr) {
 
   u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
   if(addr & 7) {
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
   }
 
   u32 physical;

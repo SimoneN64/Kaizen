@@ -94,7 +94,8 @@ inline VPR Broadcast(const VPR& vt, int l0, int l1, int l2, int l3, int l4, int 
 
 inline VPR GetVTE(const VPR& vt, u8 e) {
   VPR vte{};
-  switch(e & 0xf) {
+  e &= 0xf;
+  switch(e) {
     case 0 ... 1: return vt;
     case 2 ... 3:
       vte = Broadcast(vt, e - 2, e - 2, e, e, e + 2, e + 2, e + 4, e + 4);

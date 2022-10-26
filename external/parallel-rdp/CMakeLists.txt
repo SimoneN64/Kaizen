@@ -3,7 +3,6 @@ project(parallel-rdp)
 
 file(GLOB_RECURSE parallel-rdp-cpp parallel-rdp-standalone/parallel-rdp/*.cpp)
 
-find_package(PkgConfig REQUIRED)
 find_package(SDL2 REQUIRED)
 
 add_library(parallel-rdp
@@ -78,14 +77,7 @@ target_include_directories(parallel-rdp PUBLIC
   .
 )
 
-if(WIN32)
-	target_compile_options(parallel-rdp PUBLIC -mwindows)
-	set(LIBRARIES -static z stdc++ user32 gdi32 winmm Imm32 ole32 oleaut32 shell32 setupapi version uuid)
-else()
-	set(LIBRARIES )
-endif()
-
-target_link_libraries(parallel-rdp ${SDL2_LIBRARIES} ${LIBRARIES})
+target_link_libraries(parallel-rdp ${SDL2_LIBRARIES})
 
 if(WIN32)
   target_compile_definitions(parallel-rdp PUBLIC VK_USE_PLATFORM_WIN32_KHR)

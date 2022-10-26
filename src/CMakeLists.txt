@@ -9,9 +9,7 @@ file(GLOB_RECURSE CORE_HEADERS n64/*.hpp)
 file(GLOB_RECURSE FRONTEND_SOURCES frontend/*.cpp)
 file(GLOB_RECURSE FRONTEND_HEADERS frontend/*.hpp)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/modules")
-
-find_package(SDL2 CONFIG REQUIRED)
+find_package(SDL2 REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
 set(FMT_TEST BOOL "" FORCE OFF)

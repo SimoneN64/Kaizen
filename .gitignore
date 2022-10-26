@@ -6,9 +6,12 @@ roms/
 *.bin
 *.sh
 .cache/
+.vs/
 .vscode/
 vgcore.*
 *.dump
 *.data
 disasm.txt
 log.txt
+CMakeSettings.json
+out/

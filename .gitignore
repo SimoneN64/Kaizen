@@ -6,6 +6,7 @@ roms/
 *.bin
 *.sh
 .cache/
+.vs/
 .vscode/
 vgcore.*
 *.dump

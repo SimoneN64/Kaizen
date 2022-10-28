@@ -12,3 +12,6 @@ vgcore.*
 *.data
 disasm.txt
 log.txt
+.vs/
+CMakeSettings.json
+out/

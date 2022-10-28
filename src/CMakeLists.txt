@@ -64,5 +64,5 @@ file(REMOVE
   ${PROJECT_BINARY_DIR}/resources/shader.frag
   ${PROJECT_BINARY_DIR}/resources/shader.vert)
 
-target_link_libraries(natsukashii PRIVATE ${SDL2_LIBRARY} capstone-static nfd parallel-rdp imgui fmt::fmt nlohmann_json::nlohmann_json)
+target_link_libraries(natsukashii PRIVATE SDL2::SDL2main SDL2::SDL2-static capstone-static nfd parallel-rdp imgui fmt::fmt nlohmann_json::nlohmann_json)
 target_compile_options(natsukashii PRIVATE -mssse3 -msse4.1)

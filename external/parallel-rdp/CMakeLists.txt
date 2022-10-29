@@ -4,7 +4,6 @@ project(parallel-rdp)
 file(GLOB_RECURSE parallel-rdp-cpp parallel-rdp-standalone/parallel-rdp/*.cpp)
 
 find_package(SDL2 CONFIG REQUIRED)
-find_package(Vulkan REQUIRED)
 
 add_library(parallel-rdp
   ${parallel-rdp-cpp}
@@ -84,7 +83,7 @@ if(WIN32)
   add_compile_options(/EHa)
 endif()
 
-target_link_libraries(parallel-rdp Vulkan::Vulkan SDL2::SDL2main SDL2::SDL2)
+target_link_libraries(parallel-rdp SDL2::SDL2main SDL2::SDL2)
 
 if(WIN32)
   target_compile_definitions(parallel-rdp PUBLIC VK_USE_PLATFORM_WIN32_KHR)

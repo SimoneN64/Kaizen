@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 project(imgui)
 
-find_package(Vulkan REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
 
 add_library(imgui
@@ -24,5 +23,5 @@ if(WIN32)
   add_compile_options(/EHa)
 endif()
 
-target_include_directories(imgui PUBLIC ${SDL2_INCLUDE_DIR} ${Vulkan_INCLUDE_DIRS} imgui imgui/backends)
-target_link_libraries(imgui PUBLIC SDL2::SDL2main SDL2::SDL2 Vulkan::Vulkan)
+target_include_directories(imgui PUBLIC ${SDL2_INCLUDE_DIR} ../parallel-rdp/parallel-rdp-standalone/vulkan-headers/include imgui imgui/backends)
+target_link_libraries(imgui PUBLIC SDL2::SDL2main SDL2::SDL2)

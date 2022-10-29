@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 project(imgui)
 
-find_package(SDL2 REQUIRED)
+find_package(Vulkan REQUIRED)
+find_package(SDL2 CONFIG REQUIRED)
 
 add_library(imgui
   imgui/imgui_demo.cpp
@@ -17,12 +18,11 @@ add_library(imgui
   imgui/backends/imgui_impl_vulkan.h
   imgui/backends/imgui_impl_vulkan.cpp)
 
+
 if(WIN32)
-	target_compile_options(imgui PUBLIC -mwindows)
-	set(LIBRARIES -static z stdc++ user32 gdi32 winmm Imm32 ole32 oleaut32 shell32 setupapi version uuid)
-else()
-	set(LIBRARIES )
+  add_compile_definitions(NOMINMAX _CRT_SECURE_NO_WARNINGS)
+  add_compile_options(/EHa)
 endif()
 
-target_include_directories(imgui PUBLIC ${SDL2_INCLUDE_DIRS} imgui imgui/backends)
-target_link_libraries(imgui PUBLIC ${SDL2_LIBRARIES} ${LIBRARIES})
+target_include_directories(imgui PUBLIC ${SDL2_INCLUDE_DIR} ${Vulkan_INCLUDE_DIRS} imgui imgui/backends)
+target_link_libraries(imgui PUBLIC SDL2::SDL2main SDL2::SDL2 Vulkan::Vulkan)

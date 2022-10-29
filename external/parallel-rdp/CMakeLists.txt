@@ -52,7 +52,8 @@ add_library(parallel-rdp
 target_compile_definitions(parallel-rdp PUBLIC GRANITE_VULKAN_MT)
 
 target_include_directories(parallel-rdp PUBLIC
-  ${SDL2_INCLUDE_DIRS}
+  ${SDL2_INCLUDE_DIR}
+  ${Vulkan_INCLUDE_DIR}
   parallel-rdp-standalone/parallel-rdp
   parallel-rdp-standalone/volk
   parallel-rdp-standalone/spirv-cross
@@ -78,7 +79,12 @@ target_include_directories(parallel-rdp PUBLIC
   .
 )
 
-target_link_libraries(parallel-rdp SDL2::SDL2main SDL2::SDL2-static)
+if(WIN32)
+  add_compile_definitions(NOMINMAX _CRT_SECURE_NO_WARNINGS)
+  add_compile_options(/EHa)
+endif()
+
+target_link_libraries(parallel-rdp Vulkan::Vulkan SDL2::SDL2main SDL2::SDL2)
 
 if(WIN32)
   target_compile_definitions(parallel-rdp PUBLIC VK_USE_PLATFORM_WIN32_KHR)

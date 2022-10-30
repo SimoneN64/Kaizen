@@ -1,7 +1,6 @@
 #include <n64/core/cpu/registers/Cop1.hpp>
 #include <n64/core/cpu/Registers.hpp>
 #include <n64/core/Mem.hpp>
-#include <util.hpp>
 #include <cmath>
 #include <cfenv>
 
@@ -20,6 +19,41 @@ inline int PushRoundingMode(const FCR31& fcr31) {
 
 #define PUSHROUNDINGMODE int og = PushRoundingMode(fcr31)
 #define POPROUNDINGMODE fesetround(og)
+
+#ifdef _WIN32
+#define isnanf isnan
+#define checknanregsf(fs, ft) \
+  if(isnanf(fs) || isnanf(ft)) { \
+    regs.cop1.fcr31.flag_invalid_operation = true; \
+    regs.cop1.fcr31.cause_invalid_operation = true; \
+    FireException(regs, ExceptionCode::FloatingPointError, 1, regs.oldPC); \
+    return; \
+  }
+
+#define checknanregsd(fs, ft) \
+  if(isnan(fs) || isnan(ft)) { \
+    regs.cop1.fcr31.flag_invalid_operation = true; \
+    regs.cop1.fcr31.cause_invalid_operation = true; \
+    FireException(regs, ExceptionCode::FloatingPointError, 1, regs.oldPC); \
+    return; \
+  }
+#else
+#define checknanregsf(fs, ft) \
+  if(isnanf(fs) || isnanf(ft)) { \
+    regs.cop1.fcr31.flag_invalid_operation = true; \
+    regs.cop1.fcr31.cause_invalid_operation = true; \
+    FireException(regs, ExceptionCode::FloatingPointError, 1, regs.oldPC); \
+    return; \
+  }
+
+#define checknanregsd(fs, ft) \
+  if(isnan(fs) || isnan(ft)) { \
+    regs.cop1.fcr31.flag_invalid_operation = true; \
+    regs.cop1.fcr31.cause_invalid_operation = true; \
+    FireException(regs, ExceptionCode::FloatingPointError, 1, regs.oldPC); \
+    return; \
+  }
+#endif
 
 void Cop1::absd(Registers& regs, u32 instr) {
   double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
@@ -44,6 +78,7 @@ void Cop1::absl(Registers& regs, u32 instr) {
 void Cop1::adds(Registers& regs, u32 instr) {
   float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
   float ft = GetCop1Reg<float>(regs.cop0, FT(instr));
+  checknanregsf(fs, ft)
   float result = fs + ft;
   SetCop1Reg<float>(regs.cop0, FD(instr), result);
 }
@@ -51,6 +86,7 @@ void Cop1::adds(Registers& regs, u32 instr) {
 void Cop1::addd(Registers& regs, u32 instr) {
   double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
   double ft = GetCop1Reg<double>(regs.cop0, FT(instr));
+  checknanregsf(fs, ft)
   double result = fs + ft;
   SetCop1Reg<double>(regs.cop0, FD(instr), result);
 }
@@ -83,8 +119,8 @@ void Cop1::cfc1(Registers& regs, u32 instr) const {
   u8 fd = FD(instr);
   s32 val = 0;
   switch(fd) {
-    case 0: val = (s32)fcr0; break;
-    case 31: val = (s32)fcr31.raw; break;
+    case 0: val = fcr0; break;
+    case 31: val = fcr31.raw; break;
     default: util::panic("Undefined CFC1 with rd != 0 or 31\n");
   }
   regs.gpr[RT(instr)] = val;
@@ -228,7 +264,8 @@ inline bool CalculateCondition(Registers& regs, T fs, T ft, CompConds cond) {
       if(std::isnan(fs) || std::isnan(ft)) {
         regs.cop1.fcr31.flag_invalid_operation = true;
         regs.cop1.fcr31.cause_invalid_operation = true;
-        FireException(regs, ExceptionCode::FloatingPointError, 0, regs.oldPC);
+        FireException(regs, ExceptionCode::FloatingPointError, 1, regs.oldPC);
+        return false;
       }
 
       return CalculateCondition(regs, fs, ft, static_cast<CompConds>(cond - 8));

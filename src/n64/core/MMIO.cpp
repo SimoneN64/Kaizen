@@ -1,7 +1,7 @@
 #include <n64/core/MMIO.hpp>
 #include <util.hpp>
 #include <n64/core/Mem.hpp>
-#include <n64/core/cpu/Registers.hpp>
+#include <core/registers/Registers.hpp>
 
 namespace n64 {
 MMIO::MMIO () {

@@ -1,5 +1,5 @@
-#include <n64/core/cpu/registers/Cop0.hpp>
-#include <n64/core/cpu/Registers.hpp>
+#include <core/registers/Cop0.hpp>
+#include <core/registers/Registers.hpp>
 #include <util.hpp>
 
 namespace n64 {

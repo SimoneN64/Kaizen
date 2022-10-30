@@ -7,11 +7,12 @@
 
 namespace n64 {
 Core::Core() {
+  cpu = std::make_unique<Interpreter>();
   Stop();
 }
 
 void Core::Stop() {
-  cpu.Reset();
+  cpu->Reset();
   mem.Reset();
   pause = true;
   romLoaded = false;
@@ -19,13 +20,13 @@ void Core::Stop() {
 
 CartInfo Core::LoadROM(const std::string& rom_) {
   rom = rom_;
-  cpu.Reset();
+  cpu->Reset();
   mem.Reset();
   pause = false;
   romLoaded = true;
   
   CartInfo cartInfo = mem.LoadROM(rom);
-  DoPIFHLE(mem, cpu.regs, cartInfo);
+  DoPIFHLE(mem, cpu->regs, cartInfo);
 
   return cartInfo;
 }
@@ -41,11 +42,11 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
         mmio.vi.current = (i << 1) + field;
 
         if ((mmio.vi.current & 0x3FE) == mmio.vi.intr) {
-          InterruptRaise(mmio.mi, cpu.regs, Interrupt::VI);
+          InterruptRaise(mmio.mi, cpu->regs, Interrupt::VI);
         }
 
         for(;cycles <= mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
-          cpu.Step(mem);
+          cpu->Step(mem);
           cpuSteps++;
           if(mmio.rsp.spStatus.halt) {
             mmio.rsp.steps = 0;
@@ -58,25 +59,25 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
 
             while(mmio.rsp.steps > 0) {
               mmio.rsp.steps--;
-              mmio.rsp.Step(cpu.regs, mem);
+              mmio.rsp.Step(cpu->regs, mem);
             }
           }
 
-          mmio.ai.Step(mem, cpu.regs, 1, volumeL, volumeR);
-          scheduler.tick(1, mem, cpu.regs);
+          mmio.ai.Step(mem, cpu->regs, 1, volumeL, volumeR);
+          scheduler.tick(1, mem, cpu->regs);
         }
 
         cycles -= mmio.vi.cyclesPerHalfline;
       }
 
       if ((mmio.vi.current & 0x3FE) == mmio.vi.intr) {
-        InterruptRaise(mmio.mi, cpu.regs, Interrupt::VI);
+        InterruptRaise(mmio.mi, cpu->regs, Interrupt::VI);
       }
 
       UpdateScreenParallelRdp(*this, window, GetVI());
 
       int missedCycles = N64_CYCLES_PER_FRAME - frameCycles;
-      mmio.ai.Step(mem, cpu.regs, missedCycles, volumeL, volumeR);
+      mmio.ai.Step(mem, cpu->regs, missedCycles, volumeL, volumeR);
     } else if(pause && romLoaded) {
       UpdateScreenParallelRdp(*this, window, GetVI());
     } else if(pause && !romLoaded) {

@@ -1,6 +1,6 @@
 #include <n64/core/mmio/Interrupt.hpp>
 #include <n64/core/mmio/MI.hpp>
-#include <n64/core/cpu/Registers.hpp>
+#include <core/registers/Registers.hpp>
 
 namespace n64 {
 void InterruptRaise(MI &mi, Registers &regs, Interrupt intr) {

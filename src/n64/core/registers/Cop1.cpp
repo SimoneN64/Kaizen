@@ -1,6 +1,6 @@
-#include <n64/core/cpu/registers/Cop1.hpp>
-#include <n64/core/cpu/Registers.hpp>
-#include <n64/core/Cpu.hpp>
+#include <core/registers/Cop1.hpp>
+#include <core/registers/Registers.hpp>
+#include <n64/core/Interpreter.hpp>
 #include <util.hpp>
 
 namespace n64 {
@@ -14,7 +14,7 @@ void Cop1::Reset() {
   memset(fgr, 0, 32 * sizeof(FGR));
 }
 
-void Cop1::decode(Cpu& cpu, u32 instr) {
+void Cop1::decode(Interpreter& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   if(!regs.cop0.status.cu1) {
     FireException(regs, ExceptionCode::CoprocessorUnusable, 1, regs.oldPC);

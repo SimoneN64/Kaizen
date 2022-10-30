@@ -1,8 +1,8 @@
 #include <Mem.hpp>
 #include <fstream>
-#include <n64/core/cpu/Registers.hpp>
-#include <n64/core/cpu/registers/Cop0.hpp>
-#include <n64/core/Cpu.hpp>
+#include <core/registers/Registers.hpp>
+#include <core/registers/Cop0.hpp>
+#include <n64/core/Interpreter.hpp>
 
 namespace n64 {
 Mem::Mem() {

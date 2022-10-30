@@ -1,6 +1,6 @@
 #include <n64/core/RSP.hpp>
 #include <util.hpp>
-#include <n64/core/cpu/Registers.hpp>
+#include <core/registers/Registers.hpp>
 #include <Interrupt.hpp>
 #include <Mem.hpp>
 

@@ -1,6 +1,6 @@
 #include <n64/core/mmio/VI.hpp>
 #include <util.hpp>
-#include <n64/core/cpu/Registers.hpp>
+#include <core/registers/Registers.hpp>
 #include <n64/core/mmio/MI.hpp>
 #include <n64/core/mmio/Interrupt.hpp>
 

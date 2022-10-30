@@ -1,5 +1,5 @@
 #pragma once
-#include <n64/core/cpu/registers/Cop0.hpp>
+#include <core/registers/Cop0.hpp>
 
 namespace n64 {
 union FCR31 {
@@ -54,7 +54,7 @@ union FGR {
   s64 raw;
 };
 
-struct Cpu;
+struct Interpreter;
 struct Registers;
 
 struct Cop1 {
@@ -63,8 +63,8 @@ struct Cop1 {
   FCR31 fcr31{};
   FGR fgr[32]{};
   void Reset();
-  void decode(Cpu&, u32);
-  friend struct Cpu;
+  void decode(Interpreter&, u32);
+  friend struct Interpreter;
 private:
   template <typename T>
   inline void SetReg(Cop0& cop0, u8 index, T value) {

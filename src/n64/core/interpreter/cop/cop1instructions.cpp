@@ -1,5 +1,5 @@
-#include <n64/core/cpu/registers/Cop1.hpp>
-#include <n64/core/cpu/Registers.hpp>
+#include <core/registers/Cop1.hpp>
+#include <core/registers/Registers.hpp>
 #include <n64/core/Mem.hpp>
 #include <cmath>
 #include <cfenv>

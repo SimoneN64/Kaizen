@@ -1,6 +1,6 @@
 #pragma once
 #include <SDL_events.h>
-#include <Cpu.hpp>
+#include <Interpreter.hpp>
 #include <Mem.hpp>
 #include <string>
 
@@ -27,6 +27,6 @@ struct Core {
   bool done = false;
   std::string rom;
   Mem mem;
-  Cpu cpu;
+  std::unique_ptr<BaseCpu> cpu;
 };
 }

@@ -1,8 +1,8 @@
-#include <n64/core/Cpu.hpp>
+#include <n64/core/Interpreter.hpp>
 #include <util.hpp>
 
 namespace n64 {
-void Cpu::special(Mem& mem, u32 instr) {
+void Interpreter::special(Mem& mem, u32 instr) {
   u8 mask = (instr & 0x3F);
   // 00rr_rccc
   switch (mask) { // TODO: named constants for clearer code
@@ -67,7 +67,7 @@ void Cpu::special(Mem& mem, u32 instr) {
   }
 }
 
-void Cpu::regimm(u32 instr) {
+void Interpreter::regimm(u32 instr) {
   u8 mask = ((instr >> 16) & 0x1F);
   // 000r_rccc
   switch (mask) { // TODO: named constants for clearer code
@@ -90,7 +90,7 @@ void Cpu::regimm(u32 instr) {
   }
 }
 
-void Cpu::Exec(Mem& mem, u32 instr) {
+void Interpreter::Exec(Mem& mem, u32 instr) {
   u8 mask = (instr >> 26) & 0x3f;
   // 00rr_rccc
   switch(mask) { // TODO: named constants for clearer code

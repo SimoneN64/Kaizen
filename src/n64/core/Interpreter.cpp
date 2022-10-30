@@ -1,8 +1,8 @@
-#include <n64/core/Cpu.hpp>
+#include <n64/core/Interpreter.hpp>
 #include <util.hpp>
 
 namespace n64 {
-void Cpu::Reset() {
+void Interpreter::Reset() {
   regs.Reset();
 }
 
@@ -25,7 +25,7 @@ inline void CheckCompareInterrupt(MI& mi, Registers& regs) {
   }
 }
 
-inline void Cpu::disassembly(u32 instr) {
+inline void Interpreter::disassembly(u32 instr) {
   size_t count;
   cs_insn *insn;
 
@@ -45,7 +45,7 @@ inline void Cpu::disassembly(u32 instr) {
     printf("ERROR: Failed to disassemble given code!\n");
 }
 
-void Cpu::Step(Mem& mem) {
+void Interpreter::Step(Mem& mem) {
   regs.gpr[0] = 0;
 
   CheckCompareInterrupt(mem.mmio.mi, regs);

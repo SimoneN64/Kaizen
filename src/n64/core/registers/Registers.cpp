@@ -1,4 +1,4 @@
-#include <Registers.hpp>
+#include <core/registers/Registers.hpp>
 
 namespace n64 {
 Registers::Registers() {

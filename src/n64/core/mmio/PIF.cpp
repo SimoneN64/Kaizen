@@ -1,6 +1,6 @@
 #include <n64/core/mmio/PIF.hpp>
 #include <n64/core/Mem.hpp>
-#include <n64/core/cpu/Registers.hpp>
+#include <core/registers/Registers.hpp>
 #include <util.hpp>
 #include "m64.hpp"
 

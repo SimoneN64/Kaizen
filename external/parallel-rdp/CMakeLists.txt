@@ -62,8 +62,8 @@ target_include_directories(parallel-rdp PUBLIC
   ../../src/n64
   ../../src/n64/core/
 	../../src/n64/core/mmio
-  ../../src/n64/core/cpu/
-  ../../src/n64/core/cpu/registers
+  ../../src/n64/core/interpreter/
+  ../../src/n64/core/interpreter/registers
   parallel-rdp-standalone
   ..
 	../capstone/include

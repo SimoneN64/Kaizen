@@ -25,21 +25,20 @@ add_executable(natsukashii
   ${FRONTEND_HEADERS}
   main.cpp
   common.hpp
-  util.hpp
-  n64/Scheduler.cpp
-  n64/Scheduler.hpp)
+  util.hpp)
 
 target_include_directories(natsukashii PRIVATE
   .
   n64
   n64/core
-  n64/core/cpu/
-  n64/core/cpu/registers
+  n64/core/interpreter/
+  n64/core/interpreter/registers
   n64/core/mmio
   n64/core/rsp
   frontend
   frontend/imgui
   ../external
+  ../external/xbyak
   ../external/imgui/imgui
   ../external/parallel-rdp/
   ../external/nativefiledialog-extended/src/include
@@ -54,8 +53,8 @@ file(REMOVE
   ${PROJECT_BINARY_DIR}/resources/shader.vert)
 
 if(WIN32)
-  add_compile_definitions(NOMINMAX _CRT_SECURE_NO_WARNINGS)
-  add_compile_options(/EHa)
+  target_compile_definitions(natsukashii PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
+  target_compile_options(natsukashii PUBLIC /EHa)
 endif()
 
 target_link_libraries(natsukashii PRIVATE SDL2::SDL2main SDL2::SDL2 capstone-static nfd parallel-rdp fmt::fmt imgui nlohmann_json::nlohmann_json)

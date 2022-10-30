@@ -1,6 +1,6 @@
 #include <RSP.hpp>
 #include <util.hpp>
-#include <n64/core/cpu/Registers.hpp>
+#include <core/registers/Registers.hpp>
 #include <Mem.hpp>
 #include <rcp_rsq.hpp>
 

@@ -1,6 +1,6 @@
 #pragma once
-#include <Cop0.hpp>
-#include <Cop1.hpp>
+#include <core/registers/Cop0.hpp>
+#include <core/registers/Cop1.hpp>
 
 namespace n64 {
 struct Registers {

@@ -115,6 +115,9 @@ void Cpu::Exec(Mem& mem, u32 instr) {
     case 0x0F: lui(instr); break;
     case 0x10: regs.cop0.decode(regs, mem, instr); break;
     case 0x11: regs.cop1.decode(*this, instr); break;
+    case 0x12:
+      FireException(regs, ExceptionCode::CoprocessorUnusable, 2, regs.oldPC);
+      break;
     case 0x14: bl(instr, regs.gpr[RS(instr)] == regs.gpr[RT(instr)]); break;
     case 0x15: bl(instr, regs.gpr[RS(instr)] != regs.gpr[RT(instr)]); break;
     case 0x16: bl(instr, regs.gpr[RS(instr)] <= 0); break;

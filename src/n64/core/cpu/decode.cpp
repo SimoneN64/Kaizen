@@ -90,6 +90,23 @@ void Cpu::regimm(u32 instr) {
   }
 }
 
+void Cpu::cop2Decode(u32 instr) {
+  if(!regs.cop0.status.cu2) {
+    FireException(regs, ExceptionCode::CoprocessorUnusable, 2, regs.oldPC);
+    return;
+  }
+  switch(RS(instr)) {
+    case 0x00: mfc2(instr); break;
+    case 0x01: dmfc2(instr); break;
+    case 0x02: cfc2(instr); break;
+    case 0x04: mtc2(instr); break;
+    case 0x05: dmtc2(instr); break;
+    case 0x06: ctc2(instr); break;
+    default:
+      FireException(regs, ExceptionCode::ReservedInstruction, 2, regs.oldPC);
+  }
+}
+
 void Cpu::Exec(Mem& mem, u32 instr) {
   u8 mask = (instr >> 26) & 0x3f;
   // 00rr_rccc
@@ -115,6 +132,7 @@ void Cpu::Exec(Mem& mem, u32 instr) {
     case 0x0F: lui(instr); break;
     case 0x10: regs.cop0.decode(regs, mem, instr); break;
     case 0x11: regs.cop1.decode(*this, instr); break;
+    case 0x12: cop2Decode(instr); break;
     case 0x14: bl(instr, regs.gpr[RS(instr)] == regs.gpr[RT(instr)]); break;
     case 0x15: bl(instr, regs.gpr[RS(instr)] != regs.gpr[RT(instr)]); break;
     case 0x16: bl(instr, regs.gpr[RS(instr)] <= 0); break;

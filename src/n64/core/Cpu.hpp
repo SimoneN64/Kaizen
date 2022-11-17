@@ -20,11 +20,13 @@ struct Cpu {
   void Step(Mem&);
   Registers regs;
 private:
+  u64 cop2Latch{};
   csh handle;
 
   void disassembly(u32 instr);
   friend struct Cop1;
 
+  void cop2Decode(u32);
   void special(Mem&, u32);
   void regimm(u32);
   void Exec(Mem&, u32);
@@ -113,5 +115,12 @@ private:
   void ori(u32);
   void xor_(u32);
   void xori(u32);
+
+  void mtc2(u32);
+  void mfc2(u32);
+  void dmtc2(u32);
+  void dmfc2(u32);
+  void ctc2(u32);
+  void cfc2(u32);
 };
 }

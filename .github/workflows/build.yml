@@ -17,7 +17,7 @@ jobs:
           cmake -B build
           cd build
           sudo make install
-      - name: Build natsukashii
+      - name: Build Gadolinium
         run: |
           cmake \
             -G Ninja \
@@ -31,11 +31,11 @@ jobs:
       - name: Collect artifacts
         run: |
           mkdir upload
-          cp -r build/{natsukashii,resources} upload
+          cp -r build/{gadolinium,resources} upload
       - name: Upload artifacts
         uses: actions/upload-artifact@master
         with:
-          name: natsukashii-linux
+          name: gadolinium-linux
           path: upload
           if-no-files-found: error
   build-windows:
@@ -49,14 +49,14 @@ jobs:
           vcpkg install sdl2[vulkan]:x64-windows
           vcpkg install fmt:x64-windows
           vcpkg install nlohmann-json:x64-windows
-      - name: Build natsukashii
+      - name: Build Gadolinium
         run: |
           cmake -B build -T clangcl -DCAPSTONE_ARCHITECTURE_DEFAULT=OFF -DCAPSTONE_BUILD_TESTS=OFF -DCAPSTONE_MIPS_SUPPORT=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release -S src
           cmake --build build --config Release
       - name: Collect artifacts
         run: |
           mkdir upload
-          cp build/Release/natsukashii.exe upload
+          cp build/Release/gadolinium.exe upload
           mkdir upload/resources
           cp build/resources/* upload/resources
           cp build/Release/SDL2.dll upload
@@ -64,6 +64,6 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@master
         with:
-          name: natsukashii-windows
+          name: gadolinium-windows
           path: upload
           if-no-files-found: error

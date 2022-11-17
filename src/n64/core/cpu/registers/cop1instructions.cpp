@@ -1,7 +1,6 @@
 #include <n64/core/cpu/registers/Cop1.hpp>
 #include <n64/core/cpu/Registers.hpp>
 #include <n64/core/Mem.hpp>
-#include <util.hpp>
 #include <cmath>
 #include <cfenv>
 
@@ -228,7 +227,7 @@ inline bool CalculateCondition(Registers& regs, T fs, T ft, CompConds cond) {
       if(std::isnan(fs) || std::isnan(ft)) {
         regs.cop1.fcr31.flag_invalid_operation = true;
         regs.cop1.fcr31.cause_invalid_operation = true;
-        FireException(regs, ExceptionCode::FloatingPointError, 0, regs.oldPC);
+        FireException(regs, ExceptionCode::FloatingPointError, 1, regs.oldPC);
       }
 
       return CalculateCondition(regs, fs, ft, static_cast<CompConds>(cond - 8));

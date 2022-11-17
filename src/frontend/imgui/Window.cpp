@@ -25,9 +25,9 @@ void Window::InitSDL() {
   SDL_Init(SDL_INIT_EVERYTHING);
   n64::InitAudio();
 
-  windowTitle = "natsukashii";
+  windowTitle = "Gadolinium";
   window = SDL_CreateWindow(
-    "natsukashii",
+    "Gadolinium",
     SDL_WINDOWPOS_CENTERED,
     SDL_WINDOWPOS_CENTERED,
     800, 600,
@@ -158,7 +158,7 @@ void Window::LoadROM(n64::Core& core, const std::string &path) {
       name = std::filesystem::path(path).stem().string();
     }
 
-    windowTitle = "natsukashii - " + name;
+    windowTitle = "Gadolinium - " + name;
     shadowWindowTitle = windowTitle;
 
     SDL_SetWindowTitle(window, windowTitle.c_str());
@@ -210,7 +210,7 @@ void Window::Render(n64::Core& core) {
         LoadROM(core, core.rom);
       }
       if (ImGui::MenuItem("Stop")) {
-        windowTitle = "natsukashii";
+        windowTitle = "Gadolinium";
         SDL_SetWindowTitle(window, windowTitle.c_str());
         core.Stop();
       }

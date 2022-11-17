@@ -36,9 +36,6 @@ void DMA(Mem& mem, Registers& regs) {
   MMIO& mmio = mem.mmio;
   SI& si = mmio.si;
   si.status.dmaBusy = false;
-  if(si.status.dmaBusy) {
-    return;
-  }
   if(si.toDram) {
     ProcessPIFCommands(mem.pifRam, si.controller, mem);
     for(int i = 0; i < 64; i++) {

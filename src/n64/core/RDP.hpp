@@ -80,4 +80,4 @@ struct RDP {
     RunCommand(mi, regs, rsp);
   }
 };
-} // natsukashii
+} // n64

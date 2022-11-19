@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(natsukashii)
+project(gadolinium)
 
 set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_CXX_STANDARD 17)
@@ -18,7 +18,7 @@ add_subdirectory(../external/parallel-rdp prdp)
 add_subdirectory(../external/imgui imgui)
 add_subdirectory(../external/nativefiledialog-extended nfd)
 
-add_executable(natsukashii
+add_executable(gadolinium
   ${CORE_SOURCES}
   ${CORE_HEADERS}
   ${FRONTEND_SOURCES}
@@ -27,7 +27,7 @@ add_executable(natsukashii
   common.hpp
   util.hpp)
 
-target_include_directories(natsukashii PRIVATE
+target_include_directories(gadolinium PRIVATE
   .
   n64
   n64/core
@@ -53,8 +53,8 @@ file(REMOVE
   ${PROJECT_BINARY_DIR}/resources/shader.vert)
 
 if(WIN32)
-  target_compile_definitions(natsukashii PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
-  target_compile_options(natsukashii PUBLIC /EHa)
+  target_compile_definitions(gadolinium PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
+  target_compile_options(gadolinium PUBLIC /EHa)
 endif()
 
-target_link_libraries(natsukashii PRIVATE SDL2::SDL2main SDL2::SDL2 capstone-static nfd parallel-rdp fmt::fmt imgui nlohmann_json::nlohmann_json)
+target_link_libraries(gadolinium PRIVATE SDL2::SDL2main SDL2::SDL2 capstone-static nfd parallel-rdp fmt::fmt imgui nlohmann_json::nlohmann_json)

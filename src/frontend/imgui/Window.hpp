@@ -6,6 +6,9 @@
 #include <SDL.h>
 #include <Core.hpp>
 #include <vector>
+#include <nlohmann/json.hpp>
+
+using namespace nlohmann;
 
 struct Window {
   explicit Window(n64::Core& core);
@@ -18,13 +21,16 @@ struct Window {
   float volumeL = 0.1, volumeR = 0.1;
   void LoadROM(n64::Core& core, const std::string& path);
 private:
+  json settings;
+  std::fstream settingsFile;
   bool lockVolume = true;
   SDL_Window* window{};
   std::string windowTitle;
   std::string shadowWindowTitle;
   void InitSDL();
-  void InitImgui(const n64::Core& core);
+  void InitImgui();
   void Render(n64::Core& core);
+  void LoadSettings(n64::Core&);
 
   VkPhysicalDevice physicalDevice{};
   VkDevice device{};

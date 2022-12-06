@@ -2,23 +2,50 @@
 #include <nfd.hpp>
 #include <Core.hpp>
 #include <Audio.hpp>
-#include <nlohmann/json.hpp>
 #include <filesystem>
 #include <SDL.h>
 
 VkInstance instance{};
-using json = nlohmann::json;
 
 Window::Window(n64::Core& core) {
   InitSDL();
+  LoadSettings(core);
   InitParallelRDP(core.mem.GetRDRAM(), window);
-  InitImgui(core);
+  InitImgui();
   NFD::Init();
 }
 
 [[nodiscard]] bool Window::gotClosed(SDL_Event event) {
   return event.window.event == SDL_WINDOWEVENT_CLOSE
       && event.window.windowID == SDL_GetWindowID(window);
+}
+
+void Window::LoadSettings(n64::Core &core) {
+  settingsFile.open("settings.json", std::fstream::in | std::fstream::out);
+  if(settingsFile.is_open()) {
+    settings = json::parse(settingsFile);
+    auto entryCpuType = settings["cpu_type"];
+    if(!entryCpuType.empty()) {
+      auto cpuType = entryCpuType.get<std::string>();
+      if(cpuType == "dynarec") {
+        core.cpuType = n64::CpuType::Dynarec;
+      } else if(cpuType == "interpreter") {
+        core.cpuType = n64::CpuType::Interpreter;
+      } else {
+        util::panic("Unrecognized cpu type: {}\n", cpuType);
+      }
+    } else {
+      settings["cpu_type"] = "dynarec";
+      settingsFile << settings;
+      core.cpuType = n64::CpuType::Dynarec;
+    }
+  } else {
+    settings["cpu_type"] = "dynarec";
+    settingsFile << settings;
+    core.cpuType = n64::CpuType::Dynarec;
+  }
+
+  settingsFile.close();
 }
 
 void Window::InitSDL() {
@@ -47,7 +74,7 @@ static void check_vk_result(VkResult err) {
   }
 }
 
-void Window::InitImgui(const n64::Core& core) {
+void Window::InitImgui() {
   VkResult err;
 
   IMGUI_CHECKVERSION();

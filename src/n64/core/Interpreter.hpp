@@ -1,12 +1,11 @@
 #pragma once
-#include <BaseCpu.hpp>
 #include <core/registers/Registers.hpp>
 #include <Mem.hpp>
 #include <capstone/capstone.h>
 #include <vector>
 
 namespace n64 {
-struct Interpreter : BaseCpu {
+struct Interpreter {
   Interpreter() {
     if(cs_open(CS_ARCH_MIPS, CS_MODE_MIPS64, &handle) != CS_ERR_OK) {
       util::panic("Could not initialize capstone!\n");
@@ -17,8 +16,9 @@ struct Interpreter : BaseCpu {
   ~Interpreter() {
     cs_close(&handle);
   }
-  void Reset() override;
-  void Step(Mem&) override;
+  void Reset();
+  void Step(Mem&);
+  Registers regs;
 private:
   csh handle;
 

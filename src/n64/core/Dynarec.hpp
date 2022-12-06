@@ -1,11 +1,13 @@
 #pragma once
-#include <BaseCpu.hpp>
 #include <xbyak/xbyak.h>
+#include <Mem.hpp>
+#include <Registers.hpp>
 
 namespace n64 {
-struct Dynarec : BaseCpu {
-  void Step(Mem& mem) override;
-  void Reset() override;
+struct Dynarec {
+  void Step(Mem& mem);
+  void Reset();
+  Registers regs;
 private:
   Xbyak::CodeGenerator code;
 };

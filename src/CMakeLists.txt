@@ -32,7 +32,7 @@ target_include_directories(gadolinium PRIVATE
   n64
   n64/core
   n64/core/interpreter/
-  n64/core/interpreter/registers
+  n64/core/registers
   n64/core/mmio
   n64/core/rsp
   frontend

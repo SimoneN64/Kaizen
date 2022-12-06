@@ -17,6 +17,7 @@ add_subdirectory(../external/capstone capstone)
 add_subdirectory(../external/parallel-rdp prdp)
 add_subdirectory(../external/imgui imgui)
 add_subdirectory(../external/nativefiledialog-extended nfd)
+add_subdirectory(../external/discord-rpc discord-rpc)
 
 add_executable(gadolinium
   ${CORE_SOURCES}
@@ -44,6 +45,7 @@ target_include_directories(gadolinium PRIVATE
   ../external/parallel-rdp/
   ../external/nativefiledialog-extended/src/include
   ../external/capstone/include
+  ../external/discord-rpc/include
   ${SDL2_INCLUDE_DIR}
 )
 
@@ -58,4 +60,4 @@ if(WIN32)
   add_compile_options(/EHa)
 endif()
 
-target_link_libraries(gadolinium PRIVATE SDL2::SDL2main SDL2::SDL2 capstone-static nfd parallel-rdp fmt::fmt imgui nlohmann_json::nlohmann_json)
+target_link_libraries(gadolinium PRIVATE discord-rpc SDL2::SDL2main SDL2::SDL2 capstone-static nfd parallel-rdp fmt::fmt imgui nlohmann_json::nlohmann_json)

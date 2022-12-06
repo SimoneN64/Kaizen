@@ -20,8 +20,9 @@ struct Window {
 private:
   bool lockVolume = true;
   SDL_Window* window{};
-  std::string windowTitle;
-  std::string shadowWindowTitle;
+  std::string windowTitle{"Gadolinium"};
+  std::string shadowWindowTitle{windowTitle};
+  std::string gameName{};
   void InitSDL();
   void InitImgui(const n64::Core& core);
   void Render(n64::Core& core);

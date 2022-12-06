@@ -151,14 +151,14 @@ void Window::LoadROM(n64::Core& core, const std::string &path) {
     std::ifstream gameDbFile("resources/game_db.json");
     json gameDb = json::parse(gameDbFile);
     auto entry = gameDb[fmt::format("{:08x}", cartInfo.crc)]["name"];
-    std::string name{};
+
     if(!entry.empty()) {
-      name = entry.get<std::string>();
+      gameName = entry.get<std::string>();
     } else {
-      name = std::filesystem::path(path).stem().string();
+      gameName = std::filesystem::path(path).stem().string();
     }
 
-    windowTitle = "Gadolinium - " + name;
+    windowTitle = "Gadolinium - " + gameName;
     shadowWindowTitle = windowTitle;
 
     SDL_SetWindowTitle(window, windowTitle.c_str());
@@ -188,6 +188,7 @@ void Window::Render(n64::Core& core) {
         nfdresult_t result = NFD_OpenDialog(&outpath, &filter, 1, nullptr);
         if (result == NFD_OKAY) {
           LoadROM(core, outpath);
+          util::UpdateRPC(util::Playing, gameName);
           NFD_FreePath(outpath);
         }
       }
@@ -211,6 +212,8 @@ void Window::Render(n64::Core& core) {
       }
       if (ImGui::MenuItem("Stop")) {
         windowTitle = "Gadolinium";
+        core.rom.clear();
+        util::UpdateRPC(util::Idling);
         SDL_SetWindowTitle(window, windowTitle.c_str());
         core.Stop();
       }
@@ -219,8 +222,10 @@ void Window::Render(n64::Core& core) {
         if(core.pause) {
           shadowWindowTitle = windowTitle;
           windowTitle += "  | Paused";
+          util::UpdateRPC(util::Paused, gameName);
         } else {
           windowTitle = shadowWindowTitle;
+          util::UpdateRPC(util::Playing, gameName);
         }
         SDL_SetWindowTitle(window, windowTitle.c_str());
       }

@@ -1,6 +1,12 @@
 #include <App.hpp>
 #include <nfd.hpp>
 
+App::App() : window(core) {
+  DiscordEventHandlers handlers{};
+  Discord_Initialize("1049669178124148806", &handlers, 1, nullptr);
+  util::UpdateRPC(util::Idling);
+}
+
 void App::Run() {
   const u8* state = SDL_GetKeyboardState(nullptr);
   SDL_EventState(SDL_DROPFILE, SDL_ENABLE);

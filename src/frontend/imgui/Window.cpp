@@ -5,6 +5,7 @@
 #include <nlohmann/json.hpp>
 #include <filesystem>
 #include <SDL.h>
+#include <SDL_vulkan.h>
 
 VkInstance instance{};
 using json = nlohmann::json;
@@ -115,6 +116,17 @@ void Window::InitImgui(const n64::Core& core) {
 
   uiFont = io.Fonts->AddFontFromFileTTF("resources/OpenSans.ttf", 15.f);
   codeFont = io.Fonts->AddFontFromFileTTF("resources/Sweet16.ttf", 15.f);
+
+  int displayIndex = SDL_GetWindowDisplayIndex(window);
+  float ddpi, hdpi, vdpi;
+  SDL_GetDisplayDPI(displayIndex, &ddpi, &hdpi, &vdpi);
+
+  ddpi /= 96.f;
+
+  uiFont = io.Fonts->AddFontFromFileTTF("resources/OpenSans.ttf", 16.f * ddpi);
+  codeFont = io.Fonts->AddFontFromFileTTF("resources/Sweet16.ttf", 16.f * ddpi);
+
+  ImGui::GetStyle().ScaleAllSizes(ddpi);
 
   {
     VkCommandBuffer commandBuffer = GetVkCommandBuffer();

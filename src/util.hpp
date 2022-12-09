@@ -295,7 +295,7 @@ inline void UpdateRPC(State state, const std::string& game = "") {
   presence.state = textState.c_str();
   presence.startTimestamp = time(nullptr);
   presence.largeImageText = "Gadolinium";
-  presence.largeImageKey = "lain";
+  presence.largeImageKey = "logo";
   Discord_UpdatePresence(&presence);
 }
 

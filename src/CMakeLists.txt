@@ -49,6 +49,8 @@ target_include_directories(gadolinium PRIVATE
   ${SDL2_INCLUDE_DIR}
 )
 
+set_target_properties(gadolinium PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+
 file(COPY ${PROJECT_SOURCE_DIR}/../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)
 file(REMOVE
   ${PROJECT_BINARY_DIR}/resources/mario.png

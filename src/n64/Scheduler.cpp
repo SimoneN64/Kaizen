@@ -20,7 +20,7 @@ void Scheduler::enqueueAbsolute(const Event& event) {
 
 void Scheduler::tick(u64 t, n64::Mem& mem, n64::Registers& regs) {
   ticks += t;
-  if(ticks >= events.top().time) {
+  while(ticks >= events.top().time) {
     events.top().event_cb(mem, regs);
     events.pop();
   }

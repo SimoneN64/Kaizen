@@ -5,7 +5,6 @@
 #include <nlohmann/json.hpp>
 #include <filesystem>
 #include <SDL.h>
-#include <SDL_vulkan.h>
 
 VkInstance instance{};
 using json = nlohmann::json;

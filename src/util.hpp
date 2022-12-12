@@ -21,7 +21,7 @@ enum MessageType : u8 {
 
 template <MessageType messageType = Info, typename ...Args>
 constexpr void print(const std::string& fmt, Args... args) {
-#ifndef __WIN32
+#ifndef _WIN32
   if constexpr(messageType == Error) {
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red), fmt, args...);
     exit(-1);

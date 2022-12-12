@@ -13,6 +13,10 @@ find_package(fmt REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
+option(RAPIDJSON_BUILD_DOC "Build rapidjson documentation." OFF)
+option(RAPIDJSON_BUILD_EXAMPLES "Build rapidjson examples." OFF)
+option(RAPIDJSON_BUILD_TESTS "Build rapidjson perftests and unittests." OFF)
+
 add_subdirectory(../external/capstone capstone)
 add_subdirectory(../external/parallel-rdp prdp)
 add_subdirectory(../external/imgui imgui)

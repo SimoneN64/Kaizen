@@ -30,3 +30,19 @@
 #define CART_REGION 0x10000000 ... 0x1FBFFFFF
 #define PIF_ROM_REGION 0x1FC00000 ... 0x1FC007BF
 #define PIF_RAM_REGION 0x1FC007C0 ... 0x1FC007FF
+
+constexpr size_t operator""_kb(unsigned long long int x) {
+  return 1024ULL * x;
+}
+
+constexpr size_t operator""_mb(unsigned long long int x) {
+  return 1024_kb * x;
+}
+
+constexpr size_t operator""_gb(unsigned long long int x) {
+  return 1024_mb * x;
+}
+
+#define ADDRESS_RANGE_SIZE 4_gb
+#define PAGE_SIZE 4_kb
+#define PAGE_COUNT ((ADDRESS_RANGE_SIZE) / (PAGE_SIZE))

@@ -82,6 +82,7 @@ private:
   std::vector<u8> cart, sram;
   u8 pifBootrom[PIF_BOOTROM_SIZE]{};
   u8 isviewer[ISVIEWER_SIZE]{};
+  std::vector<uintptr_t> writePages, readPages;
   size_t romMask;
 
   void SetCICType(u32& cicType, u32 checksum) {

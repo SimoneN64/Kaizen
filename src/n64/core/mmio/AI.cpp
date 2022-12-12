@@ -44,7 +44,7 @@ void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
     case 0x04500004: {
       u32 len = (val & 0x3FFFF) & ~7;
       if((dmaCount < 2) && len) {
-        if(dmaCount == 0) InterruptRaise(mem.mmio.mi, regs, Interrupt::AI);
+        // if(dmaCount == 0) InterruptRaise(mem.mmio.mi, regs, Interrupt::AI);
         dmaLen[dmaCount] = len;
         dmaCount++;
       }

@@ -13,5 +13,6 @@ struct Registers {
   s64 oldPC, pc, nextPC;
   s64 hi, lo;
   bool prevDelaySlot, delaySlot;
+  int steps = 0;
 };
 }

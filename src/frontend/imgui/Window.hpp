@@ -15,7 +15,7 @@ struct Window {
   [[nodiscard]] bool gotClosed(SDL_Event event);
   ImFont *uiFont{}, *codeFont{};
   u32 windowID{};
-  float volumeL = 0.01, volumeR = 0.01;
+  float volumeL = 0.0, volumeR = 0.0;
   void LoadROM(n64::Core& core, const std::string& path);
 private:
   bool lockVolume = true;

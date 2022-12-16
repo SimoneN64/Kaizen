@@ -16,21 +16,16 @@ void Mem::Reset() {
   std::fill(writePages.begin(), writePages.end(), 0);
 
   for(int i = 0; i < 2048; i++) {
-    const auto pointer = (uintptr_t) &mmio.rdp.dram[(i * PAGE_SIZE) & RDRAM_DSIZE];
-    readPages[i + 0x80000] = pointer;
-    readPages[i + 0xA0000] = pointer;
-    writePages[i + 0x80000] = pointer;
-    writePages[i + 0xA0000] = pointer;
+    const auto addr = (i * PAGE_SIZE) & RDRAM_DSIZE;
+    const auto pointer = (uintptr_t) &mmio.rdp.rdram[addr];
+    readPages[i] = pointer;
+    writePages[i] = pointer;
   }
 
-  readPages[0x84000] = (uintptr_t) &mmio.rsp.dmem[0];
-  readPages[0xA4000] = (uintptr_t) &mmio.rsp.dmem[0];
-  readPages[0x84001] = (uintptr_t) &mmio.rsp.imem[0];
-  readPages[0xA4001] = (uintptr_t) &mmio.rsp.imem[0];
-  writePages[0x84000] = (uintptr_t) &mmio.rsp.dmem[0];
-  writePages[0xA4000] = (uintptr_t) &mmio.rsp.dmem[0];
-  writePages[0x84001] = (uintptr_t) &mmio.rsp.imem[0];
-  writePages[0xA4001] = (uintptr_t) &mmio.rsp.imem[0];
+  readPages[0x4000] = (uintptr_t) &mmio.rsp.dmem[0];
+  readPages[0x4001] = (uintptr_t) &mmio.rsp.imem[0];
+  writePages[0x4000] = (uintptr_t) &mmio.rsp.dmem[0];
+  writePages[0x4001] = (uintptr_t) &mmio.rsp.imem[0];
 
   sram.resize(SRAM_SIZE);
   std::fill(sram.begin(), sram.end(), 0);
@@ -94,22 +89,22 @@ template bool MapVAddr<false>(Registers& regs, TLBAccessType accessType, u64 vad
 
 template <bool tlb>
 u8 Mem::Read8(n64::Registers &regs, u64 vaddr, s64 pc) {
-  const auto page = (vaddr & 0xFFFFFFFF) >> 12;
-  const auto offset = vaddr & 0xFFF;
+  u32 paddr = vaddr;
+  if (!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
+    HandleTLBException(regs, vaddr);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, pc);
+  }
+
+  const auto page = paddr >> 12;
+  const auto offset = paddr & 0xFFF;
   const auto pointer = readPages[page];
 
   if(pointer) {
     return ((u8*)pointer)[BYTE_ADDRESS(offset)];
   } else {
-    u32 paddr = vaddr;
-    if (!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
-      HandleTLBException(regs, vaddr);
-      FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, pc);
-    }
-
     switch (paddr) {
       case 0x00000000 ... 0x007FFFFF:
-        return mmio.rdp.dram[BYTE_ADDRESS(paddr)];
+        return mmio.rdp.rdram[BYTE_ADDRESS(paddr)];
       case 0x04000000 ... 0x0403FFFF:
         if ((paddr >> 12) & 1)
           return mmio.rsp.imem[BYTE_ADDRESS(paddr) & IMEM_DSIZE];
@@ -145,22 +140,22 @@ u8 Mem::Read8(n64::Registers &regs, u64 vaddr, s64 pc) {
 
 template <bool tlb>
 u16 Mem::Read16(n64::Registers &regs, u64 vaddr, s64 pc) {
-  const auto page = (vaddr & 0xFFFFFFFF) >> 12;
-  const auto offset = vaddr & 0xFFF;
+  u32 paddr = vaddr;
+  if (!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
+    HandleTLBException(regs, vaddr);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, pc);
+  }
+
+  const auto page = paddr >> 12;
+  const auto offset = paddr & 0xFFF;
   const auto pointer = readPages[page];
 
   if(pointer) {
     return util::ReadAccess<u16>((u8*)pointer, HALF_ADDRESS(offset));
   } else {
-    u32 paddr = vaddr;
-    if (!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
-      HandleTLBException(regs, vaddr);
-      FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, pc);
-    }
-
     switch (paddr) {
       case 0x00000000 ... 0x007FFFFF:
-        return util::ReadAccess<u16>(mmio.rdp.dram.data(), HALF_ADDRESS(paddr));
+        return util::ReadAccess<u16>(mmio.rdp.rdram.data(), HALF_ADDRESS(paddr));
       case 0x04000000 ... 0x0403FFFF:
         if ((paddr >> 12) & 1)
           return util::ReadAccess<u16>(mmio.rsp.imem, HALF_ADDRESS(paddr) & IMEM_DSIZE);
@@ -191,22 +186,22 @@ u16 Mem::Read16(n64::Registers &regs, u64 vaddr, s64 pc) {
 
 template <bool tlb>
 u32 Mem::Read32(n64::Registers &regs, u64 vaddr, s64 pc) {
-  const auto page = (vaddr & 0xFFFFFFFF) >> 12;
-  const auto offset = vaddr & 0xFFF;
+  u32 paddr = vaddr;
+  if (!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
+    HandleTLBException(regs, vaddr);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, pc);
+  }
+
+  const auto page = paddr >> 12;
+  const auto offset = paddr & 0xFFF;
   const auto pointer = readPages[page];
 
   if(pointer) {
     return util::ReadAccess<u32>((u8*)pointer, offset);
   } else {
-    u32 paddr = vaddr;
-    if(!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
-      HandleTLBException(regs, vaddr);
-      FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, pc);
-    }
-
     switch(paddr) {
       case 0x00000000 ... 0x007FFFFF:
-        return util::ReadAccess<u32>(mmio.rdp.dram.data(), paddr);
+        return util::ReadAccess<u32>(mmio.rdp.rdram.data(), paddr);
       case 0x04000000 ... 0x0403FFFF:
         if((paddr >> 12) & 1)
           return util::ReadAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE);
@@ -231,22 +226,22 @@ u32 Mem::Read32(n64::Registers &regs, u64 vaddr, s64 pc) {
 
 template <bool tlb>
 u64 Mem::Read64(n64::Registers &regs, u64 vaddr, s64 pc) {
-  const auto page = (vaddr & 0xFFFFFFFF) >> 12;
-  const auto offset = vaddr & 0xFFF;
+  u32 paddr = vaddr;
+  if (!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
+    HandleTLBException(regs, vaddr);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, pc);
+  }
+
+  const auto page = paddr >> 12;
+  const auto offset = paddr & 0xFFF;
   const auto pointer = readPages[page];
 
   if(pointer) {
     return util::ReadAccess<u64>((u8*)pointer, offset);
   } else {
-    u32 paddr = vaddr;
-    if (!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
-      HandleTLBException(regs, vaddr);
-      FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, pc);
-    }
-
     switch (paddr) {
       case 0x00000000 ... 0x007FFFFF:
-        return util::ReadAccess<u64>(mmio.rdp.dram.data(), paddr);
+        return util::ReadAccess<u64>(mmio.rdp.rdram.data(), paddr);
       case 0x04000000 ... 0x0403FFFF:
         if ((paddr >> 12) & 1)
           return util::ReadAccess<u64>(mmio.rsp.imem, paddr & IMEM_DSIZE);
@@ -285,22 +280,27 @@ template u64 Mem::Read64<true>(n64::Registers &regs, u64 vaddr, s64 pc);
 
 template <bool tlb>
 void Mem::Write8(Registers& regs, u64 vaddr, u32 val, s64 pc) {
-  const auto page = (vaddr & 0xFFFFFFFF) >> 12;
-  const auto offset = vaddr & 0xFFF;
-  const auto pointer = writePages[page];
+  u32 paddr = vaddr;
+  if (!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
+    HandleTLBException(regs, vaddr);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, pc);
+  }
+
+  const auto page = paddr >> 12;
+  auto offset = paddr & 0xFFF;
+  const auto pointer = readPages[page];
 
   if(pointer) {
-    ((u8*)pointer)[BYTE_ADDRESS(offset)] = val;
-  } else {
-    u32 paddr = vaddr;
-    if (!MapVAddr<tlb>(regs, STORE, vaddr, paddr)) {
-      HandleTLBException(regs, vaddr);
-      FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, pc);
+    if(paddr >= 0x04000000 && paddr <= 0x0403FFFF) {
+      val = val << (8 * (3 - (paddr & 3)));
+      offset = (offset & DMEM_DSIZE) & ~3;
     }
 
+    ((u8*)pointer)[BYTE_ADDRESS(offset)] = val;
+  } else {
     switch (paddr) {
       case 0x00000000 ... 0x007FFFFF:
-        mmio.rdp.dram[BYTE_ADDRESS(paddr)] = val;
+        mmio.rdp.rdram[BYTE_ADDRESS(paddr)] = val;
         break;
       case 0x04000000 ... 0x0403FFFF:
         val = val << (8 * (3 - (paddr & 3)));
@@ -339,22 +339,27 @@ void Mem::Write8(Registers& regs, u64 vaddr, u32 val, s64 pc) {
 
 template <bool tlb>
 void Mem::Write16(Registers& regs, u64 vaddr, u32 val, s64 pc) {
-  const auto page = (vaddr & 0xFFFFFFFF) >> 12;
-  const auto offset = vaddr & 0xFFF;
-  const auto pointer = writePages[page];
+  u32 paddr = vaddr;
+  if (!MapVAddr<tlb>(regs, STORE, vaddr, paddr)) {
+    HandleTLBException(regs, vaddr);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, pc);
+  }
+
+  const auto page = paddr >> 12;
+  auto offset = paddr & 0xFFF;
+  const auto pointer = readPages[page];
 
   if(pointer) {
-    util::WriteAccess<u16>((u8*)pointer, HALF_ADDRESS(offset), val);
-  } else {
-    u32 paddr = vaddr;
-    if (!MapVAddr<tlb>(regs, STORE, vaddr, paddr)) {
-      HandleTLBException(regs, vaddr);
-      FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, pc);
+    if(paddr >= 0x04000000 && paddr <= 0x0403FFFF) {
+      val = val << (16 * !(paddr & 2));
+      offset &= ~3;
     }
 
+    util::WriteAccess<u16>((u8*)pointer, HALF_ADDRESS(offset), val);
+  } else {
     switch (paddr) {
       case 0x00000000 ... 0x007FFFFF:
-        util::WriteAccess<u16>(mmio.rdp.dram.data(), HALF_ADDRESS(paddr), val);
+        util::WriteAccess<u16>(mmio.rdp.rdram.data(), HALF_ADDRESS(paddr), val);
         break;
       case 0x04000000 ... 0x0403FFFF:
         val = val << (16 * !(paddr & 2));
@@ -393,22 +398,22 @@ void Mem::Write16(Registers& regs, u64 vaddr, u32 val, s64 pc) {
 
 template <bool tlb>
 void Mem::Write32(Registers& regs, u64 vaddr, u32 val, s64 pc) {
-  const auto page = (vaddr & 0xFFFFFFFF) >> 12;
-  const auto offset = vaddr & 0xFFF;
-  const auto pointer = writePages[page];
+  u32 paddr = vaddr;
+  if(!MapVAddr<tlb>(regs, STORE, vaddr, paddr)) {
+    HandleTLBException(regs, vaddr);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, pc);
+  }
+
+  const auto page = paddr >> 12;
+  auto offset = paddr & 0xFFF;
+  const auto pointer = readPages[page];
 
   if(pointer) {
     util::WriteAccess<u32>((u8*)pointer, offset, val);
   } else {
-    u32 paddr = vaddr;
-    if(!MapVAddr<tlb>(regs, STORE, vaddr, paddr)) {
-      HandleTLBException(regs, vaddr);
-      FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, pc);
-    }
-
     switch(paddr) {
       case 0x00000000 ... 0x007FFFFF:
-        util::WriteAccess<u32>(mmio.rdp.dram.data(), paddr, val);
+        util::WriteAccess<u32>(mmio.rdp.rdram.data(), paddr, val);
         break;
       case 0x04000000 ... 0x0403FFFF:
         if(paddr & 0x1000)
@@ -444,22 +449,25 @@ void Mem::Write32(Registers& regs, u64 vaddr, u32 val, s64 pc) {
 
 template <bool tlb>
 void Mem::Write64(Registers& regs, u64 vaddr, u64 val, s64 pc) {
-  const auto page = (vaddr & 0xFFFFFFFF) >> 12;
-  const auto offset = vaddr & 0xFFF;
-  const auto pointer = writePages[page];
+  u32 paddr = vaddr;
+  if(!MapVAddr<tlb>(regs, STORE, vaddr, paddr)) {
+    HandleTLBException(regs, vaddr);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, pc);
+  }
+
+  const auto page = paddr >> 12;
+  auto offset = paddr & 0xFFF;
+  const auto pointer = readPages[page];
 
   if(pointer) {
+    if(paddr >= 0x04000000 && paddr <= 0x0403FFFF) {
+      val >>= 32;
+    }
     util::WriteAccess<u64>((u8*)pointer, offset, val);
   } else {
-    u32 paddr = vaddr;
-    if (!MapVAddr<tlb>(regs, STORE, vaddr, paddr)) {
-      HandleTLBException(regs, vaddr);
-      FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, pc);
-    }
-
     switch (paddr) {
       case 0x00000000 ... 0x007FFFFF:
-        util::WriteAccess<u64>(mmio.rdp.dram.data(), paddr, val);
+        util::WriteAccess<u64>(mmio.rdp.rdram.data(), paddr, val);
         break;
       case 0x04000000 ... 0x0403FFFF:
         val >>= 32;

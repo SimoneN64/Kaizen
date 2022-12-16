@@ -53,8 +53,6 @@ target_include_directories(gadolinium PRIVATE
   ${SDL2_INCLUDE_DIR}
 )
 
-set_target_properties(gadolinium PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
-
 file(COPY ${PROJECT_SOURCE_DIR}/../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)
 file(REMOVE
   ${PROJECT_BINARY_DIR}/resources/mario.png
@@ -64,6 +62,23 @@ file(REMOVE
 if(WIN32)
   add_compile_definitions(NOMINMAX _CRT_SECURE_NO_WARNINGS)
   add_compile_options(/EHa)
+endif()
+
+if(${CMAKE_BUILD_TYPE} MATCHES Release)
+  set_property(TARGET gadolinium PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+  if(WIN32)
+    add_compile_options(/O2)
+  else()
+    add_compile_options(-O3)
+  endif()
+else()
+  if(WIN32)
+    add_compile_options(/Od)
+  else()
+    add_compile_options(-fsanitize=address)
+    add_link_options(-fsanitize=address)
+    add_compile_options(-g)
+  endif()
 endif()
 
 target_link_libraries(gadolinium PRIVATE discord-rpc SDL2::SDL2main SDL2::SDL2 capstone-static nfd parallel-rdp fmt::fmt imgui nlohmann_json::nlohmann_json)

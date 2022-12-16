@@ -215,7 +215,7 @@ void RSP::Exec(Registers &regs, Mem& mem, u32 instr) {
       fwrite(temp, 1, IMEM_SIZE, fp);
       free(temp);
       fclose(fp);
-      util::panic("Unhandled RSP instruction ({:06b})\n", mask);
+      util::panic("Unhandled RSP instruction ({:06b}, {:04X})\n", mask, oldPC);
   }
 }
 }

@@ -20,7 +20,7 @@ struct Mem {
   void Reset();
   CartInfo LoadROM(const std::string&);
   [[nodiscard]] auto GetRDRAM() -> u8* {
-    return mmio.rdp.dram.data();
+    return mmio.rdp.rdram.data();
   }
 
   template <bool tlb = true>
@@ -46,7 +46,7 @@ struct Mem {
   inline void DumpRDRAM() const {
     FILE *fp = fopen("rdram.dump", "wb");
     u8 *temp = (u8*)calloc(RDRAM_SIZE, 1);
-    memcpy(temp, mmio.rdp.dram.data(), RDRAM_SIZE);
+    memcpy(temp, mmio.rdp.rdram.data(), RDRAM_SIZE);
     util::SwapBuffer32(RDRAM_SIZE, temp);
     fwrite(temp, 1, RDRAM_SIZE, fp);
     free(temp);
@@ -72,6 +72,7 @@ struct Mem {
     free(temp);
     fclose(fp);
   }
+  std::vector<uintptr_t> writePages, readPages;
 private:
   friend struct SI;
   friend struct PI;

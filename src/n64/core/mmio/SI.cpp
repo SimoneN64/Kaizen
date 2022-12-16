@@ -36,17 +36,14 @@ void DMA(Mem& mem, Registers& regs) {
   MMIO& mmio = mem.mmio;
   SI& si = mmio.si;
   si.status.dmaBusy = false;
-  if(si.status.dmaBusy) {
-    return;
-  }
   if(si.toDram) {
     ProcessPIFCommands(mem.pifRam, si.controller, mem);
     for(int i = 0; i < 64; i++) {
-      mem.mmio.rdp.dram[BYTE_ADDRESS(si.dramAddr + i)] = mem.pifRam[i];
+      mem.mmio.rdp.rdram[BYTE_ADDRESS(si.dramAddr + i)] = mem.pifRam[i];
     }
   } else {
     for(int i = 0; i < 64; i++) {
-      mem.pifRam[i] = mem.mmio.rdp.dram[BYTE_ADDRESS(si.dramAddr + i)];
+      mem.pifRam[i] = mem.mmio.rdp.rdram[BYTE_ADDRESS(si.dramAddr + i)];
     }
     util::logdebug("SI DMA from PIF RAM to RDRAM ({:08X} to {:08X})\n", si.pifAddr, si.dramAddr);
     ProcessPIFCommands(mem.pifRam, si.controller, mem);

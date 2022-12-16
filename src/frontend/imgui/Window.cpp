@@ -2,10 +2,12 @@
 #include <nfd.hpp>
 #include <Core.hpp>
 #include <Audio.hpp>
+#include <nlohmann/json.hpp>
 #include <filesystem>
 #include <SDL.h>
 
 VkInstance instance{};
+using json = nlohmann::json;
 
 Window::Window(n64::Core& core) {
   InitSDL();
@@ -57,7 +59,7 @@ void Window::InitSDL() {
     "Gadolinium",
     SDL_WINDOWPOS_CENTERED,
     SDL_WINDOWPOS_CENTERED,
-    800, 600,
+    1024, 768,
     SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI
   );
 
@@ -143,6 +145,17 @@ void Window::InitImgui() {
   uiFont = io.Fonts->AddFontFromFileTTF("resources/OpenSans.ttf", 15.f);
   codeFont = io.Fonts->AddFontFromFileTTF("resources/Sweet16.ttf", 15.f);
 
+  int displayIndex = SDL_GetWindowDisplayIndex(window);
+  float ddpi, hdpi, vdpi;
+  SDL_GetDisplayDPI(displayIndex, &ddpi, &hdpi, &vdpi);
+
+  ddpi /= 96.f;
+
+  uiFont = io.Fonts->AddFontFromFileTTF("resources/OpenSans.ttf", 16.f * ddpi);
+  codeFont = io.Fonts->AddFontFromFileTTF("resources/Sweet16.ttf", 16.f * ddpi);
+
+  ImGui::GetStyle().ScaleAllSizes(ddpi);
+
   {
     VkCommandBuffer commandBuffer = GetVkCommandBuffer();
     ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
@@ -178,14 +191,14 @@ void Window::LoadROM(n64::Core& core, const std::string &path) {
     std::ifstream gameDbFile("resources/game_db.json");
     json gameDb = json::parse(gameDbFile);
     auto entry = gameDb[fmt::format("{:08x}", cartInfo.crc)]["name"];
-    std::string name{};
+
     if(!entry.empty()) {
-      name = entry.get<std::string>();
+      gameName = entry.get<std::string>();
     } else {
-      name = std::filesystem::path(path).stem().string();
+      gameName = std::filesystem::path(path).stem().string();
     }
 
-    windowTitle = "Gadolinium - " + name;
+    windowTitle = "Gadolinium - " + gameName;
     shadowWindowTitle = windowTitle;
 
     SDL_SetWindowTitle(window, windowTitle.c_str());
@@ -215,6 +228,7 @@ void Window::Render(n64::Core& core) {
         nfdresult_t result = NFD_OpenDialog(&outpath, &filter, 1, nullptr);
         if (result == NFD_OKAY) {
           LoadROM(core, outpath);
+          util::UpdateRPC(util::Playing, gameName);
           NFD_FreePath(outpath);
         }
       }
@@ -238,6 +252,8 @@ void Window::Render(n64::Core& core) {
       }
       if (ImGui::MenuItem("Stop")) {
         windowTitle = "Gadolinium";
+        core.rom.clear();
+        util::UpdateRPC(util::Idling);
         SDL_SetWindowTitle(window, windowTitle.c_str());
         core.Stop();
       }
@@ -246,8 +262,10 @@ void Window::Render(n64::Core& core) {
         if(core.pause) {
           shadowWindowTitle = windowTitle;
           windowTitle += "  | Paused";
+          util::UpdateRPC(util::Paused, gameName);
         } else {
           windowTitle = shadowWindowTitle;
+          util::UpdateRPC(util::Playing, gameName);
         }
         SDL_SetWindowTitle(window, windowTitle.c_str());
       }

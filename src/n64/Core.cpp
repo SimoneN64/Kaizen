@@ -33,7 +33,7 @@ CartInfo Core::LoadROM(const std::string& rom_) {
 void Core::Run(Window& window, float volumeL, float volumeR) {
   MMIO& mmio = mem.mmio;
   Controller& controller = mmio.si.controller;
-  int cpuSteps = 0;
+
   for(int field = 0; field < mmio.vi.numFields; field++) {
     int frameCycles = 0;
     if(!pause && romLoaded) {
@@ -46,14 +46,11 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
 
         for(;cycles <= mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
           CpuStep(mem);
-          cpuSteps++;
-          if(mmio.rsp.spStatus.halt) {
-            mmio.rsp.steps = 0;
-            cpuSteps = 0;
-          } else {
-            if(cpuSteps > 2) {
+          if(!mmio.rsp.spStatus.halt) {
+            cpu.regs.steps++;
+            if(cpu.regs.steps > 2) {
               mmio.rsp.steps += 2;
-              cpuSteps -= 3;
+              cpu.regs.steps -= 3;
             }
 
             while(mmio.rsp.steps > 0) {

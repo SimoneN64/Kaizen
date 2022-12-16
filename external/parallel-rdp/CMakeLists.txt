@@ -32,8 +32,9 @@ add_library(parallel-rdp
   parallel-rdp-standalone/vulkan/texture_format.cpp
   parallel-rdp-standalone/vulkan/wsi.cpp
   parallel-rdp-standalone/vulkan/wsi.hpp
-  parallel-rdp-standalone/vulkan/wsi_timing.cpp
-  parallel-rdp-standalone/vulkan/wsi_timing.hpp
+  parallel-rdp-standalone/vulkan/memory_allocator.cpp
+  parallel-rdp-standalone/util/arena_allocator.cpp
+  parallel-rdp-standalone/vulkan/wsi.hpp
   parallel-rdp-standalone/util/aligned_alloc.cpp
   parallel-rdp-standalone/util/timer.cpp
   parallel-rdp-standalone/util/timeline_trace_file.cpp
@@ -75,6 +76,7 @@ target_include_directories(parallel-rdp PUBLIC
   ../imgui/imgui
   ../imgui/imgui/backends
   ../fmt/include
+  ../discord-rpc/include
   .
 )
 

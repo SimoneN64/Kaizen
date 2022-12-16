@@ -1,9 +1,10 @@
 #pragma once
 #include <imgui/Window.hpp>
+#include <util.hpp>
 
 struct App {
-  App() : window(core) {};
-  ~App() = default;
+  App();
+  ~App() { util::ClearRPC(); }
   void Run();
   inline void LoadROM(const std::string& path) {
     window.LoadROM(core, path);

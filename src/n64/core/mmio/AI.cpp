@@ -44,7 +44,7 @@ void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
     case 0x04500004: {
       u32 len = (val & 0x3FFFF) & ~7;
       if((dmaCount < 2) && len) {
-        if(dmaCount == 0) InterruptRaise(mem.mmio.mi, regs, Interrupt::AI);
+        // if(dmaCount == 0) InterruptRaise(mem.mmio.mi, regs, Interrupt::AI);
         dmaLen[dmaCount] = len;
         dmaCount++;
       }
@@ -81,17 +81,19 @@ void AI::Step(Mem& mem, Registers& regs, int cpuCycles, float volumeL, float vol
     }
 
     if(dmaLen[0] && dmaEnable) {
-      u32 addrHi = ((dmaAddr[0] >> 13) + dmaAddrCarry) & 0x7FF;
-      dmaAddr[0] = (addrHi << 13) | (dmaAddr[0] & 0x1FFF);
-      u32 data = util::ReadAccess<u32>(mem.mmio.rdp.dram.data(), dmaAddr[0] & RDRAM_DSIZE);
-      s16 l = s16(data >> 16);
-      s16 r = s16(data);
+      if(volumeR > 0 && volumeL > 0) {
+        u32 addrHi = ((dmaAddr[0] >> 13) + dmaAddrCarry) & 0x7FF;
+        dmaAddr[0] = (addrHi << 13) | (dmaAddr[0] & 0x1FFF);
+        u32 data = util::ReadAccess<u32>(mem.mmio.rdp.rdram.data(), dmaAddr[0] & RDRAM_DSIZE);
+        s16 l = s16(data >> 16);
+        s16 r = s16(data);
 
-      PushSample((float)l / INT16_MAX, volumeL, (float)r / INT16_MAX, volumeR);
+        PushSample((float) l / INT16_MAX, volumeL, (float) r / INT16_MAX, volumeR);
 
-      u32 addrLo = (dmaAddr[0] + 4) & 0x1FFF;
-      dmaAddr[0] = (dmaAddr[0] & ~0x1FFF) | addrLo;
-      dmaAddrCarry = addrLo == 0;
+        u32 addrLo = (dmaAddr[0] + 4) & 0x1FFF;
+        dmaAddr[0] = (dmaAddr[0] & ~0x1FFF) | addrLo;
+        dmaAddrCarry = addrLo == 0;
+      }
       dmaLen[0] -= 4;
     }
 

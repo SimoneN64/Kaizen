@@ -18,15 +18,16 @@ struct Window {
   [[nodiscard]] bool gotClosed(SDL_Event event);
   ImFont *uiFont{}, *codeFont{};
   u32 windowID{};
-  float volumeL = 0.1, volumeR = 0.1;
+  float volumeL = 0.0, volumeR = 0.0;
   void LoadROM(n64::Core& core, const std::string& path);
 private:
   json settings;
   std::fstream settingsFile;
   bool lockVolume = true;
   SDL_Window* window{};
-  std::string windowTitle;
-  std::string shadowWindowTitle;
+  std::string windowTitle{"Gadolinium"};
+  std::string shadowWindowTitle{windowTitle};
+  std::string gameName{};
   void InitSDL();
   void InitImgui();
   void Render(n64::Core& core);

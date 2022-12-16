@@ -9,7 +9,7 @@ Cop1::Cop1() {
 }
 
 void Cop1::Reset() {
-  fcr0 = 0xa00;
+  fcr0 = 0;
   fcr31.raw = 0;
   memset(fgr, 0, 32 * sizeof(FGR));
 }

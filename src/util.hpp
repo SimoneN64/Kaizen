@@ -8,6 +8,7 @@
 #include <array>
 #include <chrono>
 #include <functional>
+#include <discord_rpc.h>
 
 namespace util {
 using SteadyClock = std::chrono::steady_clock;
@@ -20,7 +21,7 @@ enum MessageType : u8 {
 
 template <MessageType messageType = Info, typename ...Args>
 constexpr void print(const std::string& fmt, Args... args) {
-#ifndef __WIN32
+#ifndef _WIN32
   if constexpr(messageType == Error) {
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red), fmt, args...);
     exit(-1);
@@ -264,5 +265,41 @@ inline auto ReadFileBinary(const std::string& path, u32** buf) {
   file.read(reinterpret_cast<char*>(*buf), size);
   file.close();
   return size;
+}
+
+enum State {
+  Idling,
+  Playing,
+  Paused
+};
+
+inline void UpdateRPC(State state, const std::string& game = "") {
+  DiscordRichPresence presence{};
+  std::string textState, textDetails;
+
+  switch(state) {
+    case Idling:
+      textDetails = "Idling";
+      break;
+    case Playing:
+      textDetails = "In-game";
+      textState = "Playing \"" + game + "\"";
+      break;
+    case Paused:
+      textDetails = "In-game";
+      textState = "Playing \"" + game + "\" (Paused)";
+      break;
+  }
+
+  presence.details = textDetails.c_str();
+  presence.state = textState.c_str();
+  presence.startTimestamp = time(nullptr);
+  presence.largeImageText = "Gadolinium";
+  presence.largeImageKey = "logo";
+  Discord_UpdatePresence(&presence);
+}
+
+inline void ClearRPC() {
+  Discord_ClearPresence();
 }
 }

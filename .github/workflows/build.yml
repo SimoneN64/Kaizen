@@ -17,7 +17,7 @@ jobs:
           cmake -B build
           cd build
           sudo make install
-      - name: Build gadolinium
+      - name: Build Gadolinium
         run: |
           cmake \
             -G Ninja \
@@ -49,7 +49,7 @@ jobs:
           vcpkg install sdl2[vulkan]:x64-windows
           vcpkg install fmt:x64-windows
           vcpkg install nlohmann-json:x64-windows
-      - name: Build gadolinium
+      - name: Build Gadolinium
         run: |
           cmake -B build -T clangcl -DCAPSTONE_ARCHITECTURE_DEFAULT=OFF -DCAPSTONE_BUILD_TESTS=OFF -DCAPSTONE_MIPS_SUPPORT=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release -S src
           cmake --build build --config Release

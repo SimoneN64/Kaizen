@@ -1,6 +1,7 @@
 #include <n64/core/RSP.hpp>
 #include <util.hpp>
 #include <n64/core/Mem.hpp>
+#include <n64/core/cpu/Registers.hpp>
 
 namespace n64 {
 RSP::RSP() {
@@ -88,6 +89,32 @@ auto RSP::Read(u32 addr) -> u32{
     default:
       util::panic("Unimplemented SP register read {:08X}\n", addr);
   }
+}
+
+void RSP::WriteStatus(MI& mi, Registers& regs, u32 value) {
+  auto write = SPStatusWrite{.raw = value};
+  if(write.clearHalt && !write.setHalt) {
+    spStatus.halt = false;
+  }
+  if(write.setHalt && !write.clearHalt) {
+    regs.steps = 0;
+    spStatus.halt = true;
+  }
+  if(write.clearBroke) spStatus.broke = false;
+  if(write.clearIntr && !write.setIntr)
+    InterruptLower(mi, regs, Interrupt::SP);
+  if(write.setIntr && !write.clearIntr)
+    InterruptRaise(mi, regs, Interrupt::SP);
+  CLEAR_SET(spStatus.singleStep, write.clearSstep, write.setSstep);
+  CLEAR_SET(spStatus.interruptOnBreak, write.clearIntrOnBreak, write.setIntrOnBreak);
+  CLEAR_SET(spStatus.signal0, write.clearSignal0, write.setSignal0);
+  CLEAR_SET(spStatus.signal1, write.clearSignal1, write.setSignal1);
+  CLEAR_SET(spStatus.signal2, write.clearSignal2, write.setSignal2);
+  CLEAR_SET(spStatus.signal3, write.clearSignal3, write.setSignal3);
+  CLEAR_SET(spStatus.signal4, write.clearSignal4, write.setSignal4);
+  CLEAR_SET(spStatus.signal5, write.clearSignal5, write.setSignal5);
+  CLEAR_SET(spStatus.signal6, write.clearSignal6, write.setSignal6);
+  CLEAR_SET(spStatus.signal7, write.clearSignal7, write.setSignal7);
 }
 
 void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {

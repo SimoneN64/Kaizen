@@ -13,10 +13,15 @@ find_package(fmt REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
+option(RAPIDJSON_BUILD_DOC "Build rapidjson documentation." OFF)
+option(RAPIDJSON_BUILD_EXAMPLES "Build rapidjson examples." OFF)
+option(RAPIDJSON_BUILD_TESTS "Build rapidjson perftests and unittests." OFF)
+
 add_subdirectory(../external/capstone capstone)
 add_subdirectory(../external/parallel-rdp prdp)
 add_subdirectory(../external/imgui imgui)
 add_subdirectory(../external/nativefiledialog-extended nfd)
+add_subdirectory(../external/discord-rpc discord-rpc)
 
 add_executable(gadolinium
   ${CORE_SOURCES}
@@ -25,7 +30,9 @@ add_executable(gadolinium
   ${FRONTEND_HEADERS}
   main.cpp
   common.hpp
-  util.hpp)
+  util.hpp
+  n64/Scheduler.cpp
+  n64/Scheduler.hpp)
 
 target_include_directories(gadolinium PRIVATE
   .
@@ -43,6 +50,7 @@ target_include_directories(gadolinium PRIVATE
   ../external/parallel-rdp/
   ../external/nativefiledialog-extended/src/include
   ../external/capstone/include
+  ../external/discord-rpc/include
   ${SDL2_INCLUDE_DIR}
 )
 
@@ -57,4 +65,21 @@ if(WIN32)
   target_compile_options(gadolinium PUBLIC /EHa)
 endif()
 
-target_link_libraries(gadolinium PRIVATE SDL2::SDL2main SDL2::SDL2 capstone-static nfd parallel-rdp fmt::fmt imgui nlohmann_json::nlohmann_json)
+if(${CMAKE_BUILD_TYPE} MATCHES Release)
+  set_property(TARGET gadolinium PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+  if(WIN32)
+    add_compile_options(/O2)
+  else()
+    add_compile_options(-O3)
+  endif()
+else()
+  if(WIN32)
+    add_compile_options(/Od)
+  else()
+    add_compile_options(-fsanitize=address)
+    add_link_options(-fsanitize=address)
+    add_compile_options(-g)
+  endif()
+endif()
+
+target_link_libraries(gadolinium PRIVATE discord-rpc SDL2::SDL2main SDL2::SDL2 capstone-static nfd parallel-rdp fmt::fmt imgui nlohmann_json::nlohmann_json)

@@ -53,12 +53,12 @@ void Interpreter::Step(Mem& mem) {
   regs.prevDelaySlot = regs.delaySlot;
   regs.delaySlot = false;
 
-  u32 instruction = mem.Read32(regs, regs.pc, regs.pc);
-
   if(ShouldServiceInterrupt(regs)) {
     FireException(regs, ExceptionCode::Interrupt, 0, regs.pc);
     return;
   }
+
+  u32 instruction = mem.Read32(regs, regs.pc, regs.pc);
 
   regs.oldPC = regs.pc;
   regs.pc = regs.nextPC;

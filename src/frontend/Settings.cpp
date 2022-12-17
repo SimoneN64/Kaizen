@@ -26,9 +26,9 @@ Settings::Settings(n64::Core& core) {
       }
     } else {
       settingsFile.clear();
-      settings["cpu"]["type"] = "dynarec";
+      settings["cpu"]["type"] = "interpreter";
       settingsFile << settings;
-      core.cpuType = n64::CpuType::Dynarec;
+      core.cpuType = n64::CpuType::Interpreter;
     }
 
     auto volumeREntry = settings["audio"]["volumeR"];
@@ -62,12 +62,12 @@ Settings::Settings(n64::Core& core) {
       lockChannels = true;
     }
   } else {
-    settings["cpu"]["type"] = "dynarec";
+    settings["cpu"]["type"] = "interpreter";
     settings["audio"]["volumeR"] = 0.5;
     settings["audio"]["volumeL"] = 0.5;
     settings["audio"]["lockChannels"] = true;
 
-    core.cpuType = n64::CpuType::Dynarec;
+    core.cpuType = n64::CpuType::Interpreter;
     volumeR = 0.5;
     volumeL = 0.5;
     lockChannels = true;

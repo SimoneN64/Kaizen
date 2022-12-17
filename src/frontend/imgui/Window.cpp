@@ -1,17 +1,14 @@
+#include <filesystem>
 #include <Window.hpp>
 #include <nfd.hpp>
 #include <Core.hpp>
 #include <Audio.hpp>
-#include <nlohmann/json.hpp>
-#include <filesystem>
 #include <SDL.h>
 
 VkInstance instance{};
-using json = nlohmann::json;
 
-Window::Window(n64::Core& core) {
+Window::Window(n64::Core& core) : settings(core) {
   InitSDL();
-  LoadSettings(core);
   InitParallelRDP(core.mem.GetRDRAM(), window);
   InitImgui();
   NFD::Init();
@@ -20,34 +17,6 @@ Window::Window(n64::Core& core) {
 [[nodiscard]] bool Window::gotClosed(SDL_Event event) {
   return event.window.event == SDL_WINDOWEVENT_CLOSE
       && event.window.windowID == SDL_GetWindowID(window);
-}
-
-void Window::LoadSettings(n64::Core &core) {
-  settingsFile.open("settings.json", std::fstream::in | std::fstream::out);
-  if(settingsFile.is_open()) {
-    settings = json::parse(settingsFile);
-    auto entryCpuType = settings["cpu_type"];
-    if(!entryCpuType.empty()) {
-      auto cpuType = entryCpuType.get<std::string>();
-      if(cpuType == "dynarec") {
-        core.cpuType = n64::CpuType::Dynarec;
-      } else if(cpuType == "interpreter") {
-        core.cpuType = n64::CpuType::Interpreter;
-      } else {
-        util::panic("Unrecognized cpu type: {}\n", cpuType);
-      }
-    } else {
-      settings["cpu_type"] = "dynarec";
-      settingsFile << settings;
-      core.cpuType = n64::CpuType::Dynarec;
-    }
-  } else {
-    settings["cpu_type"] = "dynarec";
-    settingsFile << settings;
-    core.cpuType = n64::CpuType::Dynarec;
-  }
-
-  settingsFile.close();
 }
 
 void Window::InitSDL() {
@@ -217,6 +186,7 @@ void Window::Render(n64::Core& core) {
     SDL_SetWindowTitle(window, windowTitle.c_str());
     windowTitle = shadowWindowTitle;
   }
+
   static bool showSettings = false;
   bool showMainMenuBar = windowID == SDL_GetWindowID(SDL_GetMouseFocus());
   if(showMainMenuBar) {
@@ -277,21 +247,7 @@ void Window::Render(n64::Core& core) {
     ImGui::EndMainMenuBar();
   }
 
-  if(showSettings) {
-    ImGui::OpenPopup("Settings");
-    if(ImGui::BeginPopupModal("Settings", &showSettings)) {
-      ImGui::Checkbox("Lock channels", &lockVolume);
-      ImGui::SliderFloat("Volume L", &volumeL, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
-      if (!lockVolume) {
-        ImGui::SliderFloat("Volume R", &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
-      } else {
-        volumeR = volumeL;
-        ImGui::BeginDisabled();
-        ImGui::SliderFloat("Volume R", &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
-        ImGui::EndDisabled();
-      }
-      ImGui::EndPopup();
-    }
-  }
+  settings.RenderWidget(showSettings);
+
   ImGui::PopFont();
 }

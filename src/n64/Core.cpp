@@ -33,6 +33,7 @@ CartInfo Core::LoadROM(const std::string& rom_) {
 void Core::Run(Window& window, float volumeL, float volumeR) {
   MMIO& mmio = mem.mmio;
   Controller& controller = mmio.si.controller;
+  Registers& regs = CpuGetRegs();
 
   for(int field = 0; field < mmio.vi.numFields; field++) {
     int frameCycles = 0;
@@ -41,33 +42,33 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
         mmio.vi.current = (i << 1) + field;
 
         if ((mmio.vi.current & 0x3FE) == mmio.vi.intr) {
-          InterruptRaise(mmio.mi, CpuGetRegs(), Interrupt::VI);
+          InterruptRaise(mmio.mi, regs, Interrupt::VI);
         }
 
         for(;cycles <= mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
           CpuStep(mem);
           if(!mmio.rsp.spStatus.halt) {
-            cpu.regs.steps++;
-            if(cpu.regs.steps > 2) {
+            regs.steps++;
+            if(regs.steps > 2) {
               mmio.rsp.steps += 2;
-              cpu.regs.steps -= 3;
+              regs.steps -= 3;
             }
 
             while(mmio.rsp.steps > 0) {
               mmio.rsp.steps--;
-              mmio.rsp.Step(CpuGetRegs(), mem);
+              mmio.rsp.Step(regs, mem);
             }
           }
 
-          mmio.ai.Step(mem, CpuGetRegs(), 1, volumeL, volumeR);
-          scheduler.tick(1, mem, CpuGetRegs());
+          mmio.ai.Step(mem, regs, 1, volumeL, volumeR);
+          scheduler.tick(1, mem, regs);
         }
 
         cycles -= mmio.vi.cyclesPerHalfline;
       }
 
       if ((mmio.vi.current & 0x3FE) == mmio.vi.intr) {
-        InterruptRaise(mmio.mi, CpuGetRegs(), Interrupt::VI);
+        InterruptRaise(mmio.mi, regs, Interrupt::VI);
       }
 
       UpdateScreenParallelRdp(*this, window, GetVI());

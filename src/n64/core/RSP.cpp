@@ -1,7 +1,7 @@
 #include <n64/core/RSP.hpp>
 #include <util.hpp>
 #include <n64/core/Mem.hpp>
-#include <n64/core/cpu/Registers.hpp>
+#include <n64/core/registers/Registers.hpp>
 
 namespace n64 {
 RSP::RSP() {

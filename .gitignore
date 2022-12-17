@@ -16,3 +16,4 @@ log.txt
 .vs/
 CMakeSettings.json
 out/
+settings.json

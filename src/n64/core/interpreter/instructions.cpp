@@ -778,28 +778,28 @@ void Interpreter::trap(bool cond) {
   }
 }
 
-void Cpu::mtc2(u32 instr) {
+void Interpreter::mtc2(u32 instr) {
   cop2Latch = regs.gpr[RT(instr)];
 }
 
-void Cpu::mfc2(u32 instr) {
+void Interpreter::mfc2(u32 instr) {
   s32 value = cop2Latch;
   regs.gpr[RT(instr)] = value;
 }
 
-void Cpu::dmtc2(u32 instr) {
+void Interpreter::dmtc2(u32 instr) {
   cop2Latch = regs.gpr[RT(instr)];
 }
 
-void Cpu::dmfc2(u32 instr) {
+void Interpreter::dmfc2(u32 instr) {
   regs.gpr[RT(instr)] = cop2Latch;
 }
 
-void Cpu::ctc2(u32) {
+void Interpreter::ctc2(u32) {
 
 }
 
-void Cpu::cfc2(u32) {
+void Interpreter::cfc2(u32) {
 
 }
 

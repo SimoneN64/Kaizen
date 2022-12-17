@@ -6,9 +6,7 @@
 #include <SDL.h>
 #include <Core.hpp>
 #include <vector>
-#include <nlohmann/json.hpp>
-
-using namespace nlohmann;
+#include <Settings.hpp>
 
 struct Window {
   explicit Window(n64::Core& core);
@@ -18,12 +16,9 @@ struct Window {
   [[nodiscard]] bool gotClosed(SDL_Event event);
   ImFont *uiFont{}, *codeFont{};
   u32 windowID{};
-  float volumeL = 0.0, volumeR = 0.0;
+  Settings settings;
   void LoadROM(n64::Core& core, const std::string& path);
 private:
-  json settings;
-  std::fstream settingsFile;
-  bool lockVolume = true;
   SDL_Window* window{};
   std::string windowTitle{"Gadolinium"};
   std::string shadowWindowTitle{windowTitle};
@@ -31,7 +26,6 @@ private:
   void InitSDL();
   void InitImgui();
   void Render(n64::Core& core);
-  void LoadSettings(n64::Core&);
 
   VkPhysicalDevice physicalDevice{};
   VkDevice device{};

@@ -12,7 +12,7 @@ void App::Run() {
   SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
 
   while (!core.done) {
-    core.Run(window, window.volumeL, window.volumeR);
+    core.Run(window, window.settings.GetVolumeL(), window.settings.GetVolumeL());
     core.UpdateController(state);
 
     SDL_Event event;

@@ -302,4 +302,18 @@ inline void UpdateRPC(State state, const std::string& game = "") {
 inline void ClearRPC() {
   Discord_ClearPresence();
 }
+
+#define checkjsonentry(name, type, param1, param2, defaultVal) \
+  do { \
+    auto name##Entry = settings[param1][param2];  \
+    if(!name##Entry.empty()) {                    \
+      auto value = name##Entry.get<type>();       \
+      name = value;                               \
+    } else {                                      \
+      settingsFile.clear();                       \
+      settings[param1][param2] = defaultVal;   \
+      settingsFile << settings;                   \
+      name = defaultVal;                          \
+    }                                             \
+  } while(0)
 }

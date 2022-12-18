@@ -7,6 +7,7 @@
 #include <Core.hpp>
 #include <vector>
 #include <Settings.hpp>
+#include <GameList.hpp>
 
 struct Window {
   explicit Window(n64::Core& core);
@@ -17,6 +18,7 @@ struct Window {
   ImFont *uiFont{}, *codeFont{};
   u32 windowID{};
   Settings settings;
+  GameList gameList;
   void LoadROM(n64::Core& core, const std::string& path);
 private:
   SDL_Window* window{};

@@ -12,15 +12,11 @@ struct Settings {
   float GetVolumeR() const { return volumeR; };
   bool GetLockChannels() const { return lockChannels; }
   std::string GetCpuType() const { return cpuType; }
-
-  void SetVolumeL(float v) { volumeL = v; };
-  void SetVolumeR(float v) { volumeR = v; };
-  void SetLockChannels(bool v) { lockChannels = v; }
-  void SetCpuType(std::string v) { cpuType = v; }
+  std::string GetGamesDir() const { return gamesDir; }
 
   void RenderWidget(bool& show);
 private:
-  std::string cpuType = "interpreter";
+  std::string cpuType = "interpreter", gamesDir = "";
   float volumeL = 0.0, volumeR = 0.0;
   bool lockChannels = true;
   json settings;

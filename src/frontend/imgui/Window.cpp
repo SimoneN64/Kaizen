@@ -7,7 +7,7 @@
 
 VkInstance instance{};
 
-Window::Window(n64::Core& core) : settings(core) {
+Window::Window(n64::Core& core) : settings(core), gameList(settings.GetGamesDir()) {
   InitSDL();
   InitParallelRDP(core.mem.GetRDRAM(), window);
   InitImgui();
@@ -167,6 +167,7 @@ void Window::LoadROM(n64::Core& core, const std::string &path) {
       gameName = std::filesystem::path(path).stem().string();
     }
 
+    util::UpdateRPC(util::Playing, gameName);
     windowTitle = "Gadolinium - " + gameName;
     shadowWindowTitle = windowTitle;
 
@@ -187,10 +188,13 @@ void Window::Render(n64::Core& core) {
     windowTitle = shadowWindowTitle;
   }
 
+  static bool renderGameList = true;
   static bool showSettings = false;
   bool showMainMenuBar = windowID == SDL_GetWindowID(SDL_GetMouseFocus());
+  static float mainMenuBarHeight = 0;
   if(showMainMenuBar) {
     ImGui::BeginMainMenuBar();
+    mainMenuBarHeight = ImGui::GetWindowSize().y;
     if (ImGui::BeginMenu("File")) {
       if (ImGui::MenuItem("Open", "O")) {
         nfdchar_t *outpath;
@@ -200,6 +204,7 @@ void Window::Render(n64::Core& core) {
           LoadROM(core, outpath);
           util::UpdateRPC(util::Playing, gameName);
           NFD_FreePath(outpath);
+          renderGameList = false;
         }
       }
       if (ImGui::MenuItem("Dump RDRAM")) {
@@ -219,8 +224,10 @@ void Window::Render(n64::Core& core) {
     if (ImGui::BeginMenu("Emulation")) {
       if (ImGui::MenuItem("Reset")) {
         LoadROM(core, core.rom);
+        renderGameList = false;
       }
       if (ImGui::MenuItem("Stop")) {
+        renderGameList = true;
         windowTitle = "Gadolinium";
         core.rom.clear();
         util::UpdateRPC(util::Idling);
@@ -247,6 +254,11 @@ void Window::Render(n64::Core& core) {
     ImGui::EndMainMenuBar();
   }
 
+  static std::string rom{};
+  if(renderGameList && gameList.RenderWidget(showMainMenuBar, mainMenuBarHeight, rom)) {
+    LoadROM(core, rom);
+    renderGameList = false;
+  }
   settings.RenderWidget(showSettings);
 
   ImGui::PopFont();

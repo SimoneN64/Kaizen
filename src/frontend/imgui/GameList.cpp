@@ -37,24 +37,59 @@ inline std::string CountryCodeToStr(u8 code) {
 
 GameList::GameList(const std::string& path) {
   if(!path.empty()) {
-    std::for_each(std::execution::par_unseq, begin(recursive_directory_iterator{path}), end(recursive_directory_iterator{path}), [&](const auto& p) {
+    std::ifstream gameDbFile("resources/db.json");
+    json gameDb = json::parse(gameDbFile);
+    std::vector<u8> rom{};
+
+    std::for_each(std::execution::par, begin(directory_iterator{path}), end(directory_iterator{path}), [&](const auto& p) {
+      const auto filename = p.path().string();
       if(p.path().extension() == ".n64" || p.path().extension() == ".z64" || p.path().extension() == ".v64" ||
          p.path().extension() == ".N64" || p.path().extension() == ".Z64" || p.path().extension() == ".V64") {
+        std::ifstream file(filename, std::ios::binary);
+        file.unsetf(std::ios::skipws);
 
+        if(!file.is_open()) {
+          util::panic("Unable to open {}!", filename);
+        }
+
+        file.seekg(0, std::ios::end);
+        auto size = file.tellg();
+        auto sizeAdjusted = util::NextPow2(size);
+        file.seekg(0, std::ios::beg);
+
+        std::fill(rom.begin(), rom.end(), 0);
+        rom.resize(sizeAdjusted);
+        rom.insert(rom.begin(), std::istream_iterator<u8>(file), std::istream_iterator<u8>());
+        file.close();
+
+        u32 crc{};
+        util::SwapN64RomJustCRC(sizeAdjusted, rom.data(), crc);
+
+        std::for_each(std::execution::par, gameDb["items"].begin(), gameDb["items"].end(), [&](const auto& item) {
+          const auto& crcEntry = item["crc"];
+          if(!crcEntry.empty()) {
+            if(crcEntry.template get<std::string>() == fmt::format("{:08X}", crc)) {
+              gamesList.push_back({
+                item["name"].template get<std::string>(),
+                item["region"].template get<std::string>(),
+                fmt::format("{:.2f} MiB", float(size) / 1024 / 1024),
+                "Good",
+                p.path().string()
+              });
+            }
+          }
+        });
       }
     });
+
+    gameDbFile.close();
   }
 }
 
-bool GameList::RenderWidget(bool showMainMenuBar, float mainMenuBarHeight, std::string& rom) {
+bool GameList::RenderWidget(float mainMenuBarHeight, std::string& rom) {
   const auto windowSize = ImGui::GetIO().DisplaySize;
-  if (showMainMenuBar) {
-    ImGui::SetNextWindowPos(ImVec2(0, mainMenuBarHeight));
-    ImGui::SetNextWindowSize(ImVec2(windowSize.x, windowSize.y - mainMenuBarHeight));
-  } else {
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(windowSize);
-  }
+  ImGui::SetNextWindowPos(ImVec2(0, mainMenuBarHeight));
+  ImGui::SetNextWindowSize(ImVec2(windowSize.x, windowSize.y - mainMenuBarHeight));
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
 
@@ -72,17 +107,18 @@ bool GameList::RenderWidget(bool showMainMenuBar, float mainMenuBarHeight, std::
     | ImGuiTableFlags_SizingStretchProp;
 
   bool toOpen = false;
-  if (ImGui::BeginTable("Games List", 3, flags)) {
+  if (ImGui::BeginTable("Games List", 4, flags)) {
     ImGui::TableSetupColumn("Title");
     ImGui::TableSetupColumn("Region");
+    ImGui::TableSetupColumn("Status");
     ImGui::TableSetupColumn("Size");
     ImGui::TableHeadersRow();
 
-    for (int row = 0; row < gamesList.size(); row++) {
-      GameInfo entry = gamesList[row];
+    int i = 0;
 
+    for (const auto& entry : gamesList) {
       ImGui::TableNextRow(ImGuiTableRowFlags_None);
-      ImGui::PushID(row);
+      ImGui::PushID(i);
       ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.0f, 0.5f));
       ImGui::TableSetColumnIndex(0);
 
@@ -100,6 +136,13 @@ bool GameList::RenderWidget(bool showMainMenuBar, float mainMenuBarHeight, std::
 
       ImGui::TableSetColumnIndex(2);
 
+      if (ImGui::Selectable(entry.status.c_str(), false, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap, ImVec2(0.0f, 20.f))) {
+        toOpen = true;
+        rom = entry.path;
+      }
+
+      ImGui::TableSetColumnIndex(3);
+
       if (ImGui::Selectable(entry.size.c_str(), false, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap, ImVec2(0.0f, 20.f))) {
         toOpen = true;
         rom = entry.path;
@@ -107,6 +150,7 @@ bool GameList::RenderWidget(bool showMainMenuBar, float mainMenuBarHeight, std::
 
       ImGui::PopStyleVar();
       ImGui::PopID();
+      i++;
     }
 
     ImGui::EndTable();

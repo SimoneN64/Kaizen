@@ -170,6 +170,28 @@ enum RomTypes {
   V64 = 0x37804012
 };
 
+inline void SwapN64RomJustCRC(size_t size, u8* rom, u32& crc) {
+  RomTypes endianness;
+  memcpy(&endianness, rom, 4);
+  endianness = static_cast<RomTypes>(be32toh(endianness));
+
+  switch(endianness) {
+    case RomTypes::V64: {
+      SwapBuffer16(size, rom);
+      crc = crc32(0, rom, size);
+    } break;
+    case RomTypes::N64: {
+      SwapBuffer32(size, rom);
+      crc = crc32(0, rom, size);
+    } break;
+    case RomTypes::Z64:
+      crc = crc32(0, rom, size);
+      break;
+    default:
+      panic("Unrecognized rom format! Make sure this is a valid Nintendo 64 ROM dump!\n");
+  }
+}
+
 inline void SwapN64Rom(size_t size, u8* rom, u32& crc, u32& cicChecksum) {
   RomTypes endianness;
   memcpy(&endianness, rom, 4);

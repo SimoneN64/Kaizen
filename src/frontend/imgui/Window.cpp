@@ -144,15 +144,15 @@ Window::~Window() {
   SDL_Quit();
 }
 
-ImDrawData* Window::Present(n64::Core& core) {
+DrawData Window::Present(n64::Core& core) {
   ImGui_ImplVulkan_NewFrame();
   ImGui_ImplSDL2_NewFrame(window);
   ImGui::NewFrame();
 
-  Render(core);
+  float mainMenuBarHeight = Render(core);
 
   ImGui::Render();
-  return ImGui::GetDrawData();
+  return {ImGui::GetDrawData(), mainMenuBarHeight};
 }
 
 void Window::LoadROM(n64::Core& core, const std::string &path) {
@@ -160,35 +160,35 @@ void Window::LoadROM(n64::Core& core, const std::string &path) {
     n64::CartInfo cartInfo = core.LoadROM(path);
     std::ifstream gameDbFile("resources/db.json");
     json gameDb = json::parse(gameDbFile);
+    gameName = "";
 
-    for(const auto& item : gameDb["titles"]) {
-      auto temp = item["part"]["dataarea"];
-      std::cout << temp << "\n";
-      //if(!crc.empty()) {
-      //  if(crc.get<std::string>() == fmt::format("{:08x}", cartInfo.crc)) {
-      //    auto desc = item["description"];
-      //    if(desc.empty()) {
-      //      gameName = desc.get<std::string>();
-      //    }
-      //  }
-      //}
+    for(const auto& item : gameDb["items"]) {
+      auto crc = item["crc"];
+      if(!crc.empty()) {
+        if(crc.get<std::string>() == fmt::format("{:08X}", cartInfo.crc)) {
+          auto name = item["name"];
+          if(!name.empty()) {
+            gameName = name.get<std::string>();
+          }
+        }
+      }
     };
 
     if(gameName.empty()) {
       gameName = std::filesystem::path(path).stem().string();
     }
 
-    std::cout << gameName << "\n";
-
     util::UpdateRPC(util::Playing, gameName);
     windowTitle = "Gadolinium - " + gameName;
     shadowWindowTitle = windowTitle;
+    renderGameList = false;
 
     SDL_SetWindowTitle(window, windowTitle.c_str());
+    gameDbFile.close();
   }
 }
 
-void Window::Render(n64::Core& core) {
+float Window::Render(n64::Core& core) {
   ImGui::PushFont(uiFont);
 
   u32 ticks = SDL_GetTicks();
@@ -201,78 +201,74 @@ void Window::Render(n64::Core& core) {
     windowTitle = shadowWindowTitle;
   }
 
-  static bool renderGameList = true;
   static bool showSettings = false;
-  bool showMainMenuBar = windowID == SDL_GetWindowID(SDL_GetMouseFocus());
   static float mainMenuBarHeight = 0;
-  if(showMainMenuBar) {
-    ImGui::BeginMainMenuBar();
-    mainMenuBarHeight = ImGui::GetWindowSize().y;
-    if (ImGui::BeginMenu("File")) {
-      if (ImGui::MenuItem("Open", "O")) {
-        nfdchar_t *outpath;
-        const nfdu8filteritem_t filter{"Nintendo 64 roms", "n64,z64,v64,N64,Z64,V64"};
-        nfdresult_t result = NFD_OpenDialog(&outpath, &filter, 1, nullptr);
-        if (result == NFD_OKAY) {
-          LoadROM(core, outpath);
-          util::UpdateRPC(util::Playing, gameName);
-          NFD_FreePath(outpath);
-          renderGameList = false;
-        }
+  ImGui::BeginMainMenuBar();
+  mainMenuBarHeight = ImGui::GetWindowSize().y;
+  if (ImGui::BeginMenu("File")) {
+    if (ImGui::MenuItem("Open", "O")) {
+      nfdchar_t *outpath;
+      const nfdu8filteritem_t filter{"Nintendo 64 roms", "n64,z64,v64,N64,Z64,V64"};
+      nfdresult_t result = NFD_OpenDialog(&outpath, &filter, 1, nullptr);
+      if (result == NFD_OKAY) {
+        LoadROM(core, outpath);
+        util::UpdateRPC(util::Playing, gameName);
+        NFD_FreePath(outpath);
       }
-      if (ImGui::MenuItem("Dump RDRAM")) {
-        core.mem.DumpRDRAM();
-      }
-      if (ImGui::MenuItem("Dump IMEM")) {
-        core.mem.DumpIMEM();
-      }
-      if (ImGui::MenuItem("Dump DMEM")) {
-        core.mem.DumpDMEM();
-      }
-      if (ImGui::MenuItem("Exit")) {
-        core.done = true;
-      }
-      ImGui::EndMenu();
     }
-    if (ImGui::BeginMenu("Emulation")) {
-      if (ImGui::MenuItem("Reset")) {
-        LoadROM(core, core.rom);
-        renderGameList = false;
-      }
-      if (ImGui::MenuItem("Stop")) {
-        renderGameList = true;
-        windowTitle = "Gadolinium";
-        core.rom.clear();
-        util::UpdateRPC(util::Idling);
-        SDL_SetWindowTitle(window, windowTitle.c_str());
-        core.Stop();
-      }
-      if (ImGui::MenuItem(core.pause ? "Resume" : "Pause", nullptr, false, core.romLoaded)) {
-        core.TogglePause();
-        if(core.pause) {
-          shadowWindowTitle = windowTitle;
-          windowTitle += "  | Paused";
-          util::UpdateRPC(util::Paused, gameName);
-        } else {
-          windowTitle = shadowWindowTitle;
-          util::UpdateRPC(util::Playing, gameName);
-        }
-        SDL_SetWindowTitle(window, windowTitle.c_str());
-      }
-      if (ImGui::MenuItem("Settings")) {
-        showSettings = true;
-      }
-      ImGui::EndMenu();
+    if (ImGui::MenuItem("Dump RDRAM")) {
+      core.mem.DumpRDRAM();
     }
-    ImGui::EndMainMenuBar();
+    if (ImGui::MenuItem("Dump IMEM")) {
+      core.mem.DumpIMEM();
+    }
+    if (ImGui::MenuItem("Dump DMEM")) {
+      core.mem.DumpDMEM();
+    }
+    if (ImGui::MenuItem("Exit")) {
+      core.done = true;
+    }
+    ImGui::EndMenu();
   }
+  if (ImGui::BeginMenu("Emulation")) {
+    if (ImGui::MenuItem("Reset")) {
+      LoadROM(core, core.rom);
+    }
+    if (ImGui::MenuItem("Stop")) {
+      renderGameList = true;
+      windowTitle = "Gadolinium";
+      core.rom.clear();
+      util::UpdateRPC(util::Idling);
+      SDL_SetWindowTitle(window, windowTitle.c_str());
+      core.Stop();
+    }
+    if (ImGui::MenuItem(core.pause ? "Resume" : "Pause", nullptr, false, core.romLoaded)) {
+      core.TogglePause();
+      if(core.pause) {
+        shadowWindowTitle = windowTitle;
+        windowTitle += "  | Paused";
+        util::UpdateRPC(util::Paused, gameName);
+      } else {
+        windowTitle = shadowWindowTitle;
+        util::UpdateRPC(util::Playing, gameName);
+      }
+      SDL_SetWindowTitle(window, windowTitle.c_str());
+    }
+    if (ImGui::MenuItem("Settings")) {
+      showSettings = true;
+    }
+    ImGui::EndMenu();
+  }
+  ImGui::EndMainMenuBar();
 
   static std::string rom{};
-  if(renderGameList && gameList.RenderWidget(showMainMenuBar, mainMenuBarHeight, rom)) {
+  if(renderGameList && gameList.RenderWidget(mainMenuBarHeight, rom)) {
     LoadROM(core, rom);
     renderGameList = false;
   }
   settings.RenderWidget(showSettings);
 
   ImGui::PopFont();
+
+  return mainMenuBarHeight;
 }

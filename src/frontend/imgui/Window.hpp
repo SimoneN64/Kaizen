@@ -9,10 +9,15 @@
 #include <Settings.hpp>
 #include <GameList.hpp>
 
+struct DrawData {
+  ImDrawData* first;
+  float second;
+};
+
 struct Window {
   explicit Window(n64::Core& core);
   ~Window();
-  ImDrawData* Present(n64::Core& core);
+  DrawData Present(n64::Core& core);
 
   [[nodiscard]] bool gotClosed(SDL_Event event);
   ImFont *uiFont{}, *codeFont{};
@@ -21,13 +26,14 @@ struct Window {
   GameList gameList;
   void LoadROM(n64::Core& core, const std::string& path);
 private:
+  bool renderGameList = true;
   SDL_Window* window{};
   std::string windowTitle{"Gadolinium"};
   std::string shadowWindowTitle{windowTitle};
   std::string gameName{};
   void InitSDL();
   void InitImgui();
-  void Render(n64::Core& core);
+  float Render(n64::Core& core);
 
   VkPhysicalDevice physicalDevice{};
   VkDevice device{};

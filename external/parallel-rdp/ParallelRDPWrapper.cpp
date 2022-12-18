@@ -187,7 +187,7 @@ void InitParallelRDP(const u8* rdram, SDL_Window* window) {
   LoadParallelRDP(rdram, window);
 }
 
-void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image, Util::IntrusivePtr<CommandBuffer> cmd) {
+void DrawFullscreenTexturedQuad(float mainMenuBarHeight, Util::IntrusivePtr<Image> image, Util::IntrusivePtr<CommandBuffer> cmd) {
   cmd->set_texture(0, 0, image->get_view(), Vulkan::StockSampler::LinearClamp);
   cmd->set_program(fullscreen_quad_program);
   cmd->set_quad_state();
@@ -202,12 +202,20 @@ void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image, Util::Intrusive
   int sdlWinWidth, sdlWinHeight;
   SDL_GetWindowSize(g_Window, &sdlWinWidth, &sdlWinHeight);
 
-  float zoom = std::min(
-    (float)sdlWinWidth / wsi->get_platform().get_surface_width(),
-    (float)sdlWinHeight / wsi->get_platform().get_surface_height());
+  sdlWinHeight -= mainMenuBarHeight;
 
-  float width = (wsi->get_platform().get_surface_width() / (float)sdlWinWidth) * zoom;
-  float height = (wsi->get_platform().get_surface_height() / (float)sdlWinHeight) * zoom;
+  float platform_width = wsi->get_platform().get_surface_width();
+  float platform_height = wsi->get_platform().get_surface_height();
+
+  platform_height -= mainMenuBarHeight;
+
+  float zoom = std::min(
+    (float)sdlWinWidth / platform_width,
+    (float)sdlWinHeight / platform_height);
+
+
+  float width = (platform_width / (float)sdlWinWidth) * zoom;
+  float height = (platform_height / (float)sdlWinHeight) * zoom;
 
   float uniform_data[] = {
     // Size
@@ -253,9 +261,11 @@ void UpdateScreen(n64::Core& core, Window& imguiWindow, Util::IntrusivePtr<Image
   Util::IntrusivePtr<CommandBuffer> cmd = wsi->get_device().request_command_buffer();
 
   cmd->begin_render_pass(wsi->get_device().get_swapchain_render_pass(SwapchainRenderPass::ColorOnly));
-  DrawFullscreenTexturedQuad(image, cmd);
+  DrawData data = imguiWindow.Present(core);
 
-  ImGui_ImplVulkan_RenderDrawData(imguiWindow.Present(core), cmd->get_command_buffer());
+  DrawFullscreenTexturedQuad(data.second, image, cmd);
+
+  ImGui_ImplVulkan_RenderDrawData(data.first, cmd->get_command_buffer());
 
   cmd->end_render_pass();
   wsi->get_device().submit(cmd);

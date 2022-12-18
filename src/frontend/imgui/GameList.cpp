@@ -40,41 +40,7 @@ GameList::GameList(const std::string& path) {
     std::for_each(std::execution::par_unseq, begin(recursive_directory_iterator{path}), end(recursive_directory_iterator{path}), [&](const auto& p) {
       if(p.path().extension() == ".n64" || p.path().extension() == ".z64" || p.path().extension() == ".v64" ||
          p.path().extension() == ".N64" || p.path().extension() == ".Z64" || p.path().extension() == ".V64") {
-        std::ifstream file(p.path().string(), std::ios::binary);
-        file.unsetf(std::ios::skipws);
 
-        if(!file.is_open()) {
-          util::panic("Unable to open {}!", path);
-        }
-
-        file.seekg(0, std::ios::end);
-        auto size = file.tellg();
-        auto sizeAdjusted = util::NextPow2(size);
-        file.seekg(0, std::ios::beg);
-
-        std::vector<u8> cart{};
-
-        std::fill(cart.begin(), cart.end(), 0);
-        cart.resize(sizeAdjusted);
-        cart.insert(cart.begin(), std::istream_iterator<u8>(file), std::istream_iterator<u8>());
-
-        file.close();
-
-        u32 crc, dummy;
-        util::SwapN64Rom(sizeAdjusted, cart.data(), crc, dummy);
-
-        u8 countryCode = 0;
-        countryCode = cart[0x3D];
-
-        std::ifstream gameDbFile("resources/game_db.json");
-        json gameDb = json::parse(gameDbFile);
-        auto entry = gameDb[fmt::format("{:08x}", crc)]["name"];
-
-        if(!entry.empty()) {
-          gamesList.push_back({entry.get<std::string>(), CountryCodeToStr(countryCode), fmt::format("{:.2f} MiB", float(size) / 1024 / 1024), p.path().string()});
-        } else {
-          gamesList.push_back({p.path().stem().string(), CountryCodeToStr(countryCode), fmt::format("{:.2f} MiB", float(size) / 1024 / 1024), p.path().string()});
-        }
       }
     });
   }

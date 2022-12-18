@@ -4,6 +4,7 @@
 #include <Core.hpp>
 #include <Audio.hpp>
 #include <SDL.h>
+#include <iostream>
 
 VkInstance instance{};
 
@@ -157,15 +158,27 @@ ImDrawData* Window::Present(n64::Core& core) {
 void Window::LoadROM(n64::Core& core, const std::string &path) {
   if(!path.empty()) {
     n64::CartInfo cartInfo = core.LoadROM(path);
-    std::ifstream gameDbFile("resources/game_db.json");
+    std::ifstream gameDbFile("resources/db.json");
     json gameDb = json::parse(gameDbFile);
-    auto entry = gameDb[fmt::format("{:08x}", cartInfo.crc)]["name"];
 
-    if(!entry.empty()) {
-      gameName = entry.get<std::string>();
-    } else {
+    for(const auto& item : gameDb["titles"]) {
+      auto temp = item["part"]["dataarea"];
+      std::cout << temp << "\n";
+      //if(!crc.empty()) {
+      //  if(crc.get<std::string>() == fmt::format("{:08x}", cartInfo.crc)) {
+      //    auto desc = item["description"];
+      //    if(desc.empty()) {
+      //      gameName = desc.get<std::string>();
+      //    }
+      //  }
+      //}
+    };
+
+    if(gameName.empty()) {
       gameName = std::filesystem::path(path).stem().string();
     }
+
+    std::cout << gameName << "\n";
 
     util::UpdateRPC(util::Playing, gameName);
     windowTitle = "Gadolinium - " + gameName;

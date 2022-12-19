@@ -7,6 +7,7 @@
 #include <iostream>
 
 VkInstance instance{};
+using fs = std::filesystem;
 
 Window::Window(n64::Core& core) : settings(core), gameList(settings.GetGamesDir()) {
   InitSDL();
@@ -175,7 +176,7 @@ void Window::LoadROM(n64::Core& core, const std::string &path) {
     };
 
     if(gameName.empty()) {
-      gameName = std::filesystem::path(path).stem().string();
+      gameName = fs::path(path).stem().string();
     }
 
     util::UpdateRPC(util::Playing, gameName);

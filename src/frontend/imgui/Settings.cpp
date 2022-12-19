@@ -4,11 +4,11 @@
 #include <utilities.hpp>
 #include <nfd.h>
 
-using namespace std::filesystem;
+namespace fs = std::filesystem;
 
 Settings::Settings(n64::Core& core) {
   auto modes = std::fstream::in | std::fstream::out;
-  auto fileExists = exists("resources/settings.json");
+  auto fileExists = fs::exists("resources/settings.json");
   if(!fileExists) {
     modes |= std::fstream::trunc;
   }
@@ -57,9 +57,9 @@ Settings::Settings(n64::Core& core) {
 
 Settings::~Settings() {
   auto modes = std::fstream::out;
-  auto fileExists = exists("resources/settings.json");
+  auto fileExists = fs::exists("resources/settings.json");
   if(fileExists) {
-    modes |= std::fstream::trunc;
+    modes = modes | std::fstream::trunc;
 
     std::fstream settingsFile{"resources/settings.json", modes};
 
@@ -88,7 +88,7 @@ void Settings::RenderWidget(bool& show) {
           ImGui::SameLine();
           if(ImGui::Button("Select...")) {
             nfdchar_t *outpath;
-            nfdresult_t result = NFD_PickFolderN(&outpath, nullptr);
+            nfdresult_t result = NFD_PickFolder(&outpath, nullptr);
             if (result == NFD_OKAY) {
               gamesDir = outpath;
               NFD_FreePath(outpath);

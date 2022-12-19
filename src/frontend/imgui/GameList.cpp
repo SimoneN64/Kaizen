@@ -8,7 +8,7 @@
 #include <execution>
 
 using namespace nlohmann;
-using namespace std::filesystem;
+namespace fs = std::filesystem;
 
 GameList::GameList(const std::string& path) {
   if(!path.empty()) {
@@ -16,7 +16,7 @@ GameList::GameList(const std::string& path) {
     json gameDb = json::parse(gameDbFile);
     std::vector<u8> rom{};
 
-    for(const auto& p : directory_iterator{path}) {
+    for(const auto& p : fs::directory_iterator{path}) {
       const auto filename = p.path().string();
       if(p.path().extension() == ".n64" || p.path().extension() == ".z64" || p.path().extension() == ".v64" ||
          p.path().extension() == ".N64" || p.path().extension() == ".Z64" || p.path().extension() == ".V64") {

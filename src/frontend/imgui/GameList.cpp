@@ -10,38 +10,13 @@
 using namespace nlohmann;
 using namespace std::filesystem;
 
-inline std::string CountryCodeToStr(u8 code) {
-  switch(code) {
-    case 0x37: return "Beta";
-    case 0x41: return "Asian (NTSC)";
-    case 0x42: return "Brazilian";
-    case 0x43: return "Chinese";
-    case 0x44: return "German";
-    case 0x45: return "North America";
-    case 0x46: return "French";
-    case 0x47: return "Gateway 64 (NTSC)";
-    case 0x48: return "Dutch";
-    case 0x49: return "Italian";
-    case 0x4A: return "Japanese";
-    case 0x4B: return "Korean";
-    case 0x4C: return "Gateway 64 (PAL)";
-    case 0x4E: return "Canadian";
-    case 0x50: return "European (basic spec.)";
-    case 0x53: return "Spanish";
-    case 0x55: return "Australian";
-    case 0x57: return "Scandinavian";
-    case 0x58: case 0x59: return "European";
-    default: return "Unrecognized";
-  }
-}
-
 GameList::GameList(const std::string& path) {
   if(!path.empty()) {
     std::ifstream gameDbFile("resources/db.json");
     json gameDb = json::parse(gameDbFile);
     std::vector<u8> rom{};
 
-    std::for_each(std::execution::par, begin(directory_iterator{path}), end(directory_iterator{path}), [&](const auto& p) {
+    for(const auto& p : directory_iterator{path}) {
       const auto filename = p.path().string();
       if(p.path().extension() == ".n64" || p.path().extension() == ".z64" || p.path().extension() == ".v64" ||
          p.path().extension() == ".N64" || p.path().extension() == ".Z64" || p.path().extension() == ".V64") {
@@ -65,7 +40,7 @@ GameList::GameList(const std::string& path) {
         u32 crc{};
         util::SwapN64RomJustCRC(sizeAdjusted, rom.data(), crc);
 
-        std::for_each(std::execution::par, gameDb["items"].begin(), gameDb["items"].end(), [&](const auto& item) {
+        for(const auto& item : gameDb["items"]) {
           const auto& crcEntry = item["crc"];
           if(!crcEntry.empty()) {
             if(crcEntry.template get<std::string>() == fmt::format("{:08X}", crc)) {
@@ -78,9 +53,9 @@ GameList::GameList(const std::string& path) {
               });
             }
           }
-        });
+        };
       }
-    });
+    };
 
     gameDbFile.close();
   }

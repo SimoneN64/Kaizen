@@ -4,8 +4,8 @@ project(gadolinium)
 set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_CXX_STANDARD 17)
 
-file(GLOB_RECURSE CORE_SOURCES n64/*.cpp)
-file(GLOB_RECURSE CORE_HEADERS n64/*.hpp)
+file(GLOB_RECURSE CORE_SOURCES backend/*.cpp)
+file(GLOB_RECURSE CORE_HEADERS backend/*.hpp)
 file(GLOB_RECURSE FRONTEND_SOURCES frontend/*.cpp)
 file(GLOB_RECURSE FRONTEND_HEADERS frontend/*.hpp)
 
@@ -30,20 +30,20 @@ add_executable(gadolinium
   ${FRONTEND_HEADERS}
   main.cpp
   common.hpp
-  util.hpp
-  n64/Scheduler.cpp
-  n64/Scheduler.hpp)
+  backend/Scheduler.cpp
+  backend/Scheduler.hpp)
 
 target_include_directories(gadolinium PRIVATE
   .
-  n64
-  n64/core
-  n64/core/interpreter/
-  n64/core/registers
-  n64/core/mmio
-  n64/core/rsp
+  backend
+  backend/core
+  backend/core/interpreter/
+  backend/core/registers
+  backend/core/mmio
+  backend/core/rsp
   frontend
   frontend/imgui
+  utils
   ../external
   ../external/xbyak
   ../external/imgui/imgui

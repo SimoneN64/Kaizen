@@ -60,11 +60,12 @@ target_include_directories(parallel-rdp PUBLIC
   parallel-rdp-standalone/vulkan
   parallel-rdp-standalone/vulkan-headers/include
   parallel-rdp-standalone/util
-  ../../src/n64
-  ../../src/n64/core/
-	../../src/n64/core/mmio
-  ../../src/n64/core/interpreter/
-  ../../src/n64/core/registers
+  ../../src/backend
+  ../../src/utils
+  ../../src/backend/core/
+  ../../src/backend/core/mmio
+  ../../src/backend/core/interpreter/
+  ../../src/backend/core/registers
   parallel-rdp-standalone
   ..
 	../capstone/include

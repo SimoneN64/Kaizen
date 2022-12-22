@@ -5,9 +5,11 @@
 #include <Audio.hpp>
 #include <SDL.h>
 #include <iostream>
+#include <fstream>
+#include <Discord.hpp>
 
 VkInstance instance{};
-using fs = std::filesystem;
+namespace fs = std::filesystem;
 
 Window::Window(n64::Core& core) : settings(core), gameList(settings.GetGamesDir()) {
   InitSDL();
@@ -209,7 +211,7 @@ float Window::Render(n64::Core& core) {
   if (ImGui::BeginMenu("File")) {
     if (ImGui::MenuItem("Open", "O")) {
       nfdchar_t *outpath;
-      const nfdu8filteritem_t filter{"Nintendo 64 roms", "n64,z64,v64,N64,Z64,V64"};
+      const nfdu8filteritem_t filter{"Nintendo 64 roms", "backend,z64,v64,N64,Z64,V64"};
       nfdresult_t result = NFD_OpenDialog(&outpath, &filter, 1, nullptr);
       if (result == NFD_OKAY) {
         LoadROM(core, outpath);

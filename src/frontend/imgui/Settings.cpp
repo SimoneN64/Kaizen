@@ -1,19 +1,31 @@
 #include <Settings.hpp>
 #include <fstream>
 #include <filesystem>
-#include <utilities.hpp>
 #include <nfd.h>
+#include <Widgets.hpp>
 
 namespace fs = std::filesystem;
 
+#define checkjsonentry(name, type, param1, param2, defaultVal) \
+  do { \
+    auto name##Entry = settings[param1][param2];  \
+    if(!name##Entry.empty()) {                    \
+      auto value = name##Entry.get<type>();       \
+      name = value;                               \
+    } else {                                      \
+      settingsFile.clear();                       \
+      settings[param1][param2] = defaultVal;   \
+      settingsFile << settings;                   \
+      name = defaultVal;                          \
+    }                                             \
+  } while(0)
+
+
 Settings::Settings(n64::Core& core) {
-  auto modes = std::fstream::in | std::fstream::out;
   auto fileExists = fs::exists("resources/settings.json");
-  if(!fileExists) {
-    modes |= std::fstream::trunc;
-  }
-  std::fstream settingsFile{"resources/settings.json", modes};
+  std::fstream settingsFile;
   if(fileExists) {
+    settingsFile = std::fstream("resources/settings.json", std::fstream::in | std::fstream::out);
     settings = json::parse(settingsFile);
     auto entryCpuType = settings["cpu"]["type"];
     if(!entryCpuType.empty()) {
@@ -37,6 +49,7 @@ Settings::Settings(n64::Core& core) {
     checkjsonentry(lockChannels, bool, "audio", "lockChannels", true);
     checkjsonentry(gamesDir, std::string, "general", "gamesDir", "");
   } else {
+    settingsFile = std::fstream("resources/settings.json", std::fstream::trunc | std::fstream::in | std::fstream::out);
     settings["general"]["gamesDir"] = "";
     settings["cpu"]["type"] = "interpreter";
     settings["audio"]["volumeR"] = 0.5;
@@ -51,17 +64,14 @@ Settings::Settings(n64::Core& core) {
 
     settingsFile << settings;
   }
-
   settingsFile.close();
 }
 
 Settings::~Settings() {
-  auto modes = std::fstream::out;
   auto fileExists = fs::exists("resources/settings.json");
+  std::fstream settingsFile;
   if(fileExists) {
-    modes = modes | std::fstream::trunc;
-
-    std::fstream settingsFile{"resources/settings.json", modes};
+    settingsFile = std::fstream("resources/settings.json", std::fstream::trunc | std::fstream::out);
 
     settings["general"]["gamesDir"] = gamesDir;
     settings["cpu"]["type"] = cpuType;
@@ -69,8 +79,18 @@ Settings::~Settings() {
     settings["audio"]["volumeL"] = volumeL;
     settings["audio"]["lockChannels"] = lockChannels;
     settingsFile << settings;
-    settingsFile.close();
+  } else {
+    settingsFile = std::fstream("resources/settings.json", std::fstream::out);
+
+    settings["general"]["gamesDir"] = gamesDir;
+    settings["cpu"]["type"] = cpuType;
+    settings["audio"]["volumeR"] = volumeR;
+    settings["audio"]["volumeL"] = volumeL;
+    settings["audio"]["lockChannels"] = lockChannels;
+    settingsFile << settings;
   }
+
+  settingsFile.close();
 }
 
 void Settings::RenderWidget(bool& show) {

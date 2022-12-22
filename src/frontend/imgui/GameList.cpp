@@ -4,8 +4,8 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <fmt/format.h>
-#include <Mem.hpp>
-#include <execution>
+#include <MemoryHelpers.hpp>
+#include <File.hpp>
 
 using namespace nlohmann;
 namespace fs = std::filesystem;
@@ -18,7 +18,7 @@ GameList::GameList(const std::string& path) {
 
     for(const auto& p : fs::directory_iterator{path}) {
       const auto filename = p.path().string();
-      if(p.path().extension() == ".n64" || p.path().extension() == ".z64" || p.path().extension() == ".v64" ||
+      if(p.path().extension() == ".backend" || p.path().extension() == ".z64" || p.path().extension() == ".v64" ||
          p.path().extension() == ".N64" || p.path().extension() == ".Z64" || p.path().extension() == ".V64") {
         std::ifstream file(filename, std::ios::binary);
         file.unsetf(std::ios::skipws);

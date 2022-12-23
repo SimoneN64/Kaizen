@@ -4,60 +4,77 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <fmt/format.h>
-#include <MemoryHelpers.hpp>
+#include <RomHelpers.hpp>
 #include <File.hpp>
+#include <thread>
 
 using namespace nlohmann;
 namespace fs = std::filesystem;
 
 GameList::GameList(const std::string& path) {
   if(!path.empty()) {
-    std::ifstream gameDbFile("resources/db.json");
-    json gameDb = json::parse(gameDbFile);
-    std::vector<u8> rom{};
+    std::thread searchThread([path, this]() {
+      std::ifstream gameDbFile("resources/db.json");
+      json gameDb = json::parse(gameDbFile);
+      std::vector<u8> rom{};
+      for(const auto& p : fs::recursive_directory_iterator{path}) {
+        const auto filename = p.path().string();
+        if(p.path().extension() == ".n64" || p.path().extension() == ".z64" || p.path().extension() == ".v64" ||
+           p.path().extension() == ".N64" || p.path().extension() == ".Z64" || p.path().extension() == ".V64") {
+          std::ifstream file(filename, std::ios::binary);
+          file.unsetf(std::ios::skipws);
 
-    for(const auto& p : fs::directory_iterator{path}) {
-      const auto filename = p.path().string();
-      if(p.path().extension() == ".n64" || p.path().extension() == ".z64" || p.path().extension() == ".v64" ||
-         p.path().extension() == ".N64" || p.path().extension() == ".Z64" || p.path().extension() == ".V64") {
-        std::ifstream file(filename, std::ios::binary);
-        file.unsetf(std::ios::skipws);
+          if(!file.is_open()) {
+            util::panic("Unable to open {}!", filename);
+          }
 
-        if(!file.is_open()) {
-          util::panic("Unable to open {}!", filename);
-        }
+          file.seekg(0, std::ios::end);
+          auto size = file.tellg();
+          auto sizeAdjusted = util::NextPow2(size);
+          file.seekg(0, std::ios::beg);
 
-        file.seekg(0, std::ios::end);
-        auto size = file.tellg();
-        auto sizeAdjusted = util::NextPow2(size);
-        file.seekg(0, std::ios::beg);
+          std::fill(rom.begin(), rom.end(), 0);
+          rom.resize(sizeAdjusted);
+          rom.insert(rom.begin(), std::istream_iterator<u8>(file), std::istream_iterator<u8>());
+          file.close();
 
-        std::fill(rom.begin(), rom.end(), 0);
-        rom.resize(sizeAdjusted);
-        rom.insert(rom.begin(), std::istream_iterator<u8>(file), std::istream_iterator<u8>());
-        file.close();
+          u32 crc{};
+          util::GetRomCRC(sizeAdjusted, rom.data(), crc);
 
-        u32 crc{};
-        util::SwapN64RomJustCRC(sizeAdjusted, rom.data(), crc);
+          bool found = false;
 
-        for(const auto& item : gameDb["items"]) {
-          const auto& crcEntry = item["crc"];
-          if(!crcEntry.empty()) {
-            if(crcEntry.template get<std::string>() == fmt::format("{:08X}", crc)) {
-              gamesList.push_back({
-                item["name"].template get<std::string>(),
-                item["region"].template get<std::string>(),
-                fmt::format("{:.2f} MiB", float(size) / 1024 / 1024),
-                "Good",
-                p.path().string()
-              });
+          for(const auto& item : gameDb["items"]) {
+            const auto& crcEntry = item["crc"];
+            if(!crcEntry.empty()) {
+              if(crcEntry.get<std::string>() == fmt::format("{:08X}", crc)) {
+                found = true;
+                gamesList.push_back({
+                  item["name"].get<std::string>(),
+                  item["region"].get<std::string>(),
+                  fmt::format("{:.2f} MiB", float(size) / 1024 / 1024),
+                  "Good",
+                  p.path().string()
+                });
+              }
             }
           }
-        };
-      }
-    };
 
-    gameDbFile.close();
+          if(!found) {
+            gamesList.push_back({
+              p.path().stem(),
+              "Unknown",
+              fmt::format("{:.2f} MiB", float(size) / 1024 / 1024),
+              "Unknown",
+              p.path().string()
+            });
+          }
+        }
+      };
+
+      gameDbFile.close();
+    });
+
+    searchThread.detach();
   }
 }
 

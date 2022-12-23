@@ -12,7 +12,7 @@ struct GameList {
 
   bool RenderWidget(float, std::string&);
 
-  std::vector<GameInfo> GetGamesList() const { return gamesList; }
+  [[nodiscard]] std::vector<GameInfo> GetGamesList() const { return gamesList; }
 private:
   std::vector<GameInfo> gamesList{}, notMatch{};
 };

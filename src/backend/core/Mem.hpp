@@ -3,7 +3,7 @@
 #include <MemoryRegions.hpp>
 #include <core/MMIO.hpp>
 #include <vector>
-#include <MemoryHelpers.hpp>
+#include <RomHelpers.hpp>
 #include <log.hpp>
 
 namespace n64 {

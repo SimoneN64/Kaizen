@@ -7,6 +7,12 @@ Rewrite of my Nintendo 64 emulator "[shibumi](https://github.com/CocoSimone/shib
 
 ![Mario's face](resources/mario.png?raw=true)
 
+## Pre-built binaries
+| Windows (Release) | [Download](https://nightly.link/CocoSimone/Gadolinium/workflows/build/master/gadolinium-windows.zip) |
+|-------------------|------------------------------------------------------------------------------------------------------|
+| Linux   (Release) | [Download](https://nightly.link/CocoSimone/Gadolinium/workflows/build/master/gadolinium-linux.zip)   |
+
+
 ## Build instructions:
 First clone the repository: `git clone --recursive https://github.com/CocoSimone/Gadolinium`
 
@@ -52,3 +58,4 @@ Special thanks:
 - [WhoBrokeTheBuild](https://github.com/WhoBrokeTheBuild) for the shader that allows letterboxing :rocket:
 - [Kelpsy](https://github.com/Kelpsy), [fleroviux](https://github.com/fleroviux), [Kim-Dewelski](https://github.com/Kim-Dewelski), [Peach](https://github.com/wheremyfoodat/),
   [kivan](https://github.com/kivan117), [liuk](https://github.com/liuk7071) and [Skyler](https://github.com/skylersaleh) for the general support and motivation :heart:
+- [Spec](https://github.com/spec-chum/) for help with testing on Windows, that helped form the final build instructions :heart:

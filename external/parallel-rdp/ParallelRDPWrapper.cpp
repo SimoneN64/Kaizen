@@ -79,7 +79,7 @@ public:
     unsigned int num_extensions = 64;
 
     if (!SDL_Vulkan_GetInstanceExtensions(g_Window, &num_extensions, extensions)) {
-      util::panic("SDL_Vulkan_GetInstanceExtensions failed: %s", SDL_GetError());
+      util::panic("SDL_Vulkan_GetInstanceExtensions failed: {}", SDL_GetError());
     }
     auto vec = std::vector<const char*>();
 

@@ -17,7 +17,6 @@ option(RAPIDJSON_BUILD_DOC "Build rapidjson documentation." OFF)
 option(RAPIDJSON_BUILD_EXAMPLES "Build rapidjson examples." OFF)
 option(RAPIDJSON_BUILD_TESTS "Build rapidjson perftests and unittests." OFF)
 
-add_subdirectory(../external/capstone capstone)
 add_subdirectory(../external/parallel-rdp prdp)
 add_subdirectory(../external/imgui imgui)
 add_subdirectory(../external/nativefiledialog-extended nfd)
@@ -49,7 +48,6 @@ target_include_directories(gadolinium PRIVATE
   ../external/imgui/imgui
   ../external/parallel-rdp/
   ../external/nativefiledialog-extended/src/include
-  ../external/capstone/include
   ../external/discord-rpc/include
   ${SDL2_INCLUDE_DIR}
 )
@@ -82,4 +80,4 @@ else()
   endif()
 endif()
 
-target_link_libraries(gadolinium PRIVATE discord-rpc SDL2::SDL2main SDL2::SDL2 capstone-static nfd parallel-rdp fmt::fmt imgui nlohmann_json::nlohmann_json)
+target_link_libraries(gadolinium PRIVATE discord-rpc SDL2::SDL2main SDL2::SDL2 nfd parallel-rdp fmt::fmt imgui nlohmann_json::nlohmann_json)

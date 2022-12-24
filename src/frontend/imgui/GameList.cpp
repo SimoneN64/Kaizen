@@ -48,7 +48,7 @@ GameList::GameList(const std::string& path) {
             if(!crcEntry.empty()) {
               if(crcEntry.get<std::string>() == fmt::format("{:08X}", crc)) {
                 found = true;
-                gamesList.push_back({
+                gamesList.push_back(GameInfo{
                   item["name"].get<std::string>(),
                   item["region"].get<std::string>(),
                   fmt::format("{:.2f} MiB", float(size) / 1024 / 1024),
@@ -60,8 +60,8 @@ GameList::GameList(const std::string& path) {
           }
 
           if(!found) {
-            gamesList.push_back({
-              p.path().stem(),
+            gamesList.push_back(GameInfo{
+              p.path().stem().string(),
               "Unknown",
               fmt::format("{:.2f} MiB", float(size) / 1024 / 1024),
               "Unknown",

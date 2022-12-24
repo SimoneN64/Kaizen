@@ -68,7 +68,6 @@ target_include_directories(parallel-rdp PUBLIC
   ../../src/backend/core/registers
   parallel-rdp-standalone
   ..
-	../capstone/include
   ../../src/frontend
   ../../src/frontend/imgui
   ../../src/frontend/imgui/debugger

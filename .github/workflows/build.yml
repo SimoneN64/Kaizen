@@ -22,9 +22,6 @@ jobs:
           cmake \
             -G Ninja \
             -B build \
-            -DCAPSTONE_ARCHITECTURE_DEFAULT=OFF \
-            -DCAPSTONE_BUILD_TESTS=OFF \
-            -DCAPSTONE_MIPS_SUPPORT=ON \
             -DCMAKE_BUILD_TYPE=Release \
             -S src
           ninja -j$(nproc) -C build
@@ -51,7 +48,7 @@ jobs:
           vcpkg install nlohmann-json:x64-windows
       - name: Build Gadolinium
         run: |
-          cmake -B build -T clangcl -DCAPSTONE_ARCHITECTURE_DEFAULT=OFF -DCAPSTONE_BUILD_TESTS=OFF -DCAPSTONE_MIPS_SUPPORT=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release -S src
+          cmake -B build -T clangcl -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release -S src
           cmake --build build --config Release
       - name: Collect artifacts
         run: |

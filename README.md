@@ -8,9 +8,10 @@ Rewrite of my Nintendo 64 emulator "[shibumi](https://github.com/CocoSimone/shib
 ![Mario's face](resources/mario.png?raw=true)
 
 ## Pre-built binaries
-| Windows (Release) | [Download](https://nightly.link/CocoSimone/Gadolinium/workflows/build/master/gadolinium-windows.zip) |
-|-------------------|------------------------------------------------------------------------------------------------------|
-| Linux   (Release) | [Download](https://nightly.link/CocoSimone/Gadolinium/workflows/build/master/gadolinium-linux.zip)   |
+| Release                                                                                                       |
+|---------------------------------------------------------------------------------------------------------------|
+| [Windows (Release)](https://nightly.link/CocoSimone/Gadolinium/workflows/build/master/gadolinium-windows.zip) |
+| [Linux   (Release)](https://nightly.link/CocoSimone/Gadolinium/workflows/build/master/gadolinium-linux.zip)   |
 
 
 ## Build instructions:

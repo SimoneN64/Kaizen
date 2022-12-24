@@ -25,7 +25,7 @@ CartInfo Core::LoadROM(const std::string& rom_) {
   romLoaded = true;
   
   CartInfo cartInfo = mem.LoadROM(rom);
-  DoPIFHLE(mem, CpuGetRegs(), cartInfo);
+  DoPIFHLE(mem, regs, cartInfo);
 
   return cartInfo;
 }
@@ -33,7 +33,6 @@ CartInfo Core::LoadROM(const std::string& rom_) {
 void Core::Run(Window& window, float volumeL, float volumeR) {
   MMIO& mmio = mem.mmio;
   Controller& controller = mmio.si.controller;
-  Registers& regs = CpuGetRegs();
 
   for(int field = 0; field < mmio.vi.numFields; field++) {
     int frameCycles = 0;
@@ -46,7 +45,7 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
         }
 
         for(;cycles <= mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
-          CpuStep(mem);
+          CpuStep();
           if(!mmio.rsp.spStatus.halt) {
             regs.steps++;
             if(regs.steps > 2) {
@@ -74,7 +73,7 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
       UpdateScreenParallelRdp(*this, window, GetVI());
 
       int missedCycles = N64_CYCLES_PER_FRAME - frameCycles;
-      mmio.ai.Step(mem, CpuGetRegs(), missedCycles, volumeL, volumeR);
+      mmio.ai.Step(mem, regs, missedCycles, volumeL, volumeR);
     } else if(pause && romLoaded) {
       UpdateScreenParallelRdp(*this, window, GetVI());
     } else if(pause && !romLoaded) {

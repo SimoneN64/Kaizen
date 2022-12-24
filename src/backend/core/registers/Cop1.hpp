@@ -64,7 +64,7 @@ struct Cop1 {
   FCR31 fcr31{};
   FGR fgr[32]{};
   void Reset();
-  void decode(Interpreter&, u32);
+  void decode(Registers&, Interpreter&, u32);
   friend struct Interpreter;
 private:
   template <typename T>

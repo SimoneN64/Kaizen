@@ -5,7 +5,7 @@
 
 namespace n64 {
 struct Dynarec {
-  void Step(Mem& mem);
+  void Step(Mem& mem, Registers& regs);
   void Reset();
   Registers regs;
 private:

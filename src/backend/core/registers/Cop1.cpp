@@ -14,8 +14,7 @@ void Cop1::Reset() {
   memset(fgr, 0, 32 * sizeof(FGR));
 }
 
-void Cop1::decode(Interpreter& cpu, u32 instr) {
-  Registers& regs = cpu.regs;
+void Cop1::decode(Registers& regs, Interpreter& cpu, u32 instr) {
   if(!regs.cop0.status.cu1) {
     FireException(regs, ExceptionCode::CoprocessorUnusable, 1, regs.oldPC);
     return;
@@ -36,10 +35,10 @@ void Cop1::decode(Interpreter& cpu, u32 instr) {
     case 0x07: FireException(regs, ExceptionCode::ReservedInstruction, 1, regs.oldPC); break;
     case 0x08:
       switch(mask_branch) {
-        case 0: cpu.b(instr, !regs.cop1.fcr31.compare); break;
-        case 1: cpu.b(instr, regs.cop1.fcr31.compare); break;
-        case 2: cpu.bl(instr, !regs.cop1.fcr31.compare); break;
-        case 3: cpu.bl(instr, regs.cop1.fcr31.compare); break;
+        case 0: cpu.b(regs, instr, !regs.cop1.fcr31.compare); break;
+        case 1: cpu.b(regs, instr, regs.cop1.fcr31.compare); break;
+        case 2: cpu.bl(regs, instr, !regs.cop1.fcr31.compare); break;
+        case 3: cpu.bl(regs, instr, regs.cop1.fcr31.compare); break;
         default: util::panic("Undefined BC COP1 {:02X}\n", mask_branch);
       }
       break;

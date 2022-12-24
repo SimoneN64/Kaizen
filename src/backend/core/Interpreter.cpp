@@ -2,10 +2,6 @@
 #include <log.hpp>
 
 namespace n64 {
-void Interpreter::Reset() {
-  regs.Reset();
-}
-
 inline bool ShouldServiceInterrupt(Registers& regs) {
   bool interrupts_pending = (regs.cop0.status.im & regs.cop0.cause.interruptPending) != 0;
   bool interrupts_enabled = regs.cop0.status.ie == 1;
@@ -25,7 +21,7 @@ inline void CheckCompareInterrupt(MI& mi, Registers& regs) {
   }
 }
 
-void Interpreter::Step(Mem& mem) {
+void Interpreter::Step(Registers& regs, Mem& mem) {
   regs.gpr[0] = 0;
 
   CheckCompareInterrupt(mem.mmio.mi, regs);
@@ -44,6 +40,6 @@ void Interpreter::Step(Mem& mem) {
   regs.pc = regs.nextPC;
   regs.nextPC += 4;
 
-  Exec(mem, instruction);
+  Exec(regs, mem, instruction);
 }
 }

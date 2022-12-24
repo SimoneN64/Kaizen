@@ -24,22 +24,15 @@ struct Core {
 
   void CpuReset() {
     switch(cpuType) {
-      case CpuType::Dynarec: cpuDynarec.Reset(); break;
-      case CpuType::Interpreter: cpuInterp.Reset(); break;
+      case CpuType::Dynarec: break;
+      case CpuType::Interpreter: break;
     }
   }
 
-  void CpuStep(Mem& mem) {
+  void CpuStep() {
     switch(cpuType) {
-      case CpuType::Dynarec: cpuDynarec.Step(mem); break;
-      case CpuType::Interpreter: cpuInterp.Step(mem); break;
-    }
-  }
-
-  Registers& CpuGetRegs() {
-    switch(cpuType) {
-      case CpuType::Dynarec: return cpuDynarec.regs;
-      case CpuType::Interpreter: return cpuInterp.regs;
+      case CpuType::Dynarec: cpuDynarec.Step(mem, regs); break;
+      case CpuType::Interpreter: cpuInterp.Step(regs, mem); break;
     }
   }
 
@@ -56,5 +49,6 @@ struct Core {
   CpuType cpuType = CpuType::Dynarec;
   Interpreter cpuInterp;
   Dynarec cpuDynarec;
+  Registers regs;
 };
 }

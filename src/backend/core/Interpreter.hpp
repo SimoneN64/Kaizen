@@ -7,7 +7,7 @@ namespace n64 {
 struct Interpreter {
   Interpreter() = default;
   ~Interpreter() = default;
-  void Step(Registers& regs, Mem&);
+  void Step(Mem&, Registers&);
 private:
   u64 cop2Latch{};
   friend struct Cop1;

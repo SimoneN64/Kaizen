@@ -32,7 +32,7 @@ struct Core {
   void CpuStep() {
     switch(cpuType) {
       case CpuType::Dynarec: cpuDynarec.Step(mem, regs); break;
-      case CpuType::Interpreter: cpuInterp.Step(regs, mem); break;
+      case CpuType::Interpreter: cpuInterp.Step(mem, regs); break;
     }
   }
 

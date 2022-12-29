@@ -21,7 +21,7 @@ inline void CheckCompareInterrupt(MI& mi, Registers& regs) {
   }
 }
 
-void Interpreter::Step(Registers& regs, Mem& mem) {
+void Interpreter::Step(Mem& mem, Registers& regs) {
   regs.gpr[0] = 0;
 
   CheckCompareInterrupt(mem.mmio.mi, regs);

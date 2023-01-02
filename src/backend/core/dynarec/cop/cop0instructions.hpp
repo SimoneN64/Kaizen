@@ -8,6 +8,6 @@ void mfc0(n64::Registers&, u32);
 void dmfc0(n64::Registers&, u32);
 void eret(n64::Registers&);
 void tlbr(n64::Registers&);
-void tlbw(int, n64::Registers&);
+void tlbw(n64::Registers&, int);
 void tlbp(n64::Registers&);
 }

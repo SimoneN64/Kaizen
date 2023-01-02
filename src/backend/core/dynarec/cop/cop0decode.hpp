@@ -1,10 +1,10 @@
 #pragma once
-#include <common.hpp>
+#include <Dynarec.hpp>
 
 namespace n64 {
 struct Registers;
 }
 
 namespace n64::JIT {
-void cop0Decode(n64::Registers& regs, u32 instr);
+void cop0Decode(n64::Registers& regs, u32 instr, Dynarec& cpu);
 }

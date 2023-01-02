@@ -48,7 +48,7 @@ void tlbr(n64::Registers& regs) {
   regs.cop0.pageMask.raw = entry.pageMask.raw;
 }
 
-void tlbw(int index_, n64::Registers& regs) {
+void tlbw(n64::Registers& regs, int index_) {
   PageMask page_mask = regs.cop0.pageMask;
   u32 top = page_mask.mask & 0xAAA;
   page_mask.mask = top | (top >> 1);

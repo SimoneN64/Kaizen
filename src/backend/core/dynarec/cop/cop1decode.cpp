@@ -3,7 +3,7 @@
 #include <Registers.hpp>
 
 namespace n64::JIT {
-bool cop1Decode(n64::Registers& regs, Dynarec& cpu, u32 instr) {
+bool cop1Decode(n64::Registers& regs, u32 instr, Dynarec& cpu) {
   Xbyak::CodeGenerator& code = cpu.code;
   code.push(code.rbp);
   code.mov(code.rbp, (u64)&regs.cop0.status.raw);

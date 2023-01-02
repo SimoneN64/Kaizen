@@ -1,5 +1,5 @@
-#include <frontend/App.hpp>
-#include <backend/MupenMovie.hpp>
+#include <App.hpp>
+#include <MupenMovie.hpp>
 
 #ifdef _WIN32
 #define main SDL_main

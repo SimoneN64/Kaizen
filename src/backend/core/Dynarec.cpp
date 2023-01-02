@@ -6,7 +6,7 @@ Dynarec::Dynarec() : code(Xbyak::DEFAULT_MAX_CODE_SIZE, Xbyak::AutoGrow) {}
 
 void Dynarec::Recompile(Registers& regs, Mem& mem) {
   bool branch = false, prevBranch = false;
-  u16 start_addr = regs.pc;
+  u32 start_addr = regs.pc;
   Fn block = code.getCurr<Fn>();
 
   while(!prevBranch) {
@@ -22,12 +22,13 @@ void Dynarec::Recompile(Registers& regs, Mem& mem) {
   }
 
   code.ret();
-  codeCache[start_addr >> 12][start_addr & 15] = block;
+  codeCache[start_addr >> 20][start_addr & 0xFFF] = block;
   block();
 }
 
 void Dynarec::AllocateOuter(Registers& regs) {
-  codeCache[regs.pc >> 20] = (Fn*)calloc(0xFFF, sizeof(Fn));
+  u32 pc = regs.pc & 0xffffffff;
+  codeCache[pc >> 20] = (Fn*)calloc(0xFFF, sizeof(Fn));
 }
 
 int Dynarec::Step(Mem &mem, Registers& regs) {
@@ -36,9 +37,11 @@ int Dynarec::Step(Mem &mem, Registers& regs) {
   regs.prevDelaySlot = regs.delaySlot;
   regs.delaySlot = false;
 
-  if(codeCache[regs.pc >> 20]) {
-    if(codeCache[regs.pc >> 20][regs.pc & 0xfff]) {
-      codeCache[regs.pc >> 20][regs.pc & 0xfff]();
+  u32 pc = regs.pc & 0xffffffff;
+
+  if(codeCache[pc >> 20]) {
+    if(codeCache[pc >> 20][pc & 0xfff]) {
+      codeCache[pc >> 20][pc & 0xfff]();
     } else {
       Recompile(regs, mem);
     }

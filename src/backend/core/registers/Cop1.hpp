@@ -66,7 +66,7 @@ struct Cop1 {
   void Reset();
   void decode(Registers&, Interpreter&, u32);
   friend struct Interpreter;
-private:
+
   template <typename T>
   inline void SetReg(Cop0& cop0, u8 index, T value) {
     if constexpr(sizeof(T) == 4) {
@@ -134,7 +134,7 @@ private:
     }
     return value;
   }
-
+private:
   void absd(Registers&, u32 instr);
   void abss(Registers&, u32 instr);
   void absw(Registers&, u32 instr);

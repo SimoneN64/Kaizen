@@ -244,8 +244,9 @@ inline bool Is64BitAddressing(Cop0& cp0, u64 addr) {
   }
 }
 
-void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc) {
+void FireException(Registers& regs, ExceptionCode code, int cop, bool useOldPC) {
   bool old_exl = regs.cop0.status.exl;
+  s64 pc = useOldPC ? regs.oldPC : regs.pc;
 
   if(!regs.cop0.status.exl) {
     if(regs.prevDelaySlot) {

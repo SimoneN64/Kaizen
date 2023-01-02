@@ -1,9 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
-project(parallel-rdp)
-
 file(GLOB_RECURSE parallel-rdp-cpp parallel-rdp-standalone/parallel-rdp/*.cpp)
-
-find_package(SDL2 CONFIG REQUIRED)
 
 add_library(parallel-rdp
   ${parallel-rdp-cpp}
@@ -52,32 +47,12 @@ add_library(parallel-rdp
 target_compile_definitions(parallel-rdp PUBLIC GRANITE_VULKAN_MT)
 
 target_include_directories(parallel-rdp PUBLIC
-  ${SDL2_INCLUDE_DIR}
-  ${Vulkan_INCLUDE_DIR}
   parallel-rdp-standalone/parallel-rdp
   parallel-rdp-standalone/volk
   parallel-rdp-standalone/spirv-cross
   parallel-rdp-standalone/vulkan
   parallel-rdp-standalone/vulkan-headers/include
   parallel-rdp-standalone/util
-  ../../src/backend
-  ../../src/utils
-  ../../src/backend/core/
-  ../../src/backend/core/mmio
-  ../../src/backend/core/interpreter/
-  ../../src/backend/core/registers
-  parallel-rdp-standalone
-  ..
-  ../../src/frontend
-  ../../src/frontend/imgui
-  ../../src/frontend/imgui/debugger
-  ../../src
-  ../imgui
-  ../imgui/imgui
-  ../imgui/imgui/backends
-  ../fmt/include
-  ../discord-rpc/include
-  .
 )
 
 if(WIN32)
@@ -85,10 +60,8 @@ if(WIN32)
   add_compile_options(/EHa)
 endif()
 
-target_link_libraries(parallel-rdp SDL2::SDL2main SDL2::SDL2)
-
 if(WIN32)
   target_compile_definitions(parallel-rdp PUBLIC VK_USE_PLATFORM_WIN32_KHR)
 else()
-  target_link_libraries(parallel-rdp dl)
+  target_link_libraries(parallel-rdp PUBLIC dl)
 endif()

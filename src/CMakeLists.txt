@@ -4,53 +4,55 @@ project(gadolinium)
 set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_CXX_STANDARD 17)
 
-file(GLOB_RECURSE CORE_SOURCES backend/*.cpp)
-file(GLOB_RECURSE CORE_HEADERS backend/*.hpp)
-file(GLOB_RECURSE FRONTEND_SOURCES frontend/*.cpp)
-file(GLOB_RECURSE FRONTEND_HEADERS frontend/*.hpp)
-
-find_package(fmt REQUIRED)
 find_package(SDL2 REQUIRED)
+find_package(fmt REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
 option(RAPIDJSON_BUILD_DOC "Build rapidjson documentation." OFF)
 option(RAPIDJSON_BUILD_EXAMPLES "Build rapidjson examples." OFF)
 option(RAPIDJSON_BUILD_TESTS "Build rapidjson perftests and unittests." OFF)
 
-add_subdirectory(../external/parallel-rdp prdp)
-add_subdirectory(../external/imgui imgui)
-add_subdirectory(../external/nativefiledialog-extended nfd)
-add_subdirectory(../external/discord-rpc discord-rpc)
-
-add_executable(gadolinium
-  ${CORE_SOURCES}
-  ${CORE_HEADERS}
-  ${FRONTEND_SOURCES}
-  ${FRONTEND_HEADERS}
-  main.cpp
-  common.hpp
-  backend/Scheduler.cpp
-  backend/Scheduler.hpp)
-
-target_include_directories(gadolinium PRIVATE
+include_directories(
   .
-  backend
-  backend/core
-  backend/core/interpreter/
-  backend/core/registers
-  backend/core/mmio
-  backend/core/rsp
+  utils
   frontend
   frontend/imgui
-  utils
+  backend
+  backend/core
+  backend/core/mmio
+  backend/core/registers
+  backend/core/rsp
   ../external
   ../external/xbyak
-  ../external/imgui/imgui
-  ../external/parallel-rdp/
+  ../external/parallel-rdp
+  ../external/parallel-rdp/parallel-rdp-standalone/parallel-rdp
+  ../external/parallel-rdp/parallel-rdp-standalone/volk
+  ../external/parallel-rdp/parallel-rdp-standalone/spirv-cross
+  ../external/parallel-rdp/parallel-rdp-standalone/vulkan
+  ../external/parallel-rdp/parallel-rdp-standalone/vulkan-headers/include
+  ../external/parallel-rdp/parallel-rdp-standalone/util
   ../external/nativefiledialog-extended/src/include
+  ../external/imgui/imgui
+  ../external/imgui/imgui/backends
   ../external/discord-rpc/include
-  ${SDL2_INCLUDE_DIR}
+  ${SDL2_INCLUDE_DIRS}
 )
+
+add_subdirectory(frontend)
+add_subdirectory(frontend/imgui)
+add_subdirectory(backend)
+add_subdirectory(backend/core)
+add_subdirectory(backend/core/dynarec)
+add_subdirectory(backend/core/interpreter)
+add_subdirectory(backend/core/mmio)
+add_subdirectory(backend/core/registers)
+add_subdirectory(backend/core/rsp)
+add_subdirectory(../external/discord-rpc discord-rpc)
+add_subdirectory(../external/imgui imgui)
+add_subdirectory(../external/nativefiledialog-extended nfd)
+add_subdirectory(../external/parallel-rdp parallel-rdp)
+
+add_executable(gadolinium main.cpp)
 
 file(COPY ${PROJECT_SOURCE_DIR}/../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)
 file(REMOVE
@@ -80,4 +82,5 @@ else()
   endif()
 endif()
 
-target_link_libraries(gadolinium PRIVATE discord-rpc SDL2::SDL2main SDL2::SDL2 nfd parallel-rdp fmt::fmt imgui nlohmann_json::nlohmann_json)
+target_link_libraries(gadolinium PUBLIC SDL2::SDL2main SDL2::SDL2 frontend frontend-imgui
+  discord-rpc imgui nfd parallel-rdp backend fmt::fmt nlohmann_json::nlohmann_json core dynarec registers interpreter mmio rsp)

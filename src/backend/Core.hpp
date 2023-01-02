@@ -1,9 +1,10 @@
 #pragma once
-#include <SDL_events.h>
-#include <Interpreter.hpp>
-#include <Mem.hpp>
+#include <SDL2/SDL_events.h>
+#include <backend/core/Interpreter.hpp>
+#include <backend/core/Mem.hpp>
 #include <string>
-#include <Dynarec.hpp>
+#include <backend/core/Dynarec.hpp>
+#include <backend/core/registers/Registers.hpp>
 
 struct Window;
 
@@ -29,10 +30,10 @@ struct Core {
     }
   }
 
-  void CpuStep() {
+  int CpuStep() {
     switch(cpuType) {
-      case CpuType::Dynarec: cpuDynarec.Step(mem, regs); break;
-      case CpuType::Interpreter: cpuInterp.Step(mem, regs); break;
+      case CpuType::Dynarec: return cpuDynarec.Step(mem, regs);
+      case CpuType::Interpreter: cpuInterp.Step(mem, regs); return 1;
     }
   }
 
@@ -48,7 +49,7 @@ struct Core {
   Mem mem;
   CpuType cpuType = CpuType::Dynarec;
   Interpreter cpuInterp;
-  Dynarec cpuDynarec;
+  JIT::Dynarec cpuDynarec;
   Registers regs;
 };
 }

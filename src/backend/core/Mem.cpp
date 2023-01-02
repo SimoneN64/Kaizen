@@ -93,7 +93,7 @@ u8 Mem::Read8(n64::Registers &regs, u64 vaddr, s64 pc) {
   u32 paddr = vaddr;
   if (!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
     HandleTLBException(regs, vaddr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, pc);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, false);
   }
 
   const auto page = paddr >> 12;
@@ -144,7 +144,7 @@ u16 Mem::Read16(n64::Registers &regs, u64 vaddr, s64 pc) {
   u32 paddr = vaddr;
   if (!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
     HandleTLBException(regs, vaddr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, pc);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, false);
   }
 
   const auto page = paddr >> 12;
@@ -190,7 +190,7 @@ u32 Mem::Read32(n64::Registers &regs, u64 vaddr, s64 pc) {
   u32 paddr = vaddr;
   if (!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
     HandleTLBException(regs, vaddr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, pc);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, false);
   }
 
   const auto page = paddr >> 12;
@@ -230,7 +230,7 @@ u64 Mem::Read64(n64::Registers &regs, u64 vaddr, s64 pc) {
   u32 paddr = vaddr;
   if (!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
     HandleTLBException(regs, vaddr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, pc);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, false);
   }
 
   const auto page = paddr >> 12;
@@ -284,7 +284,7 @@ void Mem::Write8(Registers& regs, u64 vaddr, u32 val, s64 pc) {
   u32 paddr = vaddr;
   if (!MapVAddr<tlb>(regs, LOAD, vaddr, paddr)) {
     HandleTLBException(regs, vaddr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, pc);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, false);
   }
 
   const auto page = paddr >> 12;
@@ -343,7 +343,7 @@ void Mem::Write16(Registers& regs, u64 vaddr, u32 val, s64 pc) {
   u32 paddr = vaddr;
   if (!MapVAddr<tlb>(regs, STORE, vaddr, paddr)) {
     HandleTLBException(regs, vaddr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, pc);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, false);
   }
 
   const auto page = paddr >> 12;
@@ -402,7 +402,7 @@ void Mem::Write32(Registers& regs, u64 vaddr, u32 val, s64 pc) {
   u32 paddr = vaddr;
   if(!MapVAddr<tlb>(regs, STORE, vaddr, paddr)) {
     HandleTLBException(regs, vaddr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, pc);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, false);
   }
 
   const auto page = paddr >> 12;
@@ -453,7 +453,7 @@ void Mem::Write64(Registers& regs, u64 vaddr, u64 val, s64 pc) {
   u32 paddr = vaddr;
   if(!MapVAddr<tlb>(regs, STORE, vaddr, paddr)) {
     HandleTLBException(regs, vaddr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, pc);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, false);
   }
 
   const auto page = paddr >> 12;

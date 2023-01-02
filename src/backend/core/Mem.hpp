@@ -1,9 +1,9 @@
 #pragma once
 #include <common.hpp>
-#include <MemoryRegions.hpp>
-#include <core/MMIO.hpp>
+#include <backend/MemoryRegions.hpp>
+#include <backend/core/MMIO.hpp>
 #include <vector>
-#include <RomHelpers.hpp>
+#include <backend/RomHelpers.hpp>
 #include <log.hpp>
 
 namespace n64 {

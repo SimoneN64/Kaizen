@@ -30,7 +30,7 @@ void Interpreter::Step(Mem& mem, Registers& regs) {
   regs.delaySlot = false;
 
   if(ShouldServiceInterrupt(regs)) {
-    FireException(regs, ExceptionCode::Interrupt, 0, regs.pc);
+    FireException(regs, ExceptionCode::Interrupt, 0, false);
     return;
   }
 

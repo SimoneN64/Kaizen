@@ -26,7 +26,7 @@ inline int PushRoundingMode(const FCR31& fcr31) {
   if(isnanf(fs) || isnanf(ft)) { \
     regs.cop1.fcr31.flag_invalid_operation = true; \
     regs.cop1.fcr31.cause_invalid_operation = true; \
-    FireException(regs, ExceptionCode::FloatingPointError, 1, regs.oldPC); \
+    FireException(regs, ExceptionCode::FloatingPointError, 1, true); \
     return; \
   }
 
@@ -34,7 +34,7 @@ inline int PushRoundingMode(const FCR31& fcr31) {
   if(isnan(fs) || isnan(ft)) { \
     regs.cop1.fcr31.flag_invalid_operation = true; \
     regs.cop1.fcr31.cause_invalid_operation = true; \
-    FireException(regs, ExceptionCode::FloatingPointError, 1, regs.oldPC); \
+    FireException(regs, ExceptionCode::FloatingPointError, 1, true); \
     return; \
   }
 #else
@@ -42,7 +42,7 @@ inline int PushRoundingMode(const FCR31& fcr31) {
   if(isnanf(fs) || isnanf(ft)) { \
     regs.cop1.fcr31.flag_invalid_operation = true; \
     regs.cop1.fcr31.cause_invalid_operation = true; \
-    FireException(regs, ExceptionCode::FloatingPointError, 1, regs.oldPC); \
+    FireException(regs, ExceptionCode::FloatingPointError, 1, true); \
     return; \
   }
 
@@ -50,7 +50,7 @@ inline int PushRoundingMode(const FCR31& fcr31) {
   if(isnan(fs) || isnan(ft)) { \
     regs.cop1.fcr31.flag_invalid_operation = true; \
     regs.cop1.fcr31.cause_invalid_operation = true; \
-    FireException(regs, ExceptionCode::FloatingPointError, 1, regs.oldPC); \
+    FireException(regs, ExceptionCode::FloatingPointError, 1, true); \
     return; \
   }
 #endif
@@ -264,7 +264,7 @@ inline bool CalculateCondition(Registers& regs, T fs, T ft, CompConds cond) {
       if(std::isnan(fs) || std::isnan(ft)) {
         regs.cop1.fcr31.flag_invalid_operation = true;
         regs.cop1.fcr31.cause_invalid_operation = true;
-        FireException(regs, ExceptionCode::FloatingPointError, 1, regs.oldPC);
+        FireException(regs, ExceptionCode::FloatingPointError, 1, true);
         return false;
       }
 
@@ -469,19 +469,19 @@ void Cop1::floorwd(Registers& regs, u32 instr) {
 
 void Cop1::lwc1(Registers& regs, Mem& mem, u32 instr) {
   if(!regs.cop0.status.cu1) {
-    FireException(regs, ExceptionCode::CoprocessorUnusable, 1, regs.oldPC);
+    FireException(regs, ExceptionCode::CoprocessorUnusable, 1, true);
     return;
   }
 
   u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
   if(addr & 3) {
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
   }
 
   u32 physical;
   if(!MapVAddr(regs, LOAD, addr, physical)) {
     HandleTLBException(regs, addr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
     u32 data = mem.Read32<false>(regs, physical, regs.oldPC);
     SetReg<u32>(regs.cop0, FT(instr), data);
@@ -490,19 +490,19 @@ void Cop1::lwc1(Registers& regs, Mem& mem, u32 instr) {
 
 void Cop1::swc1(Registers& regs, Mem& mem, u32 instr) {
   if(!regs.cop0.status.cu1) {
-    FireException(regs, ExceptionCode::CoprocessorUnusable, 1, regs.oldPC);
+    FireException(regs, ExceptionCode::CoprocessorUnusable, 1, true);
     return;
   }
 
   u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
   if(addr & 3) {
-    FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::AddressErrorStore, 0, true);
   }
 
   u32 physical;
   if(!MapVAddr(regs, STORE, addr, physical)) {
     HandleTLBException(regs, addr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
     mem.Write32<false>(regs, physical, GetReg<u32>(regs.cop0, FT(instr)), regs.oldPC);
   }
@@ -510,13 +510,13 @@ void Cop1::swc1(Registers& regs, Mem& mem, u32 instr) {
 
 void Cop1::ldc1(Registers& regs, Mem& mem, u32 instr) {
   if(!regs.cop0.status.cu1) {
-    FireException(regs, ExceptionCode::CoprocessorUnusable, 1, regs.oldPC);
+    FireException(regs, ExceptionCode::CoprocessorUnusable, 1, true);
     return;
   }
 
   u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
   if(addr & 7) {
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
   }
 
   u32 physical;

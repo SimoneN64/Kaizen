@@ -1,82 +1,83 @@
-#include <core/Dynarec.hpp>
+#include <dynarec/instructions.hpp>
+#include <Registers.hpp>
 
 #define se_imm(x) ((s16)((x) & 0xFFFF))
 #define check_address_error(mask, addr) (((!regs.cop0.is_64bit_addressing) && (s32)(addr) != (addr)) || (((addr) & (mask)) != 0))
 #define check_signed_overflow(op1, op2, res) (((~((op1) ^ (op2)) & ((op1) ^ (res))) >> ((sizeof(res) * 8) - 1)) & 1)
 #define check_signed_underflow(op1, op2, res) (((((op1) ^ (op2)) & ((op1) ^ (res))) >> ((sizeof(res) * 8) - 1)) & 1)
 
-namespace n64 {
-void Dynarec::add(Registers& regs, u32 instr) {
+namespace n64::JIT {
+void add(Registers& regs, u32 instr) {
   u32 rs = (s32)regs.gpr[RS(instr)];
   u32 rt = (s32)regs.gpr[RT(instr)];
   u32 result = rs + rt;
   if(check_signed_overflow(rs, rt, result)) {
-    FireException(regs, ExceptionCode::Overflow, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
     regs.gpr[RD(instr)] = s32(result);
   }
 }
 
-void Dynarec::addu(Registers& regs, u32 instr) {
+void addu(Registers& regs, u32 instr) {
   s32 rs = (s32)regs.gpr[RS(instr)];
   s32 rt = (s32)regs.gpr[RT(instr)];
   s32 result = rs + rt;
   regs.gpr[RD(instr)] = result;
 }
 
-void Dynarec::addi(Registers& regs, u32 instr) {
+void addi(Registers& regs, u32 instr) {
   u32 rs = regs.gpr[RS(instr)];
   u32 imm = s32(s16(instr));
   u32 result = rs + imm;
   if(check_signed_overflow(rs, imm, result)) {
-    FireException(regs, ExceptionCode::Overflow, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
     regs.gpr[RT(instr)] = s32(result);
   }
 }
 
-void Dynarec::addiu(Registers& regs, u32 instr) {
+void addiu(Registers& regs, u32 instr) {
   s32 rs = (s32)regs.gpr[RS(instr)];
   s16 imm = (s16)(instr);
   s32 result = rs + imm;
   regs.gpr[RT(instr)] = result;
 }
 
-void Dynarec::dadd(Registers& regs, u32 instr) {
+void dadd(Registers& regs, u32 instr) {
   u64 rs = regs.gpr[RS(instr)];
   u64 rt = regs.gpr[RT(instr)];
   u64 result = rt + rs;
   if(check_signed_overflow(rs, rt, result)) {
-    FireException(regs, ExceptionCode::Overflow, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
     regs.gpr[RD(instr)] = result;
   }
 }
 
-void Dynarec::daddu(Registers& regs, u32 instr) {
+void daddu(Registers& regs, u32 instr) {
   s64 rs = regs.gpr[RS(instr)];
   s64 rt = regs.gpr[RT(instr)];
   regs.gpr[RD(instr)] = rs + rt;
 }
 
-void Dynarec::daddi(Registers& regs, u32 instr) {
+void daddi(Registers& regs, u32 instr) {
   u64 imm = s64(s16(instr));
   u64 rs = regs.gpr[RS(instr)];
   u64 result = imm + rs;
   if(check_signed_overflow(rs, imm, result)) {
-    FireException(regs, ExceptionCode::Overflow, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
     regs.gpr[RT(instr)] = result;
   }
 }
 
-void Dynarec::daddiu(Registers& regs, u32 instr) {
+void daddiu(Registers& regs, u32 instr) {
   s16 imm = (s16)(instr);
   s64 rs = regs.gpr[RS(instr)];
   regs.gpr[RT(instr)] = rs + imm;
 }
 
-void Dynarec::div(Registers& regs, u32 instr) {
+void div(Registers& regs, u32 instr) {
   s64 dividend = (s32)regs.gpr[RS(instr)];
   s64 divisor = (s32)regs.gpr[RT(instr)];
 
@@ -95,7 +96,7 @@ void Dynarec::div(Registers& regs, u32 instr) {
   }
 }
 
-void Dynarec::divu(Registers& regs, u32 instr) {
+void divu(Registers& regs, u32 instr) {
   u32 dividend = regs.gpr[RS(instr)];
   u32 divisor = regs.gpr[RT(instr)];
   if(divisor == 0) {
@@ -109,7 +110,7 @@ void Dynarec::divu(Registers& regs, u32 instr) {
   }
 }
 
-void Dynarec::ddiv(Registers& regs, u32 instr) {
+void ddiv(Registers& regs, u32 instr) {
   s64 dividend = regs.gpr[RS(instr)];
   s64 divisor = regs.gpr[RT(instr)];
   if (dividend == 0x8000000000000000 && divisor == 0xFFFFFFFFFFFFFFFF) {
@@ -130,7 +131,7 @@ void Dynarec::ddiv(Registers& regs, u32 instr) {
   }
 }
 
-void Dynarec::ddivu(Registers& regs, u32 instr) {
+void ddivu(Registers& regs, u32 instr) {
   u64 dividend = regs.gpr[RS(instr)];
   u64 divisor = regs.gpr[RT(instr)];
   if(divisor == 0) {
@@ -144,14 +145,14 @@ void Dynarec::ddivu(Registers& regs, u32 instr) {
   }
 }
 
-void Dynarec::branch(Registers& regs, bool cond, s64 address) {
+void branch(Registers& regs, bool cond, s64 address) {
   regs.delaySlot = true;
   if (cond) {
     regs.nextPC = address;
   }
 }
 
-void Dynarec::branch_likely(Registers& regs, bool cond, s64 address) {
+void branch_likely(Registers& regs, bool cond, s64 address) {
   regs.delaySlot = true;
   if (cond) {
     regs.nextPC = address;
@@ -160,78 +161,78 @@ void Dynarec::branch_likely(Registers& regs, bool cond, s64 address) {
   }
 }
 
-void Dynarec::b(Registers& regs, u32 instr, bool cond) {
+void b(Registers& regs, u32 instr, bool cond) {
   s64 offset = (s64)se_imm(instr) << 2;
   s64 address = regs.pc + offset;
   branch(regs, cond, address);
 }
 
-void Dynarec::blink(Registers& regs, u32 instr, bool cond) {
+void blink(Registers& regs, u32 instr, bool cond) {
   regs.gpr[31] = regs.nextPC;
   s64 offset = (s64)se_imm(instr) << 2;
   s64 address = regs.pc + offset;
   branch(regs, cond, address);
 }
 
-void Dynarec::bl(Registers& regs, u32 instr, bool cond) {
+void bl(Registers& regs, u32 instr, bool cond) {
   s64 offset = (s64)se_imm(instr) << 2;
   s64 address = regs.pc + offset;
   branch_likely(regs, cond, address);
 }
 
-void Dynarec::bllink(Registers& regs, u32 instr, bool cond) {
+void bllink(Registers& regs, u32 instr, bool cond) {
   regs.gpr[31] = regs.nextPC;
   s64 offset = (s64)se_imm(instr) << 2;
   s64 address = regs.pc + offset;
   branch_likely(regs, cond, address);
 }
 
-void Dynarec::lui(Registers& regs, u32 instr) {
+void lui(Registers& regs, u32 instr) {
   s64 val = (s16)instr;
   val <<= 16;
   regs.gpr[RT(instr)] = val;
 }
 
-void Dynarec::lb(Registers& regs, Mem& mem, u32 instr) {
+void lb(Registers& regs, Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   regs.gpr[RT(instr)] = (s8)mem.Read8(regs, address, regs.oldPC);
 }
 
-void Dynarec::lh(Registers& regs, Mem& mem, u32 instr) {
+void lh(Registers& regs, Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b1)) {
     HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
     return;
   }
 
   regs.gpr[RT(instr)] = (s16)mem.Read16(regs, address, regs.oldPC);
 }
 
-void Dynarec::lw(Registers& regs, Mem& mem, u32 instr) {
+void lw(Registers& regs, Mem& mem, u32 instr) {
   s16 offset = instr;
   u64 address = regs.gpr[RS(instr)] + offset;
   if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
     return;
   }
 
   u32 physical;
   if (!MapVAddr(regs, LOAD, address, physical)) {
     HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
     regs.gpr[RT(instr)] = (s32)mem.Read32<false>(regs, physical, regs.oldPC);
   }
 }
 
-void Dynarec::ll(Registers& regs, Mem& mem, u32 instr) {
+void ll(Registers& regs, Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 physical;
   if (!MapVAddr(regs, LOAD, address, physical)) {
     HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
     regs.gpr[RT(instr)] = (s32)mem.Read32<false>(regs, physical, regs.oldPC);
   }
@@ -240,12 +241,12 @@ void Dynarec::ll(Registers& regs, Mem& mem, u32 instr) {
   regs.cop0.LLAddr = physical >> 4;
 }
 
-void Dynarec::lwl(Registers& regs, Mem& mem, u32 instr) {
+void lwl(Registers& regs, Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr = 0;
   if(!MapVAddr(regs, LOAD, address, paddr)) {
     HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
     u32 shift = 8 * ((address ^ 0) & 3);
     u32 mask = 0xFFFFFFFF << shift;
@@ -255,12 +256,12 @@ void Dynarec::lwl(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Dynarec::lwr(Registers& regs, Mem& mem, u32 instr) {
+void lwr(Registers& regs, Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr = 0;
   if(!MapVAddr(regs, LOAD, address, paddr)) {
     HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
     u32 shift = 8 * ((address ^ 3) & 3);
     u32 mask = 0xFFFFFFFF >> shift;
@@ -270,11 +271,11 @@ void Dynarec::lwr(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Dynarec::ld(Registers& regs, Mem& mem, u32 instr) {
+void ld(Registers& regs, Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b111)) {
     HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
     return;
   }
 
@@ -282,12 +283,12 @@ void Dynarec::ld(Registers& regs, Mem& mem, u32 instr) {
   regs.gpr[RT(instr)] = value;
 }
 
-void Dynarec::lld(Registers& regs, Mem& mem, u32 instr) {
+void lld(Registers& regs, Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, LOAD, address, paddr)) {
     HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
     regs.gpr[RT(instr)] = mem.Read64<false>(regs, paddr, regs.oldPC);
   }
@@ -296,12 +297,12 @@ void Dynarec::lld(Registers& regs, Mem& mem, u32 instr) {
   regs.cop0.LLAddr = paddr >> 4;
 }
 
-void Dynarec::ldl(Registers& regs, Mem& mem, u32 instr) {
+void ldl(Registers& regs, Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr = 0;
   if (!MapVAddr(regs, LOAD, address, paddr)) {
     HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
     s32 shift = 8 * ((address ^ 0) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
@@ -311,12 +312,12 @@ void Dynarec::ldl(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Dynarec::ldr(Registers& regs, Mem& mem, u32 instr) {
+void ldr(Registers& regs, Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, LOAD, address, paddr)) {
     HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
     s32 shift = 8 * ((address ^ 7) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
@@ -326,17 +327,17 @@ void Dynarec::ldr(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Dynarec::lbu(Registers& regs, Mem& mem, u32 instr) {
+void lbu(Registers& regs, Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u8 value = mem.Read8(regs, address, regs.oldPC);
   regs.gpr[RT(instr)] = value;
 }
 
-void Dynarec::lhu(Registers& regs, Mem& mem, u32 instr) {
+void lhu(Registers& regs, Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b1)) {
     HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
     return;
   }
 
@@ -344,11 +345,11 @@ void Dynarec::lhu(Registers& regs, Mem& mem, u32 instr) {
   regs.gpr[RT(instr)] = value;
 }
 
-void Dynarec::lwu(Registers& regs, Mem& mem, u32 instr) {
+void lwu(Registers& regs, Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
     return;
   }
 
@@ -356,16 +357,16 @@ void Dynarec::lwu(Registers& regs, Mem& mem, u32 instr) {
   regs.gpr[RT(instr)] = value;
 }
 
-void Dynarec::sb(Registers& regs, Mem& mem, u32 instr) {
+void sb(Registers& regs, Mem& mem, u32 instr) {
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
   mem.Write8(regs, address, regs.gpr[RT(instr)], regs.oldPC);
 }
 
-void Dynarec::sc(Registers& regs, Mem& mem, u32 instr) {
+void sc(Registers& regs, Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::AddressErrorStore, 0, true);
   }
 
   if(regs.cop0.llbit) {
@@ -376,11 +377,11 @@ void Dynarec::sc(Registers& regs, Mem& mem, u32 instr) {
   regs.cop0.llbit = false;
 }
 
-void Dynarec::scd(Registers& regs, Mem& mem, u32 instr) {
+void scd(Registers& regs, Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b111)) {
     HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::AddressErrorStore, 0, true);
     return;
   }
 
@@ -392,65 +393,65 @@ void Dynarec::scd(Registers& regs, Mem& mem, u32 instr) {
   regs.cop0.llbit = false;
 }
 
-void Dynarec::sh(Registers& regs, Mem& mem, u32 instr) {
+void sh(Registers& regs, Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b1)) {
     HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::AddressErrorStore, 0, true);
     return;
   }
 
   u32 physical;
   if(!MapVAddr(regs, STORE, address, physical)) {
     HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
     mem.Write16<false>(regs, physical, regs.gpr[RT(instr)], regs.oldPC);
   }
 }
 
-void Dynarec::sw(Registers& regs, Mem& mem, u32 instr) {
+void sw(Registers& regs, Mem& mem, u32 instr) {
   s16 offset = instr;
   u64 address = regs.gpr[RS(instr)] + offset;
   if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::AddressErrorStore, 0, true);
     return;
   }
 
   u32 physical;
   if(!MapVAddr(regs, STORE, address, physical)) {
     HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
     mem.Write32<false>(regs, physical, regs.gpr[RT(instr)], regs.oldPC);
   }
 }
 
-void Dynarec::sd(Registers& regs, Mem& mem, u32 instr) {
+void sd(Registers& regs, Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::AddressErrorStore, 0, true);
     return;
   }
 
   u32 physical;
   if(!MapVAddr(regs, STORE, address, physical)) {
     HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
     mem.Write64<false>(regs, physical, regs.gpr[RT(instr)], regs.oldPC);
   }
 
 }
 
-void Dynarec::sdl(Registers& regs, Mem& mem, u32 instr) {
+void sdl(Registers& regs, Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, STORE, address, paddr)) {
     HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
     s32 shift = 8 * ((address ^ 0) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
@@ -460,12 +461,12 @@ void Dynarec::sdl(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Dynarec::sdr(Registers& regs, Mem& mem, u32 instr) {
+void sdr(Registers& regs, Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, STORE, address, paddr)) {
     HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
     s32 shift = 8 * ((address ^ 7) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
@@ -475,12 +476,12 @@ void Dynarec::sdr(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Dynarec::swl(Registers& regs, Mem& mem, u32 instr) {
+void swl(Registers& regs, Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, STORE, address, paddr)) {
     HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
     u32 shift = 8 * ((address ^ 0) & 3);
     u32 mask = 0xFFFFFFFF >> shift;
@@ -490,12 +491,12 @@ void Dynarec::swl(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Dynarec::swr(Registers& regs, Mem& mem, u32 instr) {
+void swr(Registers& regs, Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, STORE, address, paddr)) {
     HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
     u32 shift = 8 * ((address ^ 3) & 3);
     u32 mask = 0xFFFFFFFF << shift;
@@ -505,149 +506,149 @@ void Dynarec::swr(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Dynarec::ori(Registers& regs, u32 instr) {
+void ori(Registers& regs, u32 instr) {
   s64 imm = (u16)instr;
   s64 result = imm | regs.gpr[RS(instr)];
   regs.gpr[RT(instr)] = result;
 }
 
-void Dynarec::or_(Registers& regs, u32 instr) {
+void or_(Registers& regs, u32 instr) {
   regs.gpr[RD(instr)] = regs.gpr[RS(instr)] | regs.gpr[RT(instr)];
 }
 
-void Dynarec::nor(Registers& regs, u32 instr) {
+void nor(Registers& regs, u32 instr) {
   regs.gpr[RD(instr)] = ~(regs.gpr[RS(instr)] | regs.gpr[RT(instr)]);
 }
 
-void Dynarec::j(Registers& regs, u32 instr) {
+void j(Registers& regs, u32 instr) {
   s32 target = (instr & 0x3ffffff) << 2;
   s64 address = (regs.oldPC & ~0xfffffff) | target;
   if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::DataBusError, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::DataBusError, 0, true);
   }
 
   branch(regs, true, address);
 }
 
-void Dynarec::jal(Registers& regs, u32 instr) {
+void jal(Registers& regs, u32 instr) {
   regs.gpr[31] = regs.nextPC;
   j(regs, instr);
 }
 
-void Dynarec::jalr(Registers& regs, u32 instr) {
+void jalr(Registers& regs, u32 instr) {
   branch(regs, true, regs.gpr[RS(instr)]);
   regs.gpr[RD(instr)] = regs.pc + 4;
 }
 
-void Dynarec::slti(Registers& regs, u32 instr) {
+void slti(Registers& regs, u32 instr) {
   regs.gpr[RT(instr)] = regs.gpr[RS(instr)] < se_imm(instr);
 }
 
-void Dynarec::sltiu(Registers& regs, u32 instr) {
+void sltiu(Registers& regs, u32 instr) {
   regs.gpr[RT(instr)] = (u64)regs.gpr[RS(instr)] < se_imm(instr);
 }
 
-void Dynarec::slt(Registers& regs, u32 instr) {
+void slt(Registers& regs, u32 instr) {
   regs.gpr[RD(instr)] = regs.gpr[RS(instr)] < regs.gpr[RT(instr)];
 }
 
-void Dynarec::sltu(Registers& regs, u32 instr) {
+void sltu(Registers& regs, u32 instr) {
   regs.gpr[RD(instr)] = (u64)regs.gpr[RS(instr)] < (u64)regs.gpr[RT(instr)];
 }
 
-void Dynarec::xori(Registers& regs, u32 instr) {
+void xori(Registers& regs, u32 instr) {
   s64 imm = (u16)instr;
   regs.gpr[RT(instr)] = regs.gpr[RS(instr)] ^ imm;
 }
 
-void Dynarec::xor_(Registers& regs, u32 instr) {
+void xor_(Registers& regs, u32 instr) {
   regs.gpr[RD(instr)] = regs.gpr[RT(instr)] ^ regs.gpr[RS(instr)];
 }
 
-void Dynarec::andi(Registers& regs, u32 instr) {
+void andi(Registers& regs, u32 instr) {
   s64 imm = (u16)instr;
   regs.gpr[RT(instr)] = regs.gpr[RS(instr)] & imm;
 }
 
-void Dynarec::and_(Registers& regs, u32 instr) {
+void and_(Registers& regs, u32 instr) {
   regs.gpr[RD(instr)] = regs.gpr[RS(instr)] & regs.gpr[RT(instr)];
 }
 
-void Dynarec::sll(Registers& regs, u32 instr) {
+void sll(Registers& regs, u32 instr) {
   u8 sa = ((instr >> 6) & 0x1f);
   s32 result = regs.gpr[RT(instr)] << sa;
   regs.gpr[RD(instr)] = (s64)result;
 }
 
-void Dynarec::sllv(Registers& regs, u32 instr) {
+void sllv(Registers& regs, u32 instr) {
   u8 sa = (regs.gpr[RS(instr)]) & 0x1F;
   u32 rt = regs.gpr[RT(instr)];
   s32 result = rt << sa;
   regs.gpr[RD(instr)] = (s64)result;
 }
 
-void Dynarec::dsll32(Registers& regs, u32 instr) {
+void dsll32(Registers& regs, u32 instr) {
   u8 sa = ((instr >> 6) & 0x1f);
   s64 result = regs.gpr[RT(instr)] << (sa + 32);
   regs.gpr[RD(instr)] = result;
 }
 
-void Dynarec::dsll(Registers& regs, u32 instr) {
+void dsll(Registers& regs, u32 instr) {
   u8 sa = ((instr >> 6) & 0x1f);
   s64 result = regs.gpr[RT(instr)] << sa;
   regs.gpr[RD(instr)] = result;
 }
 
-void Dynarec::dsllv(Registers& regs, u32 instr) {
+void dsllv(Registers& regs, u32 instr) {
   s64 sa = regs.gpr[RS(instr)] & 63;
   s64 result = regs.gpr[RT(instr)] << sa;
   regs.gpr[RD(instr)] = result;
 }
 
-void Dynarec::srl(Registers& regs, u32 instr) {
+void srl(Registers& regs, u32 instr) {
   u32 rt = regs.gpr[RT(instr)];
   u8 sa = ((instr >> 6) & 0x1f);
   u32 result = rt >> sa;
   regs.gpr[RD(instr)] = (s32)result;
 }
 
-void Dynarec::srlv(Registers& regs, u32 instr) {
+void srlv(Registers& regs, u32 instr) {
   u8 sa = (regs.gpr[RS(instr)] & 0x1F);
   u32 rt = regs.gpr[RT(instr)];
   s32 result = rt >> sa;
   regs.gpr[RD(instr)] = (s64)result;
 }
 
-void Dynarec::dsrl(Registers& regs, u32 instr) {
+void dsrl(Registers& regs, u32 instr) {
   u64 rt = regs.gpr[RT(instr)];
   u8 sa = ((instr >> 6) & 0x1f);
   u64 result = rt >> sa;
   regs.gpr[RD(instr)] = s64(result);
 }
 
-void Dynarec::dsrlv(Registers& regs, u32 instr) {
+void dsrlv(Registers& regs, u32 instr) {
   u8 amount = (regs.gpr[RS(instr)] & 63);
   u64 rt = regs.gpr[RT(instr)];
   u64 result = rt >> amount;
   regs.gpr[RD(instr)] = s64(result);
 }
 
-void Dynarec::dsrl32(Registers& regs, u32 instr) {
+void dsrl32(Registers& regs, u32 instr) {
   u64 rt = regs.gpr[RT(instr)];
   u8 sa = ((instr >> 6) & 0x1f);
   u64 result = rt >> (sa + 32);
   regs.gpr[RD(instr)] = s64(result);
 }
 
-void Dynarec::sra(Registers& regs, u32 instr) {
+void sra(Registers& regs, u32 instr) {
   s64 rt = regs.gpr[RT(instr)];
   u8 sa = ((instr >> 6) & 0x1f);
   s32 result = rt >> sa;
   regs.gpr[RD(instr)] = result;
 }
 
-void Dynarec::srav(Registers& regs, u32 instr) {
+void srav(Registers& regs, u32 instr) {
   s64 rt = regs.gpr[RT(instr)];
   s64 rs = regs.gpr[RS(instr)];
   u8 sa = rs & 0x1f;
@@ -655,14 +656,14 @@ void Dynarec::srav(Registers& regs, u32 instr) {
   regs.gpr[RD(instr)] = result;
 }
 
-void Dynarec::dsra(Registers& regs, u32 instr) {
+void dsra(Registers& regs, u32 instr) {
   s64 rt = regs.gpr[RT(instr)];
   u8 sa = ((instr >> 6) & 0x1f);
   s64 result = rt >> sa;
   regs.gpr[RD(instr)] = result;
 }
 
-void Dynarec::dsrav(Registers& regs, u32 instr) {
+void dsrav(Registers& regs, u32 instr) {
   s64 rt = regs.gpr[RT(instr)];
   s64 rs = regs.gpr[RS(instr)];
   s64 sa = rs & 63;
@@ -670,14 +671,14 @@ void Dynarec::dsrav(Registers& regs, u32 instr) {
   regs.gpr[RD(instr)] = result;
 }
 
-void Dynarec::dsra32(Registers& regs, u32 instr) {
+void dsra32(Registers& regs, u32 instr) {
   s64 rt = regs.gpr[RT(instr)];
   u8 sa = ((instr >> 6) & 0x1f);
   s64 result = rt >> (sa + 32);
   regs.gpr[RD(instr)] = result;
 }
 
-void Dynarec::jr(Registers& regs, u32 instr) {
+void jr(Registers& regs, u32 instr) {
   s64 address = regs.gpr[RS(instr)];
   if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
@@ -687,7 +688,7 @@ void Dynarec::jr(Registers& regs, u32 instr) {
   branch(regs, true, address);
 }
 
-void Dynarec::dsub(Registers& regs, u32 instr) {
+void dsub(Registers& regs, u32 instr) {
   s64 rt = regs.gpr[RT(instr)];
   s64 rs = regs.gpr[RS(instr)];
   s64 result = rs - rt;
@@ -698,14 +699,14 @@ void Dynarec::dsub(Registers& regs, u32 instr) {
   }
 }
 
-void Dynarec::dsubu(Registers& regs, u32 instr) {
+void dsubu(Registers& regs, u32 instr) {
   u64 rt = regs.gpr[RT(instr)];
   u64 rs = regs.gpr[RS(instr)];
   u64 result = rs - rt;
   regs.gpr[RD(instr)] = s64(result);
 }
 
-void Dynarec::sub(Registers& regs, u32 instr) {
+void sub(Registers& regs, u32 instr) {
   s32 rt = regs.gpr[RT(instr)];
   s32 rs = regs.gpr[RS(instr)];
   s32 result = rs - rt;
@@ -716,14 +717,14 @@ void Dynarec::sub(Registers& regs, u32 instr) {
   }
 }
 
-void Dynarec::subu(Registers& regs, u32 instr) {
+void subu(Registers& regs, u32 instr) {
   u32 rt = regs.gpr[RT(instr)];
   u32 rs = regs.gpr[RS(instr)];
   u32 result = rs - rt;
   regs.gpr[RD(instr)] = (s64)((s32)result);
 }
 
-void Dynarec::dmultu(Registers& regs, u32 instr) {
+void dmultu(Registers& regs, u32 instr) {
   u64 rt = regs.gpr[RT(instr)];
   u64 rs = regs.gpr[RS(instr)];
   u128 result = (u128)rt * (u128)rs;
@@ -731,7 +732,7 @@ void Dynarec::dmultu(Registers& regs, u32 instr) {
   regs.hi = (s64)(result >> 64);
 }
 
-void Dynarec::dmult(Registers& regs, u32 instr) {
+void dmult(Registers& regs, u32 instr) {
   s64 rt = regs.gpr[RT(instr)];
   s64 rs = regs.gpr[RS(instr)];
   s128 result = (s128)rt * (s128)rs;
@@ -739,7 +740,7 @@ void Dynarec::dmult(Registers& regs, u32 instr) {
   regs.hi = result >> 64;
 }
 
-void Dynarec::multu(Registers& regs, u32 instr) {
+void multu(Registers& regs, u32 instr) {
   u32 rt = regs.gpr[RT(instr)];
   u32 rs = regs.gpr[RS(instr)];
   u64 result = (u64)rt * (u64)rs;
@@ -747,7 +748,7 @@ void Dynarec::multu(Registers& regs, u32 instr) {
   regs.hi = (s64)((s32)(result >> 32));
 }
 
-void Dynarec::mult(Registers& regs, u32 instr) {
+void mult(Registers& regs, u32 instr) {
   s32 rt = regs.gpr[RT(instr)];
   s32 rs = regs.gpr[RS(instr)];
   s64 result = (s64)rt * (s64)rs;
@@ -755,51 +756,42 @@ void Dynarec::mult(Registers& regs, u32 instr) {
   regs.hi = (s64)((s32)(result >> 32));
 }
 
-void Dynarec::mflo(Registers& regs, u32 instr) {
+void mflo(Registers& regs, u32 instr) {
   regs.gpr[RD(instr)] = regs.lo;
 }
 
-void Dynarec::mfhi(Registers& regs, u32 instr) {
+void mfhi(Registers& regs, u32 instr) {
   regs.gpr[RD(instr)] = regs.hi;
 }
 
-void Dynarec::mtlo(Registers& regs, u32 instr) {
+void mtlo(Registers& regs, u32 instr) {
   regs.lo = regs.gpr[RS(instr)];
 }
 
-void Dynarec::mthi(Registers& regs, u32 instr) {
+void mthi(Registers& regs, u32 instr) {
   regs.hi = regs.gpr[RS(instr)];
 }
 
-void Dynarec::trap(Registers& regs, bool cond) {
+void trap(Registers& regs, bool cond) {
   if(cond) {
     FireException(regs, ExceptionCode::Trap, 0, regs.oldPC);
   }
 }
 
-void Dynarec::mtc2(Registers& regs, u32 instr) {
-  cop2Latch = regs.gpr[RT(instr)];
+void mtc2(Dynarec& dyn, Registers& regs, u32 instr) {
+  dyn.cop2Latch = regs.gpr[RT(instr)];
 }
 
-void Dynarec::mfc2(Registers& regs, u32 instr) {
-  s32 value = cop2Latch;
+void mfc2(Dynarec& dyn, Registers& regs, u32 instr) {
+  s32 value = dyn.cop2Latch;
   regs.gpr[RT(instr)] = value;
 }
 
-void Dynarec::dmtc2(Registers& regs, u32 instr) {
-  cop2Latch = regs.gpr[RT(instr)];
+void dmtc2(Dynarec& dyn, Registers& regs, u32 instr) {
+  dyn.cop2Latch = regs.gpr[RT(instr)];
 }
 
-void Dynarec::dmfc2(Registers& regs, u32 instr) {
-  regs.gpr[RT(instr)] = cop2Latch;
+void dmfc2(Dynarec& dyn, Registers& regs, u32 instr) {
+  regs.gpr[RT(instr)] = dyn.cop2Latch;
 }
-
-void Dynarec::ctc2(Registers& regs, u32) {
-
-}
-
-void Dynarec::cfc2(Registers& regs, u32) {
-
-}
-
 }

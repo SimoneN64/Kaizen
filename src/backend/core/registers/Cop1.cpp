@@ -16,7 +16,7 @@ void Cop1::Reset() {
 
 void Cop1::decode(Registers& regs, Interpreter& cpu, u32 instr) {
   if(!regs.cop0.status.cu1) {
-    FireException(regs, ExceptionCode::CoprocessorUnusable, 1, regs.oldPC);
+    FireException(regs, ExceptionCode::CoprocessorUnusable, 1, true);
     return;
   }
 
@@ -28,11 +28,11 @@ void Cop1::decode(Registers& regs, Interpreter& cpu, u32 instr) {
     case 0x00: mfc1(regs, instr); break;
     case 0x01: dmfc1(regs, instr); break;
     case 0x02: cfc1(regs, instr); break;
-    case 0x03: FireException(regs, ExceptionCode::ReservedInstruction, 1, regs.oldPC); break;
+    case 0x03: FireException(regs, ExceptionCode::ReservedInstruction, 1, true); break;
     case 0x04: mtc1(regs, instr); break;
     case 0x05: dmtc1(regs, instr); break;
     case 0x06: ctc1(regs, instr); break;
-    case 0x07: FireException(regs, ExceptionCode::ReservedInstruction, 1, regs.oldPC); break;
+    case 0x07: FireException(regs, ExceptionCode::ReservedInstruction, 1, true); break;
     case 0x08:
       switch(mask_branch) {
         case 0: cpu.b(regs, instr, !regs.cop1.fcr31.compare); break;
@@ -61,7 +61,7 @@ void Cop1::decode(Registers& regs, Interpreter& cpu, u32 instr) {
         case 0x0E: ceilws(regs, instr); break;
         case 0x0F: floorws(regs, instr); break;
         case 0x20:
-          FireException(regs, ExceptionCode::ReservedInstruction, 1, regs.oldPC);
+          FireException(regs, ExceptionCode::ReservedInstruction, 1, true);
           break;
         case 0x21: cvtds(regs, instr); break;
         case 0x24: cvtws(regs, instr); break;
@@ -105,7 +105,7 @@ void Cop1::decode(Registers& regs, Interpreter& cpu, u32 instr) {
         case 0x0F: floorwd(regs, instr); break;
         case 0x20: cvtsd(regs, instr); break;
         case 0x21:
-          FireException(regs, ExceptionCode::ReservedInstruction, 1, regs.oldPC);
+          FireException(regs, ExceptionCode::ReservedInstruction, 1, true);
           break;
         case 0x24: cvtwd(regs, instr); break;
         case 0x25: cvtld(regs, instr); break;
@@ -137,7 +137,7 @@ void Cop1::decode(Registers& regs, Interpreter& cpu, u32 instr) {
         case 0x20: cvtsw(regs, instr); break;
         case 0x21: cvtdw(regs, instr); break;
         case 0x24:
-          FireException(regs, ExceptionCode::ReservedInstruction, 1, regs.oldPC);
+          FireException(regs, ExceptionCode::ReservedInstruction, 1, true);
           break;
         default: util::panic("Unimplemented COP1 function W[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
       }
@@ -151,10 +151,10 @@ void Cop1::decode(Registers& regs, Interpreter& cpu, u32 instr) {
         case 0x20: cvtsl(regs, instr); break;
         case 0x21: cvtdl(regs, instr); break;
         case 0x24:
-          FireException(regs, ExceptionCode::ReservedInstruction, 1, regs.oldPC);
+          FireException(regs, ExceptionCode::ReservedInstruction, 1, true);
           break;
         case 0x25:
-          FireException(regs, ExceptionCode::ReservedInstruction, 1, regs.oldPC);
+          FireException(regs, ExceptionCode::ReservedInstruction, 1, true);
           break;
         default: util::panic("Unimplemented COP1 function L[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
       }

@@ -1,13 +1,13 @@
 #pragma once
-#include <parallel-rdp/ParallelRDPWrapper.hpp>
+#include <ParallelRDPWrapper.hpp>
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
 #include <imgui_impl_vulkan.h>
-#include <SDL.h>
-#include <Core.hpp>
+#include <SDL2/SDL.h>
+#include <backend/Core.hpp>
 #include <vector>
-#include <Settings.hpp>
-#include <GameList.hpp>
+#include <frontend/imgui/Settings.hpp>
+#include <frontend/imgui/GameList.hpp>
 
 struct DrawData {
   ImDrawData* first;

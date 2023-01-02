@@ -45,17 +45,19 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
         }
 
         for(;cycles <= mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
-          CpuStep();
-          if(!mmio.rsp.spStatus.halt) {
-            regs.steps++;
-            if(regs.steps > 2) {
-              mmio.rsp.steps += 2;
-              regs.steps -= 3;
-            }
+          int cpuCount = CpuStep();
+          while(cpuCount--) {
+            if (!mmio.rsp.spStatus.halt) {
+              regs.steps++;
+              if (regs.steps > 2) {
+                mmio.rsp.steps += 2;
+                regs.steps -= 3;
+              }
 
-            while(mmio.rsp.steps > 0) {
-              mmio.rsp.steps--;
-              mmio.rsp.Step(regs, mem);
+              while (mmio.rsp.steps > 0) {
+                mmio.rsp.steps--;
+                mmio.rsp.Step(regs, mem);
+              }
             }
           }
 

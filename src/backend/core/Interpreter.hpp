@@ -13,7 +13,7 @@ private:
   friend struct Cop1;
 
   void cop2Decode(Registers&, u32);
-  void special(Registers&, Mem&, u32);
+  void special(Registers&, u32);
   void regimm(Registers&, u32);
   void Exec(Registers&, Mem&, u32);
   void add(Registers&, u32);

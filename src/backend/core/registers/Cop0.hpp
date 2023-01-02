@@ -177,7 +177,7 @@ enum class ExceptionCode : u8 {
   Watch = 23
 };
 
-void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc);
+void FireException(Registers& regs, ExceptionCode code, int cop, bool useOldPC);
 
 union Cop0Context {
   u64 raw;
@@ -235,9 +235,6 @@ struct Cop0 {
   TLBError tlbError = NONE;
   s64 openbus{};
   void decode(Registers&, Mem&, u32);
-private:
-  inline u32 GetWired() { return wired & 0x3F; }
-  inline u32 GetCount() { return u32(u64(count >> 1)); }
   inline u32 GetRandom() {
     int val = rand();
     int wired = GetWired();
@@ -253,16 +250,19 @@ private:
     val = (val % upper) + lower;
     return val;
   }
+private:
+  inline u32 GetWired() { return wired & 0x3F; }
+  inline u32 GetCount() { return u32(u64(count >> 1)); }
 
-  void mtc0(Registers&, u32);
-  void dmtc0(Registers&, u32);
-  void mfc0(Registers&, u32);
-  void dmfc0(Registers&, u32);
-  void eret(Registers&);
+  void mtc0(n64::Registers&, u32);
+  void dmtc0(n64::Registers&, u32);
+  void mfc0(n64::Registers&, u32);
+  void dmfc0(n64::Registers&, u32);
+  void eret(n64::Registers&);
 
-  void tlbr(Registers&);
-  void tlbw(int, Registers&);
-  void tlbp(Registers&);
+  void tlbr(n64::Registers&);
+  void tlbw(int, n64::Registers&);
+  void tlbp(n64::Registers&);
 };
 
 struct Registers;

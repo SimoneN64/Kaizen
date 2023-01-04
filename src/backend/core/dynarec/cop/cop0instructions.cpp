@@ -34,7 +34,7 @@ void eret(n64::Registers& regs) {
 void tlbr(n64::Registers& regs) {
   u8 Index = regs.cop0.index & 0b111111;
   if (Index >= 32) {
-    util::panic("TLBR with TLB index {}", Index);
+    Util::panic("TLBR with TLB index {}", Index);
   }
 
   TLBEntry entry = regs.cop0.tlb[Index];
@@ -54,7 +54,7 @@ void tlbw(n64::Registers& regs, int index_) {
   page_mask.mask = top | (top >> 1);
 
   if(index_ >= 32) {
-    util::panic("TLBWI with TLB index {}", index_);
+    Util::panic("TLBWI with TLB index {}", index_);
   }
 
   regs.cop0.tlb[index_].entryHi.raw  = regs.cop0.entryHi.raw;

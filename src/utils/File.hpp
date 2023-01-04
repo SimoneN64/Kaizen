@@ -2,7 +2,7 @@
 #include <fstream>
 #include <log.hpp>
 
-namespace util {
+namespace Util {
 inline auto ReadFileBinary(const std::string& path, u32** buf) {
   std::ifstream file(path, std::ios::binary);
   file.unsetf(std::ios::skipws);

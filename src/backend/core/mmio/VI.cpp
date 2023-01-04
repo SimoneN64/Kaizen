@@ -39,7 +39,7 @@ u32 VI::Read(u32 paddr) const {
     case 0x04400030: return xscale.raw;
     case 0x04400034: return yscale.raw;
     default:
-      util::panic("Unimplemented VI[%08X] read\n", paddr);
+      Util::panic("Unimplemented VI[%08X] read\n", paddr);
   }
 }
 
@@ -81,7 +81,7 @@ void VI::Write(MI& mi, Registers& regs, u32 paddr, u32 val) {
     case 0x04400030: xscale.raw = val; break;
     case 0x04400034: yscale.raw = val; break;
     default:
-      util::panic("Unimplemented VI[%08X] write (%08X)\n", paddr, val);
+      Util::panic("Unimplemented VI[%08X] write (%08X)\n", paddr, val);
   }
 }
 }

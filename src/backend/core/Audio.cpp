@@ -53,7 +53,7 @@ void InitAudio() {
   }
 
   if(!audioDev) {
-    util::panic("Failed to initialize SDL Audio: {}", SDL_GetError());
+    Util::panic("Failed to initialize SDL Audio: {}", SDL_GetError());
   }
 
   SDL_PauseAudioDevice(audioDev, false);
@@ -61,7 +61,7 @@ void InitAudio() {
   audioStreamMutex = SDL_CreateMutex();
 
   if(!audioStreamMutex) {
-    util::panic("Unable to initialize audio mutex: {}", SDL_GetError());
+    Util::panic("Unable to initialize audio mutex: {}", SDL_GetError());
   }
 }
 

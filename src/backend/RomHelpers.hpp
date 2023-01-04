@@ -2,7 +2,7 @@
 #include <log.hpp>
 #include <MemoryHelpers.hpp>
 
-namespace util {
+namespace Util {
 enum RomTypes {
   Z64 = 0x80371240,
   N64 = 0x40123780,

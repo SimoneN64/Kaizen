@@ -4,7 +4,7 @@
 App::App() : window(core) {
   DiscordEventHandlers handlers{};
   Discord_Initialize("1049669178124148806", &handlers, 1, nullptr);
-  util::UpdateRPC(util::Idling);
+  Util::UpdateRPC(Util::Idling);
 }
 
 void App::Run() {

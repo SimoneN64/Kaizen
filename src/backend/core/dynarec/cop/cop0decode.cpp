@@ -36,9 +36,8 @@ void cop0Decode(n64::Registers& regs, u32 instr, Dynarec& cpu) {
           code.call(code.rax);
           break;
         case 0x02:
-          code.mov(code.rbp, (u64)&regs.cop0.index);
-          code.and_(code.dword[code.rbp], 0x3F);
-          code.mov(code.rsi, code.dword[code.rbp]);
+          code.and_(code.dword[code.rdi + offsetof(n64::Registers, cop0.index)], 0x3F);
+          code.mov(code.rsi, code.dword[code.rdi]);
           code.mov(code.rax, (u64)tlbw);
           code.call(code.rax);
           break;
@@ -57,10 +56,10 @@ void cop0Decode(n64::Registers& regs, u32 instr, Dynarec& cpu) {
           code.mov(code.rax, (u64)eret);
           code.call(code.rax);
           break;
-        default: util::panic("Unimplemented COP0 function {} {} ({:08X}) ({:016lX})", mask_cop2 >> 3, mask_cop2 & 7, instr, regs.oldPC);
+        default: Util::panic("Unimplemented COP0 function {} {} ({:08X}) ({:016lX})", mask_cop2 >> 3, mask_cop2 & 7, instr, regs.oldPC);
       }
       break;
-    default: util::panic("Unimplemented COP0 instruction {} {}", mask_cop >> 4, mask_cop & 7);
+    default: Util::panic("Unimplemented COP0 instruction {} {}", mask_cop >> 4, mask_cop & 7);
   }
 }
 }

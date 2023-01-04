@@ -35,7 +35,7 @@ auto RDP::Read(u32 addr) const -> u32 {
     case 0x04100018: return dpc.status.pipeBusy;
     case 0x0410001C: return dpc.tmem;
     default:
-      util::panic("Unhandled DP Command Registers read (addr: {:08X})\n", addr);
+      Util::panic("Unhandled DP Command Registers read (addr: {:08X})\n", addr);
   }
 }
 
@@ -45,7 +45,7 @@ void RDP::Write(MI& mi, Registers& regs, RSP& rsp, u32 addr, u32 val) {
     case 0x04100004: WriteEnd(mi, regs, rsp, val); break;
     case 0x0410000C: WriteStatus(mi, regs, rsp, val); break;
     default:
-      util::panic("Unhandled DP Command Registers write (addr: {:08X}, val: {:08X})\n", addr, val);
+      Util::panic("Unhandled DP Command Registers write (addr: {:08X}, val: {:08X})\n", addr, val);
   }
 }
 
@@ -74,41 +74,41 @@ void RDP::WriteStatus(MI& mi, Registers& regs, RSP& rsp, u32 val) {
 
 inline void logCommand(u8 cmd) {
   switch(cmd) {
-    case 0x08: util::print("Fill triangle\n"); break;
-    case 0x09: util::print("Fill, zbuf triangle\n"); break;
-    case 0x0a: util::print("Texture triangle\n"); break;
-    case 0x0b: util::print("Texture, zbuf triangle\n"); break;
-    case 0x0c: util::print("Shade triangle\n"); break;
-    case 0x0d: util::print("Shade, zbuf triangle\n"); break;
-    case 0x0e: util::print("Shade, texture triangle\n"); break;
-    case 0x0f: util::print("Shade, texture, zbuf triangle\n"); break;
-    case 0x24: util::print("Texture rectangle\n"); break;
-    case 0x25: util::print("Texture rectangle flip\n"); break;
-    case 0x26: util::print("Sync load\n"); break;
-    case 0x27: util::print("Sync pipe\n"); break;
-    case 0x28: util::print("Sync tile\n"); break;
-    case 0x29: util::print("Sync full\n"); break;
-    case 0x2a: util::print("Set key gb\n"); break;
-    case 0x2b: util::print("Set key r\n"); break;
-    case 0x2c: util::print("Set convert\n"); break;
-    case 0x2d: util::print("Set scissor\n"); break;
-    case 0x2e: util::print("Set prim depth\n"); break;
-    case 0x2f: util::print("Set other modes\n"); break;
-    case 0x30: util::print("Load TLUT\n"); break;
-    case 0x32: util::print("Set tile size\n"); break;
-    case 0x33: util::print("Load block\n"); break;
-    case 0x34: util::print("Load tile\n"); break;
-    case 0x35: util::print("Set tile\n"); break;
-    case 0x36: util::print("Fill rectangle\n"); break;
-    case 0x37: util::print("Set fill color\n"); break;
-    case 0x38: util::print("Set fog color\n"); break;
-    case 0x39: util::print("Set blend color\n"); break;
-    case 0x3a: util::print("Set prim color\n"); break;
-    case 0x3b: util::print("Set env color\n"); break;
-    case 0x3c: util::print("Set combine\n"); break;
-    case 0x3d: util::print("Set texture image\n"); break;
-    case 0x3e: util::print("Set mask image\n"); break;
-    case 0x3f: util::print("Set color image\n"); break;
+    case 0x08: Util::print("Fill triangle\n"); break;
+    case 0x09: Util::print("Fill, zbuf triangle\n"); break;
+    case 0x0a: Util::print("Texture triangle\n"); break;
+    case 0x0b: Util::print("Texture, zbuf triangle\n"); break;
+    case 0x0c: Util::print("Shade triangle\n"); break;
+    case 0x0d: Util::print("Shade, zbuf triangle\n"); break;
+    case 0x0e: Util::print("Shade, texture triangle\n"); break;
+    case 0x0f: Util::print("Shade, texture, zbuf triangle\n"); break;
+    case 0x24: Util::print("Texture rectangle\n"); break;
+    case 0x25: Util::print("Texture rectangle flip\n"); break;
+    case 0x26: Util::print("Sync load\n"); break;
+    case 0x27: Util::print("Sync pipe\n"); break;
+    case 0x28: Util::print("Sync tile\n"); break;
+    case 0x29: Util::print("Sync full\n"); break;
+    case 0x2a: Util::print("Set key gb\n"); break;
+    case 0x2b: Util::print("Set key r\n"); break;
+    case 0x2c: Util::print("Set convert\n"); break;
+    case 0x2d: Util::print("Set scissor\n"); break;
+    case 0x2e: Util::print("Set prim depth\n"); break;
+    case 0x2f: Util::print("Set other modes\n"); break;
+    case 0x30: Util::print("Load TLUT\n"); break;
+    case 0x32: Util::print("Set tile size\n"); break;
+    case 0x33: Util::print("Load block\n"); break;
+    case 0x34: Util::print("Load tile\n"); break;
+    case 0x35: Util::print("Set tile\n"); break;
+    case 0x36: Util::print("Fill rectangle\n"); break;
+    case 0x37: Util::print("Set fill color\n"); break;
+    case 0x38: Util::print("Set fog color\n"); break;
+    case 0x39: Util::print("Set blend color\n"); break;
+    case 0x3a: Util::print("Set prim color\n"); break;
+    case 0x3b: Util::print("Set env color\n"); break;
+    case 0x3c: Util::print("Set combine\n"); break;
+    case 0x3d: Util::print("Set texture image\n"); break;
+    case 0x3e: Util::print("Set mask image\n"); break;
+    case 0x3f: Util::print("Set color image\n"); break;
   }
 }
 
@@ -130,13 +130,13 @@ void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
     if (len <= 0) return;
 
     if (len + (remaining_cmds * 4) > 0xFFFFF) {
-      util::panic("Too many RDP commands\n");
+      Util::panic("Too many RDP commands\n");
       return;
     }
 
     if (dpc.status.xbusDmemDma) {
       for (int i = 0; i < len; i += 4) {
-        u32 cmd = util::ReadAccess<u32>(rsp.dmem, (current + i) & 0xFFF);
+        u32 cmd = Util::ReadAccess<u32>(rsp.dmem, (current + i) & 0xFFF);
         cmd_buf[remaining_cmds + (i >> 2)] = cmd;
       }
     } else {
@@ -144,7 +144,7 @@ void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
         return;
       }
       for (int i = 0; i < len; i += 4) {
-        u32 cmd = util::ReadAccess<u32>(rdram.data(), current + i);
+        u32 cmd = Util::ReadAccess<u32>(rdram.data(), current + i);
         cmd_buf[remaining_cmds + (i >> 2)] = cmd;
       }
     }

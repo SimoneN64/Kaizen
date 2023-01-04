@@ -24,10 +24,7 @@ struct Core {
   VI& GetVI() { return mem.mmio.vi; }
 
   void CpuReset() {
-    switch(cpuType) {
-      case CpuType::Dynarec: break;
-      case CpuType::Interpreter: break;
-    }
+    regs.Reset();
   }
 
   int CpuStep() {

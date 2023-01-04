@@ -7,6 +7,7 @@
 #include <RomHelpers.hpp>
 #include <File.hpp>
 #include <thread>
+#include <algorithm>
 
 using namespace nlohmann;
 namespace fs = std::filesystem;
@@ -25,12 +26,12 @@ GameList::GameList(const std::string& path) {
           file.unsetf(std::ios::skipws);
 
           if(!file.is_open()) {
-            util::panic("Unable to open {}!", filename);
+            Util::panic("Unable to open {}!", filename);
           }
 
           file.seekg(0, std::ios::end);
           auto size = file.tellg();
-          auto sizeAdjusted = util::NextPow2(size);
+          auto sizeAdjusted = Util::NextPow2(size);
           file.seekg(0, std::ios::beg);
 
           std::fill(rom.begin(), rom.end(), 0);
@@ -39,7 +40,7 @@ GameList::GameList(const std::string& path) {
           file.close();
 
           u32 crc{};
-          util::GetRomCRC(sizeAdjusted, rom.data(), crc);
+          Util::GetRomCRC(sizeAdjusted, rom.data(), crc);
 
           bool found = false;
 
@@ -72,6 +73,7 @@ GameList::GameList(const std::string& path) {
       };
 
       gameDbFile.close();
+      threadDone = true;
     });
 
     searchThread.detach();
@@ -93,10 +95,9 @@ bool GameList::RenderWidget(float mainMenuBarHeight, std::string& rom) {
   );
 
   static ImGuiTableFlags flags =
-    ImGuiTableFlags_Resizable
-    | ImGuiTableFlags_RowBg
-    | ImGuiTableFlags_BordersOuterV
-    | ImGuiTableFlags_SizingStretchProp;
+    ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_Sortable | ImGuiTableFlags_SortMulti
+    | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersV | ImGuiTableFlags_NoBordersInBody
+    | ImGuiTableFlags_ScrollY;
 
   bool toOpen = false;
   if (ImGui::BeginTable("Games List", 4, flags)) {
@@ -104,6 +105,7 @@ bool GameList::RenderWidget(float mainMenuBarHeight, std::string& rom) {
     ImGui::TableSetupColumn("Region");
     ImGui::TableSetupColumn("Status");
     ImGui::TableSetupColumn("Size");
+    ImGui::TableSetupScrollFreeze(0, 1); // Make row always visible
     ImGui::TableHeadersRow();
 
     int i = 0;

@@ -39,7 +39,7 @@ void Cop1::decode(Registers& regs, Interpreter& cpu, u32 instr) {
         case 1: cpu.b(regs, instr, regs.cop1.fcr31.compare); break;
         case 2: cpu.bl(regs, instr, !regs.cop1.fcr31.compare); break;
         case 3: cpu.bl(regs, instr, regs.cop1.fcr31.compare); break;
-        default: util::panic("Undefined BC COP1 {:02X}\n", mask_branch);
+        default: Util::panic("Undefined BC COP1 {:02X}\n", mask_branch);
       }
       break;
     case 0x10: // s
@@ -82,7 +82,7 @@ void Cop1::decode(Registers& regs, Interpreter& cpu, u32 instr) {
         case 0x3D: ccond<float>(regs, instr, NGE); break;
         case 0x3E: ccond<float>(regs, instr, LE); break;
         case 0x3F: ccond<float>(regs, instr, NGT); break;
-        default: util::panic("Unimplemented COP1 function S[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
+        default: Util::panic("Unimplemented COP1 function S[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
       }
       break;
     case 0x11: // d
@@ -125,7 +125,7 @@ void Cop1::decode(Registers& regs, Interpreter& cpu, u32 instr) {
         case 0x3D: ccond<double>(regs, instr, NGE); break;
         case 0x3E: ccond<double>(regs, instr, LE); break;
         case 0x3F: ccond<double>(regs, instr, NGT); break;
-        default: util::panic("Unimplemented COP1 function D[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
+        default: Util::panic("Unimplemented COP1 function D[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
       }
       break;
     case 0x14: // w
@@ -139,7 +139,7 @@ void Cop1::decode(Registers& regs, Interpreter& cpu, u32 instr) {
         case 0x24:
           FireException(regs, ExceptionCode::ReservedInstruction, 1, true);
           break;
-        default: util::panic("Unimplemented COP1 function W[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
+        default: Util::panic("Unimplemented COP1 function W[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
       }
       break;
     case 0x15: // l
@@ -156,10 +156,10 @@ void Cop1::decode(Registers& regs, Interpreter& cpu, u32 instr) {
         case 0x25:
           FireException(regs, ExceptionCode::ReservedInstruction, 1, true);
           break;
-        default: util::panic("Unimplemented COP1 function L[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
+        default: Util::panic("Unimplemented COP1 function L[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
       }
       break;
-    default: util::panic("Unimplemented COP1 instruction {} {}", mask_sub >> 3, mask_sub & 7);
+    default: Util::panic("Unimplemented COP1 instruction {} {}", mask_sub >> 3, mask_sub & 7);
   }
 }
 }

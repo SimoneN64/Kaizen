@@ -1,28 +1,46 @@
 #include <Dynarec.hpp>
 #include <Registers.hpp>
+#include <filesystem>
 
 namespace n64::JIT {
-Dynarec::Dynarec() : code(Xbyak::DEFAULT_MAX_CODE_SIZE, Xbyak::AutoGrow) {}
+namespace fs = std::filesystem;
+
+Dynarec::~Dynarec() {
+  dumpCode.close();
+}
+
+Dynarec::Dynarec() : code(DEFAULT_MAX_CODE_SIZE, AutoGrow) {
+  if(fs::exists("jit.dump")) {
+    fs::remove("jit.dump");
+  }
+
+  dumpCode.open("jit.dump", std::ios::app | std::ios::binary);
+  code.setProtectMode(CodeGenerator::PROTECT_RWE);
+}
 
 void Dynarec::Recompile(Registers& regs, Mem& mem) {
   bool branch = false, prevBranch = false;
   u32 start_addr = regs.pc;
   Fn block = code.getCurr<Fn>();
 
+  code.sub(code.rsp, 8);
+
   while(!prevBranch) {
     instrInBlock++;
     prevBranch = branch;
-    u32 instr = mem.Read32(regs, regs.pc, regs.pc);
+    u32 instr = mem.Read32(regs, start_addr, start_addr);
 
-    regs.oldPC = regs.pc;
-    regs.pc = regs.nextPC;
-    regs.nextPC += 4;
+    start_addr += 4;
 
+    code.mov(code.rdi, (u64)&regs);
     branch = Exec(regs, mem, instr);
   }
 
+  code.add(code.rsp, 8);
   code.ret();
-  codeCache[start_addr >> 20][start_addr & 0xFFF] = block;
+  dumpCode.write(code.getCode<char*>(), code.getSize());
+  u32 pc = regs.pc & 0xffffffff;
+  codeCache[pc >> 20][pc & 0xFFF] = block;
   block();
 }
 

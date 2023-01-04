@@ -48,7 +48,7 @@ struct Mem {
     FILE *fp = fopen("rdram.dump", "wb");
     u8 *temp = (u8*)calloc(RDRAM_SIZE, 1);
     memcpy(temp, mmio.rdp.rdram.data(), RDRAM_SIZE);
-    util::SwapBuffer32(RDRAM_SIZE, temp);
+    Util::SwapBuffer32(RDRAM_SIZE, temp);
     fwrite(temp, 1, RDRAM_SIZE, fp);
     free(temp);
     fclose(fp);
@@ -58,7 +58,7 @@ struct Mem {
     FILE *fp = fopen("imem.bin", "wb");
     u8 *temp = (u8*)calloc(IMEM_SIZE, 1);
     memcpy(temp, mmio.rsp.imem, IMEM_SIZE);
-    util::SwapBuffer32(IMEM_SIZE, temp);
+    Util::SwapBuffer32(IMEM_SIZE, temp);
     fwrite(temp, 1, IMEM_SIZE, fp);
     free(temp);
     fclose(fp);
@@ -68,7 +68,7 @@ struct Mem {
     FILE *fp = fopen("dmem.dump", "wb");
     u8 *temp = (u8*)calloc(DMEM_SIZE, 1);
     memcpy(temp, mmio.rsp.dmem, DMEM_SIZE);
-    util::SwapBuffer32(DMEM_SIZE, temp);
+    Util::SwapBuffer32(DMEM_SIZE, temp);
     fwrite(temp, 1, DMEM_SIZE, fp);
     free(temp);
     fclose(fp);
@@ -107,7 +107,7 @@ private:
         cicType = CIC_NUS_6106_7106;
         break;
       default:
-        util::warn("Could not determine CIC TYPE! Checksum: {:08X} is unknown!\n", checksum);
+        Util::warn("Could not determine CIC TYPE! Checksum: {:08X} is unknown!\n", checksum);
         cicType = UNKNOWN_CIC_TYPE;
         break;
     }

@@ -30,7 +30,7 @@ u32 MMIO::Read(u32 addr) {
     case 0x04700000 ... 0x047FFFFF: return ri.Read(addr);
     case 0x04800000 ... 0x048FFFFF: return si.Read(mi, addr);
     default:
-      util::panic("Unhandled mmio read at addr {:08X}\n", addr);
+      Util::panic("Unhandled mmio read at addr {:08X}\n", addr);
   }
 }
 
@@ -45,7 +45,7 @@ void MMIO::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
     case 0x04700000 ... 0x047FFFFF: ri.Write(addr, val); break;
     case 0x04800000 ... 0x048FFFFF: si.Write(mem, regs, addr, val); break;
     default:
-      util::panic("Unhandled mmio write at addr {:08X} with val {:08X}\n", addr, val);
+      Util::panic("Unhandled mmio write at addr {:08X} with val {:08X}\n", addr, val);
   }
 }
 }

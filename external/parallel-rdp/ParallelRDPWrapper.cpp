@@ -79,7 +79,7 @@ public:
     unsigned int num_extensions = 64;
 
     if (!SDL_Vulkan_GetInstanceExtensions(g_Window, &num_extensions, extensions)) {
-      util::panic("SDL_Vulkan_GetInstanceExtensions failed: {}", SDL_GetError());
+      Util::panic("SDL_Vulkan_GetInstanceExtensions failed: {}", SDL_GetError());
     }
     auto vec = std::vector<const char*>();
 
@@ -93,7 +93,7 @@ public:
   VkSurfaceKHR create_surface(VkInstance instance, VkPhysicalDevice gpu) override {
     VkSurfaceKHR vk_surface;
     if (!SDL_Vulkan_CreateSurface(g_Window, instance, &vk_surface)) {
-      util::panic("Failed to create Vulkan window surface: {}", SDL_GetError());
+      Util::panic("Failed to create Vulkan window surface: {}", SDL_GetError());
     }
     return vk_surface;
   }
@@ -133,7 +133,7 @@ WSI* LoadWSIPlatform(Vulkan::WSIPlatform* wsi_platform, std::unique_ptr<Parallel
   wsi->set_present_mode(PresentMode::SyncToVBlank);
   Context::SystemHandles handles;
   if (!wsi->init_simple(1, handles)) {
-    util::panic("Failed to initialize WSI!");
+    Util::panic("Failed to initialize WSI!");
   }
 
   windowInfo = std::move(newWindowInfo);
@@ -157,8 +157,8 @@ void LoadParallelRDP(const u8* rdram, SDL_Window* window) {
   fragLayout.sets[0].array_size[0] = 1;
 
   u32* fullscreenQuadVert, *fullscreenQuadFrag;
-  auto sizeVert = util::ReadFileBinary("resources/vert.spv", &fullscreenQuadVert);
-  auto sizeFrag = util::ReadFileBinary("resources/frag.spv", &fullscreenQuadFrag);
+  auto sizeVert = Util::ReadFileBinary("resources/vert.spv", &fullscreenQuadVert);
+  auto sizeFrag = Util::ReadFileBinary("resources/frag.spv", &fullscreenQuadFrag);
 
   fullscreen_quad_program = wsi->get_device().request_program(fullscreenQuadVert, sizeVert, fullscreenQuadFrag, sizeFrag, &vertLayout, &fragLayout);
 
@@ -178,7 +178,7 @@ void LoadParallelRDP(const u8* rdram, SDL_Window* window) {
                                            offset, 8 * 1024 * 1024, 4 * 1024 * 1024, flags);
 
   if (!command_processor->device_is_supported()) {
-    util::panic("This device probably does not support 8/16-bit storage. Make sure you're using up-to-date drivers!");
+    Util::panic("This device probably does not support 8/16-bit storage. Make sure you're using up-to-date drivers!");
   }
 }
 

@@ -71,7 +71,7 @@ void LoadTAS(const char* filename) {
   FILE *fp = fopen(filename, "rb");
 
   if (!fp) {
-    util::panic("Error opening the movie file {}! Are you sure it's a valid movie and that it exists?", filename);
+    Util::panic("Error opening the movie file {}! Are you sure it's a valid movie and that it exists?", filename);
   }
 
   fseek(fp, 0, SEEK_END);
@@ -85,31 +85,31 @@ void LoadTAS(const char* filename) {
   loaded_tas_movie_size = size;
 
   if (!loaded_tas_movie) {
-    util::panic("Error loading movie!");
+    Util::panic("Error loading movie!");
   }
 
   memcpy(&loaded_tas_movie_header, buf, sizeof(TASMovieHeader));
 
   if (loaded_tas_movie_header.signature[0] != 0x4D || loaded_tas_movie_header.signature[1] != 0x36 || loaded_tas_movie_header.signature[2] != 0x34 || loaded_tas_movie_header.signature[3] != 0x1A) {
-    util::panic("Failed to load movie: incorrect signature. Are you sure this is a valid movie?");
+    Util::panic("Failed to load movie: incorrect signature. Are you sure this is a valid movie?");
   }
 
   if (loaded_tas_movie_header.version != 3) {
-    util::panic("This movie is version {}: only version 3 is supported.", loaded_tas_movie_header.version);
+    Util::panic("This movie is version {}: only version 3 is supported.", loaded_tas_movie_header.version);
   }
 
   if (loaded_tas_movie_header.startType != 2) {
-    util::panic("Movie start type is {} - only movies with a start type of 2 are supported (start at power on)", loaded_tas_movie_header.startType);
+    Util::panic("Movie start type is {} - only movies with a start type of 2 are supported (start at power on)", loaded_tas_movie_header.startType);
   }
 
   // TODO: check ROM CRC32 here
 
-  util::print("Loaded movie '{}' ", loaded_tas_movie_header.movie_description);
-  util::print("by {}\n", loaded_tas_movie_header.author_name);
-  util::print("{} controller(s) connected\n", loaded_tas_movie_header.numControllers);
+  Util::print("Loaded movie '{}' ", loaded_tas_movie_header.movie_description);
+  Util::print("by {}\n", loaded_tas_movie_header.author_name);
+  Util::print("{} controller(s) connected\n", loaded_tas_movie_header.numControllers);
 
   if (loaded_tas_movie_header.numControllers != 1) {
-    util::panic("Currently, only movies with 1 controller connected are supported.\n");
+    Util::panic("Currently, only movies with 1 controller connected are supported.\n");
   }
 
   loaded_tas_movie_index = sizeof(TASMovieHeader) - 4; // skip header
@@ -120,22 +120,22 @@ bool tas_movie_loaded() {
 }
 
 inline void LogController(const n64::Controller& controller) {
-  util::print("c_right: {}\n", controller.c_right);
-  util::print("c_left: {}\n", controller.c_left);
-  util::print("c_down: {}\n", controller.c_down);
-  util::print("c_up: {}\n", controller.c_up);
-  util::print("r: {}\n", controller.r);
-  util::print("l: {}\n", controller.l);
-  util::print("dp_right: {}\n", controller.dp_right);
-  util::print("dp_left: {}\n", controller.dp_left);
-  util::print("dp_down: {}\n", controller.dp_down);
-  util::print("dp_up: {}\n", controller.dp_up);
-  util::print("z: {}\n", controller.z);
-  util::print("b: {}\n", controller.b);
-  util::print("a: {}\n", controller.a);
-  util::print("start: {}\n", controller.start);
-  util::print("joy_x: {}\n", controller.joy_x);
-  util::print("joy_y: {}\n\n", controller.joy_y);
+  Util::print("c_right: {}\n", controller.c_right);
+  Util::print("c_left: {}\n", controller.c_left);
+  Util::print("c_down: {}\n", controller.c_down);
+  Util::print("c_up: {}\n", controller.c_up);
+  Util::print("r: {}\n", controller.r);
+  Util::print("l: {}\n", controller.l);
+  Util::print("dp_right: {}\n", controller.dp_right);
+  Util::print("dp_left: {}\n", controller.dp_left);
+  Util::print("dp_down: {}\n", controller.dp_down);
+  Util::print("dp_up: {}\n", controller.dp_up);
+  Util::print("z: {}\n", controller.z);
+  Util::print("b: {}\n", controller.b);
+  Util::print("a: {}\n", controller.a);
+  Util::print("start: {}\n", controller.start);
+  Util::print("joy_x: {}\n", controller.joy_x);
+  Util::print("joy_y: {}\n\n", controller.joy_y);
 }
 
 n64::Controller tas_next_inputs() {

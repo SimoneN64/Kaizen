@@ -4,7 +4,7 @@
 
 struct App {
   App();
-  ~App() { util::ClearRPC(); }
+  ~App() { Util::ClearRPC(); }
   void Run();
   inline void LoadROM(const std::string& path) {
     window.LoadROM(core, path);

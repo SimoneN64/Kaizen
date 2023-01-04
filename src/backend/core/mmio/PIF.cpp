@@ -53,7 +53,7 @@ void ProcessPIFCommands(u8* pifRam, Controller& controller, Mem& mem) {
             res[3] = controller.joy_y;
             break;
           case 2: case 3: res[0] = 0; break;
-          default: util::panic("Unimplemented PIF command {}", cmd[2]);
+          default: Util::panic("Unimplemented PIF command {}", cmd[2]);
         }
 
         i += t + rlen;

@@ -34,7 +34,7 @@ void Cop0::eret(Registers& regs) {
 void Cop0::tlbr(Registers& regs) {
   u8 Index = index & 0b111111;
   if (Index >= 32) {
-    util::panic("TLBR with TLB index {}", index);
+    Util::panic("TLBR with TLB index {}", index);
   }
 
   TLBEntry entry = tlb[Index];
@@ -55,7 +55,7 @@ void Cop0::tlbw(int index_, Registers& regs) {
   page_mask.mask = top | (top >> 1);
 
   if(index_ >= 32) {
-    util::panic("TLBWI with TLB index {}", index_);
+    Util::panic("TLBWI with TLB index {}", index_);
   }
 
   tlb[index_].entryHi.raw  = entryHi.raw;

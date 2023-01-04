@@ -35,7 +35,7 @@ Settings::Settings(n64::Core& core) {
       } else if(cpuType == "interpreter") {
         core.cpuType = n64::CpuType::Interpreter;
       } else {
-        util::panic("Unrecognized cpu type: {}\n", cpuType);
+        Util::panic("Unrecognized cpu type: {}\n", cpuType);
       }
     } else {
       settingsFile.clear();

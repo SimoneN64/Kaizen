@@ -39,13 +39,13 @@ void Window::InitSDL() {
   windowID = SDL_GetWindowID(window);
 
   if(volkInitialize() != VK_SUCCESS) {
-    util::panic("Failed to load Volk!");
+    Util::panic("Failed to load Volk!");
   }
 }
 
 static void check_vk_result(VkResult err) {
   if (err) {
-    util::panic("[vulkan] Error: VkResult = {}", err);
+    Util::panic("[vulkan] Error: VkResult = {}", err);
   }
 }
 
@@ -181,7 +181,7 @@ void Window::LoadROM(n64::Core& core, const std::string &path) {
       gameName = fs::path(path).stem().string();
     }
 
-    util::UpdateRPC(util::Playing, gameName);
+    Util::UpdateRPC(Util::Playing, gameName);
     windowTitle = "Gadolinium - " + gameName;
     shadowWindowTitle = windowTitle;
     renderGameList = false;
@@ -215,7 +215,7 @@ float Window::Render(n64::Core& core) {
       nfdresult_t result = NFD_OpenDialog(&outpath, &filter, 1, nullptr);
       if (result == NFD_OKAY) {
         LoadROM(core, outpath);
-        util::UpdateRPC(util::Playing, gameName);
+        Util::UpdateRPC(Util::Playing, gameName);
         NFD_FreePath(outpath);
       }
     }
@@ -241,7 +241,7 @@ float Window::Render(n64::Core& core) {
       renderGameList = true;
       windowTitle = "Gadolinium";
       core.rom.clear();
-      util::UpdateRPC(util::Idling);
+      Util::UpdateRPC(Util::Idling);
       SDL_SetWindowTitle(window, windowTitle.c_str());
       core.Stop();
     }
@@ -250,10 +250,10 @@ float Window::Render(n64::Core& core) {
       if(core.pause) {
         shadowWindowTitle = windowTitle;
         windowTitle += "  | Paused";
-        util::UpdateRPC(util::Paused, gameName);
+        Util::UpdateRPC(Util::Paused, gameName);
       } else {
         windowTitle = shadowWindowTitle;
-        util::UpdateRPC(util::Playing, gameName);
+        Util::UpdateRPC(Util::Playing, gameName);
       }
       SDL_SetWindowTitle(window, windowTitle.c_str());
     }

@@ -6,7 +6,7 @@ Scheduler scheduler;
 
 Scheduler::Scheduler() {
   events.push({UINT64_MAX, [](n64::Mem&, n64::Registers&){
-    util::panic("How the fuck did we get here?!\n");
+    Util::panic("How the fuck did we get here?!\n");
   }});
 }
 

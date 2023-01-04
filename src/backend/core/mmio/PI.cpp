@@ -34,7 +34,7 @@ auto PI::Read(MI& mi, u32 addr) const -> u32 {
     case 0x04600024: case 0x04600028: case 0x0460002C: case 0x04600030:
       return stub[(addr & 0xff) - 5];
     default:
-      util::panic("Unhandled PI[{:08X}] read\n", addr);
+      Util::panic("Unhandled PI[{:08X}] read\n", addr);
   }
 }
 
@@ -57,7 +57,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       dramAddr = dram_addr + len;
       cartAddr = cart_addr + len;
       InterruptRaise(mi, regs, Interrupt::PI);
-      //util::print("PI DMA from RDRAM to CARTRIDGE (size: {} B, {:08X} to {:08X})\n", len, dramAddr, cartAddr);
+      //Util::print("PI DMA from RDRAM to CARTRIDGE (size: {} B, {:08X} to {:08X})\n", len, dramAddr, cartAddr);
     } break;
     case 0x0460000C: {
       u32 len = (val & 0x00FFFFFF) + 1;
@@ -73,7 +73,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       dramAddr = dram_addr + len;
       cartAddr = cart_addr + len;
       InterruptRaise(mi, regs, Interrupt::PI);
-      //util::print("PI DMA from CARTRIDGE to RDRAM (size: {} B, {:08X} to {:08X})\n", len, cart_addr, dram_addr);
+      //Util::print("PI DMA from CARTRIDGE to RDRAM (size: {} B, {:08X} to {:08X})\n", len, cart_addr, dram_addr);
     } break;
     case 0x04600010:
       if(val & 2) {
@@ -84,7 +84,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       stub[(addr & 0xff) - 5] = val & 0xff;
       break;
     default:
-      util::panic("Unhandled PI[{:08X}] write ({:08X})\n", val, addr);
+      Util::panic("Unhandled PI[{:08X}] write ({:08X})\n", val, addr);
   }
 }
 }

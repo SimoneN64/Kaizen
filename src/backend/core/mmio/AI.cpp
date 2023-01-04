@@ -69,7 +69,7 @@ void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       dac.precision = bitrate + 1;
       break;
     default:
-      util::panic("Unhandled AI write at addr {:08X} with val {:08X}\n", addr, val);
+      Util::panic("Unhandled AI write at addr {:08X} with val {:08X}\n", addr, val);
   }
 }
 
@@ -84,7 +84,7 @@ void AI::Step(Mem& mem, Registers& regs, int cpuCycles, float volumeL, float vol
       if(volumeR > 0 && volumeL > 0) {
         u32 addrHi = ((dmaAddr[0] >> 13) + dmaAddrCarry) & 0x7FF;
         dmaAddr[0] = (addrHi << 13) | (dmaAddr[0] & 0x1FFF);
-        u32 data = util::ReadAccess<u32>(mem.mmio.rdp.rdram.data(), dmaAddr[0] & RDRAM_DSIZE);
+        u32 data = Util::ReadAccess<u32>(mem.mmio.rdp.rdram.data(), dmaAddr[0] & RDRAM_DSIZE);
         s16 l = s16(data >> 16);
         s16 r = s16(data);
 

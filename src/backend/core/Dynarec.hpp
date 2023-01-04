@@ -1,22 +1,27 @@
 #pragma once
 #include <xbyak/xbyak.h>
 #include <backend/core/Mem.hpp>
+#include <fstream>
 
 namespace n64::JIT {
+using namespace Xbyak;
+using namespace Xbyak::util;
 using Fn = void (*)();
 
 struct Dynarec {
   Dynarec();
+  ~Dynarec();
   int Step(Mem&, n64::Registers&);
   void Reset() {
     code.reset();
   }
   u64 cop2Latch{};
-  Xbyak::CodeGenerator code;
+  CodeGenerator code;
 private:
   friend struct Cop1;
   Fn* codeCache[0x80000]{};
   int instrInBlock = 0;
+  std::ofstream dumpCode;
 
   void Recompile(n64::Registers&, Mem&);
   void AllocateOuter(n64::Registers&);

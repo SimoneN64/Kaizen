@@ -3,7 +3,7 @@
 #include <string>
 #include <ctime>
 
-namespace util {
+namespace Util {
 enum State {
   Idling,
   Playing,

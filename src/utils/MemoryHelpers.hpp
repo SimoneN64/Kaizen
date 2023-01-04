@@ -4,7 +4,7 @@
 #include <portable_endian_bswap.h>
 #include <log.hpp>
 
-namespace util {
+namespace Util {
 template<typename T>
 inline T ReadAccess(u8 *data, u32 index) {
   if constexpr (sizeof(T) == 1) {

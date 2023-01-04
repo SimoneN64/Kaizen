@@ -5,24 +5,6 @@
 namespace n64::JIT {
 bool cop1Decode(n64::Registers& regs, u32 instr, Dynarec& cpu) {
   Xbyak::CodeGenerator& code = cpu.code;
-  code.push(code.rbp);
-  code.mov(code.rbp, (u64)&regs.cop0.status.raw);
-  code.mov(code.eax, code.dword[code.rbp]);
-  code.pop(code.rbp);
-  code.and_(code.eax, 0x20000000);
-  code.cmp(code.eax, 1);
-  code.je("NoException1");
-
-  code.mov(code.rdi, (u64)&regs);
-  code.mov(code.rsi, (u64)ExceptionCode::CoprocessorUnusable);
-  code.mov(code.rdx, 1);
-  code.mov(code.rcx, 1);
-  code.mov(code.rax, (u64) FireException);
-  code.call(code.rax);
-  code.xor_(code.rax, code.rax);
-  code.ret();
-
-  code.L("NoException1");
 
   u8 mask_sub = (instr >> 21) & 0x1F;
   u8 mask_fun = instr & 0x3F;
@@ -46,7 +28,7 @@ bool cop1Decode(n64::Registers& regs, u32 instr, Dynarec& cpu) {
       code.call(code.rax);
       break;
     case 0x03:
-      util::panic("[RECOMPILER] FPU Reserved instruction exception!\n");
+      Util::panic("[RECOMPILER] FPU Reserved instruction exception!\n");
     case 0x04:
       code.mov(code.rax, (u64)mtc1);
       code.call(code.rax);
@@ -60,7 +42,7 @@ bool cop1Decode(n64::Registers& regs, u32 instr, Dynarec& cpu) {
       code.call(code.rax);
       break;
     case 0x07:
-      util::panic("[RECOMPILER] FPU Reserved instruction exception!\n");
+      Util::panic("[RECOMPILER] FPU Reserved instruction exception!\n");
     case 0x08:
       switch(mask_branch) {
         case 0:
@@ -83,7 +65,7 @@ bool cop1Decode(n64::Registers& regs, u32 instr, Dynarec& cpu) {
           code.mov(code.rax, (u64)bl);
           code.call(code.rax);
           return true;
-        default: util::panic("Undefined BC COP1 {:02X}\n", mask_branch);
+        default: Util::panic("Undefined BC COP1 {:02X}\n", mask_branch);
       }
       break;
     case 0x10: // s
@@ -153,7 +135,7 @@ bool cop1Decode(n64::Registers& regs, u32 instr, Dynarec& cpu) {
           code.call(code.rax);
           break;
         case 0x20:
-          util::panic("[RECOMPILER] FPU Reserved instruction exception!\n");
+          Util::panic("[RECOMPILER] FPU Reserved instruction exception!\n");
         case 0x21:
           code.mov(code.rax, (u64)cvtds);
           code.call(code.rax);
@@ -246,7 +228,7 @@ bool cop1Decode(n64::Registers& regs, u32 instr, Dynarec& cpu) {
           code.mov(code.rdx, NGT);
           code.call(code.rax);
           break;
-        default: util::panic("Unimplemented COP1 function S[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
+        default: Util::panic("Unimplemented COP1 function S[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
       }
       break;
     case 0x11: // d
@@ -320,7 +302,7 @@ bool cop1Decode(n64::Registers& regs, u32 instr, Dynarec& cpu) {
           code.call(code.rax);
           break;
         case 0x21:
-          util::panic("[RECOMPILER] FPU Reserved instruction exception!\n");
+          Util::panic("[RECOMPILER] FPU Reserved instruction exception!\n");
         case 0x24:
           code.mov(code.rax, (u64)cvtwd);
           code.call(code.rax);
@@ -409,7 +391,7 @@ bool cop1Decode(n64::Registers& regs, u32 instr, Dynarec& cpu) {
           code.mov(code.rdx, NGT);
           code.call(code.rax);
           break;
-        default: util::panic("Unimplemented COP1 function D[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
+        default: Util::panic("Unimplemented COP1 function D[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
       }
       break;
     case 0x14: // w
@@ -439,8 +421,8 @@ bool cop1Decode(n64::Registers& regs, u32 instr, Dynarec& cpu) {
           code.call(code.rax);
           break;
         case 0x24:
-          util::panic("[RECOMPILER] FPU reserved instruction exception!\n");
-        default: util::panic("Unimplemented COP1 function W[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
+          Util::panic("[RECOMPILER] FPU reserved instruction exception!\n");
+        default: Util::panic("Unimplemented COP1 function W[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
       }
       break;
     case 0x15: // l
@@ -470,13 +452,13 @@ bool cop1Decode(n64::Registers& regs, u32 instr, Dynarec& cpu) {
           code.call(code.rax);
           break;
         case 0x24:
-          util::panic("[RECOMPILER] FPU reserved instruction exception!\n");
+          Util::panic("[RECOMPILER] FPU reserved instruction exception!\n");
         case 0x25:
-          util::panic("[RECOMPILER] FPU reserved instruction exception!\n");
-        default: util::panic("Unimplemented COP1 function L[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
+          Util::panic("[RECOMPILER] FPU reserved instruction exception!\n");
+        default: Util::panic("Unimplemented COP1 function L[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
       }
       break;
-    default: util::panic("Unimplemented COP1 instruction {} {}", mask_sub >> 3, mask_sub & 7);
+    default: Util::panic("Unimplemented COP1 instruction {} {}", mask_sub >> 3, mask_sub & 7);
   }
 
   return false;

@@ -20,7 +20,7 @@ auto RI::Read(u32 addr) const -> u32 {
     case 0x0470000C: return select;
     case 0x04700010: return refresh;
     default:
-      util::panic("Unhandled RI[{:08X}] read\n", addr);
+      Util::panic("Unhandled RI[{:08X}] read\n", addr);
   }
 }
 
@@ -31,7 +31,7 @@ void RI::Write(u32 addr, u32 val) {
     case 0x0470000C: select = val; break;
     case 0x04700010: refresh = val; break;
     default:
-      util::panic("Unhandled RI[{:08X}] write with val {:08X}\n", addr, val);
+      Util::panic("Unhandled RI[{:08X}] write with val {:08X}\n", addr, val);
   }
 }
 }

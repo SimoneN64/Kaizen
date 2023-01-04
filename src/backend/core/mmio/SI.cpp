@@ -28,7 +28,7 @@ auto SI::Read(MI& mi, u32 addr) const -> u32 {
       return val;
     }
     default:
-      util::panic("Unhandled SI[{:08X}] read\n", addr);
+      Util::panic("Unhandled SI[{:08X}] read\n", addr);
   }
 }
 
@@ -45,7 +45,7 @@ void DMA(Mem& mem, Registers& regs) {
     for(int i = 0; i < 64; i++) {
       mem.pifRam[i] = mem.mmio.rdp.rdram[BYTE_ADDRESS(si.dramAddr + i)];
     }
-    util::debug("SI DMA from PIF RAM to RDRAM ({:08X} to {:08X})\n", si.pifAddr, si.dramAddr);
+    Util::debug("SI DMA from PIF RAM to RDRAM ({:08X} to {:08X})\n", si.pifAddr, si.dramAddr);
     ProcessPIFCommands(mem.pifRam, si.controller, mem);
   }
   InterruptRaise(mem.mmio.mi, regs, Interrupt::SI);
@@ -67,13 +67,13 @@ void SI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       status.dmaBusy = true;
       toDram = false;
       scheduler.enqueueRelative({SI_DMA_DELAY, DMA});
-      util::debug("SI DMA from RDRAM to PIF RAM ({:08X} to {:08X})\n", dramAddr, val & 0x1FFFFFFF);
+      Util::debug("SI DMA from RDRAM to PIF RAM ({:08X} to {:08X})\n", dramAddr, val & 0x1FFFFFFF);
     } break;
     case 0x04800018:
       InterruptLower(mem.mmio.mi, regs, Interrupt::SI);
       break;
     default:
-      util::panic("Unhandled SI[%08X] write (%08X)\n", addr, val);
+      Util::panic("Unhandled SI[%08X] write (%08X)\n", addr, val);
   }
 }
 }

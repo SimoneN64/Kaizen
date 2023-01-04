@@ -7,7 +7,7 @@
 namespace n64 {
 inline void special(MI& mi, Registers& regs, RSP& rsp, u32 instr) {
   u8 mask = instr & 0x3f;
-  //util::print("rsp special {:02X}\n", mask);
+  //Util::print("rsp special {:02X}\n", mask);
   switch(mask) {
     case 0x00:
       if(instr != 0) {
@@ -41,25 +41,25 @@ inline void special(MI& mi, Registers& regs, RSP& rsp, u32 instr) {
     case 0x27: rsp.nor(instr); break;
     case 0x2A: rsp.slt(instr); break;
     case 0x2B: rsp.sltu(instr); break;
-    default: util::panic("Unhandled RSP special instruction ({:06b})\n", mask);
+    default: Util::panic("Unhandled RSP special instruction ({:06b})\n", mask);
   }
 }
 
 inline void regimm(RSP& rsp, u32 instr) {
   u8 mask = ((instr >> 16) & 0x1F);
-  //util::print("rsp regimm {:02X}\n", mask);
+  //Util::print("rsp regimm {:02X}\n", mask);
   switch(mask) {
     case 0x00: rsp.b(instr, (s32)rsp.gpr[RS(instr)] < 0); break;
     case 0x01: rsp.b(instr, (s32)rsp.gpr[RS(instr)] >= 0); break;
     case 0x10: rsp.blink(instr, (s32)rsp.gpr[RS(instr)] < 0); break;
     case 0x11: rsp.blink(instr, (s32)rsp.gpr[RS(instr)] >= 0); break;
-    default: util::panic("Unhandled RSP regimm instruction ({:05b})\n", mask);
+    default: Util::panic("Unhandled RSP regimm instruction ({:05b})\n", mask);
   }
 }
 
 inline void lwc2(RSP& rsp, u32 instr) {
   u8 mask = (instr >> 11) & 0x1F;
-  //util::print("lwc2 {:02X}\n", mask);
+  //Util::print("lwc2 {:02X}\n", mask);
   switch(mask) {
     case 0x00: rsp.lbv(instr); break;
     case 0x01: rsp.lsv(instr); break;
@@ -71,13 +71,13 @@ inline void lwc2(RSP& rsp, u32 instr) {
     case 0x07: rsp.luv(instr); break;
     case 0x0A: break;
     case 0x0B: rsp.ltv(instr); break;
-    default: util::panic("Unhandled RSP LWC2 {:05b}\n", mask);
+    default: Util::panic("Unhandled RSP LWC2 {:05b}\n", mask);
   }
 }
 
 inline void swc2(RSP& rsp, u32 instr) {
   u8 mask = (instr >> 11) & 0x1F;
-  //util::print("swc2 {:02X}\n", mask);
+  //Util::print("swc2 {:02X}\n", mask);
   switch(mask) {
     case 0x00: rsp.sbv(instr); break;
     case 0x01: rsp.ssv(instr); break;
@@ -88,14 +88,14 @@ inline void swc2(RSP& rsp, u32 instr) {
     case 0x07: rsp.suv(instr); break;
     case 0x0A: rsp.swv(instr); break;
     case 0x0B: rsp.stv(instr); break;
-    default: util::panic("Unhandled RSP SWC2 {:05b}\n", mask);
+    default: Util::panic("Unhandled RSP SWC2 {:05b}\n", mask);
   }
 }
 
 inline void cop2(RSP& rsp, u32 instr) {
   u8 mask = instr & 0x3F;
   u8 mask_sub = (instr >> 21) & 0x1F;
-  //util::print("Cop2 {:02X}\n", mask);
+  //Util::print("Cop2 {:02X}\n", mask);
   switch(mask) {
     case 0x00:
       if((instr >> 25) & 1) {
@@ -106,7 +106,7 @@ inline void cop2(RSP& rsp, u32 instr) {
           case 0x02: rsp.cfc2(instr); break;
           case 0x04: rsp.mtc2(instr); break;
           case 0x06: rsp.ctc2(instr); break;
-          default: util::panic("Unhandled RSP COP2 sub ({:05b})\n", mask_sub);
+          default: Util::panic("Unhandled RSP COP2 sub ({:05b})\n", mask_sub);
         }
       }
       break;
@@ -150,7 +150,7 @@ inline void cop2(RSP& rsp, u32 instr) {
     case 0x33: rsp.vmov(instr); break;
     case 0x34: rsp.vrsq(instr); break;
     case 0x37: case 0x3F: break;
-    default: util::panic("Unhandled RSP COP2 ({:06b})\n", mask);
+    default: Util::panic("Unhandled RSP COP2 ({:06b})\n", mask);
   }
 }
 
@@ -159,15 +159,15 @@ inline void cop0(Registers& regs, Mem& mem, u32 instr) {
   MMIO& mmio = mem.mmio;
   RSP& rsp = mmio.rsp;
   RDP& rdp = mmio.rdp;
-  //util::print("Cop0 {:02X}\n", mask);
+  //Util::print("Cop0 {:02X}\n", mask);
   if((instr & 0x7FF) == 0) {
     switch (mask) {
       case 0x00: rsp.mfc0(rdp, instr); break;
       case 0x04: rsp.mtc0(regs, mem, instr); break;
-      default: util::panic("Unhandled RSP COP0 ({:05b})\n", mask);
+      default: Util::panic("Unhandled RSP COP0 ({:05b})\n", mask);
     }
   } else {
-    util::panic("RSP COP0 unknown {:08X}\n", instr);
+    Util::panic("RSP COP0 unknown {:08X}\n", instr);
   }
 }
 
@@ -176,7 +176,7 @@ void RSP::Exec(Registers &regs, Mem& mem, u32 instr) {
   MMIO& mmio = mem.mmio;
   RDP& rdp = mmio.rdp;
   MI& mi = mmio.mi;
-  //util::print("RSP {:02X}\n", mask);
+  //Util::print("RSP {:02X}\n", mask);
   switch(mask) {
     case 0x00: special(mi, regs, *this, instr); break;
     case 0x01: regimm(*this, instr); break;
@@ -211,11 +211,11 @@ void RSP::Exec(Registers &regs, Mem& mem, u32 instr) {
       FILE *fp = fopen("imem.bin", "wb");
       u8 *temp = (u8*)calloc(IMEM_SIZE, 1);
       memcpy(temp, imem, IMEM_SIZE);
-      util::SwapBuffer32(IMEM_SIZE, temp);
+      Util::SwapBuffer32(IMEM_SIZE, temp);
       fwrite(temp, 1, IMEM_SIZE, fp);
       free(temp);
       fclose(fp);
-      util::panic("Unhandled RSP instruction ({:06b}, {:04X})\n", mask, oldPC);
+      Util::panic("Unhandled RSP instruction ({:06b}, {:04X})\n", mask, oldPC);
   }
 }
 }

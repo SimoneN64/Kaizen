@@ -32,39 +32,39 @@ void RSP::Reset() {
 }
 
 inline void logRSP(const RSP& rsp, const u32 instr) {
-  util::print("{:04X} {:08X} ", rsp.oldPC, instr);
+  Util::print("{:04X} {:08X} ", rsp.oldPC, instr);
   for (int i = 0; i < 32; i++) {
-    util::print("{:08X} ", (u32)rsp.gpr[i]);
+    Util::print("{:08X} ", (u32)rsp.gpr[i]);
   }
 
   for (int i = 0; i < 32; i++) {
     for (int e = 0; e < 8; e++) {
-      util::print("{:04X}", rsp.vpr[i].element[e]);
+      Util::print("{:04X}", rsp.vpr[i].element[e]);
     }
-    util::print(" ");
+    Util::print(" ");
   }
 
   for (int e = 0; e < 8; e++) {
-    util::print("{:04X}", rsp.acc.h.element[e]);
+    Util::print("{:04X}", rsp.acc.h.element[e]);
   }
-  util::print(" ");
+  Util::print(" ");
 
   for (int e = 0; e < 8; e++) {
-    util::print("{:04X}", rsp.acc.m.element[e]);
+    Util::print("{:04X}", rsp.acc.m.element[e]);
   }
-  util::print(" ");
+  Util::print(" ");
 
   for (int e = 0; e < 8; e++) {
-    util::print("{:04X}", rsp.acc.l.element[e]);
+    Util::print("{:04X}", rsp.acc.l.element[e]);
   }
 
-  util::print(" {:04X} {:04X} {:02X}\n", rsp.GetVCC(), rsp.GetVCO(), rsp.GetVCE());
-  util::print("DMEM: {:02X}{:02X}\n", rsp.dmem[0x3c4], rsp.dmem[0x3c5]);
+  Util::print(" {:04X} {:04X} {:02X}\n", rsp.GetVCC(), rsp.GetVCO(), rsp.GetVCE());
+  Util::print("DMEM: {:02X}{:02X}\n", rsp.dmem[0x3c4], rsp.dmem[0x3c5]);
 }
 
 void RSP::Step(Registers& regs, Mem& mem) {
   gpr[0] = 0;
-  u32 instr = util::ReadAccess<u32>(imem, pc & IMEM_DSIZE);
+  u32 instr = Util::ReadAccess<u32>(imem, pc & IMEM_DSIZE);
   oldPC = pc & 0xFFC;
   pc = nextPC & 0xFFC;
   nextPC += 4;
@@ -87,7 +87,7 @@ auto RSP::Read(u32 addr) -> u32{
       return AcquireSemaphore();
     case 0x04080000: return pc & 0xFFC;
     default:
-      util::panic("Unimplemented SP register read {:08X}\n", addr);
+      Util::panic("Unimplemented SP register read {:08X}\n", addr);
   }
 }
 
@@ -137,7 +137,7 @@ void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
         SetPC(value);
       } break;
     default:
-      util::panic("Unimplemented SP register write {:08X}, val: {:08X}\n", addr, value);
+      Util::panic("Unimplemented SP register write {:08X}, val: {:08X}\n", addr, value);
   }
 }
 }

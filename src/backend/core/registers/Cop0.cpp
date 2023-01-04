@@ -48,7 +48,7 @@ u32 Cop0::GetReg32(u8 addr) {
     case 23: case 24: case 25:
     case 31: return openbus;
     default:
-      util::panic("Unsupported word read from COP0 register {}\n", index);
+      Util::panic("Unsupported word read from COP0 register {}\n", index);
   }
 }
 
@@ -69,7 +69,7 @@ u64 Cop0::GetReg64(u8 addr) {
     case 23: case 24: case 25:
     case 31: return openbus;
     default:
-      util::panic("Unsupported word read from COP0 register {}\n", index);
+      Util::panic("Unsupported word read from COP0 register {}\n", index);
   }
 }
 
@@ -131,7 +131,7 @@ void Cop0::SetReg32(u8 addr, u32 value) {
     case 23: case 24: case 25:
     case 31: break;
     default:
-      util::panic("Unsupported word read from COP0 register {}\n", index);
+      Util::panic("Unsupported word read from COP0 register {}\n", index);
   }
 }
 
@@ -159,7 +159,7 @@ void Cop0::SetReg64(u8 addr, u64 value) {
     case COP0_REG_LLADDR: LLAddr = value; break;
     case COP0_REG_ERROREPC: ErrorEPC = (s64)value; break;
     default:
-      util::panic("Unsupported word write to COP0 register {}\n", addr);
+      Util::panic("Unsupported word write to COP0 register {}\n", addr);
   }
 }
 
@@ -264,7 +264,7 @@ void FireException(Registers& regs, ExceptionCode code, int cop, bool useOldPC) 
   regs.cop0.cause.exceptionCode = static_cast<u8>(code);
 
   if(regs.cop0.status.bev) {
-    util::panic("BEV bit set!\n");
+    Util::panic("BEV bit set!\n");
   } else {
     switch(code) {
       case ExceptionCode::Interrupt: case ExceptionCode::TLBModification:
@@ -285,7 +285,7 @@ void FireException(Registers& regs, ExceptionCode code, int cop, bool useOldPC) 
           regs.SetPC(s64(s32(0x80000000)));
         }
         break;
-      default: util::panic("Unhandled exception! {}\n", static_cast<u8>(code));
+      default: Util::panic("Unhandled exception! {}\n", static_cast<u8>(code));
     }
   }
 }
@@ -303,7 +303,7 @@ void HandleTLBException(Registers& regs, u64 vaddr) {
 
 ExceptionCode GetTLBExceptionCode(TLBError error, TLBAccessType accessType) {
   switch(error) {
-    case NONE: util::panic("Getting TLB exception with error NONE\n");
+    case NONE: Util::panic("Getting TLB exception with error NONE\n");
     case INVALID: case MISS:
       return accessType == LOAD ?
         ExceptionCode::TLBLoad : ExceptionCode::TLBStore;
@@ -313,7 +313,7 @@ ExceptionCode GetTLBExceptionCode(TLBError error, TLBAccessType accessType) {
       return accessType == LOAD ?
         ExceptionCode::AddressErrorLoad : ExceptionCode::AddressErrorStore;
     default:
-      util::panic("Getting TLB exception for unknown error code! ({})\n", error);
+      Util::panic("Getting TLB exception for unknown error code! ({})\n", error);
   }
 }
 
@@ -332,10 +332,10 @@ void Cop0::decode(Registers& regs, Mem& mem, u32 instr) {
         case 0x06: tlbw(GetRandom(), regs); break;
         case 0x08: tlbp(regs); break;
         case 0x18: eret(regs); break;
-        default: util::panic("Unimplemented COP0 function {} {} ({:08X}) ({:016lX})", mask_cop2 >> 3, mask_cop2 & 7, instr, regs.oldPC);
+        default: Util::panic("Unimplemented COP0 function {} {} ({:08X}) ({:016lX})", mask_cop2 >> 3, mask_cop2 & 7, instr, regs.oldPC);
       }
       break;
-    default: util::panic("Unimplemented COP0 instruction {} {}", mask_cop >> 4, mask_cop & 7);
+    default: Util::panic("Unimplemented COP0 instruction {} {}", mask_cop >> 4, mask_cop & 7);
   }
 }
 }

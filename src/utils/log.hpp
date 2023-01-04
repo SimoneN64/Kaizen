@@ -3,7 +3,7 @@
 #include <fmt/format.h>
 #include <fmt/color.h>
 
-namespace util {
+namespace Util {
 enum MessageType : u8 {
   Info, Debug, Warn, Error
 };

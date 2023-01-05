@@ -8,6 +8,9 @@ using namespace Xbyak;
 using namespace Xbyak::util;
 using Fn = void (*)();
 
+#define GPR_OFFSET(x) ((uintptr_t)&regs.gpr[(x)] - (uintptr_t)&regs)
+#define REG_OFFSET(kind) ((uintptr_t)&regs.kind - (uintptr_t)&regs)
+
 struct Dynarec {
   Dynarec();
   ~Dynarec();

@@ -13,6 +13,11 @@ using namespace nlohmann;
 namespace fs = std::filesystem;
 
 GameList::GameList(const std::string& path) {
+  Create(path);
+}
+
+void GameList::Create(const std::string &path) {
+  threadDone = false;
   if(!path.empty()) {
     std::thread searchThread([path, this]() {
       std::ifstream gameDbFile("resources/db.json");
@@ -20,6 +25,10 @@ GameList::GameList(const std::string& path) {
       std::vector<u8> rom{};
       for(const auto& p : fs::recursive_directory_iterator{path}) {
         const auto filename = p.path().string();
+        if(threadDone) {
+          gamesList.clear();
+          break;
+        }
         if(p.path().extension() == ".n64" || p.path().extension() == ".z64" || p.path().extension() == ".v64" ||
            p.path().extension() == ".N64" || p.path().extension() == ".Z64" || p.path().extension() == ".V64") {
           std::ifstream file(filename, std::ios::binary);

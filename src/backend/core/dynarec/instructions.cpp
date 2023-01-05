@@ -148,14 +148,14 @@ void ddivu(Registers& regs, u32 instr) {
 void branch(Registers& regs, bool cond, s64 address) {
   regs.delaySlot = true;
   if (cond) {
-    regs.nextPC = address;
+    regs.pc = address;
   }
 }
 
 void branch_likely(Registers& regs, bool cond, s64 address) {
   regs.delaySlot = true;
   if (cond) {
-    regs.nextPC = address;
+    regs.pc = address;
   } else {
     regs.SetPC(regs.nextPC);
   }

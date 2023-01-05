@@ -160,6 +160,7 @@ DrawData Window::Present(n64::Core& core) {
 
 void Window::LoadROM(n64::Core& core, const std::string &path) {
   if(!path.empty()) {
+    gameList.threadDone = true;
     n64::CartInfo cartInfo = core.LoadROM(path);
     std::ifstream gameDbFile("resources/db.json");
     json gameDb = json::parse(gameDbFile);
@@ -243,6 +244,7 @@ float Window::Render(n64::Core& core) {
       core.rom.clear();
       Util::UpdateRPC(Util::Idling);
       SDL_SetWindowTitle(window, windowTitle.c_str());
+      gameList.Create(settings.GetGamesDir());
       core.Stop();
     }
     if (ImGui::MenuItem(core.pause ? "Resume" : "Pause", nullptr, false, core.romLoaded)) {

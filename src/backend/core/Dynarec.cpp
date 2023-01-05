@@ -15,7 +15,7 @@ Dynarec::Dynarec() : code(DEFAULT_MAX_CODE_SIZE, AutoGrow) {
   }
 
   dumpCode.open("jit.dump", std::ios::app | std::ios::binary);
-  code.setProtectMode(CodeGenerator::PROTECT_RWE);
+  code.ready();
 }
 
 void Dynarec::Recompile(Registers& regs, Mem& mem) {
@@ -23,7 +23,7 @@ void Dynarec::Recompile(Registers& regs, Mem& mem) {
   u32 start_addr = regs.pc;
   Fn block = code.getCurr<Fn>();
 
-  code.sub(code.rsp, 8);
+  code.sub(rsp, 8);
 
   while(!prevBranch) {
     instrInBlock++;
@@ -32,11 +32,11 @@ void Dynarec::Recompile(Registers& regs, Mem& mem) {
 
     start_addr += 4;
 
-    code.mov(code.rdi, (u64)&regs);
+    code.mov(rdi, (u64)&regs);
     branch = Exec(regs, mem, instr);
   }
 
-  code.add(code.rsp, 8);
+  code.add(rsp, 8);
   code.ret();
   dumpCode.write(code.getCode<char*>(), code.getSize());
   u32 pc = regs.pc & 0xffffffff;

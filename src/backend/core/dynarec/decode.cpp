@@ -4,8 +4,6 @@
 #include <Registers.hpp>
 
 namespace n64::JIT {
-#define GPR_OFFSET(x) ((uintptr_t)&regs.gpr[(x)] - (uintptr_t)&regs)
-
 void Dynarec::cop2Decode(n64::Registers& regs, u32 instr) {
   code.mov(rdi, (u64)this);
   code.mov(rsi, (u64)&regs);
@@ -233,67 +231,61 @@ bool Dynarec::special(n64::Registers& regs, u32 instr) {
       code.call(rax);
       break;
     case 0x30:
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))],
-               qword[rdi + GPR_OFFSET(RT(instr))]);
-      code.cmovge(cl, ch);
-      code.mov(rsi, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
+      code.xor_(rsi, rsi);
+      code.cmp(r8, rcx);
+      code.setge(sil);
       code.mov(rax, (u64)trap);
       code.call(rax);
       res = true;
       break;
     case 0x31:
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))],
-               qword[rdi + GPR_OFFSET(RT(instr))]);
-      code.cmovae(cl, ch);
-      code.mov(rsi, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
+      code.xor_(rsi, rsi);
+      code.cmp(r8, rcx);
+      code.setae(sil);
       code.mov(rax, (u64)trap);
       code.call(rax);
       res = true;
       break;
     case 0x32:
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))],
-               qword[rdi + GPR_OFFSET(RT(instr))]);
-      code.cmovl(cl, ch);
-      code.mov(rsi, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
+      code.xor_(rsi, rsi);
+      code.cmp(r8, rcx);
+      code.setl(sil);
       code.mov(rax, (u64)trap);
       code.call(rax);
       res = true;
       break;
     case 0x33:
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))],
-               qword[rdi + GPR_OFFSET(RT(instr))]);
-      code.cmovb(cl, ch);
-      code.mov(rsi, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
+      code.xor_(rsi, rsi);
+      code.cmp(r8, rcx);
+      code.setb(sil);
       code.mov(rax, (u64)trap);
       code.call(rax);
       res = true;
       break;
     case 0x34:
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))],
-               qword[rdi + GPR_OFFSET(RT(instr))]);
-      code.cmove(cl, ch);
-      code.mov(rsi, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
+      code.xor_(rsi, rsi);
+      code.cmp(r8, rcx);
+      code.sete(sil);
       code.mov(rax, (u64)trap);
       code.call(rax);
       res = true;
       break;
     case 0x36:
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))],
-               qword[rdi + GPR_OFFSET(RT(instr))]);
-      code.cmovne(cl, ch);
-      code.mov(rsi, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
+      code.xor_(rsi, rsi);
+      code.cmp(r8, rcx);
+      code.setne(sil);
       code.mov(rax, (u64)trap);
       code.call(rax);
       res = true;
@@ -341,141 +333,121 @@ bool Dynarec::regimm(n64::Registers& regs, u32 instr) {
   switch (mask) { // TODO: named constants for clearer code
     case 0x00:
       code.mov(rsi, (u64)instr);
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))], 0);
-      code.cmovl(cl, ch);
-      code.mov(rdx, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.xor_(rdx, rdx);
+      code.cmp(r8, 0);
+      code.setl(dl);
       code.mov(rax, (u64)b);
       code.call(rax);
       break;
     case 0x01:
       code.mov(rsi, (u64)instr);
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))], 0);
-      code.cmovge(cl, ch);
-      code.mov(rdx, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.xor_(rdx, rdx);
+      code.cmp(r8, 0);
+      code.setge(dl);
       code.mov(rax, (u64)b);
       code.call(rax);
       break;
     case 0x02:
       code.mov(rsi, (u64)instr);
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))], 0);
-      code.cmovl(cl, ch);
-      code.mov(rdx, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.xor_(rdx, rdx);
+      code.cmp(r8, 0);
+      code.setl(dl);
       code.mov(rax, (u64)bl);
       code.call(rax);
       break;
     case 0x03:
       code.mov(rsi, (u64)instr);
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))], 0);
-      code.cmovge(cl, ch);
-      code.mov(rdx, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.xor_(rdx, rdx);
+      code.cmp(r8, 0);
+      code.setge(dl);
       code.mov(rax, (u64)bl);
       code.call(rax);
       break;
     case 0x08:
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))],
-               s64(s16(instr)));
-      code.cmovge(cl, ch);
-      code.mov(rsi, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.xor_(rsi, rsi);
+      code.cmp(r8, s64(s16(instr)));
+      code.setge(sil);
       code.mov(rax, (u64)trap);
       code.call(rax);
       break;
     case 0x09:
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))],
-               u64(s64(s16(instr))));
-      code.cmovae(cl, ch);
-      code.mov(rsi, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.xor_(rsi, rsi);
+      code.cmp(r8, u64(s64(s16(instr))));
+      code.setae(sil);
       code.mov(rax, (u64)trap);
       code.call(rax);
       break;
     case 0x0A:
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))],
-               s64(s16(instr)));
-      code.cmovl(cl, ch);
-      code.mov(rsi, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.xor_(rsi, rsi);
+      code.cmp(r8, s64(s16(instr)));
+      code.setl(sil);
       code.mov(rax, (u64)trap);
       code.call(rax);
       break;
     case 0x0B:
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))],
-               u64(s64(s16(instr))));
-      code.cmovb(cl, ch);
-      code.mov(rsi, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.xor_(rsi, rsi);
+      code.cmp(r8, u64(s64(s16(instr))));
+      code.setb(sil);
       code.mov(rax, (u64)trap);
       code.call(rax);
       break;
     case 0x0C:
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))],
-               s64(s16(instr)));
-      code.cmove(cl, ch);
-      code.mov(rsi, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.xor_(rsi, rsi);
+      code.cmp(r8, s64(s16(instr)));
+      code.sete(sil);
       code.mov(rax, (u64)trap);
       code.call(rax);
       break;
     case 0x0E:
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))],
-               s64(s16(instr)));
-      code.cmovne(cl, ch);
-      code.mov(rsi, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.xor_(rsi, rsi);
+      code.cmp(r8, s64(s16(instr)));
+      code.setne(sil);
       code.mov(rax, (u64)trap);
       code.call(rax);
       break;
     case 0x10:
       code.mov(rsi, (u64)instr);
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))], 0);
-      code.cmovl(cl, ch);
-      code.mov(rdx, cl.cvt64());
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.xor_(rdx, rdx);
+      code.cmp(rcx, 0);
+      code.setl(dl);
       code.mov(rax, (u64)blink);
       code.call(rax);
       break;
     case 0x11:
       code.mov(rsi, (u64)instr);
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))], 0);
-      code.cmovge(cl, ch);
-      code.mov(rdx, cl.cvt64());
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.xor_(rdx, rdx);
+      code.cmp(rcx, 0);
+      code.setge(dl);
       code.mov(rax, (u64)blink);
       code.call(rax);
       break;
     case 0x12:
       code.mov(rsi, (u64)instr);
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))], 0);
-      code.cmovl(cl, ch);
-      code.mov(rdx, cl.cvt64());
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.xor_(rdx, rdx);
+      code.cmp(rcx, 0);
+      code.setl(dl);
       code.mov(rax, (u64)bllink);
       code.call(rax);
       break;
     case 0x13:
       code.mov(rsi, (u64)instr);
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))], 0);
-      code.cmovge(cl, ch);
-      code.mov(rdx, cl.cvt64());
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.xor_(rdx, rdx);
+      code.cmp(rcx, 0);
+      code.setge(dl);
       code.mov(rax, (u64)bllink);
       code.call(rax);
       break;
@@ -508,10 +480,10 @@ bool Dynarec::Exec(n64::Registers& regs, Mem& mem, u32 instr) {
       break;
     case 0x04:
       code.mov(rsi, (u64)instr);
-      code.mov(rbx, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
       code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
       code.xor_(rdx, rdx);
-      code.cmp(rbx, rcx);
+      code.cmp(r8, rcx);
       code.sete(dl);
       code.mov(rax, (u64)b);
       code.call(rax);
@@ -519,10 +491,10 @@ bool Dynarec::Exec(n64::Registers& regs, Mem& mem, u32 instr) {
       break;
     case 0x05:
       code.mov(rsi, (u64)instr);
-      code.mov(rbx, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
       code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
       code.xor_(rdx, rdx);
-      code.cmp(rbx, rcx);
+      code.cmp(r8, rcx);
       code.setne(dl);
       code.mov(rax, (u64)b);
       code.call(rax);
@@ -530,9 +502,9 @@ bool Dynarec::Exec(n64::Registers& regs, Mem& mem, u32 instr) {
       break;
     case 0x06:
       code.mov(rsi, (u64)instr);
-      code.mov(rbx, qword[rdi + GPR_OFFSET(RS(instr))]);
-      code.test(rbx, rbx);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
       code.xor_(rdx, rdx);
+      code.test(r8, r8);
       code.setnz(dl);
       code.mov(rax, (u64)b);
       code.call(rax);
@@ -540,9 +512,9 @@ bool Dynarec::Exec(n64::Registers& regs, Mem& mem, u32 instr) {
       break;
     case 0x07:
       code.mov(rsi, (u64)instr);
-      code.mov(rbx, qword[rdi + GPR_OFFSET(RS(instr))]);
-      code.test(rbx, rbx);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
       code.xor_(rdx, rdx);
+      code.test(r8, r8);
       code.setg(dl);
       code.mov(rax, (u64)b);
       code.call(rax);
@@ -593,43 +565,39 @@ bool Dynarec::Exec(n64::Registers& regs, Mem& mem, u32 instr) {
     case 0x12: cop2Decode(regs, instr); break;
     case 0x14:
       code.mov(rsi, (u64)instr);
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))],
-               qword[rdi + GPR_OFFSET(RT(instr))]);
-      code.cmove(cl, ch);
-      code.mov(rdx, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
+      code.xor_(rdx, rdx);
+      code.cmp(r8, rcx);
+      code.sete(dl);
       code.mov(rax, (u64)bl);
       code.call(rax);
       break;
     case 0x15:
       code.mov(rsi, (u64)instr);
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))],
-               qword[rdi + GPR_OFFSET(RT(instr))]);
-      code.cmovne(cl, ch);
-      code.mov(rdx, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
+      code.xor_(rdx, rdx);
+      code.cmp(r8, rcx);
+      code.setne(dl);
       code.mov(rax, (u64)bl);
       code.call(rax);
       break;
     case 0x16:
       code.mov(rsi, (u64)instr);
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))], 0);
-      code.cmovle(cl, ch);
-      code.mov(rdx, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.xor_(rdx, rdx);
+      code.cmp(r8, 0);
+      code.setle(dl);
       code.mov(rax, (u64)bl);
       code.call(rax);
       break;
     case 0x17:
       code.mov(rsi, (u64)instr);
-      code.mov(cl, 0);
-      code.mov(ch, 1);
-      code.cmp(qword[rdi + GPR_OFFSET(RS(instr))], 0);
-      code.cmovg(cl, ch);
-      code.mov(rdx, cl.cvt64());
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.xor_(rdx, rdx);
+      code.cmp(r8, 0);
+      code.setg(dl);
       code.mov(rax, (u64)b);
       code.call(rax);
       break;

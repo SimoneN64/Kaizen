@@ -148,14 +148,14 @@ void ddivu(Registers& regs, u32 instr) {
 void branch(Registers& regs, bool cond, s64 address) {
   regs.delaySlot = true;
   if (cond) {
-    regs.pc = address;
+    regs.nextPC = address;
   }
 }
 
 void branch_likely(Registers& regs, bool cond, s64 address) {
   regs.delaySlot = true;
   if (cond) {
-    regs.pc = address;
+    regs.nextPC = address;
   } else {
     regs.SetPC(regs.nextPC);
   }
@@ -357,12 +357,12 @@ void lwu(Registers& regs, Mem& mem, u32 instr) {
   regs.gpr[RT(instr)] = value;
 }
 
-void sb(Registers& regs, Mem& mem, u32 instr) {
+void sb(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  mem.Write8(regs, address, regs.gpr[RT(instr)], regs.oldPC);
+  mem.Write8(regs, dyn, address, regs.gpr[RT(instr)], regs.oldPC);
 }
 
-void sc(Registers& regs, Mem& mem, u32 instr) {
+void sc(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
@@ -370,14 +370,14 @@ void sc(Registers& regs, Mem& mem, u32 instr) {
   }
 
   if(regs.cop0.llbit) {
-    mem.Write32(regs, address, regs.gpr[RT(instr)], regs.oldPC);
+    mem.Write32(regs, dyn, address, regs.gpr[RT(instr)], regs.oldPC);
   }
 
   regs.gpr[RT(instr)] = (u64)regs.cop0.llbit;
   regs.cop0.llbit = false;
 }
 
-void scd(Registers& regs, Mem& mem, u32 instr) {
+void scd(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b111)) {
     HandleTLBException(regs, address);
@@ -386,14 +386,14 @@ void scd(Registers& regs, Mem& mem, u32 instr) {
   }
 
   if(regs.cop0.llbit) {
-    mem.Write64(regs, address, regs.gpr[RT(instr)], regs.oldPC);
+    mem.Write64(regs, dyn, address, regs.gpr[RT(instr)], regs.oldPC);
   }
 
   regs.gpr[RT(instr)] = (s64)((u64)regs.cop0.llbit);
   regs.cop0.llbit = false;
 }
 
-void sh(Registers& regs, Mem& mem, u32 instr) {
+void sh(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b1)) {
     HandleTLBException(regs, address);
@@ -406,11 +406,11 @@ void sh(Registers& regs, Mem& mem, u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write16<false>(regs, physical, regs.gpr[RT(instr)], regs.oldPC);
+    mem.Write16<false>(regs, dyn, physical, regs.gpr[RT(instr)], regs.oldPC);
   }
 }
 
-void sw(Registers& regs, Mem& mem, u32 instr) {
+void sw(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
   s16 offset = instr;
   u64 address = regs.gpr[RS(instr)] + offset;
   if (check_address_error(address, 0b11)) {
@@ -424,11 +424,11 @@ void sw(Registers& regs, Mem& mem, u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write32<false>(regs, physical, regs.gpr[RT(instr)], regs.oldPC);
+    mem.Write32<false>(regs, dyn, physical, regs.gpr[RT(instr)], regs.oldPC);
   }
 }
 
-void sd(Registers& regs, Mem& mem, u32 instr) {
+void sd(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
@@ -441,12 +441,12 @@ void sd(Registers& regs, Mem& mem, u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write64<false>(regs, physical, regs.gpr[RT(instr)], regs.oldPC);
+    mem.Write64<false>(regs, dyn, physical, regs.gpr[RT(instr)], regs.oldPC);
   }
 
 }
 
-void sdl(Registers& regs, Mem& mem, u32 instr) {
+void sdl(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, STORE, address, paddr)) {
@@ -457,11 +457,11 @@ void sdl(Registers& regs, Mem& mem, u32 instr) {
     u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
     u64 data = mem.Read64<false>(regs, paddr & ~7, regs.oldPC);
     u64 rt = regs.gpr[RT(instr)];
-    mem.Write64<false>(regs, paddr & ~7, (data & ~mask) | (rt >> shift), regs.oldPC);
+    mem.Write64<false>(regs, dyn, paddr & ~7, (data & ~mask) | (rt >> shift), regs.oldPC);
   }
 }
 
-void sdr(Registers& regs, Mem& mem, u32 instr) {
+void sdr(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, STORE, address, paddr)) {
@@ -472,11 +472,11 @@ void sdr(Registers& regs, Mem& mem, u32 instr) {
     u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
     u64 data = mem.Read64<false>(regs, paddr & ~7, regs.oldPC);
     u64 rt = regs.gpr[RT(instr)];
-    mem.Write64<false>(regs, paddr & ~7, (data & ~mask) | (rt << shift), regs.oldPC);
+    mem.Write64<false>(regs, dyn, paddr & ~7, (data & ~mask) | (rt << shift), regs.oldPC);
   }
 }
 
-void swl(Registers& regs, Mem& mem, u32 instr) {
+void swl(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, STORE, address, paddr)) {
@@ -487,11 +487,11 @@ void swl(Registers& regs, Mem& mem, u32 instr) {
     u32 mask = 0xFFFFFFFF >> shift;
     u32 data = mem.Read32<false>(regs, paddr & ~3, regs.oldPC);
     u32 rt = regs.gpr[RT(instr)];
-    mem.Write32<false>(regs, paddr & ~3, (data & ~mask) | (rt >> shift), regs.oldPC);
+    mem.Write32<false>(regs, dyn, paddr & ~3, (data & ~mask) | (rt >> shift), regs.oldPC);
   }
 }
 
-void swr(Registers& regs, Mem& mem, u32 instr) {
+void swr(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, STORE, address, paddr)) {
@@ -502,7 +502,7 @@ void swr(Registers& regs, Mem& mem, u32 instr) {
     u32 mask = 0xFFFFFFFF << shift;
     u32 data = mem.Read32<false>(regs, paddr & ~3, regs.oldPC);
     u32 rt = regs.gpr[RT(instr)];
-    mem.Write32<false>(regs, paddr & ~3, (data & ~mask) | (rt << shift), regs.oldPC);
+    mem.Write32<false>(regs, dyn, paddr & ~3, (data & ~mask) | (rt << shift), regs.oldPC);
   }
 }
 

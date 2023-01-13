@@ -13,7 +13,6 @@ constexpr void print(const std::string& fmt, Args... args) {
 #ifndef _WIN32
   if constexpr(messageType == Error) {
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red), fmt, args...);
-    exit(-1);
   } else if constexpr(messageType == Warn) {
     fmt::print(fg(fmt::color::yellow), fmt, args...);
   } else if constexpr(messageType == Info) {
@@ -24,10 +23,7 @@ constexpr void print(const std::string& fmt, Args... args) {
 #endif
   }
 #else
-  if constexpr(messageType == Error) {
-    fmt::print(fmt, args...);
-    exit(-1);
-  } else if constexpr(messageType == Debug) {
+  if constexpr(messageType == Debug) {
 #ifndef NDEBUG
     fmt::print(fmt, args...);
 #endif
@@ -40,6 +36,7 @@ constexpr void print(const std::string& fmt, Args... args) {
 template <typename ...Args>
 constexpr void panic(const std::string& fmt, Args... args) {
   print<Error>(fmt, args...);
+  exit(-1);
 }
 
 template <typename ...Args>

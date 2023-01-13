@@ -85,4 +85,22 @@ inline u32 crc32(u32 crc, const u8 *buf, size_t len) {
   }
   return ~crc;
 }
+
+#ifdef _WIN32
+inline void* aligned_alloc(size_t alignment, size_t size) {
+  return _aligned_malloc(size, alignment);
+}
+
+inline void free(void* ptr) {
+  _aligned_free(ptr);
+}
+#else
+inline void* aligned_alloc(size_t alignment, size_t size) {
+  return std::aligned_alloc(alignment, size);
+}
+
+inline void free(void* ptr) {
+  std::free(ptr);
+}
+#endif
 }

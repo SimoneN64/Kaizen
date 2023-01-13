@@ -24,6 +24,7 @@ struct Core {
   VI& GetVI() { return mem.mmio.vi; }
 
   void CpuReset() {
+    cpuDynarec.Reset();
     regs.Reset();
   }
 

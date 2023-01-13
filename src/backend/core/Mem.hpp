@@ -15,6 +15,10 @@ struct CartInfo {
   u32 crc;
 };
 
+namespace JIT {
+struct Dynarec;
+}
+
 struct Mem {
   ~Mem() = default;
   Mem();
@@ -32,6 +36,14 @@ struct Mem {
   u32 Read32(Registers&, u64, s64);
   template <bool tlb = true>
   u64 Read64(Registers&, u64, s64);
+  template <bool tlb = true>
+  void Write8(Registers&, JIT::Dynarec&, u64, u32, s64);
+  template <bool tlb = true>
+  void Write16(Registers&, JIT::Dynarec&, u64, u32, s64);
+  template <bool tlb = true>
+  void Write32(Registers&, JIT::Dynarec&, u64, u32, s64);
+  template <bool tlb = true>
+  void Write64(Registers&, JIT::Dynarec&, u64, u64, s64);
   template <bool tlb = true>
   void Write8(Registers&, u64, u32, s64);
   template <bool tlb = true>

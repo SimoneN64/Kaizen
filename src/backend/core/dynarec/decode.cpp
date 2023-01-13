@@ -82,7 +82,7 @@ bool Dynarec::special(n64::Registers& regs, u32 instr) {
       code.call(rax);
       res = true;
       break;
-    case 0x0C: Util::panic("[RECOMPILER] Unhandled syscall instruction {:016X}\n", (u64)regs.pc);
+    case 0x0C: Util::print<Util::Error>("[RECOMPILER] Unhandled syscall instruction {:016X}\n", (u64)regs.pc); /*dumpCode.close();*/ exit(1);
     case 0x0D: Util::panic("[RECOMPILER] Unhandled break instruction {:016X}\n", (u64)regs.pc);
     case 0x0F: break; // SYNC
     case 0x10:
@@ -526,6 +526,7 @@ bool Dynarec::Exec(n64::Registers& regs, Mem& mem, u32 instr) {
       code.call(rax);
       break;
     case 0x09:
+      emitBreakpoint();
       code.mov(rsi, (u64)instr);
       code.mov(rax, (u64)addiu);
       code.call(rax);
@@ -674,43 +675,50 @@ bool Dynarec::Exec(n64::Registers& regs, Mem& mem, u32 instr) {
       break;
     case 0x28:
       code.mov(rsi, (u64)&mem);
-      code.mov(rdx, (u64)instr);
+      code.mov(rdx, (u64)this);
+      code.mov(rcx, (u64)instr);
       code.mov(rax, (u64)sb);
       code.call(rax);
       break;
     case 0x29:
       code.mov(rsi, (u64)&mem);
-      code.mov(rdx, (u64)instr);
+      code.mov(rdx, (u64)this);
+      code.mov(rcx, (u64)instr);
       code.mov(rax, (u64)sh);
       code.call(rax);
       break;
     case 0x2A:
       code.mov(rsi, (u64)&mem);
-      code.mov(rdx, (u64)instr);
+      code.mov(rdx, (u64)this);
+      code.mov(rcx, (u64)instr);
       code.mov(rax, (u64)swl);
       code.call(rax);
       break;
     case 0x2B:
       code.mov(rsi, (u64)&mem);
-      code.mov(rdx, (u64)instr);
+      code.mov(rdx, (u64)this);
+      code.mov(rcx, (u64)instr);
       code.mov(rax, (u64)sw);
       code.call(rax);
       break;
     case 0x2C:
       code.mov(rsi, (u64)&mem);
-      code.mov(rdx, (u64)instr);
+      code.mov(rdx, (u64)this);
+      code.mov(rcx, (u64)instr);
       code.mov(rax, (u64)sdl);
       code.call(rax);
       break;
     case 0x2D:
       code.mov(rsi, (u64)&mem);
-      code.mov(rdx, (u64)instr);
+      code.mov(rdx, (u64)this);
+      code.mov(rcx, (u64)instr);
       code.mov(rax, (u64)sdr);
       code.call(rax);
       break;
     case 0x2E:
       code.mov(rsi, (u64)&mem);
-      code.mov(rdx, (u64)instr);
+      code.mov(rdx, (u64)this);
+      code.mov(rcx, (u64)instr);
       code.mov(rax, (u64)swr);
       code.call(rax);
       break;
@@ -747,7 +755,8 @@ bool Dynarec::Exec(n64::Registers& regs, Mem& mem, u32 instr) {
       break;
     case 0x38:
       code.mov(rsi, (u64)&mem);
-      code.mov(rdx, (u64)instr);
+      code.mov(rdx, (u64)this);
+      code.mov(rcx, (u64)instr);
       code.mov(rax, (u64)sc);
       code.call(rax);
       break;
@@ -759,7 +768,8 @@ bool Dynarec::Exec(n64::Registers& regs, Mem& mem, u32 instr) {
       break;
     case 0x3C:
       code.mov(rsi, (u64)&mem);
-      code.mov(rdx, (u64)instr);
+      code.mov(rdx, (u64)this);
+      code.mov(rcx, (u64)instr);
       code.mov(rax, (u64)scd);
       code.call(rax);
       break;
@@ -771,7 +781,8 @@ bool Dynarec::Exec(n64::Registers& regs, Mem& mem, u32 instr) {
       break;
     case 0x3F:
       code.mov(rsi, (u64)&mem);
-      code.mov(rdx, (u64)instr);
+      code.mov(rdx, (u64)this);
+      code.mov(rcx, (u64)instr);
       code.mov(rax, (u64)sd);
       code.call(rax);
       break;

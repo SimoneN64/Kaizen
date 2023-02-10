@@ -147,15 +147,15 @@ Window::~Window() {
   SDL_Quit();
 }
 
-DrawData Window::Present(n64::Core& core) {
+ImDrawData* Window::Present(n64::Core& core) {
   ImGui_ImplVulkan_NewFrame();
   ImGui_ImplSDL2_NewFrame(window);
   ImGui::NewFrame();
 
-  float mainMenuBarHeight = Render(core);
+  Render(core);
 
   ImGui::Render();
-  return {ImGui::GetDrawData(), mainMenuBarHeight};
+  return ImGui::GetDrawData();
 }
 
 void Window::LoadROM(n64::Core& core, const std::string &path) {
@@ -192,23 +192,10 @@ void Window::LoadROM(n64::Core& core, const std::string &path) {
   }
 }
 
-float Window::Render(n64::Core& core) {
-  ImGui::PushFont(uiFont);
-
-  u32 ticks = SDL_GetTicks();
-  static u32 lastFrame = 0;
-  if(!core.pause && lastFrame < ticks - 1000) {
-    lastFrame = ticks;
-    windowTitle += fmt::format("  | {:02d} In-Game FPS", core.mem.mmio.vi.swaps);
-    core.mem.mmio.vi.swaps = 0;
-    SDL_SetWindowTitle(window, windowTitle.c_str());
-    windowTitle = shadowWindowTitle;
-  }
-
-  static bool showSettings = false;
-  static float mainMenuBarHeight = 0;
+void Window::RenderMainMenuBar(n64::Core &core) {
   ImGui::BeginMainMenuBar();
   mainMenuBarHeight = ImGui::GetWindowSize().y;
+
   if (ImGui::BeginMenu("File")) {
     if (ImGui::MenuItem("Open", "O")) {
       nfdchar_t *outpath;
@@ -265,15 +252,33 @@ float Window::Render(n64::Core& core) {
     ImGui::EndMenu();
   }
   ImGui::EndMainMenuBar();
+}
+
+void Window::Render(n64::Core& core) {
+  ImGui::PushFont(uiFont);
+
+  u32 ticks = SDL_GetTicks();
+  static u32 lastFrame = 0;
+  if(!core.pause && lastFrame < ticks - 1000) {
+    lastFrame = ticks;
+    windowTitle += fmt::format("  | {:02d} In-Game FPS", core.mem.mmio.vi.swaps);
+    core.mem.mmio.vi.swaps = 0;
+    SDL_SetWindowTitle(window, windowTitle.c_str());
+    windowTitle = shadowWindowTitle;
+  }
+
+  if(SDL_GetMouseFocus()) {
+    RenderMainMenuBar(core);
+  }
 
   static std::string rom{};
   if(renderGameList && gameList.RenderWidget(mainMenuBarHeight, rom)) {
     LoadROM(core, rom);
     renderGameList = false;
   }
+
+  mainMenuBarHeight = 0;
   settings.RenderWidget(showSettings);
 
   ImGui::PopFont();
-
-  return mainMenuBarHeight;
 }

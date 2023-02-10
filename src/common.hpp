@@ -14,7 +14,7 @@ using u128 = __uint128_t;
 using s128 = __int128_t;
 
 #define N64_CPU_FREQ 93750000
-#define N64_CYCLES_PER_FRAME ((N64_CPU_FREQ) / 60)
+#define N64_CYCLES_PER_FRAME(pal) ((N64_CPU_FREQ) / (pal ? 50 : 60))
 #define HALF_ADDRESS(addr) ((addr) ^ 2)
 #define BYTE_ADDRESS(addr) ((addr) ^ 3)
 

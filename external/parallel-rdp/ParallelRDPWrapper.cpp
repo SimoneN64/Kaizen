@@ -15,8 +15,6 @@ static CommandProcessor* command_processor;
 static WSI* wsi;
 static std::unique_ptr<ParallelRdpWindowInfo> windowInfo;
 
-std::vector<Semaphore> acquire_semaphore;
-
 VkQueue GetGraphicsQueue() {
   return wsi->get_context().get_queue_info().queues[QUEUE_INDEX_GRAPHICS];
 }
@@ -140,7 +138,7 @@ WSI* LoadWSIPlatform(Vulkan::WSIPlatform* wsi_platform, std::unique_ptr<Parallel
   return wsi;
 }
 
-void LoadParallelRDP(const u8* rdram, SDL_Window* window) {
+void LoadParallelRDP(const u8* rdram) {
   ResourceLayout vertLayout;
   ResourceLayout fragLayout;
 
@@ -185,38 +183,28 @@ void LoadParallelRDP(const u8* rdram, SDL_Window* window) {
 void InitParallelRDP(const u8* rdram, SDL_Window* window) {
   g_Window = window;
   LoadWSIPlatform(new SDLWSIPlatform(), std::make_unique<SDLParallelRdpWindowInfo>());
-  LoadParallelRDP(rdram, window);
+  LoadParallelRDP(rdram);
 }
 
-void DrawFullscreenTexturedQuad(float mainMenuBarHeight, Util::IntrusivePtr<Image> image, Util::IntrusivePtr<CommandBuffer> cmd) {
+void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image, Util::IntrusivePtr<CommandBuffer> cmd) {
   cmd->set_texture(0, 0, image->get_view(), Vulkan::StockSampler::LinearClamp);
   cmd->set_program(fullscreen_quad_program);
   cmd->set_quad_state();
   auto data = static_cast<float*>(cmd->allocate_vertex_data(0, 6 * sizeof(float), 2 * sizeof(float)));
-  *data++ = -1.0f;
-  *data++ = -3.0f;
-  *data++ = -1.0f;
-  *data++ = +1.0f;
-  *data++ = +3.0f;
-  *data++ = +1.0f;
+  data[0] = -1.0f;
+  data[1] = -3.0f;
+  data[2] = -1.0f;
+  data[3] = +1.0f;
+  data[4] = +3.0f;
+  data[5] = +1.0f;
 
-  int sdlWinWidth, sdlWinHeight;
-  SDL_GetWindowSize(g_Window, &sdlWinWidth, &sdlWinHeight);
+  auto windowSize = windowInfo->get_window_size();
 
-  sdlWinHeight -= mainMenuBarHeight;
+  float zoom = std::min(windowSize.x / wsi->get_platform().get_surface_width(),
+                        windowSize.y / wsi->get_platform().get_surface_height());
 
-  float platform_width = wsi->get_platform().get_surface_width();
-  float platform_height = wsi->get_platform().get_surface_height();
-
-  platform_height -= mainMenuBarHeight;
-
-  float zoom = std::min(
-    (float)sdlWinWidth / platform_width,
-    (float)sdlWinHeight / platform_height);
-
-
-  float width = (platform_width / (float)sdlWinWidth) * zoom;
-  float height = (platform_height / (float)sdlWinHeight) * zoom;
+  float width = (wsi->get_platform().get_surface_width() / windowSize.x) * zoom;
+  float height = (wsi->get_platform().get_surface_height() / windowSize.y) * zoom;
 
   float uniform_data[] = {
     // Size
@@ -262,11 +250,11 @@ void UpdateScreen(n64::Core& core, Window& imguiWindow, Util::IntrusivePtr<Image
   Util::IntrusivePtr<CommandBuffer> cmd = wsi->get_device().request_command_buffer();
 
   cmd->begin_render_pass(wsi->get_device().get_swapchain_render_pass(SwapchainRenderPass::ColorOnly));
-  DrawData data = imguiWindow.Present(core);
+  ImDrawData* drawData = imguiWindow.Present(core);
 
-  DrawFullscreenTexturedQuad(data.second, image, cmd);
+  DrawFullscreenTexturedQuad(image, cmd);
 
-  ImGui_ImplVulkan_RenderDrawData(data.first, cmd->get_command_buffer());
+  ImGui_ImplVulkan_RenderDrawData(drawData, cmd->get_command_buffer());
 
   cmd->end_render_pass();
   wsi->get_device().submit(cmd);

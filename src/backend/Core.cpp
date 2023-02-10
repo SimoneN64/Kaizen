@@ -75,7 +75,7 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
 
       UpdateScreenParallelRdp(*this, window, GetVI());
 
-      int missedCycles = N64_CYCLES_PER_FRAME - frameCycles;
+      int missedCycles = N64_CYCLES_PER_FRAME(false) - frameCycles;
       mmio.ai.Step(mem, regs, missedCycles, volumeL, volumeR);
     } else if(pause && romLoaded) {
       UpdateScreenParallelRdp(*this, window, GetVI());

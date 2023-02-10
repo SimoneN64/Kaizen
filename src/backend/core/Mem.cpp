@@ -108,10 +108,10 @@ u8 Mem::Read8(n64::Registers &regs, u64 vaddr, s64 pc) {
       case 0x00000000 ... 0x007FFFFF:
         return mmio.rdp.rdram[BYTE_ADDRESS(paddr)];
       case 0x04000000 ... 0x0403FFFF:
-        if ((paddr >> 12) & 1)
-          return mmio.rsp.imem[BYTE_ADDRESS(paddr) & IMEM_DSIZE];
+        if (paddr  & 0x1000)
+          return mmio.rsp.imem[BYTE_ADDRESS(paddr) - IMEM_REGION_START];
         else
-          return mmio.rsp.dmem[BYTE_ADDRESS(paddr) & DMEM_DSIZE];
+          return mmio.rsp.dmem[BYTE_ADDRESS(paddr) - DMEM_REGION_START];
       case 0x04040000 ... 0x040FFFFF:
       case 0x04100000 ... 0x041FFFFF:
       case 0x04600000 ... 0x048FFFFF:
@@ -159,7 +159,7 @@ u16 Mem::Read16(n64::Registers &regs, u64 vaddr, s64 pc) {
       case 0x00000000 ... 0x007FFFFF:
         return Util::ReadAccess<u16>(mmio.rdp.rdram.data(), HALF_ADDRESS(paddr));
       case 0x04000000 ... 0x0403FFFF:
-        if ((paddr >> 12) & 1)
+        if (paddr  & 0x1000)
           return Util::ReadAccess<u16>(mmio.rsp.imem, HALF_ADDRESS(paddr) & IMEM_DSIZE);
         else
           return Util::ReadAccess<u16>(mmio.rsp.dmem, HALF_ADDRESS(paddr) & DMEM_DSIZE);
@@ -205,7 +205,7 @@ u32 Mem::Read32(n64::Registers &regs, u64 vaddr, s64 pc) {
       case 0x00000000 ... 0x007FFFFF:
         return Util::ReadAccess<u32>(mmio.rdp.rdram.data(), paddr);
       case 0x04000000 ... 0x0403FFFF:
-        if((paddr >> 12) & 1)
+        if(paddr  & 0x1000)
           return Util::ReadAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE);
         else
           return Util::ReadAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE);
@@ -245,7 +245,7 @@ u64 Mem::Read64(n64::Registers &regs, u64 vaddr, s64 pc) {
       case 0x00000000 ... 0x007FFFFF:
         return Util::ReadAccess<u64>(mmio.rdp.rdram.data(), paddr);
       case 0x04000000 ... 0x0403FFFF:
-        if ((paddr >> 12) & 1)
+        if (paddr  & 0x1000)
           return Util::ReadAccess<u64>(mmio.rsp.imem, paddr & IMEM_DSIZE);
         else
           return Util::ReadAccess<u64>(mmio.rsp.dmem, paddr & DMEM_DSIZE);
@@ -288,7 +288,7 @@ void Mem::Write8(Registers& regs, n64::JIT::Dynarec& dyn, u64 vaddr, u32 val, s6
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, false);
   }
 
-  dyn.InvalidatePage(paddr);
+  dyn.InvalidatePage(BYTE_ADDRESS(paddr));
 
   const auto page = paddr >> 12;
   auto offset = paddr & 0xFFF;
@@ -349,7 +349,7 @@ void Mem::Write16(Registers& regs, n64::JIT::Dynarec& dyn, u64 vaddr, u32 val, s
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, false);
   }
 
-  dyn.InvalidatePage(paddr);
+  dyn.InvalidatePage(HALF_ADDRESS(paddr));
 
   const auto page = paddr >> 12;
   auto offset = paddr & 0xFFF;

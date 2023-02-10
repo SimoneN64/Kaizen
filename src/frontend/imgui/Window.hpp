@@ -10,15 +10,10 @@
 #include <frontend/imgui/Settings.hpp>
 #include <frontend/imgui/GameList.hpp>
 
-struct DrawData {
-  ImDrawData* first;
-  float second;
-};
-
 struct Window {
   explicit Window(n64::Core& core);
   ~Window();
-  DrawData Present(n64::Core& core);
+  ImDrawData* Present(n64::Core& core);
 
   [[nodiscard]] bool gotClosed(SDL_Event event);
   ImFont *uiFont{}, *codeFont{};
@@ -28,13 +23,16 @@ struct Window {
   void LoadROM(n64::Core& core, const std::string& path);
 private:
   bool renderGameList = true;
+  bool showSettings = false;
+  float mainMenuBarHeight = 0;
   SDL_Window* window{};
   std::string windowTitle{"Gadolinium"};
   std::string shadowWindowTitle{windowTitle};
   std::string gameName{};
   void InitSDL();
   void InitImgui();
-  float Render(n64::Core& core);
+  void Render(n64::Core& core);
+  void RenderMainMenuBar(n64::Core& core);
 
   VkPhysicalDevice physicalDevice{};
   VkDevice device{};

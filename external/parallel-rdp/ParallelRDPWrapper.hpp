@@ -9,8 +9,8 @@ static SDL_Window* g_Window;
 class ParallelRdpWindowInfo {
 public:
   struct CoordinatePair {
-    int x;
-    int y;
+    float x;
+    float y;
   };
   virtual CoordinatePair get_window_size() = 0;
   virtual ~ParallelRdpWindowInfo() = default;
@@ -20,7 +20,7 @@ class SDLParallelRdpWindowInfo : public ParallelRdpWindowInfo {
   CoordinatePair get_window_size() {
     int width, height;
     SDL_GetWindowSize(g_Window, &width, &height);
-    return CoordinatePair{ width, height };
+    return CoordinatePair{ static_cast<float>(width), static_cast<float>(height) };
   }
 };
 

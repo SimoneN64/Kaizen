@@ -69,7 +69,7 @@ inline void lwc2(RSP& rsp, u32 instr) {
     case 0x05: rsp.lrv(instr); break;
     case 0x06: rsp.lpv(instr); break;
     case 0x07: rsp.luv(instr); break;
-    case 0x0A: break;
+    case 0x08: rsp.lhv(instr); break;
     case 0x0B: rsp.ltv(instr); break;
     default: Util::panic("Unhandled RSP LWC2 {:05b}\n", mask);
   }
@@ -84,8 +84,10 @@ inline void swc2(RSP& rsp, u32 instr) {
     case 0x02: rsp.slv(instr); break;
     case 0x03: rsp.sdv(instr); break;
     case 0x04: rsp.sqv(instr); break;
+    case 0x05: rsp.srv(instr); break;
     case 0x06: rsp.spv(instr); break;
     case 0x07: rsp.suv(instr); break;
+    case 0x08: rsp.shv(instr); break;
     case 0x09: rsp.sfv(instr); break;
     case 0x0A: rsp.swv(instr); break;
     case 0x0B: rsp.stv(instr); break;

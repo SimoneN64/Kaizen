@@ -219,17 +219,6 @@ void RSP::lqv(u32 instr) {
   }
 }
 
-void RSP::lrv(u32 instr) {
-  int e = E1(instr);
-  u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 4);
-  int start = 16 - ((addr & 0xf) - e);
-  addr &= 0xFFFFFFF0;
-
-  for(int i = start; i < 16; i++) {
-    vpr[VT(instr)].byte[BYTE_INDEX(i & 0xf)] = ReadByte(addr++);
-  }
-}
-
 void RSP::lpv(u32 instr) {
   int e = E1(instr);
   u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 3);
@@ -417,6 +406,63 @@ void RSP::spv(u32 instr) {
     } else {
       WriteByte(addr++, vpr[VT(instr)].element[ELEMENT_INDEX(offset & 7)] >> 7);
     }
+  }
+}
+
+void RSP::srv(u32 instr) {
+  u32 address = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 4);
+  int start = E1(instr);
+  int end = start + (address & 15);
+  int base = 16 - (address & 15);
+  address &= ~15;
+  for(int i = start; i < end; i++) {
+    WriteByte(address++, vpr[VT(instr)].byte[BYTE_INDEX((i + base) & 0xF)]);
+  }
+}
+
+void RSP::shv(u32 instr) {
+  u32 address = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 4);
+
+  u32 in_addr_offset = address & 0x7;
+  address &= ~0x7;
+
+  int e = E1(instr);
+
+  for (int i = 0; i < 8; i++) {
+    int byte_index = (i * 2) + e;
+    u16 val = vpr[VT(instr)].byte[BYTE_INDEX(byte_index & 15)] << 1;
+    val |= vpr[VT(instr)].byte[BYTE_INDEX((byte_index + 1) & 15)] >> 7;
+    u8 b = val & 0xFF;
+
+    int ofs = in_addr_offset + (i * 2);
+    WriteByte(address + (ofs & 0xF), b);
+  }
+}
+
+void RSP::lhv(u32 instr) {
+  u32 address = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 4);
+
+  u32 in_addr_offset = address & 0x7;
+  address &= ~0x7;
+
+  int e = E1(instr);
+
+  for (int i = 0; i < 8; i++) {
+    int ofs = ((16 - e) + (i * 2) + in_addr_offset) & 0xF;
+    u16 val = ReadByte(address + ofs);
+    val <<= 7;
+    vpr[VT(instr)].element[ELEMENT_INDEX(i)] = val;
+  }
+}
+
+void RSP::lrv(u32 instr) {
+  u32 address = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 4);
+  int e = E1(instr);
+  int start = 16 - ((address & 15) - e);
+  address &= ~15;
+
+  for(int i = start; i < 16; i++) {
+    vpr[VT(instr)].byte[BYTE_INDEX(i & 0xF)] = ReadByte(address++);
   }
 }
 

@@ -258,6 +258,7 @@ struct RSP {
   void llv(u32 instr);
   void lrv(u32 instr);
   void lqv(u32 instr);
+  void lfv(u32 instr);
   void lhv(u32 instr);
   void ltv(u32 instr);
   void lpv(u32 instr);
@@ -306,6 +307,7 @@ struct RSP {
   void vcl(u32 instr);
   void vmacf(u32 instr);
   void vmacu(u32 instr);
+  void vmacq(u32 instr);
   void vmadh(u32 instr);
   void vmadl(u32 instr);
   void vmadm(u32 instr);
@@ -313,6 +315,7 @@ struct RSP {
   void vmov(u32 instr);
   void vmulf(u32 instr);
   void vmulu(u32 instr);
+  void vmulq(u32 instr);
   void vmudl(u32 instr);
   void vmudh(u32 instr);
   void vmudm(u32 instr);
@@ -326,6 +329,8 @@ struct RSP {
   void vrsq(u32 instr);
   void vrcpl(u32 instr);
   void vrsql(u32 instr);
+  void vrndp(u32 instr);
+  void vrndn(u32 instr);
   void vrcph(u32 instr);
   void vsar(u32 instr);
   void vsub(u32 instr);
@@ -334,6 +339,7 @@ struct RSP {
   void vnxor(u32 instr);
   void vor(u32 instr);
   void vnor(u32 instr);
+  void vzero(u32 instr);
   void mfc0(RDP& rdp, u32 instr);
   void mtc0(Registers& regs, Mem& mem, u32 instr);
   void mfc2(u32 instr);

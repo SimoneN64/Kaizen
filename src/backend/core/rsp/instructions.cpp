@@ -455,6 +455,27 @@ void RSP::lhv(u32 instr) {
   }
 }
 
+void RSP::lfv(u32 instr) {
+  VPR& vt = vpr[VT(instr)];
+  int start = E1(instr);
+  u32 address = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 4);
+  u32 base = (address & 7) - start;
+  address &= ~7;
+
+  int end = std::min(start + 8, 16);
+
+  // TODO: should be possible to do with one loop
+  VPR tmp;
+  for (u32 offset = 0; offset < 4; offset++) {
+    tmp.element[ELEMENT_INDEX(offset + 0)] = ReadByte(address + (base + offset * 4 + 0 & 15)) << 7;
+    tmp.element[ELEMENT_INDEX(offset + 4)] = ReadByte(address + (base + offset * 4 + 8 & 15)) << 7;
+  }
+
+  for (u32 offset = start; offset < end; offset++) {
+    vt.byte[BYTE_INDEX(offset)] = tmp.byte[BYTE_INDEX(offset)];
+  }
+}
+
 void RSP::lrv(u32 instr) {
   u32 address = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 4);
   int e = E1(instr);
@@ -885,6 +906,24 @@ void RSP::vmulf(u32 instr) {
   }
 }
 
+void RSP::vmulq(u32 instr) {
+  VPR& vs = vpr[VS(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
+  VPR& vd = vpr[VD(instr)];
+
+  for(int i = 0; i < 8; i++) {
+    s32 product = vs.selement[i] * vte.selement[i];
+    if(product < 0) {
+      product += 31;
+    }
+
+    acc.h.element[i] = product >> 16;
+    acc.m.element[i] = product;
+    acc.l.element[i] = 0;
+    vd.element[i] = signedClamp(product >> 1) & ~15;
+  }
+}
+
 void RSP::vmulu(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1126,6 +1165,23 @@ void RSP::vmacu(u32 instr) {
   }
 }
 
+void RSP::vmacq(u32 instr) {
+  VPR& vd = vpr[VD(instr)];
+
+  for(int i = 0; i < 8; i++) {
+    s32 product = acc.h.element[i] << 16 | acc.m.element[i];
+    if(product < 0 && !(product & 1 << 5)) {
+      product += 32;
+    } else if(product >= 32 && !(product & 1 << 5)) {
+      product -= 32;
+    }
+    acc.h.element[i] = product >> 16;
+    acc.m.element[i] = product & 0xFFFF;
+
+    vd.element[i] = signedClamp(product >> 1) & ~15;
+  }
+}
+
 void RSP::veq(u32 instr) {
   int e = E2(instr);
   VPR& vd = vpr[VD(instr)];
@@ -1288,6 +1344,75 @@ void RSP::vrsq(u32 instr) {
 
   for (int i = 0; i < 8; i++) {
     acc.l.element[i] = vte.element[i];
+  }
+}
+
+// from nall, in ares
+static inline s64 sclip(s64 x, u32 bits) {
+  u64 b = 1ull << (bits - 1);
+  u64 m = b * 2 - 1;
+  return ((x & m) ^ b) - b;
+}
+
+void RSP::vrndn(u32 instr) {
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
+
+  for(int i = 0; i < 8; i++) {
+    s32 product = (s16)vte.selement[i];
+
+    if(VS(instr) & 1) {
+      product <<= 16;
+    }
+
+    s64 accum = 0;
+    accum |= acc.h.element[i];
+    accum <<= 16;
+    accum |= acc.m.element[i];
+    accum <<= 16;
+    accum |= acc.l.element[i];
+    accum <<= 16;
+    accum >>= 16;
+
+    if(accum <  0) {
+      accum = sclip(accum + product, 48);
+    }
+
+    acc.h.element[i] = accum >> 32;
+    acc.m.element[i] = accum >> 16;
+    acc.l.element[i] = accum >>  0;
+    vd.element[i] = signedClamp(accum >> 16);
+  }
+}
+
+void RSP::vrndp(u32 instr) {
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
+
+  for(int i = 0; i < 8; i++) {
+    s32 product = (s16)vte.selement[i];
+
+    if(VS(instr) & 1) {
+      product <<= 16;
+    }
+
+    s64 accum = 0;
+    accum |= acc.h.element[i];
+    accum <<= 16;
+    accum |= acc.m.element[i];
+    accum <<= 16;
+    accum |= acc.l.element[i];
+    accum <<= 16;
+    accum >>= 16;
+
+    if(accum >= 0) {
+      accum = sclip(accum + product, 48);
+    }
+
+    acc.h.element[i] = accum >> 32;
+    acc.m.element[i] = accum >> 16;
+    acc.l.element[i] = accum >>  0;
+    vd.element[i] = signedClamp(accum >> 16);
   }
 }
 
@@ -1474,6 +1599,18 @@ void RSP::vor(u32 instr) {
     acc.l.element[i] = vte.element[i] | vs.element[i];
     vd.element[i] = acc.l.element[i];
   }
+}
+
+void RSP::vzero(u32 instr) {
+  VPR& vs = vpr[VS(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
+  VPR& vd = vpr[VD(instr)];
+
+  for(int i = 0; i < 8; i++) {
+    acc.l.element[i] = vte.element[i] + vs.element[i];
+  }
+
+  memset(&vd, 0, sizeof(VPR));
 }
 
 void RSP::mfc0(RDP& rdp, u32 instr) {

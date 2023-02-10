@@ -90,18 +90,20 @@ void Cop1::ceilwd(Registers& regs, u32 instr) {
 }
 
 void Cop1::cfc1(Registers& regs, u32 instr) const {
-  u8 fd = FD(instr);
+  u8 fd = RD(instr);
   s32 val = 0;
   switch(fd) {
     case 0: val = fcr0; break;
-    case 31: val = fcr31.raw; break;
+    case 31:
+      val = fcr31.raw;
+      break;
     default: Util::panic("Undefined CFC1 with rd != 0 or 31\n");
   }
   regs.gpr[RT(instr)] = val;
 }
 
 void Cop1::ctc1(Registers& regs, u32 instr) {
-  u8 fs = FS(instr);
+  u8 fs = RD(instr);
   u32 val = regs.gpr[RT(instr)];
   switch(fs) {
     case 0: break;

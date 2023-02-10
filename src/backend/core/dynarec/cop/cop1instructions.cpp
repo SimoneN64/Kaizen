@@ -90,7 +90,7 @@ void ceilwd(n64::Registers& regs, u32 instr) {
 }
 
 void cfc1(n64::Registers& regs, u32 instr) {
-  u8 fd = FD(instr);
+  u8 fd = RD(instr);
   s32 val = 0;
   switch(fd) {
     case 0: val = regs.cop1.fcr0; break;

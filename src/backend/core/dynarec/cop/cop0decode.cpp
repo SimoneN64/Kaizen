@@ -21,7 +21,7 @@ void cop0Decode(n64::Registers& regs, u32 instr, Dynarec& cpu) {
       break;
     case 0x04:
       code.mov(code.rsi, (u64)instr);
-      code.mov(code.rax, (u64)mtc0);
+      code.mov(code.rax, (uintptr_t)mtc0);
       code.call(code.rax);
       break;
     case 0x05:

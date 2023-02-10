@@ -281,6 +281,7 @@ struct RSP {
   void ssv(u32 instr);
   void suv(u32 instr);
   void slv(u32 instr);
+  void sfv(u32 instr);
   void spv(u32 instr);
   void sllv(u32 instr);
   void srlv(u32 instr);

@@ -41,6 +41,7 @@ void addiu(Registers& regs, u32 instr) {
   s16 imm = (s16)(instr);
   s32 result = rs + imm;
   regs.gpr[RT(instr)] = result;
+  Util::print("addiu {:08X}, {:04X} = {:08X} [reg: {:016X}]\n", (u32)rs, imm, (u32)result, (u64)regs.gpr[RT(instr)]);
 }
 
 void dadd(Registers& regs, u32 instr) {
@@ -146,6 +147,7 @@ void ddivu(Registers& regs, u32 instr) {
 }
 
 void branch(Registers& regs, bool cond, s64 address) {
+  //Util::debug("\t\tJIT branch from {:08X} -> {:08X}\n", (u32)regs.oldPC, (u32)address);
   regs.delaySlot = true;
   if (cond) {
     regs.nextPC = address;
@@ -155,8 +157,10 @@ void branch(Registers& regs, bool cond, s64 address) {
 void branch_likely(Registers& regs, bool cond, s64 address) {
   regs.delaySlot = true;
   if (cond) {
+    //Util::debug("\t\tJIT branch likely taken from {:08X} -> {:08X}\n", (u32)regs.oldPC, (u32)address);
     regs.nextPC = address;
   } else {
+    //Util::debug("\t\tJIT branch likely not taken from {:08X} -> {:08X}\n", (u32)regs.oldPC, (u32)address);
     regs.SetPC(regs.nextPC);
   }
 }

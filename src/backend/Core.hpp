@@ -10,7 +10,7 @@ struct Window;
 
 namespace n64 {
 enum class CpuType {
-  Dynarec, Interpreter
+  Dynarec, Interpreter, NONE
 };
 
 struct Core {
@@ -24,14 +24,27 @@ struct Core {
   VI& GetVI() { return mem.mmio.vi; }
 
   void CpuReset() {
-    cpuDynarec.Reset();
-    regs.Reset();
+    switch(cpuType) {
+      case CpuType::Dynarec: cpuDynarec->Reset(); break;
+      case CpuType::Interpreter: cpuInterp->Reset(); break;
+      case CpuType::NONE: break;
+    }
+  }
+
+  Registers& CpuGetRegs() {
+    switch(cpuType) {
+      case CpuType::Dynarec: return cpuDynarec->regs;
+      case CpuType::Interpreter: return cpuInterp->regs;
+      case CpuType::NONE:
+        Util::panic("BRUH\n");
+    }
   }
 
   int CpuStep() {
     switch(cpuType) {
-      case CpuType::Dynarec: return cpuDynarec.Step(mem, regs);
-      case CpuType::Interpreter: cpuInterp.Step(mem, regs); return 1;
+      case CpuType::Dynarec: return cpuDynarec->Step(mem);
+      case CpuType::Interpreter: cpuInterp->Step(mem); return 1;
+      case CpuType::NONE: return 0;
     }
   }
 
@@ -45,9 +58,8 @@ struct Core {
   bool done = false;
   std::string rom;
   Mem mem;
-  CpuType cpuType = CpuType::Dynarec;
-  Interpreter cpuInterp;
-  JIT::Dynarec cpuDynarec;
-  Registers regs;
+  CpuType cpuType = CpuType::NONE;
+  Interpreter* cpuInterp = nullptr;
+  JIT::Dynarec* cpuDynarec = nullptr;
 };
 }

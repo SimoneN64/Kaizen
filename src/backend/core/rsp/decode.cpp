@@ -86,6 +86,7 @@ inline void swc2(RSP& rsp, u32 instr) {
     case 0x04: rsp.sqv(instr); break;
     case 0x06: rsp.spv(instr); break;
     case 0x07: rsp.suv(instr); break;
+    case 0x09: rsp.sfv(instr); break;
     case 0x0A: rsp.swv(instr); break;
     case 0x0B: rsp.stv(instr); break;
     default: Util::panic("Unhandled RSP SWC2 {:05b}\n", mask);

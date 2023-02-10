@@ -44,6 +44,11 @@ add_library(parallel-rdp
   parallel-rdp-standalone/volk/volk.c
 )
 
+if(WIN32)
+  target_compile_definitions(parallel-rdp PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
+  target_compile_options(parallel-rdp PUBLIC /EHa)
+endif()
+
 target_compile_definitions(parallel-rdp PUBLIC GRANITE_VULKAN_MT)
 
 target_include_directories(parallel-rdp PUBLIC
@@ -54,11 +59,6 @@ target_include_directories(parallel-rdp PUBLIC
   parallel-rdp-standalone/vulkan-headers/include
   parallel-rdp-standalone/util
 )
-
-if(WIN32)
-  add_compile_definitions(NOMINMAX _CRT_SECURE_NO_WARNINGS)
-  add_compile_options(/EHa)
-endif()
 
 if(WIN32)
   target_compile_definitions(parallel-rdp PUBLIC VK_USE_PLATFORM_WIN32_KHR)

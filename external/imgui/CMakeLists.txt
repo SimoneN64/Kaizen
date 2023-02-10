@@ -12,10 +12,9 @@ add_library(imgui
   imgui/backends/imgui_impl_vulkan.h
   imgui/backends/imgui_impl_vulkan.cpp)
 
-
 if(WIN32)
-  add_compile_definitions(NOMINMAX _CRT_SECURE_NO_WARNINGS)
-  add_compile_options(/EHa)
+  target_compile_definitions(imgui PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
+  target_compile_options(imgui PUBLIC /EHa)
 endif()
 
 target_include_directories(imgui PUBLIC ../parallel-rdp/parallel-rdp-standalone/volk

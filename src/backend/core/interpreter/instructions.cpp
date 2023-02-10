@@ -6,7 +6,7 @@
 #define check_signed_underflow(op1, op2, res) (((((op1) ^ (op2)) & ((op1) ^ (res))) >> ((sizeof(res) * 8) - 1)) & 1)
 
 namespace n64 {
-void Interpreter::add(Registers& regs, u32 instr) {
+void Interpreter::add(u32 instr) {
   u32 rs = (s32)regs.gpr[RS(instr)];
   u32 rt = (s32)regs.gpr[RT(instr)];
   u32 result = rs + rt;
@@ -17,14 +17,14 @@ void Interpreter::add(Registers& regs, u32 instr) {
   }
 }
 
-void Interpreter::addu(Registers& regs, u32 instr) {
+void Interpreter::addu(u32 instr) {
   s32 rs = (s32)regs.gpr[RS(instr)];
   s32 rt = (s32)regs.gpr[RT(instr)];
   s32 result = rs + rt;
   regs.gpr[RD(instr)] = result;
 }
 
-void Interpreter::addi(Registers& regs, u32 instr) {
+void Interpreter::addi(u32 instr) {
   u32 rs = regs.gpr[RS(instr)];
   u32 imm = s32(s16(instr));
   u32 result = rs + imm;
@@ -35,14 +35,14 @@ void Interpreter::addi(Registers& regs, u32 instr) {
   }
 }
 
-void Interpreter::addiu(Registers& regs, u32 instr) {
+void Interpreter::addiu(u32 instr) {
   s32 rs = (s32)regs.gpr[RS(instr)];
   s16 imm = (s16)(instr);
   s32 result = rs + imm;
   regs.gpr[RT(instr)] = result;
 }
 
-void Interpreter::dadd(Registers& regs, u32 instr) {
+void Interpreter::dadd(u32 instr) {
   u64 rs = regs.gpr[RS(instr)];
   u64 rt = regs.gpr[RT(instr)];
   u64 result = rt + rs;
@@ -53,13 +53,13 @@ void Interpreter::dadd(Registers& regs, u32 instr) {
   }
 }
 
-void Interpreter::daddu(Registers& regs, u32 instr) {
+void Interpreter::daddu(u32 instr) {
   s64 rs = regs.gpr[RS(instr)];
   s64 rt = regs.gpr[RT(instr)];
   regs.gpr[RD(instr)] = rs + rt;
 }
 
-void Interpreter::daddi(Registers& regs, u32 instr) {
+void Interpreter::daddi(u32 instr) {
   u64 imm = s64(s16(instr));
   u64 rs = regs.gpr[RS(instr)];
   u64 result = imm + rs;
@@ -70,13 +70,13 @@ void Interpreter::daddi(Registers& regs, u32 instr) {
   }
 }
 
-void Interpreter::daddiu(Registers& regs, u32 instr) {
+void Interpreter::daddiu(u32 instr) {
   s16 imm = (s16)(instr);
   s64 rs = regs.gpr[RS(instr)];
   regs.gpr[RT(instr)] = rs + imm;
 }
 
-void Interpreter::div(Registers& regs, u32 instr) {
+void Interpreter::div(u32 instr) {
   s64 dividend = (s32)regs.gpr[RS(instr)];
   s64 divisor = (s32)regs.gpr[RT(instr)];
 
@@ -95,7 +95,7 @@ void Interpreter::div(Registers& regs, u32 instr) {
   }
 }
 
-void Interpreter::divu(Registers& regs, u32 instr) {
+void Interpreter::divu(u32 instr) {
   u32 dividend = regs.gpr[RS(instr)];
   u32 divisor = regs.gpr[RT(instr)];
   if(divisor == 0) {
@@ -109,7 +109,7 @@ void Interpreter::divu(Registers& regs, u32 instr) {
   }
 }
 
-void Interpreter::ddiv(Registers& regs, u32 instr) {
+void Interpreter::ddiv(u32 instr) {
   s64 dividend = regs.gpr[RS(instr)];
   s64 divisor = regs.gpr[RT(instr)];
   if (dividend == 0x8000000000000000 && divisor == 0xFFFFFFFFFFFFFFFF) {
@@ -130,7 +130,7 @@ void Interpreter::ddiv(Registers& regs, u32 instr) {
   }
 }
 
-void Interpreter::ddivu(Registers& regs, u32 instr) {
+void Interpreter::ddivu(u32 instr) {
   u64 dividend = regs.gpr[RS(instr)];
   u64 divisor = regs.gpr[RT(instr)];
   if(divisor == 0) {
@@ -144,14 +144,14 @@ void Interpreter::ddivu(Registers& regs, u32 instr) {
   }
 }
 
-void Interpreter::branch(Registers& regs, bool cond, s64 address) {
+void Interpreter::branch(bool cond, s64 address) {
   regs.delaySlot = true;
   if (cond) {
     regs.nextPC = address;
   }
 }
 
-void Interpreter::branch_likely(Registers& regs, bool cond, s64 address) {
+void Interpreter::branch_likely(bool cond, s64 address) {
   regs.delaySlot = true;
   if (cond) {
     regs.nextPC = address;
@@ -160,44 +160,44 @@ void Interpreter::branch_likely(Registers& regs, bool cond, s64 address) {
   }
 }
 
-void Interpreter::b(Registers& regs, u32 instr, bool cond) {
+void Interpreter::b(u32 instr, bool cond) {
   s64 offset = (s64)se_imm(instr) << 2;
   s64 address = regs.pc + offset;
-  branch(regs, cond, address);
+  branch(cond, address);
 }
 
-void Interpreter::blink(Registers& regs, u32 instr, bool cond) {
+void Interpreter::blink(u32 instr, bool cond) {
   regs.gpr[31] = regs.nextPC;
   s64 offset = (s64)se_imm(instr) << 2;
   s64 address = regs.pc + offset;
-  branch(regs, cond, address);
+  branch(cond, address);
 }
 
-void Interpreter::bl(Registers& regs, u32 instr, bool cond) {
+void Interpreter::bl(u32 instr, bool cond) {
   s64 offset = (s64)se_imm(instr) << 2;
   s64 address = regs.pc + offset;
-  branch_likely(regs, cond, address);
+  branch_likely(cond, address);
 }
 
-void Interpreter::bllink(Registers& regs, u32 instr, bool cond) {
+void Interpreter::bllink(u32 instr, bool cond) {
   regs.gpr[31] = regs.nextPC;
   s64 offset = (s64)se_imm(instr) << 2;
   s64 address = regs.pc + offset;
-  branch_likely(regs, cond, address);
+  branch_likely(cond, address);
 }
 
-void Interpreter::lui(Registers& regs, u32 instr) {
+void Interpreter::lui(u32 instr) {
   s64 val = (s16)instr;
   val <<= 16;
   regs.gpr[RT(instr)] = val;
 }
 
-void Interpreter::lb(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::lb(Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   regs.gpr[RT(instr)] = (s8)mem.Read8(regs, address, regs.oldPC);
 }
 
-void Interpreter::lh(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::lh(Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b1)) {
     HandleTLBException(regs, address);
@@ -208,7 +208,7 @@ void Interpreter::lh(Registers& regs, Mem& mem, u32 instr) {
   regs.gpr[RT(instr)] = (s16)mem.Read16(regs, address, regs.oldPC);
 }
 
-void Interpreter::lw(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::lw(Mem& mem, u32 instr) {
   s16 offset = instr;
   u64 address = regs.gpr[RS(instr)] + offset;
   if (check_address_error(address, 0b11)) {
@@ -226,7 +226,7 @@ void Interpreter::lw(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::ll(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::ll(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 physical;
   if (!MapVAddr(regs, LOAD, address, physical)) {
@@ -240,7 +240,7 @@ void Interpreter::ll(Registers& regs, Mem& mem, u32 instr) {
   regs.cop0.LLAddr = physical >> 4;
 }
 
-void Interpreter::lwl(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::lwl(Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr = 0;
   if(!MapVAddr(regs, LOAD, address, paddr)) {
@@ -255,7 +255,7 @@ void Interpreter::lwl(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::lwr(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::lwr(Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr = 0;
   if(!MapVAddr(regs, LOAD, address, paddr)) {
@@ -270,7 +270,7 @@ void Interpreter::lwr(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::ld(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::ld(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b111)) {
     HandleTLBException(regs, address);
@@ -282,7 +282,7 @@ void Interpreter::ld(Registers& regs, Mem& mem, u32 instr) {
   regs.gpr[RT(instr)] = value;
 }
 
-void Interpreter::lld(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::lld(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, LOAD, address, paddr)) {
@@ -296,7 +296,7 @@ void Interpreter::lld(Registers& regs, Mem& mem, u32 instr) {
   regs.cop0.LLAddr = paddr >> 4;
 }
 
-void Interpreter::ldl(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::ldl(Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr = 0;
   if (!MapVAddr(regs, LOAD, address, paddr)) {
@@ -311,7 +311,7 @@ void Interpreter::ldl(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::ldr(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::ldr(Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, LOAD, address, paddr)) {
@@ -326,13 +326,13 @@ void Interpreter::ldr(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::lbu(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::lbu(Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u8 value = mem.Read8(regs, address, regs.oldPC);
   regs.gpr[RT(instr)] = value;
 }
 
-void Interpreter::lhu(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::lhu(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b1)) {
     HandleTLBException(regs, address);
@@ -344,7 +344,7 @@ void Interpreter::lhu(Registers& regs, Mem& mem, u32 instr) {
   regs.gpr[RT(instr)] = value;
 }
 
-void Interpreter::lwu(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::lwu(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
@@ -356,12 +356,12 @@ void Interpreter::lwu(Registers& regs, Mem& mem, u32 instr) {
   regs.gpr[RT(instr)] = value;
 }
 
-void Interpreter::sb(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::sb(Mem& mem, u32 instr) {
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
   mem.Write8(regs, address, regs.gpr[RT(instr)], regs.oldPC);
 }
 
-void Interpreter::sc(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::sc(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
@@ -376,7 +376,7 @@ void Interpreter::sc(Registers& regs, Mem& mem, u32 instr) {
   regs.cop0.llbit = false;
 }
 
-void Interpreter::scd(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::scd(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b111)) {
     HandleTLBException(regs, address);
@@ -392,7 +392,7 @@ void Interpreter::scd(Registers& regs, Mem& mem, u32 instr) {
   regs.cop0.llbit = false;
 }
 
-void Interpreter::sh(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::sh(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b1)) {
     HandleTLBException(regs, address);
@@ -409,7 +409,7 @@ void Interpreter::sh(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::sw(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::sw(Mem& mem, u32 instr) {
   s16 offset = instr;
   u64 address = regs.gpr[RS(instr)] + offset;
   if (check_address_error(address, 0b11)) {
@@ -427,7 +427,7 @@ void Interpreter::sw(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::sd(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::sd(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
@@ -445,7 +445,7 @@ void Interpreter::sd(Registers& regs, Mem& mem, u32 instr) {
 
 }
 
-void Interpreter::sdl(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::sdl(Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, STORE, address, paddr)) {
@@ -460,7 +460,7 @@ void Interpreter::sdl(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::sdr(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::sdr(Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, STORE, address, paddr)) {
@@ -475,7 +475,7 @@ void Interpreter::sdr(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::swl(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::swl(Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, STORE, address, paddr)) {
@@ -490,7 +490,7 @@ void Interpreter::swl(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::swr(Registers& regs, Mem& mem, u32 instr) {
+void Interpreter::swr(Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, STORE, address, paddr)) {
@@ -505,21 +505,21 @@ void Interpreter::swr(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::ori(Registers& regs, u32 instr) {
+void Interpreter::ori(u32 instr) {
   s64 imm = (u16)instr;
   s64 result = imm | regs.gpr[RS(instr)];
   regs.gpr[RT(instr)] = result;
 }
 
-void Interpreter::or_(Registers& regs, u32 instr) {
+void Interpreter::or_(u32 instr) {
   regs.gpr[RD(instr)] = regs.gpr[RS(instr)] | regs.gpr[RT(instr)];
 }
 
-void Interpreter::nor(Registers& regs, u32 instr) {
+void Interpreter::nor(u32 instr) {
   regs.gpr[RD(instr)] = ~(regs.gpr[RS(instr)] | regs.gpr[RT(instr)]);
 }
 
-void Interpreter::j(Registers& regs, u32 instr) {
+void Interpreter::j(u32 instr) {
   s32 target = (instr & 0x3ffffff) << 2;
   s64 address = (regs.oldPC & ~0xfffffff) | target;
   if (check_address_error(address, 0b11)) {
@@ -527,127 +527,127 @@ void Interpreter::j(Registers& regs, u32 instr) {
     FireException(regs, ExceptionCode::DataBusError, 0, true);
   }
 
-  branch(regs, true, address);
+  branch(true, address);
 }
 
-void Interpreter::jal(Registers& regs, u32 instr) {
+void Interpreter::jal(u32 instr) {
   regs.gpr[31] = regs.nextPC;
-  j(regs, instr);
+  j(instr);
 }
 
-void Interpreter::jalr(Registers& regs, u32 instr) {
-  branch(regs, true, regs.gpr[RS(instr)]);
+void Interpreter::jalr(u32 instr) {
+  branch(true, regs.gpr[RS(instr)]);
   regs.gpr[RD(instr)] = regs.pc + 4;
 }
 
-void Interpreter::slti(Registers& regs, u32 instr) {
+void Interpreter::slti(u32 instr) {
   regs.gpr[RT(instr)] = regs.gpr[RS(instr)] < se_imm(instr);
 }
 
-void Interpreter::sltiu(Registers& regs, u32 instr) {
+void Interpreter::sltiu(u32 instr) {
   regs.gpr[RT(instr)] = (u64)regs.gpr[RS(instr)] < se_imm(instr);
 }
 
-void Interpreter::slt(Registers& regs, u32 instr) {
+void Interpreter::slt(u32 instr) {
   regs.gpr[RD(instr)] = regs.gpr[RS(instr)] < regs.gpr[RT(instr)];
 }
 
-void Interpreter::sltu(Registers& regs, u32 instr) {
+void Interpreter::sltu(u32 instr) {
   regs.gpr[RD(instr)] = (u64)regs.gpr[RS(instr)] < (u64)regs.gpr[RT(instr)];
 }
 
-void Interpreter::xori(Registers& regs, u32 instr) {
+void Interpreter::xori(u32 instr) {
   s64 imm = (u16)instr;
   regs.gpr[RT(instr)] = regs.gpr[RS(instr)] ^ imm;
 }
 
-void Interpreter::xor_(Registers& regs, u32 instr) {
+void Interpreter::xor_(u32 instr) {
   regs.gpr[RD(instr)] = regs.gpr[RT(instr)] ^ regs.gpr[RS(instr)];
 }
 
-void Interpreter::andi(Registers& regs, u32 instr) {
+void Interpreter::andi(u32 instr) {
   s64 imm = (u16)instr;
   regs.gpr[RT(instr)] = regs.gpr[RS(instr)] & imm;
 }
 
-void Interpreter::and_(Registers& regs, u32 instr) {
+void Interpreter::and_(u32 instr) {
   regs.gpr[RD(instr)] = regs.gpr[RS(instr)] & regs.gpr[RT(instr)];
 }
 
-void Interpreter::sll(Registers& regs, u32 instr) {
+void Interpreter::sll(u32 instr) {
   u8 sa = ((instr >> 6) & 0x1f);
   s32 result = regs.gpr[RT(instr)] << sa;
   regs.gpr[RD(instr)] = (s64)result;
 }
 
-void Interpreter::sllv(Registers& regs, u32 instr) {
+void Interpreter::sllv(u32 instr) {
   u8 sa = (regs.gpr[RS(instr)]) & 0x1F;
   u32 rt = regs.gpr[RT(instr)];
   s32 result = rt << sa;
   regs.gpr[RD(instr)] = (s64)result;
 }
 
-void Interpreter::dsll32(Registers& regs, u32 instr) {
+void Interpreter::dsll32(u32 instr) {
   u8 sa = ((instr >> 6) & 0x1f);
   s64 result = regs.gpr[RT(instr)] << (sa + 32);
   regs.gpr[RD(instr)] = result;
 }
 
-void Interpreter::dsll(Registers& regs, u32 instr) {
+void Interpreter::dsll(u32 instr) {
   u8 sa = ((instr >> 6) & 0x1f);
   s64 result = regs.gpr[RT(instr)] << sa;
   regs.gpr[RD(instr)] = result;
 }
 
-void Interpreter::dsllv(Registers& regs, u32 instr) {
+void Interpreter::dsllv(u32 instr) {
   s64 sa = regs.gpr[RS(instr)] & 63;
   s64 result = regs.gpr[RT(instr)] << sa;
   regs.gpr[RD(instr)] = result;
 }
 
-void Interpreter::srl(Registers& regs, u32 instr) {
+void Interpreter::srl(u32 instr) {
   u32 rt = regs.gpr[RT(instr)];
   u8 sa = ((instr >> 6) & 0x1f);
   u32 result = rt >> sa;
   regs.gpr[RD(instr)] = (s32)result;
 }
 
-void Interpreter::srlv(Registers& regs, u32 instr) {
+void Interpreter::srlv(u32 instr) {
   u8 sa = (regs.gpr[RS(instr)] & 0x1F);
   u32 rt = regs.gpr[RT(instr)];
   s32 result = rt >> sa;
   regs.gpr[RD(instr)] = (s64)result;
 }
 
-void Interpreter::dsrl(Registers& regs, u32 instr) {
+void Interpreter::dsrl(u32 instr) {
   u64 rt = regs.gpr[RT(instr)];
   u8 sa = ((instr >> 6) & 0x1f);
   u64 result = rt >> sa;
   regs.gpr[RD(instr)] = s64(result);
 }
 
-void Interpreter::dsrlv(Registers& regs, u32 instr) {
+void Interpreter::dsrlv(u32 instr) {
   u8 amount = (regs.gpr[RS(instr)] & 63);
   u64 rt = regs.gpr[RT(instr)];
   u64 result = rt >> amount;
   regs.gpr[RD(instr)] = s64(result);
 }
 
-void Interpreter::dsrl32(Registers& regs, u32 instr) {
+void Interpreter::dsrl32(u32 instr) {
   u64 rt = regs.gpr[RT(instr)];
   u8 sa = ((instr >> 6) & 0x1f);
   u64 result = rt >> (sa + 32);
   regs.gpr[RD(instr)] = s64(result);
 }
 
-void Interpreter::sra(Registers& regs, u32 instr) {
+void Interpreter::sra(u32 instr) {
   s64 rt = regs.gpr[RT(instr)];
   u8 sa = ((instr >> 6) & 0x1f);
   s32 result = rt >> sa;
   regs.gpr[RD(instr)] = result;
 }
 
-void Interpreter::srav(Registers& regs, u32 instr) {
+void Interpreter::srav(u32 instr) {
   s64 rt = regs.gpr[RT(instr)];
   s64 rs = regs.gpr[RS(instr)];
   u8 sa = rs & 0x1f;
@@ -655,14 +655,14 @@ void Interpreter::srav(Registers& regs, u32 instr) {
   regs.gpr[RD(instr)] = result;
 }
 
-void Interpreter::dsra(Registers& regs, u32 instr) {
+void Interpreter::dsra(u32 instr) {
   s64 rt = regs.gpr[RT(instr)];
   u8 sa = ((instr >> 6) & 0x1f);
   s64 result = rt >> sa;
   regs.gpr[RD(instr)] = result;
 }
 
-void Interpreter::dsrav(Registers& regs, u32 instr) {
+void Interpreter::dsrav(u32 instr) {
   s64 rt = regs.gpr[RT(instr)];
   s64 rs = regs.gpr[RS(instr)];
   s64 sa = rs & 63;
@@ -670,24 +670,24 @@ void Interpreter::dsrav(Registers& regs, u32 instr) {
   regs.gpr[RD(instr)] = result;
 }
 
-void Interpreter::dsra32(Registers& regs, u32 instr) {
+void Interpreter::dsra32(u32 instr) {
   s64 rt = regs.gpr[RT(instr)];
   u8 sa = ((instr >> 6) & 0x1f);
   s64 result = rt >> (sa + 32);
   regs.gpr[RD(instr)] = result;
 }
 
-void Interpreter::jr(Registers& regs, u32 instr) {
+void Interpreter::jr(u32 instr) {
   s64 address = regs.gpr[RS(instr)];
   if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::DataBusError, 0, regs.oldPC);
   }
 
-  branch(regs, true, address);
+  branch(true, address);
 }
 
-void Interpreter::dsub(Registers& regs, u32 instr) {
+void Interpreter::dsub(u32 instr) {
   s64 rt = regs.gpr[RT(instr)];
   s64 rs = regs.gpr[RS(instr)];
   s64 result = rs - rt;
@@ -698,14 +698,14 @@ void Interpreter::dsub(Registers& regs, u32 instr) {
   }
 }
 
-void Interpreter::dsubu(Registers& regs, u32 instr) {
+void Interpreter::dsubu(u32 instr) {
   u64 rt = regs.gpr[RT(instr)];
   u64 rs = regs.gpr[RS(instr)];
   u64 result = rs - rt;
   regs.gpr[RD(instr)] = s64(result);
 }
 
-void Interpreter::sub(Registers& regs, u32 instr) {
+void Interpreter::sub(u32 instr) {
   s32 rt = regs.gpr[RT(instr)];
   s32 rs = regs.gpr[RS(instr)];
   s32 result = rs - rt;
@@ -716,14 +716,14 @@ void Interpreter::sub(Registers& regs, u32 instr) {
   }
 }
 
-void Interpreter::subu(Registers& regs, u32 instr) {
+void Interpreter::subu(u32 instr) {
   u32 rt = regs.gpr[RT(instr)];
   u32 rs = regs.gpr[RS(instr)];
   u32 result = rs - rt;
   regs.gpr[RD(instr)] = (s64)((s32)result);
 }
 
-void Interpreter::dmultu(Registers& regs, u32 instr) {
+void Interpreter::dmultu(u32 instr) {
   u64 rt = regs.gpr[RT(instr)];
   u64 rs = regs.gpr[RS(instr)];
   u128 result = (u128)rt * (u128)rs;
@@ -731,7 +731,7 @@ void Interpreter::dmultu(Registers& regs, u32 instr) {
   regs.hi = (s64)(result >> 64);
 }
 
-void Interpreter::dmult(Registers& regs, u32 instr) {
+void Interpreter::dmult(u32 instr) {
   s64 rt = regs.gpr[RT(instr)];
   s64 rs = regs.gpr[RS(instr)];
   s128 result = (s128)rt * (s128)rs;
@@ -739,7 +739,7 @@ void Interpreter::dmult(Registers& regs, u32 instr) {
   regs.hi = result >> 64;
 }
 
-void Interpreter::multu(Registers& regs, u32 instr) {
+void Interpreter::multu(u32 instr) {
   u32 rt = regs.gpr[RT(instr)];
   u32 rs = regs.gpr[RS(instr)];
   u64 result = (u64)rt * (u64)rs;
@@ -747,7 +747,7 @@ void Interpreter::multu(Registers& regs, u32 instr) {
   regs.hi = (s64)((s32)(result >> 32));
 }
 
-void Interpreter::mult(Registers& regs, u32 instr) {
+void Interpreter::mult(u32 instr) {
   s32 rt = regs.gpr[RT(instr)];
   s32 rs = regs.gpr[RS(instr)];
   s64 result = (s64)rt * (s64)rs;
@@ -755,50 +755,50 @@ void Interpreter::mult(Registers& regs, u32 instr) {
   regs.hi = (s64)((s32)(result >> 32));
 }
 
-void Interpreter::mflo(Registers& regs, u32 instr) {
+void Interpreter::mflo(u32 instr) {
   regs.gpr[RD(instr)] = regs.lo;
 }
 
-void Interpreter::mfhi(Registers& regs, u32 instr) {
+void Interpreter::mfhi(u32 instr) {
   regs.gpr[RD(instr)] = regs.hi;
 }
 
-void Interpreter::mtlo(Registers& regs, u32 instr) {
+void Interpreter::mtlo(u32 instr) {
   regs.lo = regs.gpr[RS(instr)];
 }
 
-void Interpreter::mthi(Registers& regs, u32 instr) {
+void Interpreter::mthi(u32 instr) {
   regs.hi = regs.gpr[RS(instr)];
 }
 
-void Interpreter::trap(Registers& regs, bool cond) {
+void Interpreter::trap(bool cond) {
   if(cond) {
     FireException(regs, ExceptionCode::Trap, 0, regs.oldPC);
   }
 }
 
-void Interpreter::mtc2(Registers& regs, u32 instr) {
+void Interpreter::mtc2(u32 instr) {
   cop2Latch = regs.gpr[RT(instr)];
 }
 
-void Interpreter::mfc2(Registers& regs, u32 instr) {
+void Interpreter::mfc2(u32 instr) {
   s32 value = cop2Latch;
   regs.gpr[RT(instr)] = value;
 }
 
-void Interpreter::dmtc2(Registers& regs, u32 instr) {
+void Interpreter::dmtc2(u32 instr) {
   cop2Latch = regs.gpr[RT(instr)];
 }
 
-void Interpreter::dmfc2(Registers& regs, u32 instr) {
+void Interpreter::dmfc2(u32 instr) {
   regs.gpr[RT(instr)] = cop2Latch;
 }
 
-void Interpreter::ctc2(Registers& regs, u32) {
+void Interpreter::ctc2(u32) {
 
 }
 
-void Interpreter::cfc2(Registers& regs, u32) {
+void Interpreter::cfc2(u32) {
 
 }
 

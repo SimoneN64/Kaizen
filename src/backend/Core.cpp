@@ -25,7 +25,7 @@ CartInfo Core::LoadROM(const std::string& rom_) {
   romLoaded = true;
   
   CartInfo cartInfo = mem.LoadROM(rom);
-  DoPIFHLE(mem, regs, cartInfo);
+  DoPIFHLE(mem, CpuGetRegs(), cartInfo);
 
   return cartInfo;
 }
@@ -33,6 +33,7 @@ CartInfo Core::LoadROM(const std::string& rom_) {
 void Core::Run(Window& window, float volumeL, float volumeR) {
   MMIO& mmio = mem.mmio;
   Controller& controller = mmio.si.controller;
+  Registers& regs = CpuGetRegs();
 
   for(int field = 0; field < mmio.vi.numFields; field++) {
     int frameCycles = 0;

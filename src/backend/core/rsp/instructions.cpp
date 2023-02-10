@@ -420,6 +420,68 @@ void RSP::spv(u32 instr) {
   }
 }
 
+void RSP::sfv(u32 instr) {
+  VPR& vt = vpr[VT(instr)];
+  u32 address = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 4);
+  int base = address & 7;
+  address &= ~7;
+  int e = E1(instr);
+
+  u8 values[4] = {0, 0, 0, 0};
+
+  switch (e) {
+    case 0:
+    case 15:
+      values[0] = vt.element[ELEMENT_INDEX(0)] >> 7;
+      values[1] = vt.element[ELEMENT_INDEX(1)] >> 7;
+      values[2] = vt.element[ELEMENT_INDEX(2)] >> 7;
+      values[3] = vt.element[ELEMENT_INDEX(3)] >> 7;
+      break;
+    case 1:
+      values[0] = vt.element[ELEMENT_INDEX(6)] >> 7;
+      values[1] = vt.element[ELEMENT_INDEX(7)] >> 7;
+      values[2] = vt.element[ELEMENT_INDEX(4)] >> 7;
+      values[3] = vt.element[ELEMENT_INDEX(5)] >> 7;
+      break;
+    case 4:
+      values[0] = vt.element[ELEMENT_INDEX(1)] >> 7;
+      values[1] = vt.element[ELEMENT_INDEX(2)] >> 7;
+      values[2] = vt.element[ELEMENT_INDEX(3)] >> 7;
+      values[3] = vt.element[ELEMENT_INDEX(0)] >> 7;
+      break;
+    case 5:
+      values[0] = vt.element[ELEMENT_INDEX(7)] >> 7;
+      values[1] = vt.element[ELEMENT_INDEX(4)] >> 7;
+      values[2] = vt.element[ELEMENT_INDEX(5)] >> 7;
+      values[3] = vt.element[ELEMENT_INDEX(6)] >> 7;
+      break;
+    case 8:
+      values[0] = vt.element[ELEMENT_INDEX(4)] >> 7;
+      values[1] = vt.element[ELEMENT_INDEX(5)] >> 7;
+      values[2] = vt.element[ELEMENT_INDEX(6)] >> 7;
+      values[3] = vt.element[ELEMENT_INDEX(7)] >> 7;
+      break;
+    case 11:
+      values[0] = vt.element[ELEMENT_INDEX(3)] >> 7;
+      values[1] = vt.element[ELEMENT_INDEX(0)] >> 7;
+      values[2] = vt.element[ELEMENT_INDEX(1)] >> 7;
+      values[3] = vt.element[ELEMENT_INDEX(2)] >> 7;
+      break;
+    case 12:
+      values[0] = vt.element[ELEMENT_INDEX(5)] >> 7;
+      values[1] = vt.element[ELEMENT_INDEX(6)] >> 7;
+      values[2] = vt.element[ELEMENT_INDEX(7)] >> 7;
+      values[3] = vt.element[ELEMENT_INDEX(4)] >> 7;
+      break;
+    default:
+      break;
+  }
+
+  for (int i = 0; i < 4; i++) {
+    WriteByte(address + ((base + (i << 2)) & 15), values[i]);
+  }
+}
+
 void RSP::sbv(u32 instr) {
   int e = E1(instr);
   u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 0);

@@ -1,5 +1,6 @@
 #include <dynarec/cop/cop1instructions.hpp>
 #include <cfenv>
+#include <cmath>
 #include <Cop1.hpp>
 #include <Registers.hpp>
 
@@ -19,65 +20,39 @@ inline int PushRoundingMode(const FCR31& fcr31) {
 #define PUSHROUNDINGMODE int og = PushRoundingMode(regs.cop1.fcr31)
 #define POPROUNDINGMODE fesetround(og)
 
-#ifdef _WIN32
-#define isnanf isnan
-#define checknanregsf(fs, ft) \
-  if(isnanf(fs) || isnanf(ft)) { \
+#define checknanregs(fs, ft) do { \
+  if(std::isnan(fs) || std::isnan(ft)) { \
     regs.cop1.fcr31.flag_invalid_operation = true; \
     regs.cop1.fcr31.cause_invalid_operation = true; \
     FireException(regs, ExceptionCode::FloatingPointError, 1, true); \
     return; \
-  }
-
-#define checknanregsd(fs, ft) \
-  if(isnan(fs) || isnan(ft)) { \
-    regs.cop1.fcr31.flag_invalid_operation = true; \
-    regs.cop1.fcr31.cause_invalid_operation = true; \
-    FireException(regs, ExceptionCode::FloatingPointError, 1, true); \
-    return; \
-  }
-#else
-#define checknanregsf(fs, ft) \
-  if(isnanf(fs) || isnanf(ft)) { \
-    regs.cop1.fcr31.flag_invalid_operation = true; \
-    regs.cop1.fcr31.cause_invalid_operation = true; \
-    FireException(regs, ExceptionCode::FloatingPointError, 1, true); \
-    return; \
-  }
-
-#define checknanregsd(fs, ft) \
-  if(isnan(fs) || isnan(ft)) { \
-    regs.cop1.fcr31.flag_invalid_operation = true; \
-    regs.cop1.fcr31.cause_invalid_operation = true; \
-    FireException(regs, ExceptionCode::FloatingPointError, 1, true); \
-    return; \
-  }
-#endif
+  }                               \
+} while(0)
 
 void absd(n64::Registers& regs, u32 instr) {
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
-  regs.cop1.SetCop1Reg<double>(regs.cop0, FD(instr), fabs(fs));
+  regs.cop1.SetCop1Reg<double>(regs.cop0, FD(instr), std::abs(fs));
 }
 
 void abss(n64::Registers& regs, u32 instr) {
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
-  regs.cop1.SetCop1Reg<float>(regs.cop0, FD(instr), fabsf(fs));
+  regs.cop1.SetCop1Reg<float>(regs.cop0, FD(instr), std::abs(fs));
 }
 
 void absw(n64::Registers& regs, u32 instr) {
   s32 fs = regs.cop1.GetReg<s32>(regs.cop0, FS(instr));
-  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), abs(fs));
+  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), std::abs(fs));
 }
 
 void absl(n64::Registers& regs, u32 instr) {
   s64 fs = regs.cop1.GetReg<s64>(regs.cop0, FS(instr));
-  regs.cop1.SetReg(regs.cop0, FD(instr), labs(fs));
+  regs.cop1.SetReg(regs.cop0, FD(instr), std::abs(fs));
 }
 
 void adds(n64::Registers& regs, u32 instr) {
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   float ft = regs.cop1.GetCop1Reg<float>(regs.cop0, FT(instr));
-  checknanregsf(fs, ft)
+  checknanregs(fs, ft);
   float result = fs + ft;
   regs.cop1.SetCop1Reg<float>(regs.cop0, FD(instr), result);
 }
@@ -85,32 +60,32 @@ void adds(n64::Registers& regs, u32 instr) {
 void addd(n64::Registers& regs, u32 instr) {
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   double ft = regs.cop1.GetCop1Reg<double>(regs.cop0, FT(instr));
-  checknanregsf(fs, ft)
+  checknanregs(fs, ft);
   double result = fs + ft;
   regs.cop1.SetCop1Reg<double>(regs.cop0, FD(instr), result);
 }
 
 void ceills(n64::Registers& regs, u32 instr) {
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
-  s64 result = ceilf(fs);
+  s64 result = std::ceil(fs);
   regs.cop1.SetReg<u64>(regs.cop0, FD(instr), result);
 }
 
 void ceilws(n64::Registers& regs, u32 instr) {
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
-  s32 result = ceilf(fs);
+  s32 result = std::ceil(fs);
   regs.cop1.SetReg<u32>(regs.cop0, FD(instr), result);
 }
 
 void ceilld(n64::Registers& regs, u32 instr) {
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
-  s64 result = ceil(fs);
+  s64 result = std::ceil(fs);
   regs.cop1.SetReg<u64>(regs.cop0, FD(instr), result);
 }
 
 void ceilwd(n64::Registers& regs, u32 instr) {
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
-  s32 result = ceil(fs);
+  s32 result = std::ceil(fs);
   regs.cop1.SetReg<u32>(regs.cop0, FD(instr), result);
 }
 
@@ -410,60 +385,60 @@ void negd(Registers &regs, u32 instr) {
 
 void sqrts(Registers &regs, u32 instr) {
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
-  regs.cop1.SetCop1Reg<float>(regs.cop0, FD(instr), sqrtf(fs));
+  regs.cop1.SetCop1Reg<float>(regs.cop0, FD(instr), std::sqrt(fs));
 }
 
 void sqrtd(Registers &regs, u32 instr) {
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
-  regs.cop1.SetCop1Reg<double>(regs.cop0, FD(instr), sqrt(fs));
+  regs.cop1.SetCop1Reg<double>(regs.cop0, FD(instr), std::sqrt(fs));
 }
 
 void roundls(n64::Registers& regs, u32 instr) {
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   PUSHROUNDINGMODE;
-  regs.cop1.SetReg<u64>(regs.cop0, FD(instr), (s32)nearbyintf(fs));
+  regs.cop1.SetReg<u64>(regs.cop0, FD(instr), (s32)std::nearbyint(fs));
   POPROUNDINGMODE;
 }
 
 void roundld(n64::Registers& regs, u32 instr) {
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   PUSHROUNDINGMODE;
-  regs.cop1.SetReg<u64>(regs.cop0, FD(instr), (s64)nearbyint(fs));
+  regs.cop1.SetReg<u64>(regs.cop0, FD(instr), (s64)std::nearbyint(fs));
   POPROUNDINGMODE;
 }
 
 void roundws(n64::Registers& regs, u32 instr) {
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   PUSHROUNDINGMODE;
-  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), (s32)nearbyintf(fs));
+  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), (s32)std::nearbyint(fs));
   POPROUNDINGMODE;
 }
 
 void roundwd(n64::Registers& regs, u32 instr) {
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   PUSHROUNDINGMODE;
-  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), (s32)nearbyint(fs));
+  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), (s32)std::nearbyint(fs));
   POPROUNDINGMODE;
 }
 
 void floorls(n64::Registers& regs, u32 instr) {
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
-  regs.cop1.SetReg<u64>(regs.cop0, FD(instr), (s64)floorf(fs));
+  regs.cop1.SetReg<u64>(regs.cop0, FD(instr), (s64)std::floor(fs));
 }
 
 void floorld(n64::Registers& regs, u32 instr) {
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
-  regs.cop1.SetReg<u64>(regs.cop0, FD(instr), (s64)floor(fs));
+  regs.cop1.SetReg<u64>(regs.cop0, FD(instr), (s64)std::floor(fs));
 }
 
 void floorws(n64::Registers& regs, u32 instr) {
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
-  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), (s64)floorf(fs));
+  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), (s64)std::floor(fs));
 }
 
 void floorwd(n64::Registers& regs, u32 instr) {
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
-  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), (s64)floor(fs));
+  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), (s64)std::floor(fs));
 }
 
 void lwc1(n64::Registers& regs, Mem& mem, u32 instr) {
@@ -550,25 +525,25 @@ void sdc1(n64::Registers& regs, Mem& mem, u32 instr) {
 
 void truncws(n64::Registers& regs, u32 instr) {
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
-  s32 result = (s32)truncf(fs);
+  s32 result = (s32)std::trunc(fs);
   regs.cop1.SetReg<u32>(regs.cop0, FD(instr), result);
 }
 
 void truncwd(n64::Registers& regs, u32 instr) {
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
-  s32 result = (s32)trunc(fs);
+  s32 result = (s32)std::trunc(fs);
   regs.cop1.SetReg<u32>(regs.cop0, FD(instr), result);
 }
 
 void truncls(n64::Registers& regs, u32 instr) {
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
-  s64 result = (s64)truncf(fs);
+  s64 result = (s64)std::trunc(fs);
   regs.cop1.SetReg<u64>(regs.cop0, FD(instr), result);
 }
 
 void truncld(n64::Registers& regs, u32 instr) {
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
-  s64 result = (s64)trunc(fs);
+  s64 result = (s64)std::trunc(fs);
   regs.cop1.SetReg<u64>(regs.cop0, FD(instr), result);
 }
 

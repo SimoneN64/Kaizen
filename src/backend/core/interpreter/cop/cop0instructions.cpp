@@ -31,7 +31,7 @@ void Cop0::eret(Registers& regs) {
 }
 
 
-void Cop0::tlbr(Registers& regs) {
+void Cop0::tlbr() {
   u8 Index = index & 0b111111;
   if (Index >= 32) {
     Util::panic("TLBR with TLB index {}", index);
@@ -48,7 +48,7 @@ void Cop0::tlbr(Registers& regs) {
   pageMask.raw = entry.pageMask.raw;
 }
 
-void Cop0::tlbw(int index_, Registers& regs) {
+void Cop0::tlbw(int index_) {
   PageMask page_mask{};
   page_mask = pageMask;
   u32 top = page_mask.mask & 0xAAA;

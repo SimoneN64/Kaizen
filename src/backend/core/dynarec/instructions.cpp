@@ -1,5 +1,4 @@
-#include <dynarec/instructions.hpp>
-#include <Registers.hpp>
+#include <core/Dynarec.hpp>
 
 #define se_imm(x) ((s16)((x) & 0xFFFF))
 #define check_address_error(mask, addr) (((!regs.cop0.is_64bit_addressing) && (s32)(addr) != (addr)) || (((addr) & (mask)) != 0))
@@ -41,7 +40,6 @@ void addiu(Registers& regs, u32 instr) {
   s16 imm = (s16)(instr);
   s32 result = rs + imm;
   regs.gpr[RT(instr)] = result;
-  Util::print("addiu {:08X}, {:04X} = {:08X} [reg: {:016X}]\n", (u32)rs, imm, (u32)result, (u64)regs.gpr[RT(instr)]);
 }
 
 void dadd(Registers& regs, u32 instr) {
@@ -147,7 +145,6 @@ void ddivu(Registers& regs, u32 instr) {
 }
 
 void branch(Registers& regs, bool cond, s64 address) {
-  //Util::debug("\t\tJIT branch from {:08X} -> {:08X}\n", (u32)regs.oldPC, (u32)address);
   regs.delaySlot = true;
   if (cond) {
     regs.nextPC = address;
@@ -157,10 +154,8 @@ void branch(Registers& regs, bool cond, s64 address) {
 void branch_likely(Registers& regs, bool cond, s64 address) {
   regs.delaySlot = true;
   if (cond) {
-    //Util::debug("\t\tJIT branch likely taken from {:08X} -> {:08X}\n", (u32)regs.oldPC, (u32)address);
     regs.nextPC = address;
   } else {
-    //Util::debug("\t\tJIT branch likely not taken from {:08X} -> {:08X}\n", (u32)regs.oldPC, (u32)address);
     regs.SetPC(regs.nextPC);
   }
 }
@@ -199,18 +194,30 @@ void lui(Registers& regs, u32 instr) {
 
 void lb(Registers& regs, Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  regs.gpr[RT(instr)] = (s8)mem.Read8(regs, address, regs.oldPC);
+  u32 paddr = 0;
+  if(!MapVAddr(regs, LOAD, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
+  } else {
+    regs.gpr[RT(instr)] = (s8)mem.Read8(regs, paddr);
+  }
 }
 
 void lh(Registers& regs, Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(address, 0b1)) {
+  if ((address & 0b1) > 0) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
     return;
   }
 
-  regs.gpr[RT(instr)] = (s16)mem.Read16(regs, address, regs.oldPC);
+  u32 paddr = 0;
+  if(!MapVAddr(regs, LOAD, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
+  } else {
+    regs.gpr[RT(instr)] = (s16)mem.Read16(regs, address);
+  }
 }
 
 void lw(Registers& regs, Mem& mem, u32 instr) {
@@ -222,23 +229,28 @@ void lw(Registers& regs, Mem& mem, u32 instr) {
     return;
   }
 
-  u32 physical;
+  u32 physical = 0;
   if (!MapVAddr(regs, LOAD, address, physical)) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
-    regs.gpr[RT(instr)] = (s32)mem.Read32<false>(regs, physical, regs.oldPC);
+    regs.gpr[RT(instr)] = (s32)mem.Read32(regs, physical);
   }
 }
 
 void ll(Registers& regs, Mem& mem, u32 instr) {
-  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 physical;
   if (!MapVAddr(regs, LOAD, address, physical)) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
-    regs.gpr[RT(instr)] = (s32)mem.Read32<false>(regs, physical, regs.oldPC);
+    if ((address & 0b11) > 0) {
+      FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
+      return;
+    } else {
+      regs.gpr[RT(instr)] = (s32)mem.Read32(regs, physical);
+    }
   }
 
   regs.cop0.llbit = true;
@@ -254,7 +266,7 @@ void lwl(Registers& regs, Mem& mem, u32 instr) {
   } else {
     u32 shift = 8 * ((address ^ 0) & 3);
     u32 mask = 0xFFFFFFFF << shift;
-    u32 data = mem.Read32<false>(regs, paddr & ~3, regs.oldPC);
+    u32 data = mem.Read32(regs, paddr & ~3);
     s32 result = s32((regs.gpr[RT(instr)] & ~mask) | (data << shift));
     regs.gpr[RT(instr)] = result;
   }
@@ -269,7 +281,7 @@ void lwr(Registers& regs, Mem& mem, u32 instr) {
   } else {
     u32 shift = 8 * ((address ^ 3) & 3);
     u32 mask = 0xFFFFFFFF >> shift;
-    u32 data = mem.Read32<false>(regs, paddr & ~3, regs.oldPC);
+    u32 data = mem.Read32(regs, paddr & ~3);
     s32 result = s32((regs.gpr[RT(instr)] & ~mask) | (data >> shift));
     regs.gpr[RT(instr)] = result;
   }
@@ -283,22 +295,30 @@ void ld(Registers& regs, Mem& mem, u32 instr) {
     return;
   }
 
-  s64 value = mem.Read64(regs, address, regs.oldPC);
+  s64 value = mem.Read64(regs, address);
   regs.gpr[RT(instr)] = value;
 }
 
 void lld(Registers& regs, Mem& mem, u32 instr) {
-  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  if (!regs.cop0.is_64bit_addressing && !regs.cop0.kernel_mode) {
+    FireException(regs, ExceptionCode::ReservedInstruction, 0, true);
+    return;
+  }
+
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, LOAD, address, paddr)) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
-    regs.gpr[RT(instr)] = mem.Read64<false>(regs, paddr, regs.oldPC);
+    if ((address & 0b111) > 0) {
+      FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
+    } else {
+      regs.gpr[RT(instr)] = mem.Read64(regs, paddr);
+      regs.cop0.llbit = true;
+      regs.cop0.LLAddr = paddr >> 4;
+    }
   }
-
-  regs.cop0.llbit = true;
-  regs.cop0.LLAddr = paddr >> 4;
 }
 
 void ldl(Registers& regs, Mem& mem, u32 instr) {
@@ -310,7 +330,7 @@ void ldl(Registers& regs, Mem& mem, u32 instr) {
   } else {
     s32 shift = 8 * ((address ^ 0) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
-    u64 data = mem.Read64<false>(regs, paddr & ~7, regs.oldPC);
+    u64 data = mem.Read64(regs, paddr & ~7);
     s64 result = (s64) ((regs.gpr[RT(instr)] & ~mask) | (data << shift));
     regs.gpr[RT(instr)] = result;
   }
@@ -325,7 +345,7 @@ void ldr(Registers& regs, Mem& mem, u32 instr) {
   } else {
     s32 shift = 8 * ((address ^ 7) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
-    u64 data = mem.Read64<false>(regs, paddr & ~7, regs.oldPC);
+    u64 data = mem.Read64(regs, paddr & ~7);
     s64 result = (s64) ((regs.gpr[RT(instr)] & ~mask) | (data >> shift));
     regs.gpr[RT(instr)] = result;
   }
@@ -333,7 +353,7 @@ void ldr(Registers& regs, Mem& mem, u32 instr) {
 
 void lbu(Registers& regs, Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  u8 value = mem.Read8(regs, address, regs.oldPC);
+  u8 value = mem.Read8(regs, address);
   regs.gpr[RT(instr)] = value;
 }
 
@@ -345,7 +365,7 @@ void lhu(Registers& regs, Mem& mem, u32 instr) {
     return;
   }
 
-  u16 value = mem.Read16(regs, address, regs.oldPC);
+  u16 value = mem.Read16(regs, address);
   regs.gpr[RT(instr)] = value;
 }
 
@@ -357,28 +377,36 @@ void lwu(Registers& regs, Mem& mem, u32 instr) {
     return;
   }
 
-  u32 value = mem.Read32(regs, address, regs.oldPC);
+  u32 value = mem.Read32(regs, address);
   regs.gpr[RT(instr)] = value;
 }
 
 void sb(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  mem.Write8(regs, dyn, address, regs.gpr[RT(instr)], regs.oldPC);
+  mem.Write8(regs, dyn, address, regs.gpr[RT(instr)]);
 }
 
 void sc(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
-  s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(address, 0b11)) {
-    HandleTLBException(regs, address);
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
+
+  if ((address & 0b11) > 0) {
     FireException(regs, ExceptionCode::AddressErrorStore, 0, true);
+    return;
   }
 
   if(regs.cop0.llbit) {
-    mem.Write32(regs, dyn, address, regs.gpr[RT(instr)], regs.oldPC);
+    regs.cop0.llbit = false;
+    u32 paddr = 0;
+    if(!MapVAddr(regs, STORE, address, paddr)) {
+      HandleTLBException(regs, address);
+      FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
+    } else {
+      mem.Write32(regs, dyn, paddr, regs.gpr[RT(instr)]);
+      regs.gpr[RT(instr)] = 1;
+    }
+  } else {
+    regs.gpr[RT(instr)] = 0;
   }
-
-  regs.gpr[RT(instr)] = (u64)regs.cop0.llbit;
-  regs.cop0.llbit = false;
 }
 
 void scd(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
@@ -390,7 +418,7 @@ void scd(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
   }
 
   if(regs.cop0.llbit) {
-    mem.Write64(regs, dyn, address, regs.gpr[RT(instr)], regs.oldPC);
+    mem.Write64(regs, dyn, address, regs.gpr[RT(instr)]);
   }
 
   regs.gpr[RT(instr)] = (s64)((u64)regs.cop0.llbit);
@@ -410,7 +438,7 @@ void sh(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write16<false>(regs, dyn, physical, regs.gpr[RT(instr)], regs.oldPC);
+    mem.Write16(regs, dyn, physical, regs.gpr[RT(instr)]);
   }
 }
 
@@ -428,7 +456,7 @@ void sw(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write32<false>(regs, dyn, physical, regs.gpr[RT(instr)], regs.oldPC);
+    mem.Write32(regs, dyn, physical, regs.gpr[RT(instr)]);
   }
 }
 
@@ -445,7 +473,7 @@ void sd(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write64<false>(regs, dyn, physical, regs.gpr[RT(instr)], regs.oldPC);
+    mem.Write64(regs, dyn, physical, regs.gpr[RT(instr)]);
   }
 
 }
@@ -459,9 +487,9 @@ void sdl(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
   } else {
     s32 shift = 8 * ((address ^ 0) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
-    u64 data = mem.Read64<false>(regs, paddr & ~7, regs.oldPC);
+    u64 data = mem.Read64(regs, paddr & ~7);
     u64 rt = regs.gpr[RT(instr)];
-    mem.Write64<false>(regs, dyn, paddr & ~7, (data & ~mask) | (rt >> shift), regs.oldPC);
+    mem.Write64(regs, dyn, paddr & ~7, (data & ~mask) | (rt >> shift));
   }
 }
 
@@ -474,9 +502,9 @@ void sdr(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
   } else {
     s32 shift = 8 * ((address ^ 7) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
-    u64 data = mem.Read64<false>(regs, paddr & ~7, regs.oldPC);
+    u64 data = mem.Read64(regs, paddr & ~7);
     u64 rt = regs.gpr[RT(instr)];
-    mem.Write64<false>(regs, dyn, paddr & ~7, (data & ~mask) | (rt << shift), regs.oldPC);
+    mem.Write64(regs, dyn, paddr & ~7, (data & ~mask) | (rt << shift));
   }
 }
 
@@ -489,9 +517,9 @@ void swl(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
   } else {
     u32 shift = 8 * ((address ^ 0) & 3);
     u32 mask = 0xFFFFFFFF >> shift;
-    u32 data = mem.Read32<false>(regs, paddr & ~3, regs.oldPC);
+    u32 data = mem.Read32(regs, paddr & ~3);
     u32 rt = regs.gpr[RT(instr)];
-    mem.Write32<false>(regs, dyn, paddr & ~3, (data & ~mask) | (rt >> shift), regs.oldPC);
+    mem.Write32(regs, dyn, paddr & ~3, (data & ~mask) | (rt >> shift));
   }
 }
 
@@ -504,9 +532,9 @@ void swr(Registers& regs, Mem& mem, Dynarec& dyn, u32 instr) {
   } else {
     u32 shift = 8 * ((address ^ 3) & 3);
     u32 mask = 0xFFFFFFFF << shift;
-    u32 data = mem.Read32<false>(regs, paddr & ~3, regs.oldPC);
+    u32 data = mem.Read32(regs, paddr & ~3);
     u32 rt = regs.gpr[RT(instr)];
-    mem.Write32<false>(regs, dyn, paddr & ~3, (data & ~mask) | (rt << shift), regs.oldPC);
+    mem.Write32(regs, dyn, paddr & ~3, (data & ~mask) | (rt << shift));
   }
 }
 
@@ -525,12 +553,8 @@ void nor(Registers& regs, u32 instr) {
 }
 
 void j(Registers& regs, u32 instr) {
-  s32 target = (instr & 0x3ffffff) << 2;
-  s64 address = (regs.oldPC & ~0xfffffff) | target;
-  if (check_address_error(address, 0b11)) {
-    HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::DataBusError, 0, true);
-  }
+  u64 target = (instr & 0x3ffffff) << 2;
+  u64 address = ((regs.pc - 4) & ~0xfffffff) | target;
 
   branch(regs, true, address);
 }
@@ -686,7 +710,7 @@ void jr(Registers& regs, u32 instr) {
   s64 address = regs.gpr[RS(instr)];
   if (check_address_error(address, 0b11)) {
     HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::DataBusError, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::DataBusError, 0, true);
   }
 
   branch(regs, true, address);
@@ -697,7 +721,7 @@ void dsub(Registers& regs, u32 instr) {
   s64 rs = regs.gpr[RS(instr)];
   s64 result = rs - rt;
   if(check_signed_underflow(rs, rt, result)) {
-    FireException(regs, ExceptionCode::Overflow, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
     regs.gpr[RD(instr)] = result;
   }
@@ -715,7 +739,7 @@ void sub(Registers& regs, u32 instr) {
   s32 rs = regs.gpr[RS(instr)];
   s32 result = rs - rt;
   if(check_signed_underflow(rs, rt, result)) {
-    FireException(regs, ExceptionCode::Overflow, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
     regs.gpr[RD(instr)] = result;
   }
@@ -778,7 +802,7 @@ void mthi(Registers& regs, u32 instr) {
 
 void trap(Registers& regs, bool cond) {
   if(cond) {
-    FireException(regs, ExceptionCode::Trap, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::Trap, 0, true);
   }
 }
 
@@ -798,4 +822,13 @@ void dmtc2(Dynarec& dyn, Registers& regs, u32 instr) {
 void dmfc2(Dynarec& dyn, Registers& regs, u32 instr) {
   regs.gpr[RT(instr)] = dyn.cop2Latch;
 }
+
+void ctc2(u32) {
+
+}
+
+void cfc2(u32) {
+
+}
+
 }

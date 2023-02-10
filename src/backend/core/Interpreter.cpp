@@ -29,12 +29,19 @@ void Interpreter::Step(Mem& mem) {
   regs.prevDelaySlot = regs.delaySlot;
   regs.delaySlot = false;
 
+  u32 paddr = 0;
+  if(!MapVAddr(regs, LOAD, regs.pc, paddr)) {
+    HandleTLBException(regs, regs.pc);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, false);
+    return;
+  }
+
+  u32 instruction = mem.Read32(regs, paddr);
+
   if(ShouldServiceInterrupt(regs)) {
     FireException(regs, ExceptionCode::Interrupt, 0, false);
     return;
   }
-
-  u32 instruction = mem.Read32(regs, regs.pc, regs.pc);
 
   regs.oldPC = regs.pc;
   regs.pc = regs.nextPC;

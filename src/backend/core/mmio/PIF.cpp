@@ -73,11 +73,11 @@ void ProcessPIFCommands(u8* pifRam, Controller& controller, Mem& mem) {
 void DoPIFHLE(Mem& mem, Registers& regs, CartInfo cartInfo) {
   u32 cicType = cartInfo.cicType;
   bool pal = cartInfo.isPAL;
-  mem.Write32<false>(regs, 0x1FC007E4, cicSeeds[cicType], regs.pc);
+  mem.Write32(regs, 0x1FC007E4, cicSeeds[cicType]);
 
   switch(cicType) {
     case CIC_NUS_6101:
-      mem.Write32<false>(regs, 0x318, RDRAM_SIZE, regs.pc);
+      mem.Write32(regs, 0x318, RDRAM_SIZE);
       regs.gpr[2] = (s64)0xFFFFFFFFDF6445CC;
       regs.gpr[3] = (s64)0xFFFFFFFFDF6445CC;
       regs.gpr[4] = 0x45CC;
@@ -102,7 +102,7 @@ void DoPIFHLE(Mem& mem, Registers& regs, CartInfo cartInfo) {
       regs.hi = (s64)0xFFFFFFFF997EC317;
       break;
     case CIC_NUS_7102:
-      mem.Write32<false>(regs, 0x318, RDRAM_SIZE, regs.pc);
+      mem.Write32(regs, 0x318, RDRAM_SIZE);
       regs.gpr[1] = 0x0000000000000001;
       regs.gpr[2] = 0x000000001E324416;
       regs.gpr[3] = 0x000000001E324416;
@@ -127,7 +127,7 @@ void DoPIFHLE(Mem& mem, Registers& regs, CartInfo cartInfo) {
       regs.hi = 0x0000000010054A98;
       break;
     case CIC_NUS_6102_7101:
-      mem.Write32<false>(regs, 0x318, RDRAM_SIZE, regs.pc);
+      mem.Write32(regs, 0x318, RDRAM_SIZE);
       regs.gpr[1] = 0x0000000000000001;
       regs.gpr[2] = 0x000000000EBDA536;
       regs.gpr[3] = 0x000000000EBDA536;
@@ -157,7 +157,7 @@ void DoPIFHLE(Mem& mem, Registers& regs, CartInfo cartInfo) {
       }
       break;
     case CIC_NUS_6103_7103:
-      mem.Write32<false>(regs, 0x318, RDRAM_SIZE, regs.pc);
+      mem.Write32(regs, 0x318, RDRAM_SIZE);
       regs.gpr[0] = 0x0000000000000000;
       regs.gpr[1] = 0x0000000000000001;
       regs.gpr[2] = 0x0000000049A5EE96;
@@ -200,7 +200,7 @@ void DoPIFHLE(Mem& mem, Registers& regs, CartInfo cartInfo) {
       }
       break;
     case CIC_NUS_6105_7105:
-      mem.Write32<false>(regs, 0x3F0, RDRAM_SIZE, regs.pc);
+      mem.Write32(regs, 0x3F0, RDRAM_SIZE);
       regs.gpr[2] = (s64)0xFFFFFFFFF58B0FBF;
       regs.gpr[3] = (s64)0xFFFFFFFFF58B0FBF;
       regs.gpr[4] = 0x0000000000000FBF;
@@ -229,14 +229,14 @@ void DoPIFHLE(Mem& mem, Registers& regs, CartInfo cartInfo) {
         regs.gpr[31] = (s64)0xFFFFFFFFA4001554;
       }
 
-      mem.Write32<false>(regs, 0x04001000, 0x3C0DBFC0, regs.pc);
-      mem.Write32<false>(regs, 0x04001004, 0x8DA807FC, regs.pc);
-      mem.Write32<false>(regs, 0x04001008, 0x25AD07C0, regs.pc);
-      mem.Write32<false>(regs, 0x0400100C, 0x31080080, regs.pc);
-      mem.Write32<false>(regs, 0x04001000, 0x5500FFFC, regs.pc);
-      mem.Write32<false>(regs, 0x04001004, 0x3C0DBFC0, regs.pc);
-      mem.Write32<false>(regs, 0x04001008, 0x8DA80024, regs.pc);
-      mem.Write32<false>(regs, 0x0400100C, 0x3C0BB000, regs.pc);
+      mem.Write32(regs, 0x04001000, 0x3C0DBFC0);
+      mem.Write32(regs, 0x04001004, 0x8DA807FC);
+      mem.Write32(regs, 0x04001008, 0x25AD07C0);
+      mem.Write32(regs, 0x0400100C, 0x31080080);
+      mem.Write32(regs, 0x04001000, 0x5500FFFC);
+      mem.Write32(regs, 0x04001004, 0x3C0DBFC0);
+      mem.Write32(regs, 0x04001008, 0x8DA80024);
+      mem.Write32(regs, 0x0400100C, 0x3C0BB000);
       break;
     case CIC_NUS_6106_7106:
       regs.gpr[2] = (s64)0xFFFFFFFFA95930A4;

@@ -1,7 +1,7 @@
 #include <core/Interpreter.hpp>
 
 #define se_imm(x) ((s16)((x) & 0xFFFF))
-#define check_address_error(mask, addr) (((!regs.cop0.is_64bit_addressing) && (s32)(addr) != (addr)) || (((addr) & (mask)) != 0))
+#define check_address_error(mask, vaddr) (((!regs.cop0.is_64bit_addressing) && (s32)(vaddr) != (vaddr)) || (((vaddr) & (mask)) != 0))
 #define check_signed_overflow(op1, op2, res) (((~((op1) ^ (op2)) & ((op1) ^ (res))) >> ((sizeof(res) * 8) - 1)) & 1)
 #define check_signed_underflow(op1, op2, res) (((((op1) ^ (op2)) & ((op1) ^ (res))) >> ((sizeof(res) * 8) - 1)) & 1)
 
@@ -194,46 +194,63 @@ void Interpreter::lui(u32 instr) {
 
 void Interpreter::lb(Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  regs.gpr[RT(instr)] = (s8)mem.Read8(regs, address, regs.oldPC);
+  u32 paddr = 0;
+  if(!MapVAddr(regs, LOAD, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
+  } else {
+    regs.gpr[RT(instr)] = (s8)mem.Read8(regs, paddr);
+  }
 }
 
 void Interpreter::lh(Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(address, 0b1)) {
+  if ((address & 0b1) > 0) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
     return;
   }
 
-  regs.gpr[RT(instr)] = (s16)mem.Read16(regs, address, regs.oldPC);
+  u32 paddr = 0;
+  if(!MapVAddr(regs, LOAD, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
+  } else {
+    regs.gpr[RT(instr)] = (s16)mem.Read16(regs, paddr);
+  }
 }
 
 void Interpreter::lw(Mem& mem, u32 instr) {
   s16 offset = instr;
   u64 address = regs.gpr[RS(instr)] + offset;
-  if (check_address_error(address, 0b11)) {
+  if (check_address_error(0b11, address)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
     return;
   }
 
-  u32 physical;
+  u32 physical = 0;
   if (!MapVAddr(regs, LOAD, address, physical)) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
-    regs.gpr[RT(instr)] = (s32)mem.Read32<false>(regs, physical, regs.oldPC);
+    regs.gpr[RT(instr)] = (s32)mem.Read32(regs, physical);
   }
 }
 
 void Interpreter::ll(Mem& mem, u32 instr) {
-  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 physical;
   if (!MapVAddr(regs, LOAD, address, physical)) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
-    regs.gpr[RT(instr)] = (s32)mem.Read32<false>(regs, physical, regs.oldPC);
+    if ((address & 0b11) > 0) {
+      FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
+      return;
+    } else {
+      regs.gpr[RT(instr)] = (s32)mem.Read32(regs, physical);
+    }
   }
 
   regs.cop0.llbit = true;
@@ -249,7 +266,7 @@ void Interpreter::lwl(Mem& mem, u32 instr) {
   } else {
     u32 shift = 8 * ((address ^ 0) & 3);
     u32 mask = 0xFFFFFFFF << shift;
-    u32 data = mem.Read32<false>(regs, paddr & ~3, regs.oldPC);
+    u32 data = mem.Read32(regs, paddr & ~3);
     s32 result = s32((regs.gpr[RT(instr)] & ~mask) | (data << shift));
     regs.gpr[RT(instr)] = result;
   }
@@ -264,7 +281,7 @@ void Interpreter::lwr(Mem& mem, u32 instr) {
   } else {
     u32 shift = 8 * ((address ^ 3) & 3);
     u32 mask = 0xFFFFFFFF >> shift;
-    u32 data = mem.Read32<false>(regs, paddr & ~3, regs.oldPC);
+    u32 data = mem.Read32(regs, paddr & ~3);
     s32 result = s32((regs.gpr[RT(instr)] & ~mask) | (data >> shift));
     regs.gpr[RT(instr)] = result;
   }
@@ -272,28 +289,42 @@ void Interpreter::lwr(Mem& mem, u32 instr) {
 
 void Interpreter::ld(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(address, 0b111)) {
+  if (check_address_error(0b111, address)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
     return;
   }
 
-  s64 value = mem.Read64(regs, address, regs.oldPC);
-  regs.gpr[RT(instr)] = value;
+  u32 paddr = 0;
+  if(!MapVAddr(regs, LOAD, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
+  } else {
+    s64 value = mem.Read64(regs, paddr);
+    regs.gpr[RT(instr)] = value;
+  }
 }
 
 void Interpreter::lld(Mem& mem, u32 instr) {
-  s64 address = regs.gpr[RS(instr)] + (s16)instr;
+  if (!regs.cop0.is_64bit_addressing && !regs.cop0.kernel_mode) {
+    FireException(regs, ExceptionCode::ReservedInstruction, 0, true);
+    return;
+  }
+
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, LOAD, address, paddr)) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
-    regs.gpr[RT(instr)] = mem.Read64<false>(regs, paddr, regs.oldPC);
+    if ((address & 0b111) > 0) {
+      FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
+    } else {
+      regs.gpr[RT(instr)] = mem.Read64(regs, paddr);
+      regs.cop0.llbit = true;
+      regs.cop0.LLAddr = paddr >> 4;
+    }
   }
-
-  regs.cop0.llbit = true;
-  regs.cop0.LLAddr = paddr >> 4;
 }
 
 void Interpreter::ldl(Mem& mem, u32 instr) {
@@ -305,7 +336,7 @@ void Interpreter::ldl(Mem& mem, u32 instr) {
   } else {
     s32 shift = 8 * ((address ^ 0) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
-    u64 data = mem.Read64<false>(regs, paddr & ~7, regs.oldPC);
+    u64 data = mem.Read64(regs, paddr & ~7);
     s64 result = (s64) ((regs.gpr[RT(instr)] & ~mask) | (data << shift));
     regs.gpr[RT(instr)] = result;
   }
@@ -320,7 +351,7 @@ void Interpreter::ldr(Mem& mem, u32 instr) {
   } else {
     s32 shift = 8 * ((address ^ 7) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
-    u64 data = mem.Read64<false>(regs, paddr & ~7, regs.oldPC);
+    u64 data = mem.Read64(regs, paddr & ~7);
     s64 result = (s64) ((regs.gpr[RT(instr)] & ~mask) | (data >> shift));
     regs.gpr[RT(instr)] = result;
   }
@@ -328,91 +359,129 @@ void Interpreter::ldr(Mem& mem, u32 instr) {
 
 void Interpreter::lbu(Mem& mem, u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  u8 value = mem.Read8(regs, address, regs.oldPC);
-  regs.gpr[RT(instr)] = value;
+  u32 paddr;
+  if (!MapVAddr(regs, LOAD, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
+  } else {
+    u8 value = mem.Read8(regs, paddr);
+    regs.gpr[RT(instr)] = value;
+  }
 }
 
 void Interpreter::lhu(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(address, 0b1)) {
+  if ((address & 0b1) > 0) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
     return;
   }
-
-  u16 value = mem.Read16(regs, address, regs.oldPC);
-  regs.gpr[RT(instr)] = value;
+  u32 paddr;
+  if (!MapVAddr(regs, LOAD, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
+  } else {
+    u16 value = mem.Read16(regs, paddr);
+    regs.gpr[RT(instr)] = value;
+  }
 }
 
 void Interpreter::lwu(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(address, 0b11)) {
+  if ((address & 0b11) > 0) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
     return;
   }
 
-  u32 value = mem.Read32(regs, address, regs.oldPC);
-  regs.gpr[RT(instr)] = value;
+  u32 paddr;
+  if (!MapVAddr(regs, LOAD, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
+  } else {
+    u32 value = mem.Read32(regs, paddr);
+    regs.gpr[RT(instr)] = value;
+  }
 }
 
 void Interpreter::sb(Mem& mem, u32 instr) {
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  mem.Write8(regs, address, regs.gpr[RT(instr)], regs.oldPC);
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
+  u32 paddr;
+  if (!MapVAddr(regs, STORE, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
+  } else {
+    mem.Write8(regs, paddr, regs.gpr[RT(instr)]);
+  }
 }
 
 void Interpreter::sc(Mem& mem, u32 instr) {
-  s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(address, 0b11)) {
-    HandleTLBException(regs, address);
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
+
+  if ((address & 0b11) > 0) {
     FireException(regs, ExceptionCode::AddressErrorStore, 0, true);
+    return;
   }
 
   if(regs.cop0.llbit) {
-    mem.Write32(regs, address, regs.gpr[RT(instr)], regs.oldPC);
+    regs.cop0.llbit = false;
+    u32 paddr = 0;
+    if(!MapVAddr(regs, STORE, address, paddr)) {
+      HandleTLBException(regs, address);
+      FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
+    } else {
+      mem.Write32(regs, paddr, regs.gpr[RT(instr)]);
+      regs.gpr[RT(instr)] = 1;
+    }
+  } else {
+    regs.gpr[RT(instr)] = 0;
   }
-
-  regs.gpr[RT(instr)] = (u64)regs.cop0.llbit;
-  regs.cop0.llbit = false;
 }
 
 void Interpreter::scd(Mem& mem, u32 instr) {
+  if (!regs.cop0.is_64bit_addressing && !regs.cop0.kernel_mode) {
+    FireException(regs, ExceptionCode::ReservedInstruction, 0, true);
+    return;
+  }
+
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(address, 0b111)) {
+  if ((address & 0b111) > 0) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, true);
     return;
   }
 
   if(regs.cop0.llbit) {
-    mem.Write64(regs, address, regs.gpr[RT(instr)], regs.oldPC);
+    regs.cop0.llbit = false;
+    u32 paddr = 0;
+    if(!MapVAddr(regs, STORE, address, paddr)) {
+      HandleTLBException(regs, address);
+      FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
+    } else {
+      mem.Write32(regs, paddr, regs.gpr[RT(instr)]);
+      regs.gpr[RT(instr)] = 1;
+    }
+  } else {
+    regs.gpr[RT(instr)] = 0;
   }
-
-  regs.gpr[RT(instr)] = (s64)((u64)regs.cop0.llbit);
-  regs.cop0.llbit = false;
 }
 
 void Interpreter::sh(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(address, 0b1)) {
-    HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorStore, 0, true);
-    return;
-  }
 
   u32 physical;
   if(!MapVAddr(regs, STORE, address, physical)) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write16<false>(regs, physical, regs.gpr[RT(instr)], regs.oldPC);
+    mem.Write16(regs, physical, regs.gpr[RT(instr)]);
   }
 }
 
 void Interpreter::sw(Mem& mem, u32 instr) {
   s16 offset = instr;
   u64 address = regs.gpr[RS(instr)] + offset;
-  if (check_address_error(address, 0b11)) {
+  if (check_address_error(0b11, address)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, true);
     return;
@@ -423,13 +492,13 @@ void Interpreter::sw(Mem& mem, u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write32<false>(regs, physical, regs.gpr[RT(instr)], regs.oldPC);
+    mem.Write32(regs, physical, regs.gpr[RT(instr)]);
   }
 }
 
 void Interpreter::sd(Mem& mem, u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(address, 0b11)) {
+  if (check_address_error(0b111, address)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, true);
     return;
@@ -440,9 +509,8 @@ void Interpreter::sd(Mem& mem, u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write64<false>(regs, physical, regs.gpr[RT(instr)], regs.oldPC);
+    mem.Write64(regs, physical, regs.gpr[RT(instr)]);
   }
-
 }
 
 void Interpreter::sdl(Mem& mem, u32 instr) {
@@ -454,9 +522,9 @@ void Interpreter::sdl(Mem& mem, u32 instr) {
   } else {
     s32 shift = 8 * ((address ^ 0) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
-    u64 data = mem.Read64<false>(regs, paddr & ~7, regs.oldPC);
+    u64 data = mem.Read64(regs, paddr & ~7);
     u64 rt = regs.gpr[RT(instr)];
-    mem.Write64<false>(regs, paddr & ~7, (data & ~mask) | (rt >> shift), regs.oldPC);
+    mem.Write64(regs, paddr & ~7, (data & ~mask) | (rt >> shift));
   }
 }
 
@@ -469,9 +537,9 @@ void Interpreter::sdr(Mem& mem, u32 instr) {
   } else {
     s32 shift = 8 * ((address ^ 7) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
-    u64 data = mem.Read64<false>(regs, paddr & ~7, regs.oldPC);
+    u64 data = mem.Read64(regs, paddr & ~7);
     u64 rt = regs.gpr[RT(instr)];
-    mem.Write64<false>(regs, paddr & ~7, (data & ~mask) | (rt << shift), regs.oldPC);
+    mem.Write64(regs, paddr & ~7, (data & ~mask) | (rt << shift));
   }
 }
 
@@ -484,9 +552,9 @@ void Interpreter::swl(Mem& mem, u32 instr) {
   } else {
     u32 shift = 8 * ((address ^ 0) & 3);
     u32 mask = 0xFFFFFFFF >> shift;
-    u32 data = mem.Read32<false>(regs, paddr & ~3, regs.oldPC);
+    u32 data = mem.Read32(regs, paddr & ~3);
     u32 rt = regs.gpr[RT(instr)];
-    mem.Write32<false>(regs, paddr & ~3, (data & ~mask) | (rt >> shift), regs.oldPC);
+    mem.Write32(regs, paddr & ~3, (data & ~mask) | (rt >> shift));
   }
 }
 
@@ -499,9 +567,9 @@ void Interpreter::swr(Mem& mem, u32 instr) {
   } else {
     u32 shift = 8 * ((address ^ 3) & 3);
     u32 mask = 0xFFFFFFFF << shift;
-    u32 data = mem.Read32<false>(regs, paddr & ~3, regs.oldPC);
+    u32 data = mem.Read32(regs, paddr & ~3);
     u32 rt = regs.gpr[RT(instr)];
-    mem.Write32<false>(regs, paddr & ~3, (data & ~mask) | (rt << shift), regs.oldPC);
+    mem.Write32(regs, paddr & ~3, (data & ~mask) | (rt << shift));
   }
 }
 
@@ -522,10 +590,6 @@ void Interpreter::nor(u32 instr) {
 void Interpreter::j(u32 instr) {
   s32 target = (instr & 0x3ffffff) << 2;
   s64 address = (regs.oldPC & ~0xfffffff) | target;
-  if (check_address_error(address, 0b11)) {
-    HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::DataBusError, 0, true);
-  }
 
   branch(true, address);
 }
@@ -679,11 +743,6 @@ void Interpreter::dsra32(u32 instr) {
 
 void Interpreter::jr(u32 instr) {
   s64 address = regs.gpr[RS(instr)];
-  if (check_address_error(address, 0b11)) {
-    HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::DataBusError, 0, regs.oldPC);
-  }
-
   branch(true, address);
 }
 
@@ -692,7 +751,7 @@ void Interpreter::dsub(u32 instr) {
   s64 rs = regs.gpr[RS(instr)];
   s64 result = rs - rt;
   if(check_signed_underflow(rs, rt, result)) {
-    FireException(regs, ExceptionCode::Overflow, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
     regs.gpr[RD(instr)] = result;
   }
@@ -710,7 +769,7 @@ void Interpreter::sub(u32 instr) {
   s32 rs = regs.gpr[RS(instr)];
   s32 result = rs - rt;
   if(check_signed_underflow(rs, rt, result)) {
-    FireException(regs, ExceptionCode::Overflow, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
     regs.gpr[RD(instr)] = result;
   }
@@ -773,7 +832,7 @@ void Interpreter::mthi(u32 instr) {
 
 void Interpreter::trap(bool cond) {
   if(cond) {
-    FireException(regs, ExceptionCode::Trap, 0, regs.oldPC);
+    FireException(regs, ExceptionCode::Trap, 0, true);
   }
 }
 

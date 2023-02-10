@@ -448,16 +448,13 @@ void lwc1(n64::Registers& regs, Mem& mem, u32 instr) {
   }
 
   u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
-  if(addr & 3) {
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
-  }
 
   u32 physical;
   if(!MapVAddr(regs, LOAD, addr, physical)) {
     HandleTLBException(regs, addr);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
-    u32 data = mem.Read32<false>(regs, physical, regs.oldPC);
+    u32 data = mem.Read32(regs, physical);
     regs.cop1.SetReg<u32>(regs.cop0, FT(instr), data);
   }
 }
@@ -469,57 +466,48 @@ void swc1(n64::Registers& regs, Mem& mem, u32 instr) {
   }
 
   u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
-  if(addr & 3) {
-    FireException(regs, ExceptionCode::AddressErrorStore, 0, true);
-  }
 
   u32 physical;
   if(!MapVAddr(regs, STORE, addr, physical)) {
     HandleTLBException(regs, addr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write32<false>(regs, physical, regs.cop1.GetReg<u32>(regs.cop0, FT(instr)), regs.oldPC);
+    mem.Write32(regs, physical, regs.cop1.GetReg<u32>(regs.cop0, FT(instr)));
   }
 }
 
 void ldc1(n64::Registers& regs, Mem& mem, u32 instr) {
   if(!regs.cop0.status.cu1) {
-    FireException(regs, ExceptionCode::CoprocessorUnusable, 1, regs.oldPC);
+    FireException(regs, ExceptionCode::CoprocessorUnusable, 1, true);
     return;
   }
 
   u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
-  if(addr & 7) {
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
-  }
 
   u32 physical;
   if(!MapVAddr(regs, LOAD, addr, physical)) {
     HandleTLBException(regs, addr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
-    u64 data = mem.Read64<false>(regs, physical, regs.oldPC);
+    u64 data = mem.Read64(regs, physical);
     regs.cop1.SetReg<u64>(regs.cop0, FT(instr), data);
   }
 }
 
 void sdc1(n64::Registers& regs, Mem& mem, u32 instr) {
   if(!regs.cop0.status.cu1) {
-    FireException(regs, ExceptionCode::CoprocessorUnusable, 1, regs.oldPC);
+    FireException(regs, ExceptionCode::CoprocessorUnusable, 1, true);
     return;
   }
 
   u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
-  if(addr & 7) {
-    FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
-  }
 
   u32 physical;
   if(!MapVAddr(regs, STORE, addr, physical)) {
     HandleTLBException(regs, addr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write64<false>(regs, physical, regs.cop1.GetReg<u64>(regs.cop0, FT(instr)), regs.oldPC);
+    mem.Write64(regs, physical, regs.cop1.GetReg<u64>(regs.cop0, FT(instr)));
   }
 }
 

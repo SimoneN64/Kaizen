@@ -327,9 +327,9 @@ void Cop0::decode(Registers& regs, Mem& mem, u32 instr) {
     case 0x05: dmtc0(regs, instr); break;
     case 0x10 ... 0x1F:
       switch(mask_cop2) {
-        case 0x01: tlbr(regs); break;
-        case 0x02: tlbw(index & 0x3F, regs); break;
-        case 0x06: tlbw(GetRandom(), regs); break;
+        case 0x01: tlbr(); break;
+        case 0x02: tlbw(index & 0x3F); break;
+        case 0x06: tlbw(GetRandom()); break;
         case 0x08: tlbp(regs); break;
         case 0x18: eret(regs); break;
         default: Util::panic("Unimplemented COP0 function {} {} ({:08X}) ({:016lX})", mask_cop2 >> 3, mask_cop2 & 7, instr, regs.oldPC);

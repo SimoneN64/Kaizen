@@ -63,7 +63,7 @@ void Dynarec::Recompile(Mem& mem, u32 pc) {
   while(!prevBranch) {
     instrInBlock++;
     prevBranch = branch;
-    u32 instr = mem.Read32<false>(regs, loopPC, loopPC);
+    u32 instr = mem.Read32(regs, loopPC);
 
     emitBreakpoint();
     code.mov(rdi, (uintptr_t)&regs);
@@ -104,8 +104,11 @@ int Dynarec::Step(Mem &mem) {
   regs.delaySlot = false;
 
   u32 pc{};
+
   if(!MapVAddr(regs, LOAD, regs.pc, pc)) {
-    Util::panic("[RECOMPILER] Failed to translate PC to physical address (v: {:08X})\n", regs.pc);
+    HandleTLBException(regs, regs.pc);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, false);
+    return 0;
   }
 
   if(blockCache[pc >> 20]) {

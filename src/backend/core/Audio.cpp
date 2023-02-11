@@ -1,5 +1,5 @@
 #include <Audio.hpp>
-#include <SDL_audio.h>
+#include <SDL2/SDL_audio.h>
 #include <log.hpp>
 
 namespace n64 {

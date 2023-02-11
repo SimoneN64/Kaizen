@@ -1,5 +1,4 @@
 #pragma once
-#define SDL_MAIN_HANDLED
 #include <ParallelRDPWrapper.hpp>
 #include <imgui.h>
 #include <imgui_impl_sdl.h>

@@ -61,28 +61,10 @@ file(REMOVE
   ${PROJECT_BINARY_DIR}/resources/shader.frag
   ${PROJECT_BINARY_DIR}/resources/shader.vert)
 
+target_link_libraries(gadolinium PUBLIC frontend frontend-imgui
+  discord-rpc imgui nfd parallel-rdp backend fmt::fmt nlohmann_json::nlohmann_json core dynarec registers interpreter mmio rsp SDL2::SDL2main SDL2::SDL2)
+
 if(WIN32)
   target_compile_definitions(gadolinium PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
   target_compile_options(gadolinium PUBLIC /EHa)
-  target_link_libraries(gadolinium PUBLIC ws2_32)
 endif()
-
-if(${CMAKE_BUILD_TYPE} MATCHES Release)
-  set_property(TARGET gadolinium PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-  if(WIN32)
-    target_compile_options(gadolinium PRIVATE /O2)
-  else()
-    target_compile_options(gadolinium PRIVATE -O3)
-  endif()
-else()
-  if(WIN32)
-    target_compile_options(gadolinium PRIVATE /Od)
-  else()
-    #target_compile_options(gadolinium PRIVATE -fsanitize=address)
-    #target_link_options(gadolinium PRIVATE -fsanitize=address)
-    target_compile_options(gadolinium PRIVATE -g)
-  endif()
-endif()
-
-target_link_libraries(gadolinium PUBLIC SDL2::SDL2main SDL2::SDL2 frontend frontend-imgui
-  discord-rpc imgui nfd parallel-rdp backend fmt::fmt nlohmann_json::nlohmann_json core dynarec registers interpreter mmio rsp)

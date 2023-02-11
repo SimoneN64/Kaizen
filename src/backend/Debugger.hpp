@@ -12,7 +12,9 @@ namespace n64 { struct Core; }
 struct Debugger {
   Debugger(n64::Core& core);
   ~Debugger();
-  bool broken = false, enabled = true;
+
+  bool broken = false,  enabled = true;
+#ifndef DISABLE_GDB_STUB
   int steps = 0;
   gdbstub_t* gdb;
   Breakpoint* breakpoints = nullptr;
@@ -28,7 +30,9 @@ struct Debugger {
     }
     return false;
   }
-
+#else
+  inline bool checkBreakpoint(u32 address) const { return false; }
+#endif
   void tick() const;
   void breakpointHit();
 };

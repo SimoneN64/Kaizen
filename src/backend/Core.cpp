@@ -7,6 +7,9 @@
 
 namespace n64 {
 Core::Core() {
+  if(SDL_GameControllerAddMappingsFromFile("resources/gamecontrollerdb.txt") < 0) {
+    Util::print("Failed to load game controller DB\n");
+  }
   Stop();
 }
 
@@ -25,6 +28,7 @@ CartInfo Core::LoadROM(const std::string& rom_) {
   romLoaded = true;
   
   CartInfo cartInfo = mem.LoadROM(rom);
+  isPAL = cartInfo.isPAL;
   DoPIFHLE(mem, CpuGetRegs(), cartInfo);
 
   return cartInfo;
@@ -32,7 +36,6 @@ CartInfo Core::LoadROM(const std::string& rom_) {
 
 void Core::Run(Window& window, float volumeL, float volumeR) {
   MMIO& mmio = mem.mmio;
-  Controller& controller = mmio.si.controller;
   Registers& regs = CpuGetRegs();
 
   for(int field = 0; field < mmio.vi.numFields; field++) {
@@ -47,6 +50,7 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
 
         for(;cycles <= mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
           int cpuCount = CpuStep();
+          int oldCpuCount = cpuCount;
           while(cpuCount--) {
             if (!mmio.rsp.spStatus.halt) {
               regs.steps++;
@@ -62,7 +66,7 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
             }
           }
 
-          mmio.ai.Step(mem, regs, 1, volumeL, volumeR);
+          mmio.ai.Step(mem, regs, oldCpuCount, volumeL, volumeR);
           scheduler.tick(1, mem, regs);
         }
 
@@ -75,7 +79,7 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
 
       UpdateScreenParallelRdp(*this, window, GetVI());
 
-      int missedCycles = N64_CYCLES_PER_FRAME(false) - frameCycles;
+      int missedCycles = N64_CYCLES_PER_FRAME(isPAL) - frameCycles;
       mmio.ai.Step(mem, regs, missedCycles, volumeL, volumeR);
     } else if(pause && romLoaded) {
       UpdateScreenParallelRdp(*this, window, GetVI());

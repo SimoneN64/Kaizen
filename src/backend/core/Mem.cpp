@@ -17,25 +17,17 @@ void Mem::Reset() {
   std::fill(readPages.begin(), readPages.end(), 0);
   std::fill(writePages.begin(), writePages.end(), 0);
 
-  int i = 0;
-  for(i = 0; i < RDRAM_SIZE / PAGE_SIZE; i++) {
+  for(int i = 0; i < RDRAM_SIZE / PAGE_SIZE; i++) {
     const auto addr = (i * PAGE_SIZE) & RDRAM_DSIZE;
     const auto pointer = (uintptr_t) &mmio.rdp.rdram[addr];
     readPages[i] = pointer;
     writePages[i] = pointer;
   }
 
-  readPages[0x4000] = (uintptr_t) &mmio.rsp.dmem[0];
-  readPages[0x4001] = (uintptr_t) &mmio.rsp.imem[0];
-  writePages[0x4000] = (uintptr_t) &mmio.rsp.dmem[0];
-  writePages[0x4001] = (uintptr_t) &mmio.rsp.imem[0];
-
   sram.resize(SRAM_SIZE);
   std::fill(sram.begin(), sram.end(), 0);
   romMask = 0;
   mmio.Reset();
-  cart.resize(0xFC00000);
-  std::fill(cart.begin(), cart.end(), 0);
 }
 
 CartInfo Mem::LoadROM(const std::string& filename) {
@@ -67,12 +59,6 @@ CartInfo Mem::LoadROM(const std::string& filename) {
   SetCICType(result.cicType, cicChecksum);
   result.isPAL = IsROMPAL();
 
-  for(int i = 0; i < sizeAdjusted / PAGE_SIZE; i++) {
-    const auto addr = (i * PAGE_SIZE) & romMask;
-    const auto pointer = (uintptr_t) &cart[addr];
-    readPages[0x10000 + i] = pointer;
-  }
-
   return result;
 }
 
@@ -97,9 +83,6 @@ template bool MapVAddr<true>(Registers& regs, TLBAccessType accessType, u64 vadd
 template bool MapVAddr<false>(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr);
 
 u8 Mem::Read8(n64::Registers &regs, u32 paddr) {
-  if(paddr >= 0x10000000 && paddr <= 0x1FBFFFFF)
-    paddr = (paddr + 2) & ~2;
-
   const auto page = paddr >> 12;
   const auto offset = paddr & 0xFFF;
   const auto pointer = readPages[page];
@@ -126,6 +109,7 @@ u8 Mem::Read8(n64::Registers &regs, u32 paddr) {
         return (w >> (offs * 8)) & 0xff;
       }
       case 0x10000000 ... 0x1FBFFFFF:
+        paddr = (paddr + 2) & ~2;
         return cart[BYTE_ADDRESS(paddr) & romMask];
       case 0x1FC00000 ... 0x1FC007BF:
         return pifBootrom[BYTE_ADDRESS(paddr) - 0x1FC00000];
@@ -143,9 +127,6 @@ u8 Mem::Read8(n64::Registers &regs, u32 paddr) {
 }
 
 u16 Mem::Read16(n64::Registers &regs, u32 paddr) {
-  if(paddr >= 0x10000000 && paddr <= 0x1FBFFFFF)
-    paddr = (paddr + 2) & ~3;
-
   const auto page = paddr >> 12;
   const auto offset = paddr & 0xFFF;
   const auto pointer = readPages[page];
@@ -167,6 +148,7 @@ u16 Mem::Read16(n64::Registers &regs, u32 paddr) {
       case 0x04500000 ... 0x048FFFFF:
         return mmio.Read(paddr);
       case 0x10000000 ... 0x1FBFFFFF:
+        paddr = (paddr + 2) & ~3;
         return Util::ReadAccess<u16>(cart.data(), HALF_ADDRESS(paddr) & romMask);
       case 0x1FC00000 ... 0x1FC007BF:
         return Util::ReadAccess<u16>(pifBootrom, HALF_ADDRESS(paddr) - 0x1FC00000);
@@ -256,209 +238,25 @@ u64 Mem::Read64(n64::Registers &regs, u32 paddr) {
 
 void Mem::Write8(Registers& regs, n64::JIT::Dynarec& dyn, u32 paddr, u32 val) {
   dyn.InvalidatePage(BYTE_ADDRESS(paddr));
-
-  if(paddr >= 0x04000000 && paddr <= 0x0403FFFF) {
-    val = val << (8 * (3 - (paddr & 3)));
-    paddr = (paddr & DMEM_DSIZE) & ~3;
-  }
-
-  const auto page = paddr >> 12;
-  auto offset = paddr & 0xFFF;
-  const auto pointer = readPages[page];
-
-  if(pointer) {
-    ((u8*)pointer)[BYTE_ADDRESS(offset)] = val;
-  } else {
-    switch (paddr) {
-      case 0x00000000 ... 0x007FFFFF:
-        mmio.rdp.rdram[BYTE_ADDRESS(paddr)] = val;
-        break;
-      case 0x04000000 ... 0x0403FFFF:
-        if (paddr & 0x1000)
-          Util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
-        else
-          Util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
-        break;
-      case 0x04040000 ... 0x040FFFFF:
-      case 0x04100000 ... 0x041FFFFF:
-      case 0x04300000 ...  0x044FFFFF:
-      case 0x04500000 ... 0x048FFFFF:
-        Util::panic("MMIO Write8!\n");
-      case 0x10000000 ... 0x13FFFFFF:
-        break;
-      case 0x1FC007C0 ... 0x1FC007FF:
-        val = val << (8 * (3 - (paddr & 3)));
-        paddr = (paddr - 0x1FC007C0) & ~3;
-        Util::WriteAccess<u32>(pifRam, paddr, htobe32(val));
-        ProcessPIFCommands(pifRam, mmio.si.controller, *this);
-        break;
-      case 0x00800000 ... 0x03FFFFFF:
-      case 0x04200000 ... 0x042FFFFF:
-      case 0x08000000 ... 0x0FFFFFFF:
-      case 0x04900000 ... 0x07FFFFFF:
-      case 0x1FC00800 ... 0x7FFFFFFF:
-      case 0x80000000 ... 0xFFFFFFFF:
-        break;
-      default:
-        Util::panic("Unimplemented 8-bit write at address {:08X} with value {:0X} (PC = {:016X})\n", paddr, val,
-                    (u64) regs.pc);
-    }
-  }
+  return Write8(regs, paddr, val);
 }
 
 void Mem::Write16(Registers& regs, n64::JIT::Dynarec& dyn, u32 paddr, u32 val) {
   dyn.InvalidatePage(HALF_ADDRESS(paddr));
-
-  if(paddr >= 0x04000000 && paddr <= 0x0403FFFF) {
-    val = val << (16 * !(paddr & 2));
-    paddr &= ~3;
-  }
-
-  const auto page = paddr >> 12;
-  auto offset = paddr & 0xFFF;
-  const auto pointer = readPages[page];
-
-  if(pointer) {
-    Util::WriteAccess<u16>((u8*)pointer, HALF_ADDRESS(offset), val);
-  } else {
-    switch (paddr) {
-      case 0x00000000 ... 0x007FFFFF:
-        Util::WriteAccess<u16>(mmio.rdp.rdram.data(), HALF_ADDRESS(paddr), val);
-        break;
-      case 0x04000000 ... 0x0403FFFF:
-        if (paddr & 0x1000)
-          Util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
-        else
-          Util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
-        break;
-      case 0x04040000 ... 0x040FFFFF:
-      case 0x04100000 ... 0x041FFFFF:
-      case 0x04300000 ...  0x044FFFFF:
-      case 0x04500000 ... 0x048FFFFF:
-        Util::panic("MMIO Write16!\n");
-      case 0x10000000 ... 0x13FFFFFF:
-        break;
-      case 0x1FC007C0 ... 0x1FC007FF:
-        val = val << (16 * !(paddr & 2));
-        paddr &= ~3;
-        Util::WriteAccess<u32>(pifRam, paddr - 0x1FC007C0, htobe32(val));
-        ProcessPIFCommands(pifRam, mmio.si.controller, *this);
-        break;
-      case 0x00800000 ... 0x03FFFFFF:
-      case 0x04200000 ... 0x042FFFFF:
-      case 0x08000000 ... 0x0FFFFFFF:
-      case 0x04900000 ... 0x07FFFFFF:
-      case 0x1FC00800 ... 0x7FFFFFFF:
-      case 0x80000000 ... 0xFFFFFFFF:
-        break;
-      default:
-        Util::panic("Unimplemented 16-bit write at address {:08X} with value {:0X} (PC = {:016X})\n", paddr, val,
-                    (u64) regs.pc);
-    }
-  }
+  return Write16(regs, paddr, val);
 }
 
 void Mem::Write32(Registers& regs, n64::JIT::Dynarec& dyn, u32 paddr, u32 val) {
   dyn.InvalidatePage(paddr);
-
-  const auto page = paddr >> 12;
-  auto offset = paddr & 0xFFF;
-  const auto pointer = readPages[page];
-
-  if(pointer) {
-    Util::WriteAccess<u32>((u8*)pointer, offset, val);
-  } else {
-    switch(paddr) {
-      case 0x00000000 ... 0x007FFFFF:
-        Util::WriteAccess<u32>(mmio.rdp.rdram.data(), paddr, val);
-        break;
-      case 0x04000000 ... 0x0403FFFF:
-        if(paddr & 0x1000)
-          Util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
-        else
-          Util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
-        break;
-      case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
-      case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF: mmio.Write(*this, regs, paddr, val); break;
-      case 0x10000000 ... 0x13FF0013: break;
-      case 0x13FF0014: {
-        if(val < ISVIEWER_SIZE) {
-          char* message = (char*)calloc(val + 1, 1);
-          memcpy(message, isviewer, val);
-          fmt::print("{}", message);
-          free(message);
-        }
-      } break;
-      case 0x13FF0020 ... 0x13FFFFFF:
-        Util::WriteAccess<u32>(isviewer, paddr - 0x13FF0020, htobe32(val));
-        break;
-      case 0x1FC007C0 ... 0x1FC007FF:
-        Util::WriteAccess<u32>(pifRam, paddr - 0x1FC007C0, htobe32(val));
-        ProcessPIFCommands(pifRam, mmio.si.controller, *this);
-        break;
-      case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
-      case 0x08000000 ... 0x0FFFFFFF: case 0x04900000 ... 0x07FFFFFF:
-      case 0x1FC00800 ... 0x7FFFFFFF: case 0x80000000 ... 0xFFFFFFFF: break;
-      default: Util::panic("Unimplemented 32-bit write at address {:08X} with value {:0X} (PC = {:016X})\n", paddr, val, (u64)regs.pc);
-    }
-  }
+  return Write32(regs, paddr, val);
 }
 
 void Mem::Write64(Registers& regs, n64::JIT::Dynarec& dyn, u32 paddr, u64 val) {
   dyn.InvalidatePage(paddr);
-
-  if(paddr >= 0x04000000 && paddr <= 0x0403FFFF) {
-    val >>= 32;
-  }
-
-  const auto page = paddr >> 12;
-  auto offset = paddr & 0xFFF;
-  const auto pointer = readPages[page];
-
-  if(pointer) {
-    Util::WriteAccess<u64>((u8*)pointer, offset, val);
-  } else {
-    switch (paddr) {
-      case 0x00000000 ... 0x007FFFFF:
-        Util::WriteAccess<u64>(mmio.rdp.rdram.data(), paddr, val);
-        break;
-      case 0x04000000 ... 0x0403FFFF:
-        if (paddr & 0x1000)
-          Util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
-        else
-          Util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
-        break;
-      case 0x04040000 ... 0x040FFFFF:
-      case 0x04100000 ... 0x041FFFFF:
-      case 0x04300000 ...  0x044FFFFF:
-      case 0x04500000 ... 0x048FFFFF:
-        Util::panic("MMIO Write64!\n");
-      case 0x10000000 ... 0x13FFFFFF:
-        break;
-      case 0x1FC007C0 ... 0x1FC007FF:
-        Util::WriteAccess<u64>(pifRam, paddr - 0x1FC007C0, htobe64(val));
-        ProcessPIFCommands(pifRam, mmio.si.controller, *this);
-        break;
-      case 0x00800000 ... 0x03FFFFFF:
-      case 0x04200000 ... 0x042FFFFF:
-      case 0x08000000 ... 0x0FFFFFFF:
-      case 0x04900000 ... 0x07FFFFFF:
-      case 0x1FC00800 ... 0x7FFFFFFF:
-      case 0x80000000 ... 0xFFFFFFFF:
-        break;
-      default:
-        Util::panic("Unimplemented 64-bit write at address {:08X} with value {:0X} (PC = {:016X})\n", paddr, val,
-                    (u64) regs.pc);
-    }
-  }
+  return Write64(regs, paddr, val);
 }
 
 void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
-  if(paddr >= 0x04000000 && paddr <= 0x0403FFFF) {
-    val = val << (8 * (3 - (paddr & 3)));
-    paddr = (paddr & DMEM_DSIZE) & ~3;
-  }
-
   const auto page = paddr >> 12;
   auto offset = paddr & 0xFFF;
   const auto pointer = readPages[page];
@@ -471,6 +269,8 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
         mmio.rdp.rdram[BYTE_ADDRESS(paddr)] = val;
         break;
       case 0x04000000 ... 0x0403FFFF:
+        val = val << (8 * (3 - (paddr & 3)));
+        paddr = (paddr & DMEM_DSIZE) & ~3;
         if (paddr & 0x1000)
           Util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
         else
@@ -481,7 +281,7 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
       case 0x04300000 ...  0x044FFFFF:
       case 0x04500000 ... 0x048FFFFF:
         Util::panic("MMIO Write8!\n");
-      case 0x10000000 ... 0x13FFFFFF:
+      case 0x10000000 ... 0x1FBFFFFF:
         break;
       case 0x1FC007C0 ... 0x1FC007FF:
         val = val << (8 * (3 - (paddr & 3)));
@@ -505,8 +305,7 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
 
 void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
   if(paddr >= 0x04000000 && paddr <= 0x0403FFFF) {
-    val = val << (16 * !(paddr & 2));
-    paddr &= ~3;
+
   }
 
   const auto page = paddr >> 12;
@@ -521,6 +320,8 @@ void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
         Util::WriteAccess<u16>(mmio.rdp.rdram.data(), HALF_ADDRESS(paddr), val);
         break;
       case 0x04000000 ... 0x0403FFFF:
+        val = val << (16 * !(paddr & 2));
+        paddr &= ~3;
         if (paddr & 0x1000)
           Util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
         else
@@ -531,7 +332,7 @@ void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
       case 0x04300000 ...  0x044FFFFF:
       case 0x04500000 ... 0x048FFFFF:
         Util::panic("MMIO Write16!\n");
-      case 0x10000000 ... 0x13FFFFFF:
+      case 0x10000000 ... 0x1FBFFFFF:
         break;
       case 0x1FC007C0 ... 0x1FC007FF:
         val = val << (16 * !(paddr & 2));
@@ -585,6 +386,7 @@ void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
       case 0x13FF0020 ... 0x13FFFFFF:
         Util::WriteAccess<u32>(isviewer, paddr - 0x13FF0020, htobe32(val));
         break;
+      case 0x14000000 ... 0x1FBFFFFF: break;
       case 0x1FC007C0 ... 0x1FC007FF:
         Util::WriteAccess<u32>(pifRam, paddr - 0x1FC007C0, htobe32(val));
         ProcessPIFCommands(pifRam, mmio.si.controller, *this);
@@ -598,10 +400,6 @@ void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
 }
 
 void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
-  if(paddr >= 0x04000000 && paddr <= 0x0403FFFF) {
-    val >>= 32;
-  }
-
   const auto page = paddr >> 12;
   auto offset = paddr & 0xFFF;
   const auto pointer = readPages[page];
@@ -614,6 +412,7 @@ void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
         Util::WriteAccess<u64>(mmio.rdp.rdram.data(), paddr, val);
         break;
       case 0x04000000 ... 0x0403FFFF:
+        val >>= 32;
         if (paddr & 0x1000)
           Util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
         else
@@ -624,7 +423,7 @@ void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
       case 0x04300000 ...  0x044FFFFF:
       case 0x04500000 ... 0x048FFFFF:
         Util::panic("MMIO Write64!\n");
-      case 0x10000000 ... 0x13FFFFFF:
+      case 0x10000000 ... 0x1FBFFFFF:
         break;
       case 0x1FC007C0 ... 0x1FC007FF:
         Util::WriteAccess<u64>(pifRam, paddr - 0x1FC007C0, htobe64(val));

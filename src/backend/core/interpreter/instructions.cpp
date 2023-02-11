@@ -1,6 +1,5 @@
 #include <core/Interpreter.hpp>
 
-#define se_imm(x) ((s16)((x) & 0xFFFF))
 #define check_address_error(mask, vaddr) (((!regs.cop0.is_64bit_addressing) && (s32)(vaddr) != (vaddr)) || (((vaddr) & (mask)) != 0))
 #define check_signed_overflow(op1, op2, res) (((~((op1) ^ (op2)) & ((op1) ^ (res))) >> ((sizeof(res) * 8) - 1)) & 1)
 #define check_signed_underflow(op1, op2, res) (((((op1) ^ (op2)) & ((op1) ^ (res))) >> ((sizeof(res) * 8) - 1)) & 1)
@@ -161,27 +160,31 @@ void Interpreter::branch_likely(bool cond, s64 address) {
 }
 
 void Interpreter::b(u32 instr, bool cond) {
-  s64 offset = (s64)se_imm(instr) << 2;
+  s16 imm = instr;
+  s64 offset = (s64)imm << 2;
   s64 address = regs.pc + offset;
   branch(cond, address);
 }
 
 void Interpreter::blink(u32 instr, bool cond) {
   regs.gpr[31] = regs.nextPC;
-  s64 offset = (s64)se_imm(instr) << 2;
+  s16 imm = instr;
+  s64 offset = (s64)imm << 2;
   s64 address = regs.pc + offset;
   branch(cond, address);
 }
 
 void Interpreter::bl(u32 instr, bool cond) {
-  s64 offset = (s64)se_imm(instr) << 2;
+  s16 imm = instr;
+  s64 offset = (s64)imm << 2;
   s64 address = regs.pc + offset;
   branch_likely(cond, address);
 }
 
 void Interpreter::bllink(u32 instr, bool cond) {
   regs.gpr[31] = regs.nextPC;
-  s64 offset = (s64)se_imm(instr) << 2;
+  s16 imm = instr;
+  s64 offset = (s64)imm << 2;
   s64 address = regs.pc + offset;
   branch_likely(cond, address);
 }
@@ -605,11 +608,13 @@ void Interpreter::jalr(u32 instr) {
 }
 
 void Interpreter::slti(u32 instr) {
-  regs.gpr[RT(instr)] = regs.gpr[RS(instr)] < se_imm(instr);
+  s16 imm = instr;
+  regs.gpr[RT(instr)] = regs.gpr[RS(instr)] < imm;
 }
 
 void Interpreter::sltiu(u32 instr) {
-  regs.gpr[RT(instr)] = (u64)regs.gpr[RS(instr)] < se_imm(instr);
+  s16 imm = instr;
+  regs.gpr[RT(instr)] = (u64)regs.gpr[RS(instr)] < imm;
 }
 
 void Interpreter::slt(u32 instr) {

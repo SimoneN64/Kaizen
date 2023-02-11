@@ -52,6 +52,7 @@ struct Core {
   int cycles = 0;
 
   bool pause = true;
+  bool isPAL = false;
   bool romLoaded = false;
   SDL_GameController* gamepad;
   bool gamepadConnected = false;

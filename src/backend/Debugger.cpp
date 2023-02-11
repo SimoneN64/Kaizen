@@ -1,4 +1,6 @@
 #include <Debugger.hpp>
+
+#ifndef DISABLE_GDB_STUB
 #define GDBSTUB_IMPLEMENTATION
 #include <gdbstub.h>
 #include <log.hpp>
@@ -254,7 +256,7 @@ Debugger::Debugger(n64::Core& core) : core(core) {
 
   gdb = gdbstub_init(config);
   if (!gdb) {
-    Util::panic("Failed to initialize GDB stub!");
+    Util::panic("Failed to initialize GDB stub!\n");
   }
 }
 
@@ -272,3 +274,20 @@ void Debugger::breakpointHit() {
   broken = true;
   gdbstub_breakpoint_hit(gdb);
 }
+#else
+Debugger::Debugger(n64::Core& core) {
+
+}
+
+Debugger::~Debugger() {
+
+}
+
+void Debugger::tick() const {
+
+}
+
+void Debugger::breakpointHit() {
+
+}
+#endif

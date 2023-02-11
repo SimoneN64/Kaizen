@@ -35,6 +35,7 @@ include_directories(
   ../external/imgui/imgui
   ../external/imgui/imgui/backends
   ../external/discord-rpc/include
+  ../external/gdbstub
   ${SDL2_INCLUDE_DIRS}
 )
 

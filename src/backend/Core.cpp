@@ -49,7 +49,7 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
         }
 
         for(;cycles <= mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
-          int cpuCount = CpuStep();
+          int cpuCount = CpuStep(*this);
           int oldCpuCount = cpuCount;
           while(cpuCount--) {
             if (!mmio.rsp.spStatus.halt) {
@@ -87,6 +87,9 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
       UpdateScreenParallelRdpNoGame(*this, window);
     }
   }
+
+  if(debugger.enabled && romLoaded && !pause)
+    debugger.tick();
 }
 
 #define GET_BUTTON(gamepad, i) SDL_GameControllerGetButton(gamepad, i)

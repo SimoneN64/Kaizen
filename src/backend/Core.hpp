@@ -5,6 +5,7 @@
 #include <string>
 #include <backend/core/Dynarec.hpp>
 #include <backend/core/registers/Registers.hpp>
+#include <Debugger.hpp>
 
 struct Window;
 
@@ -40,10 +41,17 @@ struct Core {
     }
   }
 
-  int CpuStep() {
-    switch(cpuType) {
-      case CpuType::Dynarec: return cpuDynarec->Step(mem);
-      case CpuType::Interpreter: cpuInterp->Step(mem); return 1;
+  static int CpuStep(Core& core) {
+    if (core.debugger.enabled && core.debugger.checkBreakpoint(core.CpuGetRegs().pc)) {
+      core.debugger.breakpointHit();
+    }
+    while (core.debugger.broken) {
+      usleep(1000);
+      core.debugger.tick();
+    }
+    switch(core.cpuType) {
+      case CpuType::Dynarec: return core.cpuDynarec->Step(core.mem);
+      case CpuType::Interpreter: core.cpuInterp->Step(core.mem); return 1;
       case CpuType::NONE: return 0;
     }
   }
@@ -62,5 +70,6 @@ struct Core {
   CpuType cpuType = CpuType::NONE;
   Interpreter* cpuInterp = nullptr;
   JIT::Dynarec* cpuDynarec = nullptr;
+  Debugger debugger{*this};
 };
 }

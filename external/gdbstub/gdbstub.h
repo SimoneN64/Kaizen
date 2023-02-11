@@ -27,7 +27,7 @@
 #ifndef GDBSTUB_H
 #define GDBSTUB_H
 
-#include <stdint.h>
+#include <cstdint>
 #include <sys/types.h>
 
 typedef void (*gdbstub_connected_t)(void * user_data);
@@ -37,9 +37,9 @@ typedef void (*gdbstub_stop_t)(void * user_data);
 typedef void (*gdbstub_step_t)(void * user_data);
 typedef void (*gdbstub_set_breakpoint_t)(void * user_data, uint32_t address);
 typedef void (*gdbstub_clear_breakpoint_t)(void * user_data, uint32_t address);
-typedef ssize_t (*gdbstub_get_memory_t)(void * user_data, char * buffer, size_t buffer_length, uint32_t address, size_t length);
-typedef ssize_t (*gdbstub_get_register_value_t)(void * user_data, char * buffer, size_t buffer_length, int reg);
-typedef ssize_t (*gdbstub_get_general_registers_t)(void * user_data, char * buffer, size_t buffer_length);
+typedef size_t (*gdbstub_get_memory_t)(void * user_data, char * buffer, size_t buffer_length, uint32_t address, size_t length);
+typedef size_t (*gdbstub_get_register_value_t)(void * user_data, char * buffer, size_t buffer_length, int reg);
+typedef size_t (*gdbstub_get_general_registers_t)(void * user_data, char * buffer, size_t buffer_length);
 
 typedef struct gdbstub_config gdbstub_config_t;
 
@@ -90,12 +90,12 @@ void gdbstub_breakpoint_hit(gdbstub_t * gdb);
 
 #ifdef GDBSTUB_IMPLEMENTATION
 
-#include <errno.h>
+#include <cerrno>
 #include <fcntl.h>
 #include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #if defined(WIN32)
 #define WIN32_LEAN_AND_MEAN
@@ -127,15 +127,15 @@ struct gdbstub
     int client;
 
     char buffer[GDBSTUB_BUFFER_LENGTH];
-    ssize_t buffer_length;
+    size_t buffer_length;
 
     gdbstate_t state;
     char packet[GDBSTUB_BUFFER_LENGTH];
-    ssize_t packet_length;
+    size_t packet_length;
     uint8_t packet_checksum;
 
     char checksum[2];
-    ssize_t checksum_length;
+    size_t checksum_length;
 
 };
 
@@ -325,7 +325,7 @@ void _gdbstub_recv(gdbstub_t * gdb)
         return;
     }
 
-    for (ssize_t i = 0; i < gdb->buffer_length; ++i) {
+    for (size_t i = 0; i < gdb->buffer_length; ++i) {
         char c = gdb->buffer[i];
 
         switch (gdb->state)

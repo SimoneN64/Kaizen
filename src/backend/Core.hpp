@@ -6,6 +6,7 @@
 #include <backend/core/Dynarec.hpp>
 #include <backend/core/registers/Registers.hpp>
 #include <Debugger.hpp>
+#include <SDL_timer.h>
 
 struct Window;
 
@@ -46,7 +47,7 @@ struct Core {
       core.debugger.breakpointHit();
     }
     while (core.debugger.broken) {
-      usleep(1000);
+      SDL_Delay(1);
       core.debugger.tick();
     }
     switch(core.cpuType) {

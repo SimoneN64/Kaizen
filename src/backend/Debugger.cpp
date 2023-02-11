@@ -110,17 +110,17 @@ const char* memory_map =
   "<memory type=\"rom\" start=\"0xffffffffbfc00000\" length=\"0x7c0\"/>" // PIF ROM
   "</memory-map>";
 
-void n64_debug_start(void* user_data) {
+void debugStart(void* user_data) {
   auto* debugger = (Debugger*)user_data;
   debugger->broken = false;
 }
 
-void n64_debug_stop(void* user_data) {
+void debugStop(void* user_data) {
   auto* debugger = (Debugger*)user_data;
   debugger->broken = true;
 }
 
-void n64_debug_step(void* user_data) {
+void debugStep(void* user_data) {
   auto* debugger = (Debugger*)user_data;
   bool old_broken = debugger->broken;
   debugger->broken = false;
@@ -129,7 +129,7 @@ void n64_debug_step(void* user_data) {
   debugger->steps += 2;
 }
 
-void n64_debug_set_breakpoint(void* user_data, u32 address) {
+void debugSetBreakpoint(void* user_data, u32 address) {
   auto* debugger = (Debugger*)user_data;
   auto* breakpoint = (Breakpoint*)malloc(sizeof(Breakpoint));
   breakpoint->address = address;
@@ -149,7 +149,7 @@ void n64_debug_set_breakpoint(void* user_data, u32 address) {
   }
 }
 
-void n64_debug_clear_breakpoint(void* user_data, u32 address) {
+void debugClearBreakpoint(void* user_data, u32 address) {
   auto* debugger = (Debugger*)user_data;
   if (debugger->breakpoints == nullptr) {
     return; // No breakpoints set at all
@@ -171,7 +171,7 @@ void n64_debug_clear_breakpoint(void* user_data, u32 address) {
   }
 }
 
-ssize_t n64_debug_get_memory(void* user_data, char* buffer, size_t length, u32 address, size_t bytes) {
+size_t debugGetMemory(void* user_data, char* buffer, size_t length, u32 address, size_t bytes) {
   auto* debugger = (Debugger*)user_data;
   printf("Checking memory at address 0x%08X\n", address);
   int printed = 0;
@@ -188,7 +188,7 @@ ssize_t n64_debug_get_memory(void* user_data, char* buffer, size_t length, u32 a
   return printed + 1;
 }
 
-ssize_t n64_debug_get_register_value(void* user_data, char * buffer, size_t buffer_length, int reg) {
+size_t debugGetRegisterValue(void* user_data, char * buffer, size_t buffer_length, int reg) {
   auto* debugger = (Debugger*)user_data;
   switch (reg) {
     case 0 ... 31:
@@ -204,7 +204,7 @@ ssize_t n64_debug_get_register_value(void* user_data, char * buffer, size_t buff
     case 36:
       return snprintf(buffer, buffer_length, "%08x", debugger->core.CpuGetRegs().cop0.cause.raw);
     case 37:
-      printf("Sending PC: 0x%016lX\n", debugger->core.CpuGetRegs().pc);
+      //printf("Sending PC: 0x%016lX\n", debugger->core.CpuGetRegs().pc);
       return snprintf(buffer, buffer_length, "%016lx", debugger->core.CpuGetRegs().pc);
     case 38 ... 71: // TODO FPU stuff
       return snprintf(buffer, buffer_length, "%08x", 0);
@@ -213,10 +213,10 @@ ssize_t n64_debug_get_register_value(void* user_data, char * buffer, size_t buff
   }
 }
 
-ssize_t n64_debug_get_general_registers(void* user_data, char * buffer, size_t buffer_length) {
+size_t debugGetGeneralRegisters(void* user_data, char * buffer, size_t buffer_length) {
   auto* debugger = (Debugger*)user_data;
   printf("The buffer length is %ld!\n", buffer_length);
-  ssize_t printed = 0;
+  size_t printed = 0;
   for (int i = 0; i < 32; i++) {
     int ofs = i * 16; // 64 bit regs take up 16 ascii chars to print in hex
     if (ofs + 16 > buffer_length) {
@@ -233,14 +233,14 @@ Debugger::Debugger(n64::Core& core) : core(core) {
   memset(&config, 0, sizeof(gdbstub_config_t));
   config.port                  = 1337;
   config.user_data             = this;
-  config.start                 = (gdbstub_start_t) n64_debug_start;
-  config.stop                  = (gdbstub_stop_t) n64_debug_stop;
-  config.step                  = (gdbstub_step_t) n64_debug_step;
-  config.set_breakpoint        = (gdbstub_set_breakpoint_t) n64_debug_set_breakpoint;
-  config.clear_breakpoint      = (gdbstub_clear_breakpoint_t) n64_debug_clear_breakpoint;
-  config.get_memory            = (gdbstub_get_memory_t) n64_debug_get_memory;
-  config.get_register_value    = (gdbstub_get_register_value_t) n64_debug_get_register_value;
-  config.get_general_registers = (gdbstub_get_general_registers_t) n64_debug_get_general_registers;
+  config.start                 = (gdbstub_start_t) debugStart;
+  config.stop                  = (gdbstub_stop_t) debugStop;
+  config.step                  = (gdbstub_step_t) debugStep;
+  config.set_breakpoint        = (gdbstub_set_breakpoint_t) debugSetBreakpoint;
+  config.clear_breakpoint      = (gdbstub_clear_breakpoint_t) debugClearBreakpoint;
+  config.get_memory            = (gdbstub_get_memory_t) debugGetMemory;
+  config.get_register_value    = (gdbstub_get_register_value_t) debugGetRegisterValue;
+  config.get_general_registers = (gdbstub_get_general_registers_t) debugGetGeneralRegisters;
 
   config.target_config = target_xml;
   config.target_config_length = strlen(target_xml);

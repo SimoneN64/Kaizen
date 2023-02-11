@@ -88,7 +88,7 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
     }
   }
 
-  if(debugger.enabled && romLoaded && !pause)
+  if(debugger.enabled)
     debugger.tick();
 }
 

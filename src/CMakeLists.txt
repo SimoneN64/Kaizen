@@ -64,6 +64,7 @@ file(REMOVE
 if(WIN32)
   target_compile_definitions(gadolinium PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
   target_compile_options(gadolinium PUBLIC /EHa)
+  target_link_libraries(gadolinium PUBLIC ws2_32)
 endif()
 
 if(${CMAKE_BUILD_TYPE} MATCHES Release)

@@ -45,8 +45,12 @@ add_library(parallel-rdp
 )
 
 if(WIN32)
-  target_compile_definitions(parallel-rdp PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
-  target_compile_options(parallel-rdp PUBLIC /EHa)
+  target_compile_definitions(parallel-rdp PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS VK_USE_PLATFORM_WIN32_KHR)
+  if(MSVC)
+    target_compile_options(parallel-rdp PUBLIC /EHa)
+  endif()
+else()
+  target_link_libraries(parallel-rdp PUBLIC dl)
 endif()
 
 target_compile_definitions(parallel-rdp PUBLIC GRANITE_VULKAN_MT)
@@ -59,9 +63,3 @@ target_include_directories(parallel-rdp PUBLIC
   parallel-rdp-standalone/vulkan-headers/include
   parallel-rdp-standalone/util
 )
-
-if(WIN32)
-  target_compile_definitions(parallel-rdp PUBLIC VK_USE_PLATFORM_WIN32_KHR)
-else()
-  target_link_libraries(parallel-rdp PUBLIC dl)
-endif()

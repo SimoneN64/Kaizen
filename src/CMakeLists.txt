@@ -66,5 +66,7 @@ target_link_libraries(gadolinium PUBLIC frontend frontend-imgui
 
 if(WIN32)
   target_compile_definitions(gadolinium PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
-  target_compile_options(gadolinium PUBLIC /EHa)
+  if(MSVC)
+    target_compile_options(parallel-rdp PUBLIC /EHa)
+  endif()
 endif()

@@ -39,7 +39,7 @@ static_assert(sizeof(Controller) == 4);
 struct Mem;
 struct Registers;
 
-const u32 cicSeeds[] = {
+constexpr u32 cicSeeds[] = {
   0x0,
   0x00043F3F, // CIC_NUS_6101
   0x00043F3F, // CIC_NUS_7102
@@ -62,5 +62,5 @@ enum CICType {
 struct CartInfo;
 
 void ProcessPIFCommands(u8*, Controller&, Mem&);
-void DoPIFHLE(Mem& mem, Registers& regs, CartInfo cartInfo);
+void ExecutePIF(Mem& mem, Registers& regs, CartInfo cartInfo);
 }

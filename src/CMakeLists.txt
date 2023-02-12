@@ -64,6 +64,11 @@ file(REMOVE
 target_link_libraries(gadolinium PUBLIC frontend frontend-imgui
   discord-rpc imgui nfd parallel-rdp backend fmt::fmt nlohmann_json::nlohmann_json core dynarec registers interpreter mmio rsp SDL2::SDL2main SDL2::SDL2)
 
+if(${CMAKE_BUILD_TYPE} MATCHES Debug)
+  add_compile_options(-fsanitize=address -fsanitize=undefined)
+  add_link_options(-fsanitize=address -fsanitize=undefined)
+endif()
+
 if(WIN32)
   target_compile_definitions(gadolinium PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
   if(MSVC)

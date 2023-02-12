@@ -14,7 +14,7 @@ namespace fs = std::filesystem;
       name = value;                               \
     } else {                                      \
       settingsFile.clear();                       \
-      settings[param1][param2] = defaultVal;   \
+      settings[param1][param2] = defaultVal;      \
       settingsFile << settings;                   \
       name = defaultVal;                          \
     }                                             \

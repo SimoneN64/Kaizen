@@ -15,8 +15,7 @@ struct Window {
   ImDrawData* Present(n64::Core& core);
 
   [[nodiscard]] bool gotClosed(SDL_Event event);
-  ImFont *uiFont{}, *codeFont{};
-  u32 windowID{};
+  ImFont *uiFont{};
   Settings settings;
   GameList gameList;
   void LoadROM(n64::Core& core, const std::string& path);

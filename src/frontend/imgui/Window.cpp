@@ -37,8 +37,6 @@ void Window::InitSDL() {
     SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI
   );
 
-  windowID = SDL_GetWindowID(window);
-
   if(volkInitialize() != VK_SUCCESS) {
     Util::panic("Failed to load Volk!");
   }
@@ -116,9 +114,6 @@ void Window::InitImgui() {
   initInfo.CheckVkResultFn = check_vk_result;
   ImGui_ImplVulkan_Init(&initInfo, GetVkRenderPass());
 
-  uiFont = io.Fonts->AddFontFromFileTTF("resources/OpenSans.ttf", 15.f);
-  codeFont = io.Fonts->AddFontFromFileTTF("resources/Sweet16.ttf", 15.f);
-
   int displayIndex = SDL_GetWindowDisplayIndex(window);
   float ddpi, hdpi, vdpi;
   SDL_GetDisplayDPI(displayIndex, &ddpi, &hdpi, &vdpi);
@@ -126,7 +121,6 @@ void Window::InitImgui() {
   ddpi /= 96.f;
 
   uiFont = io.Fonts->AddFontFromFileTTF("resources/OpenSans.ttf", 16.f * ddpi);
-  codeFont = io.Fonts->AddFontFromFileTTF("resources/Sweet16.ttf", 16.f * ddpi);
 
   ImGui::GetStyle().ScaleAllSizes(ddpi);
 
@@ -138,11 +132,12 @@ void Window::InitImgui() {
 }
 
 Window::~Window() {
-  VkResult err = vkDeviceWaitIdle(device);
+  auto err = vkDeviceWaitIdle(device);
   check_vk_result(err);
   ImGui_ImplVulkan_Shutdown();
   ImGui_ImplSDL2_Shutdown();
   ImGui::DestroyContext();
+
   SDL_DestroyWindow(window);
   SDL_DestroyWindow(g_Window);
   SDL_Quit();

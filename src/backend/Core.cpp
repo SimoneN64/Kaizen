@@ -29,7 +29,7 @@ CartInfo Core::LoadROM(const std::string& rom_) {
   
   CartInfo cartInfo = mem.LoadROM(rom);
   isPAL = cartInfo.isPAL;
-  DoPIFHLE(mem, CpuGetRegs(), cartInfo);
+  ExecutePIF(mem, CpuGetRegs(), cartInfo);
 
   return cartInfo;
 }

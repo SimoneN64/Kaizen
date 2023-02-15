@@ -8880,12 +8880,14 @@
 			"md5": "530311472663F4885C387C90C8BB2FCF"
 		},
 		{
-			"name": "Ronaldinho's Soccer 64 (Brazil) (Pirate)",
+			"name": "Ronaldinho's Soccer 64",
+			"region": "Brazil",
 			"crc": "C296ECA1",
 			"md5": "14F1F43A0314C3E36D9D248E1F03EC2E"
 		},
 		{
-			"name": "Ronaldinho's Soccer 64 (Brazil) (Pirate)",
+			"name": "Ronaldinho's Soccer 64",
+			"region": "Brazil",
 			"crc": "19380E04",
 			"md5": "A8EC2EC0D25D5F920E9F53F5BBB9A653"
 		},

@@ -13,15 +13,19 @@ void add(Registers& regs, u32 instr) {
   if(check_signed_overflow(rs, rt, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
-    regs.gpr[RD(instr)] = s32(result);
+    if(likely(RD(instr) != 0)) {
+      regs.gpr[RD(instr)] = s32(result);
+    }
   }
 }
 
 void addu(Registers& regs, u32 instr) {
-  s32 rs = (s32)regs.gpr[RS(instr)];
-  s32 rt = (s32)regs.gpr[RT(instr)];
-  s32 result = rs + rt;
-  regs.gpr[RD(instr)] = result;
+  if(likely(RD(instr) != 0)) {
+    s32 rs = (s32)regs.gpr[RS(instr)];
+    s32 rt = (s32)regs.gpr[RT(instr)];
+    s32 result = rs + rt;
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void addi(Registers& regs, u32 instr) {
@@ -49,14 +53,18 @@ void dadd(Registers& regs, u32 instr) {
   if(check_signed_overflow(rs, rt, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
-    regs.gpr[RD(instr)] = result;
+    if(likely(RD(instr) != 0)) {
+      regs.gpr[RD(instr)] = result;
+    }
   }
 }
 
 void daddu(Registers& regs, u32 instr) {
-  s64 rs = regs.gpr[RS(instr)];
-  s64 rt = regs.gpr[RT(instr)];
-  regs.gpr[RD(instr)] = rs + rt;
+  if(likely(RD(instr) != 0)) {
+    s64 rs = regs.gpr[RS(instr)];
+    s64 rt = regs.gpr[RT(instr)];
+    regs.gpr[RD(instr)] = rs + rt;
+  }
 }
 
 void daddi(Registers& regs, u32 instr) {
@@ -545,11 +553,15 @@ void ori(Registers& regs, u32 instr) {
 }
 
 void or_(Registers& regs, u32 instr) {
-  regs.gpr[RD(instr)] = regs.gpr[RS(instr)] | regs.gpr[RT(instr)];
+  if(likely(RD(instr) != 0)) {
+    regs.gpr[RD(instr)] = regs.gpr[RS(instr)] | regs.gpr[RT(instr)];
+  }
 }
 
 void nor(Registers& regs, u32 instr) {
-  regs.gpr[RD(instr)] = ~(regs.gpr[RS(instr)] | regs.gpr[RT(instr)]);
+  if(likely(RD(instr) != 0)) {
+    regs.gpr[RD(instr)] = ~(regs.gpr[RS(instr)] | regs.gpr[RT(instr)]);
+  }
 }
 
 void j(Registers& regs, u32 instr) {
@@ -566,7 +578,9 @@ void jal(Registers& regs, u32 instr) {
 
 void jalr(Registers& regs, u32 instr) {
   branch(regs, true, regs.gpr[RS(instr)]);
-  regs.gpr[RD(instr)] = regs.pc + 4;
+  if(likely(RD(instr) != 0)) {
+    regs.gpr[RD(instr)] = regs.pc + 4;
+  }
 }
 
 void slti(Registers& regs, u32 instr) {
@@ -578,11 +592,15 @@ void sltiu(Registers& regs, u32 instr) {
 }
 
 void slt(Registers& regs, u32 instr) {
-  regs.gpr[RD(instr)] = regs.gpr[RS(instr)] < regs.gpr[RT(instr)];
+  if(likely(RD(instr) != 0)) {
+    regs.gpr[RD(instr)] = regs.gpr[RS(instr)] < regs.gpr[RT(instr)];
+  }
 }
 
 void sltu(Registers& regs, u32 instr) {
-  regs.gpr[RD(instr)] = (u64)regs.gpr[RS(instr)] < (u64)regs.gpr[RT(instr)];
+  if(likely(RD(instr) != 0)) {
+    regs.gpr[RD(instr)] = (u64) regs.gpr[RS(instr)] < (u64) regs.gpr[RT(instr)];
+  }
 }
 
 void xori(Registers& regs, u32 instr) {
@@ -591,7 +609,9 @@ void xori(Registers& regs, u32 instr) {
 }
 
 void xor_(Registers& regs, u32 instr) {
-  regs.gpr[RD(instr)] = regs.gpr[RT(instr)] ^ regs.gpr[RS(instr)];
+  if(likely(RD(instr) != 0)) {
+    regs.gpr[RD(instr)] = regs.gpr[RT(instr)] ^ regs.gpr[RS(instr)];
+  }
 }
 
 void andi(Registers& regs, u32 instr) {
@@ -600,110 +620,142 @@ void andi(Registers& regs, u32 instr) {
 }
 
 void and_(Registers& regs, u32 instr) {
-  regs.gpr[RD(instr)] = regs.gpr[RS(instr)] & regs.gpr[RT(instr)];
+  if(likely(RD(instr) != 0)) {
+    regs.gpr[RD(instr)] = regs.gpr[RS(instr)] & regs.gpr[RT(instr)];
+  }
 }
 
 void sll(Registers& regs, u32 instr) {
-  u8 sa = ((instr >> 6) & 0x1f);
-  s32 result = regs.gpr[RT(instr)] << sa;
-  regs.gpr[RD(instr)] = (s64)result;
+  if(likely(RD(instr) != 0)) {
+    u8 sa = ((instr >> 6) & 0x1f);
+    s32 result = regs.gpr[RT(instr)] << sa;
+    regs.gpr[RD(instr)] = (s64) result;
+  }
 }
 
 void sllv(Registers& regs, u32 instr) {
-  u8 sa = (regs.gpr[RS(instr)]) & 0x1F;
-  u32 rt = regs.gpr[RT(instr)];
-  s32 result = rt << sa;
-  regs.gpr[RD(instr)] = (s64)result;
+  if(likely(RD(instr) != 0)) {
+    u8 sa = (regs.gpr[RS(instr)]) & 0x1F;
+    u32 rt = regs.gpr[RT(instr)];
+    s32 result = rt << sa;
+    regs.gpr[RD(instr)] = (s64) result;
+  }
 }
 
 void dsll32(Registers& regs, u32 instr) {
-  u8 sa = ((instr >> 6) & 0x1f);
-  s64 result = regs.gpr[RT(instr)] << (sa + 32);
-  regs.gpr[RD(instr)] = result;
+  if(likely(RD(instr) != 0)) {
+    u8 sa = ((instr >> 6) & 0x1f);
+    s64 result = regs.gpr[RT(instr)] << (sa + 32);
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void dsll(Registers& regs, u32 instr) {
-  u8 sa = ((instr >> 6) & 0x1f);
-  s64 result = regs.gpr[RT(instr)] << sa;
-  regs.gpr[RD(instr)] = result;
+  if(likely(RD(instr) != 0)) {
+    u8 sa = ((instr >> 6) & 0x1f);
+    s64 result = regs.gpr[RT(instr)] << sa;
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void dsllv(Registers& regs, u32 instr) {
-  s64 sa = regs.gpr[RS(instr)] & 63;
-  s64 result = regs.gpr[RT(instr)] << sa;
-  regs.gpr[RD(instr)] = result;
+  if(likely(RD(instr) != 0)) {
+    s64 sa = regs.gpr[RS(instr)] & 63;
+    s64 result = regs.gpr[RT(instr)] << sa;
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void srl(Registers& regs, u32 instr) {
-  u32 rt = regs.gpr[RT(instr)];
-  u8 sa = ((instr >> 6) & 0x1f);
-  u32 result = rt >> sa;
-  regs.gpr[RD(instr)] = (s32)result;
+  if(likely(RD(instr) != 0)) {
+    u32 rt = regs.gpr[RT(instr)];
+    u8 sa = ((instr >> 6) & 0x1f);
+    u32 result = rt >> sa;
+    regs.gpr[RD(instr)] = (s32) result;
+  }
 }
 
 void srlv(Registers& regs, u32 instr) {
-  u8 sa = (regs.gpr[RS(instr)] & 0x1F);
-  u32 rt = regs.gpr[RT(instr)];
-  s32 result = rt >> sa;
-  regs.gpr[RD(instr)] = (s64)result;
+  if(likely(RD(instr) != 0)) {
+    u8 sa = (regs.gpr[RS(instr)] & 0x1F);
+    u32 rt = regs.gpr[RT(instr)];
+    s32 result = rt >> sa;
+    regs.gpr[RD(instr)] = (s64) result;
+  }
 }
 
 void dsrl(Registers& regs, u32 instr) {
-  u64 rt = regs.gpr[RT(instr)];
-  u8 sa = ((instr >> 6) & 0x1f);
-  u64 result = rt >> sa;
-  regs.gpr[RD(instr)] = s64(result);
+  if(likely(RD(instr) != 0)) {
+    u64 rt = regs.gpr[RT(instr)];
+    u8 sa = ((instr >> 6) & 0x1f);
+    u64 result = rt >> sa;
+    regs.gpr[RD(instr)] = s64(result);
+  }
 }
 
 void dsrlv(Registers& regs, u32 instr) {
-  u8 amount = (regs.gpr[RS(instr)] & 63);
-  u64 rt = regs.gpr[RT(instr)];
-  u64 result = rt >> amount;
-  regs.gpr[RD(instr)] = s64(result);
+  if(likely(RD(instr) != 0)) {
+    u8 amount = (regs.gpr[RS(instr)] & 63);
+    u64 rt = regs.gpr[RT(instr)];
+    u64 result = rt >> amount;
+    regs.gpr[RD(instr)] = s64(result);
+  }
 }
 
 void dsrl32(Registers& regs, u32 instr) {
-  u64 rt = regs.gpr[RT(instr)];
-  u8 sa = ((instr >> 6) & 0x1f);
-  u64 result = rt >> (sa + 32);
-  regs.gpr[RD(instr)] = s64(result);
+  if(likely(RD(instr) != 0)) {
+    u64 rt = regs.gpr[RT(instr)];
+    u8 sa = ((instr >> 6) & 0x1f);
+    u64 result = rt >> (sa + 32);
+    regs.gpr[RD(instr)] = s64(result);
+  }
 }
 
 void sra(Registers& regs, u32 instr) {
-  s64 rt = regs.gpr[RT(instr)];
-  u8 sa = ((instr >> 6) & 0x1f);
-  s32 result = rt >> sa;
-  regs.gpr[RD(instr)] = result;
+  if(likely(RD(instr) != 0)) {
+    s64 rt = regs.gpr[RT(instr)];
+    u8 sa = ((instr >> 6) & 0x1f);
+    s32 result = rt >> sa;
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void srav(Registers& regs, u32 instr) {
-  s64 rt = regs.gpr[RT(instr)];
-  s64 rs = regs.gpr[RS(instr)];
-  u8 sa = rs & 0x1f;
-  s32 result = rt >> sa;
-  regs.gpr[RD(instr)] = result;
+  if(likely(RD(instr) != 0)) {
+    s64 rt = regs.gpr[RT(instr)];
+    s64 rs = regs.gpr[RS(instr)];
+    u8 sa = rs & 0x1f;
+    s32 result = rt >> sa;
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void dsra(Registers& regs, u32 instr) {
-  s64 rt = regs.gpr[RT(instr)];
-  u8 sa = ((instr >> 6) & 0x1f);
-  s64 result = rt >> sa;
-  regs.gpr[RD(instr)] = result;
+  if(likely(RD(instr) != 0)) {
+    s64 rt = regs.gpr[RT(instr)];
+    u8 sa = ((instr >> 6) & 0x1f);
+    s64 result = rt >> sa;
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void dsrav(Registers& regs, u32 instr) {
-  s64 rt = regs.gpr[RT(instr)];
-  s64 rs = regs.gpr[RS(instr)];
-  s64 sa = rs & 63;
-  s64 result = rt >> sa;
-  regs.gpr[RD(instr)] = result;
+  if(likely(RD(instr) != 0)) {
+    s64 rt = regs.gpr[RT(instr)];
+    s64 rs = regs.gpr[RS(instr)];
+    s64 sa = rs & 63;
+    s64 result = rt >> sa;
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void dsra32(Registers& regs, u32 instr) {
-  s64 rt = regs.gpr[RT(instr)];
-  u8 sa = ((instr >> 6) & 0x1f);
-  s64 result = rt >> (sa + 32);
-  regs.gpr[RD(instr)] = result;
+  if(likely(RD(instr) != 0)) {
+    s64 rt = regs.gpr[RT(instr)];
+    u8 sa = ((instr >> 6) & 0x1f);
+    s64 result = rt >> (sa + 32);
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void jr(Registers& regs, u32 instr) {
@@ -723,15 +775,19 @@ void dsub(Registers& regs, u32 instr) {
   if(check_signed_underflow(rs, rt, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
-    regs.gpr[RD(instr)] = result;
+    if(likely(RD(instr) != 0)) {
+      regs.gpr[RD(instr)] = result;
+    }
   }
 }
 
 void dsubu(Registers& regs, u32 instr) {
-  u64 rt = regs.gpr[RT(instr)];
-  u64 rs = regs.gpr[RS(instr)];
-  u64 result = rs - rt;
-  regs.gpr[RD(instr)] = s64(result);
+  if(likely(RD(instr) != 0)) {
+    u64 rt = regs.gpr[RT(instr)];
+    u64 rs = regs.gpr[RS(instr)];
+    u64 result = rs - rt;
+    regs.gpr[RD(instr)] = s64(result);
+  }
 }
 
 void sub(Registers& regs, u32 instr) {
@@ -741,15 +797,19 @@ void sub(Registers& regs, u32 instr) {
   if(check_signed_underflow(rs, rt, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
-    regs.gpr[RD(instr)] = result;
+    if(likely(RD(instr) != 0)) {
+      regs.gpr[RD(instr)] = result;
+    }
   }
 }
 
 void subu(Registers& regs, u32 instr) {
-  u32 rt = regs.gpr[RT(instr)];
-  u32 rs = regs.gpr[RS(instr)];
-  u32 result = rs - rt;
-  regs.gpr[RD(instr)] = (s64)((s32)result);
+  if(likely(RD(instr) != 0)) {
+    u32 rt = regs.gpr[RT(instr)];
+    u32 rs = regs.gpr[RS(instr)];
+    u32 result = rs - rt;
+    regs.gpr[RD(instr)] = (s64) ((s32) result);
+  }
 }
 
 void dmultu(Registers& regs, u32 instr) {
@@ -785,11 +845,15 @@ void mult(Registers& regs, u32 instr) {
 }
 
 void mflo(Registers& regs, u32 instr) {
-  regs.gpr[RD(instr)] = regs.lo;
+  if(likely(RD(instr) != 0)) {
+    regs.gpr[RD(instr)] = regs.lo;
+  }
 }
 
 void mfhi(Registers& regs, u32 instr) {
-  regs.gpr[RD(instr)] = regs.hi;
+  if(likely(RD(instr) != 0)) {
+    regs.gpr[RD(instr)] = regs.hi;
+  }
 }
 
 void mtlo(Registers& regs, u32 instr) {

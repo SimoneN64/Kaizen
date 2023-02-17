@@ -5,10 +5,10 @@
 #include <vector>
 #include <backend/RomHelpers.hpp>
 #include <log.hpp>
+#include <Registers.hpp>
+#include <algorithm>
 
 namespace n64 {
-struct Registers;
-
 struct CartInfo {
   bool isPAL;
   u32 cicType;
@@ -20,12 +20,14 @@ struct Dynarec;
 }
 
 struct Mem {
-  ~Mem() = default;
+  ~Mem() {
+    free(sram);
+  }
   Mem();
   void Reset();
   CartInfo LoadROM(const std::string&);
-  [[nodiscard]] auto GetRDRAM() -> u8* {
-    return mmio.rdp.rdram.data();
+  [[nodiscard]] auto GetRDRAM() const -> u8* {
+    return mmio.rdp.rdram;
   }
 
   u8 Read8(Registers&, u32);
@@ -47,7 +49,7 @@ struct Mem {
   inline void DumpRDRAM() const {
     FILE *fp = fopen("rdram.dump", "wb");
     u8 *temp = (u8*)calloc(RDRAM_SIZE, 1);
-    memcpy(temp, mmio.rdp.rdram.data(), RDRAM_SIZE);
+    memcpy(temp, mmio.rdp.rdram, RDRAM_SIZE);
     Util::SwapBuffer32(RDRAM_SIZE, temp);
     fwrite(temp, 1, RDRAM_SIZE, fp);
     free(temp);
@@ -73,20 +75,19 @@ struct Mem {
     free(temp);
     fclose(fp);
   }
-  std::vector<uintptr_t> writePages, readPages;
+  uintptr_t writePages[PAGE_COUNT], readPages[PAGE_COUNT];
 private:
   friend struct SI;
   friend struct PI;
   friend struct AI;
-  friend struct Cpu;
   friend struct RSP;
   friend struct Core;
-  std::vector<u8> cart, sram;
+  u8* sram, *cart;
   u8 pifBootrom[PIF_BOOTROM_SIZE]{};
   u8 isviewer[ISVIEWER_SIZE]{};
-  size_t romMask;
+  size_t romMask = 0;
 
-  void SetCICType(u32& cicType, u32 checksum) {
+  static void SetCICType(u32& cicType, u32 checksum) {
     switch(checksum) {
       case 0xEC8B1325: // 7102
         cicType = CIC_NUS_7102;
@@ -115,12 +116,15 @@ private:
 
   bool IsROMPAL() {
     static const char pal_codes[] = {'D', 'F', 'I', 'P', 'S', 'U', 'X', 'Y'};
-    for (int i = 0; i < 8; i++) {
-      if (cart[0x3e] == pal_codes[i]) {
-        return true;
-      }
-    }
-    return false;
+    return std::any_of(std::begin(pal_codes), std::end(pal_codes), [this](char a) {
+      return cart[0x3e] == a;
+    });
+    // for (char pal_code : pal_codes) {
+    //   if (cart[0x3e] == pal_code) {
+    //     return true;
+    //   }
+    // }
+    // return false;
   }
 };
 

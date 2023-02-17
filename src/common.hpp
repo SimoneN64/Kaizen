@@ -34,7 +34,6 @@ using s128 = __int128_t;
 #define BYTE_INDEX(i)   (15 - (i))
 
 #define SI_DMA_DELAY (65536 * 2)
-
-enum TLBAccessType {
-  LOAD, STORE
-};
+#define ARCH_TARGET(...) __attribute__ ((target_clones (__VA_ARGS__)))
+#define unlikely(exp) __builtin_expect(exp, 0)
+#define likely(exp) __builtin_expect(exp, 1)

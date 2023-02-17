@@ -22,8 +22,6 @@ inline void CheckCompareInterrupt(MI& mi, Registers& regs) {
 }
 
 void Interpreter::Step(Mem& mem) {
-  regs.gpr[0] = 0;
-
   CheckCompareInterrupt(mem.mmio.mi, regs);
 
   regs.prevDelaySlot = regs.delaySlot;

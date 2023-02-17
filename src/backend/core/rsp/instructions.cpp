@@ -80,6 +80,7 @@ inline void SetCop0Reg(Registers& regs, Mem& mem, u8 index, u32 val) {
   }
 }
 
+ARCH_TARGET("sse3", "avx2", "default")
 inline VPR Broadcast(const VPR& vt, int l0, int l1, int l2, int l3, int l4, int l5, int l6, int l7) {
   VPR vte{};
   vte.element[ELEMENT_INDEX(0)] = vt.element[ELEMENT_INDEX(l0)];
@@ -93,6 +94,7 @@ inline VPR Broadcast(const VPR& vt, int l0, int l1, int l2, int l3, int l4, int 
   return vte;
 }
 
+ARCH_TARGET("sse3", "avx2", "default")
 inline VPR GetVTE(const VPR& vt, u8 e) {
   VPR vte{};
   e &= 0xf;
@@ -692,6 +694,7 @@ inline u16 unsignedClamp(s64 val) {
   return val;
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vabs(u32 instr) {
   VPR& vs = vpr[VS(instr)];
   VPR& vd = vpr[VD(instr)];
@@ -716,6 +719,7 @@ void RSP::vabs(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vadd(u32 instr) {
   VPR& vs = vpr[VS(instr)];
   VPR& vd = vpr[VD(instr)];
@@ -730,6 +734,7 @@ void RSP::vadd(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vaddc(u32 instr) {
   VPR& vs = vpr[VS(instr)];
   VPR& vd = vpr[VD(instr)];
@@ -744,6 +749,7 @@ void RSP::vaddc(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vch(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -776,6 +782,7 @@ void RSP::vch(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vcr(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -808,6 +815,7 @@ void RSP::vcr(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vcl(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -843,6 +851,7 @@ void RSP::vcl(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmov(u32 instr) {
   u8 e = E2(instr), vs = VS(instr) & 7;
   VPR& vd = vpr[VD(instr)];
@@ -885,6 +894,7 @@ inline bool IsSignExtension(s16 hi, s16 lo) {
   return false;
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmulf(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -906,6 +916,7 @@ void RSP::vmulf(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmulq(u32 instr) {
   VPR& vs = vpr[VS(instr)];
   VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
@@ -924,6 +935,7 @@ void RSP::vmulq(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmulu(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -945,6 +957,7 @@ void RSP::vmulu(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmudl(u32 instr) {
   u8 e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -971,6 +984,7 @@ void RSP::vmudl(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmudh(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -989,6 +1003,7 @@ void RSP::vmudh(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmudm(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1005,6 +1020,7 @@ void RSP::vmudm(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmudn(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1030,6 +1046,7 @@ void RSP::vmudn(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmadh(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1052,6 +1069,7 @@ void RSP::vmadh(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmadl(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1080,6 +1098,7 @@ void RSP::vmadl(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmadm(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1099,6 +1118,7 @@ void RSP::vmadm(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmadn(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1124,6 +1144,7 @@ void RSP::vmadn(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmacf(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR& vs = vpr[VS(instr)];
@@ -1145,6 +1166,7 @@ void RSP::vmacf(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmacu(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR& vs = vpr[VS(instr)];
@@ -1165,6 +1187,7 @@ void RSP::vmacu(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmacq(u32 instr) {
   VPR& vd = vpr[VD(instr)];
 
@@ -1182,6 +1205,7 @@ void RSP::vmacq(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::veq(u32 instr) {
   int e = E2(instr);
   VPR& vd = vpr[VD(instr)];
@@ -1196,6 +1220,7 @@ void RSP::veq(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vne(u32 instr) {
   int e = E2(instr);
   VPR& vd = vpr[VD(instr)];
@@ -1210,6 +1235,7 @@ void RSP::vne(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vge(u32 instr) {
   int e = E2(instr);
   VPR& vd = vpr[VD(instr)];
@@ -1226,6 +1252,7 @@ void RSP::vge(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vlt(u32 instr) {
   int e = E2(instr);
   VPR& vd = vpr[VD(instr)];
@@ -1287,6 +1314,7 @@ inline u32 rsq(u32 input) {
   return result ^ mask;
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vrcpl(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR& vt = vpr[VT(instr)];
@@ -1313,6 +1341,7 @@ void RSP::vrcpl(u32 instr) {
   vd.element[ELEMENT_INDEX(de)] = result;
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vrcp(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR& vt = vpr[VT(instr)];
@@ -1330,6 +1359,7 @@ void RSP::vrcp(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vrsq(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR& vt = vpr[VT(instr)];
@@ -1354,6 +1384,7 @@ static inline s64 sclip(s64 x, u32 bits) {
   return ((x & m) ^ b) - b;
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vrndn(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
@@ -1385,6 +1416,7 @@ void RSP::vrndn(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vrndp(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
@@ -1416,6 +1448,7 @@ void RSP::vrndp(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vrsql(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR& vt = vpr[VT(instr)];
@@ -1441,6 +1474,7 @@ void RSP::vrsql(u32 instr) {
   vd.element[ELEMENT_INDEX(de)] = result;
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vrcph(u32 instr) {
   int e = E2(instr) & 7;
   int de = DE(instr) & 7;
@@ -1457,6 +1491,7 @@ void RSP::vrcph(u32 instr) {
   divInLoaded = true;
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vsar(u32 instr) {
   u8 e = E2(instr);
   switch(e) {
@@ -1483,6 +1518,7 @@ void RSP::vsar(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vsubc(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1499,6 +1535,7 @@ void RSP::vsubc(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vsub(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1515,6 +1552,7 @@ void RSP::vsub(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmrg(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1529,6 +1567,7 @@ void RSP::vmrg(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vxor(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1541,6 +1580,7 @@ void RSP::vxor(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vnxor(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1553,6 +1593,7 @@ void RSP::vnxor(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vand(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1565,6 +1606,7 @@ void RSP::vand(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vnand(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1577,6 +1619,7 @@ void RSP::vnand(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vnor(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1589,6 +1632,7 @@ void RSP::vnor(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vor(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1601,6 +1645,7 @@ void RSP::vor(u32 instr) {
   }
 }
 
+ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vzero(u32 instr) {
   VPR& vs = vpr[VS(instr)];
   VPR vte = GetVTE(vpr[VT(instr)], E2(instr));

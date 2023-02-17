@@ -69,7 +69,7 @@ u64 Cop0::GetReg64(u8 addr) {
     case 23: case 24: case 25:
     case 31: return openbus;
     default:
-      Util::panic("Unsupported word read from COP0 register {}\n", index);
+      Util::panic("Unsupported dword read from COP0 register {}\n", index);
   }
 }
 
@@ -131,7 +131,7 @@ void Cop0::SetReg32(u8 addr, u32 value) {
     case 23: case 24: case 25:
     case 31: break;
     default:
-      Util::panic("Unsupported word read from COP0 register {}\n", index);
+      Util::panic("Unsupported word write from COP0 register {}\n", index);
   }
 }
 
@@ -159,7 +159,7 @@ void Cop0::SetReg64(u8 addr, u64 value) {
     case COP0_REG_LLADDR: LLAddr = value; break;
     case COP0_REG_ERROREPC: ErrorEPC = (s64)value; break;
     default:
-      Util::panic("Unsupported word write to COP0 register {}\n", addr);
+      Util::panic("Unsupported dword write to COP0 register {}\n", addr);
   }
 }
 

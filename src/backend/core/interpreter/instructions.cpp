@@ -12,15 +12,19 @@ void Interpreter::add(u32 instr) {
   if(check_signed_overflow(rs, rt, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
-    regs.gpr[RD(instr)] = s32(result);
+    if(likely(RD(instr) != 0)) {
+      regs.gpr[RD(instr)] = s32(result);
+    }
   }
 }
 
 void Interpreter::addu(u32 instr) {
-  s32 rs = (s32)regs.gpr[RS(instr)];
-  s32 rt = (s32)regs.gpr[RT(instr)];
-  s32 result = rs + rt;
-  regs.gpr[RD(instr)] = result;
+  if(likely(RD(instr) != 0)) {
+    s32 rs = (s32)regs.gpr[RS(instr)];
+    s32 rt = (s32)regs.gpr[RT(instr)];
+    s32 result = rs + rt;
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void Interpreter::addi(u32 instr) {
@@ -48,14 +52,18 @@ void Interpreter::dadd(u32 instr) {
   if(check_signed_overflow(rs, rt, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
-    regs.gpr[RD(instr)] = result;
+    if(likely(RD(instr) != 0)) {
+      regs.gpr[RD(instr)] = result;
+    }
   }
 }
 
 void Interpreter::daddu(u32 instr) {
-  s64 rs = regs.gpr[RS(instr)];
-  s64 rt = regs.gpr[RT(instr)];
-  regs.gpr[RD(instr)] = rs + rt;
+  if(likely(RD(instr) != 0)) {
+    s64 rs = regs.gpr[RS(instr)];
+    s64 rt = regs.gpr[RT(instr)];
+    regs.gpr[RD(instr)] = rs + rt;
+  }
 }
 
 void Interpreter::daddi(u32 instr) {
@@ -583,11 +591,15 @@ void Interpreter::ori(u32 instr) {
 }
 
 void Interpreter::or_(u32 instr) {
-  regs.gpr[RD(instr)] = regs.gpr[RS(instr)] | regs.gpr[RT(instr)];
+  if(likely(RD(instr) != 0)) {
+    regs.gpr[RD(instr)] = regs.gpr[RS(instr)] | regs.gpr[RT(instr)];
+  }
 }
 
 void Interpreter::nor(u32 instr) {
-  regs.gpr[RD(instr)] = ~(regs.gpr[RS(instr)] | regs.gpr[RT(instr)]);
+  if(likely(RD(instr) != 0)) {
+    regs.gpr[RD(instr)] = ~(regs.gpr[RS(instr)] | regs.gpr[RT(instr)]);
+  }
 }
 
 void Interpreter::j(u32 instr) {
@@ -604,7 +616,9 @@ void Interpreter::jal(u32 instr) {
 
 void Interpreter::jalr(u32 instr) {
   branch(true, regs.gpr[RS(instr)]);
-  regs.gpr[RD(instr)] = regs.pc + 4;
+  if(likely(RD(instr) != 0)) {
+    regs.gpr[RD(instr)] = regs.pc + 4;
+  }
 }
 
 void Interpreter::slti(u32 instr) {
@@ -618,11 +632,15 @@ void Interpreter::sltiu(u32 instr) {
 }
 
 void Interpreter::slt(u32 instr) {
-  regs.gpr[RD(instr)] = regs.gpr[RS(instr)] < regs.gpr[RT(instr)];
+  if(likely(RD(instr) != 0)) {
+    regs.gpr[RD(instr)] = regs.gpr[RS(instr)] < regs.gpr[RT(instr)];
+  }
 }
 
 void Interpreter::sltu(u32 instr) {
-  regs.gpr[RD(instr)] = (u64)regs.gpr[RS(instr)] < (u64)regs.gpr[RT(instr)];
+  if(likely(RD(instr) != 0)) {
+    regs.gpr[RD(instr)] = (u64) regs.gpr[RS(instr)] < (u64) regs.gpr[RT(instr)];
+  }
 }
 
 void Interpreter::xori(u32 instr) {
@@ -631,7 +649,9 @@ void Interpreter::xori(u32 instr) {
 }
 
 void Interpreter::xor_(u32 instr) {
-  regs.gpr[RD(instr)] = regs.gpr[RT(instr)] ^ regs.gpr[RS(instr)];
+  if(likely(RD(instr) != 0)) {
+    regs.gpr[RD(instr)] = regs.gpr[RT(instr)] ^ regs.gpr[RS(instr)];
+  }
 }
 
 void Interpreter::andi(u32 instr) {
@@ -640,110 +660,142 @@ void Interpreter::andi(u32 instr) {
 }
 
 void Interpreter::and_(u32 instr) {
-  regs.gpr[RD(instr)] = regs.gpr[RS(instr)] & regs.gpr[RT(instr)];
+  if(likely(RD(instr) != 0)) {
+    regs.gpr[RD(instr)] = regs.gpr[RS(instr)] & regs.gpr[RT(instr)];
+  }
 }
 
 void Interpreter::sll(u32 instr) {
-  u8 sa = ((instr >> 6) & 0x1f);
-  s32 result = regs.gpr[RT(instr)] << sa;
-  regs.gpr[RD(instr)] = (s64)result;
+  if(likely(RD(instr) != 0)) {
+    u8 sa = ((instr >> 6) & 0x1f);
+    s32 result = regs.gpr[RT(instr)] << sa;
+    regs.gpr[RD(instr)] = (s64) result;
+  }
 }
 
 void Interpreter::sllv(u32 instr) {
-  u8 sa = (regs.gpr[RS(instr)]) & 0x1F;
-  u32 rt = regs.gpr[RT(instr)];
-  s32 result = rt << sa;
-  regs.gpr[RD(instr)] = (s64)result;
+  if(likely(RD(instr) != 0)) {
+    u8 sa = (regs.gpr[RS(instr)]) & 0x1F;
+    u32 rt = regs.gpr[RT(instr)];
+    s32 result = rt << sa;
+    regs.gpr[RD(instr)] = (s64) result;
+  }
 }
 
 void Interpreter::dsll32(u32 instr) {
-  u8 sa = ((instr >> 6) & 0x1f);
-  s64 result = regs.gpr[RT(instr)] << (sa + 32);
-  regs.gpr[RD(instr)] = result;
+  if(likely(RD(instr) != 0)) {
+    u8 sa = ((instr >> 6) & 0x1f);
+    s64 result = regs.gpr[RT(instr)] << (sa + 32);
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void Interpreter::dsll(u32 instr) {
-  u8 sa = ((instr >> 6) & 0x1f);
-  s64 result = regs.gpr[RT(instr)] << sa;
-  regs.gpr[RD(instr)] = result;
+  if(likely(RD(instr) != 0)) {
+    u8 sa = ((instr >> 6) & 0x1f);
+    s64 result = regs.gpr[RT(instr)] << sa;
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void Interpreter::dsllv(u32 instr) {
-  s64 sa = regs.gpr[RS(instr)] & 63;
-  s64 result = regs.gpr[RT(instr)] << sa;
-  regs.gpr[RD(instr)] = result;
+  if(likely(RD(instr) != 0)) {
+    s64 sa = regs.gpr[RS(instr)] & 63;
+    s64 result = regs.gpr[RT(instr)] << sa;
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void Interpreter::srl(u32 instr) {
-  u32 rt = regs.gpr[RT(instr)];
-  u8 sa = ((instr >> 6) & 0x1f);
-  u32 result = rt >> sa;
-  regs.gpr[RD(instr)] = (s32)result;
+  if(likely(RD(instr) != 0)) {
+    u32 rt = regs.gpr[RT(instr)];
+    u8 sa = ((instr >> 6) & 0x1f);
+    u32 result = rt >> sa;
+    regs.gpr[RD(instr)] = (s32) result;
+  }
 }
 
 void Interpreter::srlv(u32 instr) {
-  u8 sa = (regs.gpr[RS(instr)] & 0x1F);
-  u32 rt = regs.gpr[RT(instr)];
-  s32 result = rt >> sa;
-  regs.gpr[RD(instr)] = (s64)result;
+  if(likely(RD(instr) != 0)) {
+    u8 sa = (regs.gpr[RS(instr)] & 0x1F);
+    u32 rt = regs.gpr[RT(instr)];
+    s32 result = rt >> sa;
+    regs.gpr[RD(instr)] = (s64) result;
+  }
 }
 
 void Interpreter::dsrl(u32 instr) {
-  u64 rt = regs.gpr[RT(instr)];
-  u8 sa = ((instr >> 6) & 0x1f);
-  u64 result = rt >> sa;
-  regs.gpr[RD(instr)] = s64(result);
+  if(likely(RD(instr) != 0)) {
+    u64 rt = regs.gpr[RT(instr)];
+    u8 sa = ((instr >> 6) & 0x1f);
+    u64 result = rt >> sa;
+    regs.gpr[RD(instr)] = s64(result);
+  }
 }
 
 void Interpreter::dsrlv(u32 instr) {
-  u8 amount = (regs.gpr[RS(instr)] & 63);
-  u64 rt = regs.gpr[RT(instr)];
-  u64 result = rt >> amount;
-  regs.gpr[RD(instr)] = s64(result);
+  if(likely(RD(instr) != 0)) {
+    u8 amount = (regs.gpr[RS(instr)] & 63);
+    u64 rt = regs.gpr[RT(instr)];
+    u64 result = rt >> amount;
+    regs.gpr[RD(instr)] = s64(result);
+  }
 }
 
 void Interpreter::dsrl32(u32 instr) {
-  u64 rt = regs.gpr[RT(instr)];
-  u8 sa = ((instr >> 6) & 0x1f);
-  u64 result = rt >> (sa + 32);
-  regs.gpr[RD(instr)] = s64(result);
+  if(likely(RD(instr) != 0)) {
+    u64 rt = regs.gpr[RT(instr)];
+    u8 sa = ((instr >> 6) & 0x1f);
+    u64 result = rt >> (sa + 32);
+    regs.gpr[RD(instr)] = s64(result);
+  }
 }
 
 void Interpreter::sra(u32 instr) {
-  s64 rt = regs.gpr[RT(instr)];
-  u8 sa = ((instr >> 6) & 0x1f);
-  s32 result = rt >> sa;
-  regs.gpr[RD(instr)] = result;
+  if(likely(RD(instr) != 0)) {
+    s64 rt = regs.gpr[RT(instr)];
+    u8 sa = ((instr >> 6) & 0x1f);
+    s32 result = rt >> sa;
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void Interpreter::srav(u32 instr) {
   s64 rt = regs.gpr[RT(instr)];
-  s64 rs = regs.gpr[RS(instr)];
-  u8 sa = rs & 0x1f;
-  s32 result = rt >> sa;
-  regs.gpr[RD(instr)] = result;
+  if(likely(RD(instr) != 0)) {
+    s64 rs = regs.gpr[RS(instr)];
+    u8 sa = rs & 0x1f;
+    s32 result = rt >> sa;
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void Interpreter::dsra(u32 instr) {
-  s64 rt = regs.gpr[RT(instr)];
-  u8 sa = ((instr >> 6) & 0x1f);
-  s64 result = rt >> sa;
-  regs.gpr[RD(instr)] = result;
+  if(likely(RD(instr) != 0)) {
+    s64 rt = regs.gpr[RT(instr)];
+    u8 sa = ((instr >> 6) & 0x1f);
+    s64 result = rt >> sa;
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void Interpreter::dsrav(u32 instr) {
-  s64 rt = regs.gpr[RT(instr)];
-  s64 rs = regs.gpr[RS(instr)];
-  s64 sa = rs & 63;
-  s64 result = rt >> sa;
-  regs.gpr[RD(instr)] = result;
+  if(likely(RD(instr) != 0)) {
+    s64 rt = regs.gpr[RT(instr)];
+    s64 rs = regs.gpr[RS(instr)];
+    s64 sa = rs & 63;
+    s64 result = rt >> sa;
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void Interpreter::dsra32(u32 instr) {
-  s64 rt = regs.gpr[RT(instr)];
-  u8 sa = ((instr >> 6) & 0x1f);
-  s64 result = rt >> (sa + 32);
-  regs.gpr[RD(instr)] = result;
+  if(likely(RD(instr) != 0)) {
+    s64 rt = regs.gpr[RT(instr)];
+    u8 sa = ((instr >> 6) & 0x1f);
+    s64 result = rt >> (sa + 32);
+    regs.gpr[RD(instr)] = result;
+  }
 }
 
 void Interpreter::jr(u32 instr) {
@@ -758,15 +810,19 @@ void Interpreter::dsub(u32 instr) {
   if(check_signed_underflow(rs, rt, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
-    regs.gpr[RD(instr)] = result;
+    if(likely(RD(instr) != 0)) {
+      regs.gpr[RD(instr)] = result;
+    }
   }
 }
 
 void Interpreter::dsubu(u32 instr) {
-  u64 rt = regs.gpr[RT(instr)];
-  u64 rs = regs.gpr[RS(instr)];
-  u64 result = rs - rt;
-  regs.gpr[RD(instr)] = s64(result);
+  if(likely(RD(instr) != 0)) {
+    u64 rt = regs.gpr[RT(instr)];
+    u64 rs = regs.gpr[RS(instr)];
+    u64 result = rs - rt;
+    regs.gpr[RD(instr)] = s64(result);
+  }
 }
 
 void Interpreter::sub(u32 instr) {
@@ -776,15 +832,19 @@ void Interpreter::sub(u32 instr) {
   if(check_signed_underflow(rs, rt, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
-    regs.gpr[RD(instr)] = result;
+    if(likely(RD(instr) != 0)) {
+      regs.gpr[RD(instr)] = result;
+    }
   }
 }
 
 void Interpreter::subu(u32 instr) {
-  u32 rt = regs.gpr[RT(instr)];
-  u32 rs = regs.gpr[RS(instr)];
-  u32 result = rs - rt;
-  regs.gpr[RD(instr)] = (s64)((s32)result);
+  if(likely(RD(instr) != 0)) {
+    u32 rt = regs.gpr[RT(instr)];
+    u32 rs = regs.gpr[RS(instr)];
+    u32 result = rs - rt;
+    regs.gpr[RD(instr)] = (s64) ((s32) result);
+  }
 }
 
 void Interpreter::dmultu(u32 instr) {
@@ -820,11 +880,15 @@ void Interpreter::mult(u32 instr) {
 }
 
 void Interpreter::mflo(u32 instr) {
-  regs.gpr[RD(instr)] = regs.lo;
+  if(likely(RD(instr) != 0)) {
+    regs.gpr[RD(instr)] = regs.lo;
+  }
 }
 
 void Interpreter::mfhi(u32 instr) {
-  regs.gpr[RD(instr)] = regs.hi;
+  if(likely(RD(instr) != 0)) {
+    regs.gpr[RD(instr)] = regs.hi;
+  }
 }
 
 void Interpreter::mtlo(u32 instr) {

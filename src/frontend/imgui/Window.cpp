@@ -12,7 +12,7 @@
 VkInstance instance{};
 namespace fs = std::filesystem;
 
-Window::Window(n64::Core& core) : settings(core), gameList(settings.GetGamesDir()) {
+Window::Window(n64::Core& core) : settings(core) {
   InitSDL();
   InitParallelRDP(core.mem.GetRDRAM(), window);
   InitImgui();
@@ -156,7 +156,6 @@ ImDrawData* Window::Present(n64::Core& core) {
 
 void Window::LoadROM(n64::Core& core, const std::string &path) {
   if(!path.empty()) {
-    gameList.threadDone = true;
     n64::CartInfo cartInfo = core.LoadROM(path);
     std::ifstream gameDbFile("resources/db.json");
     json gameDb = json::parse(gameDbFile);
@@ -181,7 +180,6 @@ void Window::LoadROM(n64::Core& core, const std::string &path) {
     Util::UpdateRPC(Util::Playing, gameName);
     windowTitle = "Gadolinium - " + gameName;
     shadowWindowTitle = windowTitle;
-    renderGameList = false;
 
     SDL_SetWindowTitle(window, windowTitle.c_str());
     gameDbFile.close();
@@ -190,7 +188,6 @@ void Window::LoadROM(n64::Core& core, const std::string &path) {
 
 void Window::RenderMainMenuBar(n64::Core &core) {
   ImGui::BeginMainMenuBar();
-  mainMenuBarHeight = ImGui::GetWindowSize().y;
 
   if (ImGui::BeginMenu("File")) {
     if (ImGui::MenuItem("Open", "O")) {
@@ -222,12 +219,10 @@ void Window::RenderMainMenuBar(n64::Core &core) {
       LoadROM(core, core.rom);
     }
     if (ImGui::MenuItem("Stop")) {
-      renderGameList = true;
       windowTitle = "Gadolinium";
       core.rom.clear();
       Util::UpdateRPC(Util::Idling);
       SDL_SetWindowTitle(window, windowTitle.c_str());
-      gameList.Create(settings.GetGamesDir());
       core.Stop();
     }
     if (ImGui::MenuItem(core.pause ? "Resume" : "Pause", nullptr, false, core.romLoaded)) {
@@ -267,13 +262,6 @@ void Window::Render(n64::Core& core) {
     RenderMainMenuBar(core);
   }
 
-  static std::string rom{};
-  if(renderGameList && gameList.RenderWidget(mainMenuBarHeight, rom)) {
-    LoadROM(core, rom);
-    renderGameList = false;
-  }
-
-  mainMenuBarHeight = 0;
   settings.RenderWidget(showSettings);
 
   ImGui::PopFont();

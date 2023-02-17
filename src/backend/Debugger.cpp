@@ -178,7 +178,7 @@ size_t debugGetMemory(void* user_data, char* buffer, size_t length, u32 address,
   printf("Checking memory at address 0x%08X\n", address);
   int printed = 0;
   u32 paddr;
-  if(!n64::MapVAddr(debugger->core.CpuGetRegs(), LOAD, address, paddr)) {
+  if(!n64::MapVAddr(debugger->core.CpuGetRegs(), n64::LOAD, address, paddr)) {
     return 0;
   }
 

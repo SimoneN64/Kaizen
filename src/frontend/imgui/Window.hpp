@@ -7,7 +7,6 @@
 #include <backend/Core.hpp>
 #include <vector>
 #include <frontend/imgui/Settings.hpp>
-#include <frontend/imgui/GameList.hpp>
 
 struct Window {
   explicit Window(n64::Core& core);
@@ -17,12 +16,9 @@ struct Window {
   [[nodiscard]] bool gotClosed(SDL_Event event);
   ImFont *uiFont{};
   Settings settings;
-  GameList gameList;
   void LoadROM(n64::Core& core, const std::string& path);
 private:
-  bool renderGameList = true;
   bool showSettings = false;
-  float mainMenuBarHeight = 0;
   SDL_Window* window{};
   std::string windowTitle{"Gadolinium"};
   std::string shadowWindowTitle{windowTitle};

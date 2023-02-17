@@ -11,8 +11,10 @@ RDP::RDP() {
 
 void RDP::Reset() {
   dpc.status.raw = 0x80;
-  rdram.resize(RDRAM_SIZE);
-  std::fill(rdram.begin(), rdram.end(), 0);
+  if(rdram) {
+    free(rdram);
+  }
+  rdram = (u8*)calloc(RDRAM_SIZE, 1);
   memset(cmd_buf, 0, 0x100000);
 }
 
@@ -144,7 +146,7 @@ void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
         return;
       }
       for (int i = 0; i < len; i += 4) {
-        u32 cmd = Util::ReadAccess<u32>(rdram.data(), current + i);
+        u32 cmd = Util::ReadAccess<u32>(rdram, current + i);
         cmd_buf[remaining_cmds + (i >> 2)] = cmd;
       }
     }

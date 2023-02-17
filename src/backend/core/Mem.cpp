@@ -12,10 +12,8 @@ Mem::Mem() {
 }
 
 void Mem::Reset() {
-  readPages.resize(PAGE_COUNT);
-  writePages.resize(PAGE_COUNT);
-  std::fill(readPages.begin(), readPages.end(), 0);
-  std::fill(writePages.begin(), writePages.end(), 0);
+  memset(readPages, 0, PAGE_COUNT);
+  memset(writePages, 0, PAGE_COUNT);
 
   for(int i = 0; i < RDRAM_SIZE / PAGE_SIZE; i++) {
     const auto addr = (i * PAGE_SIZE) & RDRAM_DSIZE;
@@ -24,9 +22,16 @@ void Mem::Reset() {
     writePages[i] = pointer;
   }
 
-  sram.resize(SRAM_SIZE);
-  std::fill(sram.begin(), sram.end(), 0);
-  romMask = 0;
+  if(sram) {
+    free(sram);
+  }
+
+  if(cart) {
+    free(cart);
+  }
+
+  cart = (u8*)calloc(CART_SIZE, 1);
+  sram = (u8*)calloc(SRAM_SIZE, 1);
   mmio.Reset();
 }
 
@@ -39,22 +44,20 @@ CartInfo Mem::LoadROM(const std::string& filename) {
   }
 
   file.seekg(0, std::ios::end);
-  auto size = file.tellg();
-  auto sizeAdjusted = Util::NextPow2(size);
+  size_t size = file.tellg();
+  size_t sizeAdjusted = Util::NextPow2(size);
   romMask = sizeAdjusted - 1;
   file.seekg(0, std::ios::beg);
 
-  std::fill(cart.begin(), cart.end(), 0);
-  cart.resize(sizeAdjusted);
-  cart.insert(cart.begin(), std::istream_iterator<u8>(file), std::istream_iterator<u8>());
+  file.read(reinterpret_cast<char*>(cart), size);
 
   file.close();
 
   CartInfo result{};
 
   u32 cicChecksum;
-  Util::SwapN64Rom(sizeAdjusted, cart.data(), result.crc, cicChecksum);
-  memcpy(mmio.rsp.dmem, cart.data(), 0x1000);
+  Util::SwapN64Rom(sizeAdjusted, cart, result.crc, cicChecksum);
+  memcpy(mmio.rsp.dmem, cart, 0x1000);
 
   SetCICType(result.cicType, cicChecksum);
   result.isPAL = IsROMPAL();
@@ -108,13 +111,13 @@ u8 Mem::Read8(n64::Registers &regs, u32 paddr) {
         int offs = 3 - (paddr & 3);
         return (w >> (offs * 8)) & 0xff;
       }
-      case 0x10000000 ... 0x1FBFFFFF:
+      case CART_REGION:
         paddr = (paddr + 2) & ~2;
         return cart[BYTE_ADDRESS(paddr) & romMask];
       case 0x1FC00000 ... 0x1FC007BF:
         return pifBootrom[BYTE_ADDRESS(paddr) - 0x1FC00000];
-      case 0x1FC007C0 ... 0x1FC007FF:
-        return pifRam[paddr - 0x1FC007C0];
+      case PIF_RAM_REGION:
+        return pifRam[paddr - PIF_RAM_REGION_START];
       case 0x00800000 ... 0x03FFFFFF:
       case 0x04200000 ... 0x042FFFFF:
       case 0x04900000 ... 0x0FFFFFFF:
@@ -136,7 +139,7 @@ u16 Mem::Read16(n64::Registers &regs, u32 paddr) {
   } else {
     switch (paddr) {
       case 0x00000000 ... 0x007FFFFF:
-        return Util::ReadAccess<u16>(mmio.rdp.rdram.data(), HALF_ADDRESS(paddr));
+        return Util::ReadAccess<u16>(mmio.rdp.rdram, HALF_ADDRESS(paddr));
       case 0x04000000 ... 0x0403FFFF:
         if (paddr  & 0x1000)
           return Util::ReadAccess<u16>(mmio.rsp.imem, HALF_ADDRESS(paddr) & IMEM_DSIZE);
@@ -149,11 +152,11 @@ u16 Mem::Read16(n64::Registers &regs, u32 paddr) {
         return mmio.Read(paddr);
       case 0x10000000 ... 0x1FBFFFFF:
         paddr = (paddr + 2) & ~3;
-        return Util::ReadAccess<u16>(cart.data(), HALF_ADDRESS(paddr) & romMask);
+        return Util::ReadAccess<u16>(cart, HALF_ADDRESS(paddr) & romMask);
       case 0x1FC00000 ... 0x1FC007BF:
         return Util::ReadAccess<u16>(pifBootrom, HALF_ADDRESS(paddr) - 0x1FC00000);
-      case 0x1FC007C0 ... 0x1FC007FF:
-        return be16toh(Util::ReadAccess<u16>(pifRam, paddr - 0x1FC007C0));
+      case PIF_RAM_REGION:
+        return be16toh(Util::ReadAccess<u16>(pifRam, paddr - PIF_RAM_REGION_START));
       case 0x00800000 ... 0x03FFFFFF:
       case 0x04200000 ... 0x042FFFFF:
       case 0x04900000 ... 0x0FFFFFFF:
@@ -175,7 +178,7 @@ u32 Mem::Read32(n64::Registers &regs, u32 paddr) {
   } else {
     switch(paddr) {
       case 0x00000000 ... 0x007FFFFF:
-        return Util::ReadAccess<u32>(mmio.rdp.rdram.data(), paddr);
+        return Util::ReadAccess<u32>(mmio.rdp.rdram, paddr);
       case 0x04000000 ... 0x0403FFFF:
         if(paddr  & 0x1000)
           return Util::ReadAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE);
@@ -185,11 +188,11 @@ u32 Mem::Read32(n64::Registers &regs, u32 paddr) {
       case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF:
         return mmio.Read(paddr);
       case 0x10000000 ... 0x1FBFFFFF:
-        return Util::ReadAccess<u32>(cart.data(), paddr & romMask);
+        return Util::ReadAccess<u32>(cart, paddr & romMask);
       case 0x1FC00000 ... 0x1FC007BF:
         return Util::ReadAccess<u32>(pifBootrom, paddr - 0x1FC00000);
-      case 0x1FC007C0 ... 0x1FC007FF:
-        return be32toh(Util::ReadAccess<u32>(pifRam, paddr - 0x1FC007C0));
+      case PIF_RAM_REGION:
+        return be32toh(Util::ReadAccess<u32>(pifRam, paddr - PIF_RAM_REGION_START));
       case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
       case 0x04900000 ... 0x0FFFFFFF: case 0x1FC00800 ... 0xFFFFFFFF: return 0;
       default:
@@ -208,7 +211,7 @@ u64 Mem::Read64(n64::Registers &regs, u32 paddr) {
   } else {
     switch (paddr) {
       case 0x00000000 ... 0x007FFFFF:
-        return Util::ReadAccess<u64>(mmio.rdp.rdram.data(), paddr);
+        return Util::ReadAccess<u64>(mmio.rdp.rdram, paddr);
       case 0x04000000 ... 0x0403FFFF:
         if (paddr  & 0x1000)
           return Util::ReadAccess<u64>(mmio.rsp.imem, paddr & IMEM_DSIZE);
@@ -220,11 +223,11 @@ u64 Mem::Read64(n64::Registers &regs, u32 paddr) {
       case 0x04500000 ... 0x048FFFFF:
         return mmio.Read(paddr);
       case 0x10000000 ... 0x1FBFFFFF:
-        return Util::ReadAccess<u64>(cart.data(), paddr & romMask);
+        return Util::ReadAccess<u64>(cart, paddr & romMask);
       case 0x1FC00000 ... 0x1FC007BF:
         return Util::ReadAccess<u64>(pifBootrom, paddr - 0x1FC00000);
-      case 0x1FC007C0 ... 0x1FC007FF:
-        return be64toh(Util::ReadAccess<u64>(pifRam, paddr - 0x1FC007C0));
+      case PIF_RAM_REGION:
+        return be64toh(Util::ReadAccess<u64>(pifRam, paddr - PIF_RAM_REGION_START));
       case 0x00800000 ... 0x03FFFFFF:
       case 0x04200000 ... 0x042FFFFF:
       case 0x04900000 ... 0x0FFFFFFF:
@@ -283,9 +286,9 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
         Util::panic("MMIO Write8!\n");
       case 0x10000000 ... 0x1FBFFFFF:
         break;
-      case 0x1FC007C0 ... 0x1FC007FF:
+      case PIF_RAM_REGION:
         val = val << (8 * (3 - (paddr & 3)));
-        paddr = (paddr - 0x1FC007C0) & ~3;
+        paddr = (paddr - PIF_RAM_REGION_START) & ~3;
         Util::WriteAccess<u32>(pifRam, paddr, htobe32(val));
         ProcessPIFCommands(pifRam, mmio.si.controller, *this);
         break;
@@ -317,7 +320,7 @@ void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
   } else {
     switch (paddr) {
       case 0x00000000 ... 0x007FFFFF:
-        Util::WriteAccess<u16>(mmio.rdp.rdram.data(), HALF_ADDRESS(paddr), val);
+        Util::WriteAccess<u16>(mmio.rdp.rdram, HALF_ADDRESS(paddr), val);
         break;
       case 0x04000000 ... 0x0403FFFF:
         val = val << (16 * !(paddr & 2));
@@ -334,10 +337,10 @@ void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
         Util::panic("MMIO Write16!\n");
       case 0x10000000 ... 0x1FBFFFFF:
         break;
-      case 0x1FC007C0 ... 0x1FC007FF:
+      case PIF_RAM_REGION:
         val = val << (16 * !(paddr & 2));
         paddr &= ~3;
-        Util::WriteAccess<u32>(pifRam, paddr - 0x1FC007C0, htobe32(val));
+        Util::WriteAccess<u32>(pifRam, paddr - PIF_RAM_REGION_START, htobe32(val));
         ProcessPIFCommands(pifRam, mmio.si.controller, *this);
         break;
       case 0x00800000 ... 0x03FFFFFF:
@@ -364,7 +367,7 @@ void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
   } else {
     switch(paddr) {
       case 0x00000000 ... 0x007FFFFF:
-        Util::WriteAccess<u32>(mmio.rdp.rdram.data(), paddr, val);
+        Util::WriteAccess<u32>(mmio.rdp.rdram, paddr, val);
         break;
       case 0x04000000 ... 0x0403FFFF:
         if(paddr & 0x1000)
@@ -387,8 +390,8 @@ void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
         Util::WriteAccess<u32>(isviewer, paddr - 0x13FF0020, htobe32(val));
         break;
       case 0x14000000 ... 0x1FBFFFFF: break;
-      case 0x1FC007C0 ... 0x1FC007FF:
-        Util::WriteAccess<u32>(pifRam, paddr - 0x1FC007C0, htobe32(val));
+      case PIF_RAM_REGION:
+        Util::WriteAccess<u32>(pifRam, paddr - PIF_RAM_REGION_START, htobe32(val));
         ProcessPIFCommands(pifRam, mmio.si.controller, *this);
         break;
       case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
@@ -409,7 +412,7 @@ void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
   } else {
     switch (paddr) {
       case 0x00000000 ... 0x007FFFFF:
-        Util::WriteAccess<u64>(mmio.rdp.rdram.data(), paddr, val);
+        Util::WriteAccess<u64>(mmio.rdp.rdram, paddr, val);
         break;
       case 0x04000000 ... 0x0403FFFF:
         val >>= 32;
@@ -425,8 +428,8 @@ void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
         Util::panic("MMIO Write64!\n");
       case 0x10000000 ... 0x1FBFFFFF:
         break;
-      case 0x1FC007C0 ... 0x1FC007FF:
-        Util::WriteAccess<u64>(pifRam, paddr - 0x1FC007C0, htobe64(val));
+      case PIF_RAM_REGION:
+        Util::WriteAccess<u64>(pifRam, paddr - PIF_RAM_REGION_START, htobe64(val));
         ProcessPIFCommands(pifRam, mmio.si.controller, *this);
         break;
       case 0x00800000 ... 0x03FFFFFF:

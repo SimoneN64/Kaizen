@@ -96,6 +96,7 @@ union VPR {
   u16 element[8];
   u8 byte[16];
   u32 word[4];
+  m128i single;
 } __attribute__((packed));
 
 static_assert(sizeof(VPR) == 16);

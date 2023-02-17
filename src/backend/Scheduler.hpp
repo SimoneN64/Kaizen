@@ -9,7 +9,7 @@ struct Registers;
 
 struct Event {
   u64 time = UINT64_MAX;
-  void(*event_cb)(n64::Mem&, n64::Registers&) = nullptr;
+  void(*handler)(n64::Mem&, n64::Registers&) = nullptr;
 
   friend bool operator<(const Event& rhs, const Event& lhs) {
     return lhs.time < rhs.time;

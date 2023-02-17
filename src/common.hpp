@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <bitset>
+#include <emmintrin.h>
 
 using u8 = uint8_t;
 using u16 = uint16_t;
@@ -12,6 +13,7 @@ using s32 = int32_t;
 using s64 = int64_t;
 using u128 = __uint128_t;
 using s128 = __int128_t;
+using m128i = __m128i;
 
 #define N64_CPU_FREQ 93750000
 #define N64_CYCLES_PER_FRAME(pal) ((N64_CPU_FREQ) / (pal ? 50 : 60))
@@ -34,6 +36,5 @@ using s128 = __int128_t;
 #define BYTE_INDEX(i)   (15 - (i))
 
 #define SI_DMA_DELAY (65536 * 2)
-#define ARCH_TARGET(...) __attribute__ ((target_clones (__VA_ARGS__)))
 #define unlikely(exp) __builtin_expect(exp, 0)
 #define likely(exp) __builtin_expect(exp, 1)

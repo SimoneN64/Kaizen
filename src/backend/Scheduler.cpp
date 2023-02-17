@@ -11,17 +11,17 @@ Scheduler::Scheduler() {
 }
 
 void Scheduler::enqueueRelative(const Event& event) {
-  events.push({event.time + ticks, event.event_cb});
+  events.push({event.time + ticks, event.handler});
 }
 
 void Scheduler::enqueueAbsolute(const Event& event) {
-  events.push({event.time, event.event_cb});
+  events.push({event.time, event.handler});
 }
 
 void Scheduler::tick(u64 t, n64::Mem& mem, n64::Registers& regs) {
   ticks += t;
   while(ticks >= events.top().time) {
-    events.top().event_cb(mem, regs);
+    events.top().handler(mem, regs);
     events.pop();
   }
 }

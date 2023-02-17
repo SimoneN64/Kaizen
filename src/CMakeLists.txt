@@ -39,6 +39,9 @@ include_directories(
   ${SDL2_INCLUDE_DIRS}
 )
 
+add_compile_definitions(SIMD_SUPPORT)
+add_compile_options(-mssse3 -msse4.1)
+
 add_subdirectory(frontend)
 add_subdirectory(frontend/imgui)
 add_subdirectory(backend)

@@ -4,6 +4,7 @@
 #include <Mem.hpp>
 #include <RCP.hpp>
 #include <RSQ.hpp>
+#include <immintrin.h>
 
 namespace n64 {
 inline bool AcquireSemaphore(RSP& rsp) {
@@ -80,7 +81,6 @@ inline void SetCop0Reg(Registers& regs, Mem& mem, u8 index, u32 val) {
   }
 }
 
-ARCH_TARGET("sse3", "avx2", "default")
 inline VPR Broadcast(const VPR& vt, int l0, int l1, int l2, int l3, int l4, int l5, int l6, int l7) {
   VPR vte{};
   vte.element[ELEMENT_INDEX(0)] = vt.element[ELEMENT_INDEX(l0)];
@@ -94,7 +94,26 @@ inline VPR Broadcast(const VPR& vt, int l0, int l1, int l2, int l3, int l4, int 
   return vte;
 }
 
-ARCH_TARGET("sse3", "avx2", "default")
+#ifdef SIMD_SUPPORT
+inline VPR GetVTE(const VPR& vt, u8 e) {
+  VPR vte{};
+  e &= 0xf;
+  switch(e) {
+    case 0 ... 1: return vt;
+    case 2: vte.single = _mm_shufflehi_epi16(_mm_shufflelo_epi16(vt.single, 0xF5), 0xF5); break;
+    case 3: vte.single = _mm_shufflehi_epi16(_mm_shufflelo_epi16(vt.single, 0xA0), 0xA0); break;
+    case 4: vte.single = _mm_shufflehi_epi16(_mm_shufflelo_epi16(vt.single, 0xFF), 0xFF); break;
+    case 5: vte.single = _mm_shufflehi_epi16(_mm_shufflelo_epi16(vt.single, 0xAA), 0xAA); break;
+    case 6: vte.single = _mm_shufflehi_epi16(_mm_shufflelo_epi16(vt.single, 0x55), 0x55); break;
+    case 7: vte.single = _mm_shufflehi_epi16(_mm_shufflelo_epi16(vt.single, 0x00), 0x00); break;
+    case 8 ... 15: {
+      int index = ELEMENT_INDEX(e - 8);
+      vte.single = _mm_set1_epi16(vt.element[index]);
+    } break;
+  }
+  return vte;
+}
+#else
 inline VPR GetVTE(const VPR& vt, u8 e) {
   VPR vte{};
   e &= 0xf;
@@ -115,6 +134,7 @@ inline VPR GetVTE(const VPR& vt, u8 e) {
   }
   return vte;
 }
+#endif
 
 void RSP::add(u32 instr) {
   gpr[RD(instr)] = gpr[RS(instr)] + gpr[RT(instr)];
@@ -694,7 +714,20 @@ inline u16 unsignedClamp(s64 val) {
   return val;
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
+#ifdef SIMD_SUPPORT
+void RSP::vabs(u32 instr) {
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
+
+  m128i isZero = _mm_cmpeq_epi16(vs.single, m128i{});
+  m128i isNeg = _mm_srai_epi16(vs.single, 15);
+  m128i temp = _mm_andnot_si128(isZero, vte.single);
+  temp = _mm_xor_si128(temp, isNeg);
+  acc.l.single = _mm_sub_epi16(temp, isNeg);
+  vd.single = _mm_subs_epi16(temp, isNeg);
+}
+#else
 void RSP::vabs(u32 instr) {
   VPR& vs = vpr[VS(instr)];
   VPR& vd = vpr[VD(instr)];
@@ -718,8 +751,8 @@ void RSP::vabs(u32 instr) {
     }
   }
 }
+#endif
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vadd(u32 instr) {
   VPR& vs = vpr[VS(instr)];
   VPR& vd = vpr[VD(instr)];
@@ -734,7 +767,6 @@ void RSP::vadd(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vaddc(u32 instr) {
   VPR& vs = vpr[VS(instr)];
   VPR& vd = vpr[VD(instr)];
@@ -749,7 +781,6 @@ void RSP::vaddc(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vch(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -782,7 +813,6 @@ void RSP::vch(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vcr(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -815,7 +845,6 @@ void RSP::vcr(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vcl(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -850,15 +879,12 @@ void RSP::vcl(u32 instr) {
     vd.element[i] = acc.l.element[i];
   }
 }
-
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmov(u32 instr) {
   u8 e = E2(instr), vs = VS(instr) & 7;
   VPR& vd = vpr[VD(instr)];
   VPR vte = GetVTE(vpr[VT(instr)], e);
 
   u8 se;
-  e &= 7;
   switch(e) {
     case 0 ... 1:
       se = (e & 0b000) | (vs & 0b111);
@@ -879,10 +905,13 @@ void RSP::vmov(u32 instr) {
   u8 de = vs & 7;
 
   vd.element[ELEMENT_INDEX(de)] = vte.element[ELEMENT_INDEX(se)];
-
+#ifdef SIMD_SUPPORT
+  acc.l.single = vte.single;
+#else
   for(int i = 0; i < 8; i++) {
     acc.l.element[i] = vte.element[i];
   }
+#endif
 }
 
 inline bool IsSignExtension(s16 hi, s16 lo) {
@@ -894,7 +923,6 @@ inline bool IsSignExtension(s16 hi, s16 lo) {
   return false;
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmulf(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -916,7 +944,6 @@ void RSP::vmulf(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmulq(u32 instr) {
   VPR& vs = vpr[VS(instr)];
   VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
@@ -935,7 +962,6 @@ void RSP::vmulq(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmulu(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -957,7 +983,6 @@ void RSP::vmulu(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmudl(u32 instr) {
   u8 e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -984,7 +1009,6 @@ void RSP::vmudl(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmudh(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1003,7 +1027,6 @@ void RSP::vmudh(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmudm(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1020,7 +1043,6 @@ void RSP::vmudm(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmudn(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1046,7 +1068,26 @@ void RSP::vmudn(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
+#ifdef SIMD_SUPPORT
+void RSP::vmadh(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+  m128i lo, hi, omask;
+  lo = _mm_mullo_epi16(vs.single, vte.single);
+  hi = _mm_mulhi_epi16(vs.single, vte.single);
+  omask = _mm_adds_epu16(acc.m.single, lo);
+  acc.m.single = _mm_add_epi16(acc.m.single, lo);
+  omask = _mm_cmpeq_epi16(acc.m.single, omask);
+  omask = _mm_cmpeq_epi16(omask, m128i{});
+  hi = _mm_sub_epi16(hi, omask);
+  acc.h.single = _mm_add_epi16(acc.h.single, hi);
+  lo = _mm_unpacklo_epi16(acc.m.single, acc.h.single);
+  hi = _mm_unpackhi_epi16(acc.m.single, acc.h.single);
+  vd.single = _mm_packs_epi32(lo, hi);
+}
+#else
 void RSP::vmadh(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1068,8 +1109,8 @@ void RSP::vmadh(u32 instr) {
     vd.element[i] = result;
   }
 }
+#endif
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmadl(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1097,8 +1138,69 @@ void RSP::vmadl(u32 instr) {
     vd.element[i] = result;
   }
 }
+#ifdef SIMD_SUPPORT
+void RSP::vmadm(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
 
-ARCH_TARGET("sse4.2", "avx2", "default")
+  m128i lo, hi, sign, vta, omask;
+  lo = _mm_mullo_epi16(vs.single, vte.single);
+  hi = _mm_mulhi_epu16(vs.single, vte.single);
+  sign = _mm_srai_epi16(vs.single, 15);
+  vta = _mm_and_si128(vte.single, sign);
+  hi = _mm_sub_epi16(hi, vta);
+  omask = _mm_adds_epu16(acc.l.single, lo);
+  acc.l.single = _mm_add_epi16(acc.l.single, lo);
+  omask = _mm_cmpeq_epi16(acc.l.single, omask);
+  omask = _mm_cmpeq_epi16(omask, m128i{});
+  hi = _mm_sub_epi16(hi, omask);
+  omask = _mm_adds_epu16(acc.m.single, hi);
+  acc.m.single = _mm_add_epi16(acc.m.single, hi);
+  omask = _mm_cmpeq_epi16(acc.m.single, omask);
+  omask = _mm_cmpeq_epi16(omask, m128i{});
+  hi = _mm_srai_epi16(hi, 15);
+  acc.h.single = _mm_add_epi16(acc.h.single, hi);
+  acc.h.single = _mm_sub_epi16(acc.h.single, omask);
+  lo = _mm_unpacklo_epi16(acc.m.single, acc.h.single);
+  hi = _mm_unpackhi_epi16(acc.m.single, acc.h.single);
+  vd.single = _mm_packs_epi32(lo, hi);
+}
+
+void RSP::vmadn(u32 instr) {
+  int e = E2(instr);
+  VPR& vs = vpr[VS(instr)];
+  VPR& vd = vpr[VD(instr)];
+  VPR vte = GetVTE(vpr[VT(instr)], e);
+
+  m128i lo, hi, sign, vsa, omask, nhi, nmd, shi, smd, cmask, cval;
+  lo = _mm_mullo_epi16(vs.single, vte.single);
+  hi = _mm_mulhi_epu16(vs.single, vte.single);
+  sign = _mm_srai_epi16(vte.single, 15);
+  vsa = _mm_and_si128(vs.single, sign);
+  hi = _mm_sub_epi16(hi, vsa);
+  omask = _mm_adds_epu16(acc.l.single, lo);
+  acc.l.single = _mm_add_epi16(acc.l.single, lo);
+  omask = _mm_cmpeq_epi16(acc.l.single, omask);
+  omask = _mm_cmpeq_epi16(omask, m128i{});
+  hi = _mm_sub_epi16(hi, omask);
+  omask = _mm_adds_epu16(acc.m.single, hi);
+  acc.m.single = _mm_add_epi16(acc.m.single, hi);
+  omask = _mm_cmpeq_epi16(acc.m.single, omask);
+  omask = _mm_cmpeq_epi16(omask, m128i{});
+  hi = _mm_srai_epi16(hi, 15);
+  acc.h.single = _mm_add_epi16(acc.h.single, hi);
+  acc.h.single = _mm_sub_epi16(acc.h.single, omask);
+  nhi = _mm_srai_epi16(acc.h.single, 15);
+  nmd = _mm_srai_epi16(acc.m.single, 15);
+  shi = _mm_cmpeq_epi16(nhi, acc.h.single);
+  smd = _mm_cmpeq_epi16(nhi, nmd);
+  cmask = _mm_and_si128(smd, shi);
+  cval = _mm_cmpeq_epi16(nhi, m128i{});
+  vd.single = _mm_blendv_epi8(cval, acc.l.single, cmask);
+}
+#else
 void RSP::vmadm(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1118,7 +1220,6 @@ void RSP::vmadm(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmadn(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1143,8 +1244,8 @@ void RSP::vmadn(u32 instr) {
     vd.element[i] = result;
   }
 }
+#endif
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmacf(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR& vs = vpr[VS(instr)];
@@ -1166,7 +1267,6 @@ void RSP::vmacf(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmacu(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR& vs = vpr[VS(instr)];
@@ -1187,7 +1287,6 @@ void RSP::vmacu(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmacq(u32 instr) {
   VPR& vd = vpr[VD(instr)];
 
@@ -1205,7 +1304,6 @@ void RSP::vmacq(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::veq(u32 instr) {
   int e = E2(instr);
   VPR& vd = vpr[VD(instr)];
@@ -1220,7 +1318,6 @@ void RSP::veq(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vne(u32 instr) {
   int e = E2(instr);
   VPR& vd = vpr[VD(instr)];
@@ -1235,7 +1332,6 @@ void RSP::vne(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vge(u32 instr) {
   int e = E2(instr);
   VPR& vd = vpr[VD(instr)];
@@ -1252,7 +1348,6 @@ void RSP::vge(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vlt(u32 instr) {
   int e = E2(instr);
   VPR& vd = vpr[VD(instr)];
@@ -1314,7 +1409,6 @@ inline u32 rsq(u32 input) {
   return result ^ mask;
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vrcpl(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR& vt = vpr[VT(instr)];
@@ -1334,14 +1428,17 @@ void RSP::vrcpl(u32 instr) {
   divIn = 0;
   divInLoaded = false;
 
-  for(int i = 0; i < 8; i++) {
+#ifdef SIMD_SUPPORT
+  acc.l.single = vte.single;
+#else
+  for (int i = 0; i < 8; i++) {
     acc.l.element[i] = vte.element[i];
   }
+#endif
 
   vd.element[ELEMENT_INDEX(de)] = result;
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vrcp(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR& vt = vpr[VT(instr)];
@@ -1354,12 +1451,15 @@ void RSP::vrcp(u32 instr) {
   divOut = result >> 16;
   divInLoaded = false;
 
+#ifdef SIMD_SUPPORT
+  acc.l.single = vte.single;
+#else
   for (int i = 0; i < 8; i++) {
     acc.l.element[i] = vte.element[i];
   }
+#endif
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vrsq(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR& vt = vpr[VT(instr)];
@@ -1372,9 +1472,13 @@ void RSP::vrsq(u32 instr) {
   divOut = result >> 16;
   divInLoaded = false;
 
+#ifdef SIMD_SUPPORT
+  acc.l.single = vte.single;
+#else
   for (int i = 0; i < 8; i++) {
     acc.l.element[i] = vte.element[i];
   }
+#endif
 }
 
 // from nall, in ares
@@ -1384,7 +1488,6 @@ static inline s64 sclip(s64 x, u32 bits) {
   return ((x & m) ^ b) - b;
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vrndn(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
@@ -1416,7 +1519,6 @@ void RSP::vrndn(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vrndp(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
@@ -1448,7 +1550,6 @@ void RSP::vrndp(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vrsql(u32 instr) {
   VPR& vd = vpr[VD(instr)];
   VPR& vt = vpr[VT(instr)];
@@ -1467,14 +1568,17 @@ void RSP::vrsql(u32 instr) {
   divOut = result >> 16;
   divInLoaded = false;
 
-  for(int i = 0; i < 8; i++) {
+#ifdef SIMD_SUPPORT
+  acc.l.single = vte.single;
+#else
+  for (int i = 0; i < 8; i++) {
     acc.l.element[i] = vte.element[i];
   }
+#endif
 
   vd.element[ELEMENT_INDEX(de)] = result;
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vrcph(u32 instr) {
   int e = E2(instr) & 7;
   int de = DE(instr) & 7;
@@ -1482,43 +1586,62 @@ void RSP::vrcph(u32 instr) {
   VPR& vt = vpr[VT(instr)];
   VPR vte = GetVTE(vpr[VT(instr)], E2(instr));
 
-  for(int i = 0; i < 8; i++) {
+#ifdef SIMD_SUPPORT
+  acc.l.single = vte.single;
+#else
+  for (int i = 0; i < 8; i++) {
     acc.l.element[i] = vte.element[i];
   }
+#endif
 
   vd.element[ELEMENT_INDEX(de)] = divOut;
   divIn = vt.element[ELEMENT_INDEX(e)];
   divInLoaded = true;
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vsar(u32 instr) {
   u8 e = E2(instr);
+  VPR& vd = vpr[VD(instr)];
   switch(e) {
     case 0x8:
+#ifdef SIMD_SUPPORT
+      vd.single = acc.h.single;
+#else
       for(int i = 0; i < 8; i++) {
-        vpr[VD(instr)].element[i] = acc.h.element[i];
+        vd.element[i] = acc.h.element[i];
       }
+#endif
       break;
     case 0x9:
+#ifdef SIMD_SUPPORT
+      vd.single = acc.m.single;
+#else
       for(int i = 0; i < 8; i++) {
-        vpr[VD(instr)].element[i] = acc.m.element[i];
+        vd.element[i] = acc.m.element[i];
       }
+#endif
       break;
     case 0xA:
+#ifdef SIMD_SUPPORT
+      vd.single = acc.l.single;
+#else
       for(int i = 0; i < 8; i++) {
-        vpr[VD(instr)].element[i] = acc.l.element[i];
+        vd.element[i] = acc.l.element[i];
       }
+#endif
       break;
     default:
+#ifdef SIMD_SUPPORT
+      vd.single = _mm_set_epi16(0, 0, 0, 0, 0, 0, 0, 0);
+#else
       for(int i = 0; i < 8; i++) {
-        vpr[VD(instr)].element[i] = 0;
+        vd.element[i] = 0;
       }
+#endif
       break;
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vsubc(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1535,7 +1658,6 @@ void RSP::vsubc(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vsub(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1552,7 +1674,6 @@ void RSP::vsub(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vmrg(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1567,7 +1688,6 @@ void RSP::vmrg(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vxor(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1580,7 +1700,6 @@ void RSP::vxor(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vnxor(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1593,7 +1712,6 @@ void RSP::vnxor(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vand(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1606,7 +1724,6 @@ void RSP::vand(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vnand(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1619,7 +1736,6 @@ void RSP::vnand(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vnor(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1632,7 +1748,6 @@ void RSP::vnor(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vor(u32 instr) {
   int e = E2(instr);
   VPR& vs = vpr[VS(instr)];
@@ -1645,7 +1760,6 @@ void RSP::vor(u32 instr) {
   }
 }
 
-ARCH_TARGET("sse4.2", "avx2", "default")
 void RSP::vzero(u32 instr) {
   VPR& vs = vpr[VS(instr)];
   VPR vte = GetVTE(vpr[VT(instr)], E2(instr));

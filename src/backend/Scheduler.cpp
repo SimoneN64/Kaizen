@@ -5,17 +5,17 @@
 Scheduler scheduler;
 
 Scheduler::Scheduler() {
-  events.push({UINT64_MAX, [](n64::Mem&, n64::Registers&){
+  enqueueAbsolute({UINT64_MAX, [](n64::Mem&, n64::Registers&){
     Util::panic("How the fuck did we get here?!\n");
   }});
 }
 
 void Scheduler::enqueueRelative(const Event& event) {
-  events.push({event.time + ticks, event.handler});
+  enqueueAbsolute({event.time + ticks, event.handler});
 }
 
-void Scheduler::enqueueAbsolute(const Event& event) {
-  events.push({event.time, event.handler});
+void Scheduler::enqueueAbsolute(const Event& e) {
+  events.push(e);
 }
 
 void Scheduler::tick(u64 t, n64::Mem& mem, n64::Registers& regs) {

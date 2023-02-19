@@ -60,13 +60,14 @@ void SI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       status.dmaBusy = true;
       toDram = true;
       scheduler.enqueueRelative({SI_DMA_DELAY, DMA});
+      Util::debug("SI DMA from PIF RAM to RDRAM ({:08X} to {:08X})\n", pifAddr, dramAddr);
     } break;
     case 0x04800010: {
       pifAddr = val & 0x1FFFFFFF;
       status.dmaBusy = true;
       toDram = false;
       scheduler.enqueueRelative({SI_DMA_DELAY, DMA});
-      Util::debug("SI DMA from RDRAM to PIF RAM ({:08X} to {:08X})\n", dramAddr, val & 0x1FFFFFFF);
+      Util::debug("SI DMA from RDRAM to PIF RAM ({:08X} to {:08X})\n", dramAddr, pifAddr);
     } break;
     case 0x04800018:
       InterruptLower(mem.mmio.mi, regs, Interrupt::SI);

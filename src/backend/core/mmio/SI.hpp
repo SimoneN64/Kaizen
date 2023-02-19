@@ -36,4 +36,5 @@ struct SI {
 };
 
 static void DMA(Mem& mem, Registers& regs);
+#define SI_DMA_DELAY (65536 * 2)
 }

@@ -35,6 +35,5 @@ using m128i = __m128i;
 #define ELEMENT_INDEX(i) (7 - (i))
 #define BYTE_INDEX(i)   (15 - (i))
 
-#define SI_DMA_DELAY (65536 * 2)
 #define unlikely(exp) __builtin_expect(exp, 0)
 #define likely(exp) __builtin_expect(exp, 1)

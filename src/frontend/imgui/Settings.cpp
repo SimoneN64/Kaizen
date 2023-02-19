@@ -47,10 +47,8 @@ Settings::Settings(n64::Core& core) {
     checkjsonentry(volumeR, float, "audio", "volumeR", 0.5);
     checkjsonentry(volumeL, float, "audio", "volumeL", 0.5);
     checkjsonentry(lockChannels, bool, "audio", "lockChannels", true);
-    checkjsonentry(gamesDir, std::string, "general", "gamesDir", "");
   } else {
     settingsFile = std::fstream("resources/settings.json", std::fstream::trunc | std::fstream::in | std::fstream::out);
-    settings["general"]["gamesDir"] = "";
     settings["cpu"]["type"] = "interpreter";
     settings["audio"]["volumeR"] = 0.5;
     settings["audio"]["volumeL"] = 0.5;
@@ -60,7 +58,6 @@ Settings::Settings(n64::Core& core) {
     volumeR = 0.5;
     volumeL = 0.5;
     lockChannels = true;
-    gamesDir = "";
 
     settingsFile << settings;
   }
@@ -84,7 +81,6 @@ Settings::~Settings() {
   if(fileExists) {
     settingsFile = std::fstream("resources/settings.json", std::fstream::trunc | std::fstream::out);
 
-    settings["general"]["gamesDir"] = gamesDir;
     settings["cpu"]["type"] = cpuType;
     settings["audio"]["volumeR"] = volumeR;
     settings["audio"]["volumeL"] = volumeL;
@@ -93,7 +89,6 @@ Settings::~Settings() {
   } else {
     settingsFile = std::fstream("resources/settings.json", std::fstream::out);
 
-    settings["general"]["gamesDir"] = gamesDir;
     settings["cpu"]["type"] = cpuType;
     settings["audio"]["volumeR"] = volumeR;
     settings["audio"]["volumeL"] = volumeL;
@@ -115,16 +110,6 @@ void Settings::RenderWidget(bool& show) {
       ImGui::Separator();
       switch (category) {
         case General:
-          ImGui::Text("Games directory: %s", gamesDir.c_str());
-          ImGui::SameLine();
-          if(ImGui::Button("Select...")) {
-            nfdchar_t *outpath;
-            nfdresult_t result = NFD_PickFolder(&outpath, nullptr);
-            if (result == NFD_OKAY) {
-              gamesDir = outpath;
-              NFD_FreePath(outpath);
-            }
-          }
           break;
         case CPU: {
           const char *cpuTypes[] = {"JIT", "Interpreter"};

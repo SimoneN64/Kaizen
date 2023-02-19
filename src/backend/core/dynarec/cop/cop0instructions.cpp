@@ -2,24 +2,29 @@
 #include <log.hpp>
 #include <Registers.hpp>
 
-namespace n64::JIT {
-void mtc0(n64::Registers& regs, u32 instr) {
+namespace n64 {
+void mtc0(Dynarec& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
   regs.cop0.SetReg32(RD(instr), regs.gpr[RT(instr)]);
 }
 
-void dmtc0(n64::Registers& regs, u32 instr) {
+void dmtc0(Dynarec& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
   regs.cop0.SetReg64(RD(instr), regs.gpr[RT(instr)]);
 }
 
-void mfc0(n64::Registers& regs, u32 instr) {
+void mfc0(Dynarec& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
   regs.gpr[RT(instr)] = s32(regs.cop0.GetReg32(RD(instr)));
 }
 
-void dmfc0(n64::Registers& regs, u32 instr) {
+void dmfc0(Dynarec& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
   regs.gpr[RT(instr)] = s64(regs.cop0.GetReg64(RD(instr)));
 }
 
-void eret(n64::Registers& regs) {
+void eret(Dynarec& cpu) {
+  Registers& regs = cpu.regs;
   if(regs.cop0.status.erl) {
     regs.SetPC64(regs.cop0.ErrorEPC);
     regs.cop0.status.erl = false;
@@ -31,7 +36,8 @@ void eret(n64::Registers& regs) {
 }
 
 
-void tlbr(n64::Registers& regs) {
+void tlbr(Dynarec& cpu) {
+  Registers& regs = cpu.regs;
   u8 Index = regs.cop0.index & 0b111111;
   if (Index >= 32) {
     Util::panic("TLBR with TLB index {}", Index);
@@ -48,7 +54,8 @@ void tlbr(n64::Registers& regs) {
   regs.cop0.pageMask.raw = entry.pageMask.raw;
 }
 
-void tlbw(n64::Registers& regs, int index_) {
+void tlbw(Dynarec& cpu, int index_) {
+  Registers& regs = cpu.regs;
   PageMask page_mask = regs.cop0.pageMask;
   u32 top = page_mask.mask & 0xAAA;
   page_mask.mask = top | (top >> 1);
@@ -68,7 +75,8 @@ void tlbw(n64::Registers& regs, int index_) {
   regs.cop0.tlb[index_].initialized = true;
 }
 
-void tlbp(n64::Registers& regs) {
+void tlbp(Dynarec& cpu) {
+  Registers& regs = cpu.regs;
   int match = -1;
   TLBEntry* entry = TLBTryMatch(regs, regs.cop0.entryHi.raw, &match);
   if(entry && match >= 0) {

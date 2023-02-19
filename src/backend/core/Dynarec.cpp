@@ -1,8 +1,10 @@
-#include <Dynarec.hpp>
+#include <Core.hpp>
 #include <Registers.hpp>
 #include <filesystem>
+#include "Dynarec.hpp"
 
-namespace n64::JIT {
+
+namespace n64 {
 namespace fs = std::filesystem;
 
 Dynarec::~Dynarec() {
@@ -97,8 +99,8 @@ void Dynarec::AllocateOuter(u32 pc) {
   blockCache[pc >> 20] = (Fn*)bumpAlloc(0x1000 * sizeof(Fn));
 }
 
-int Dynarec::Step(Mem &mem) {
-  instrInBlock = 0;
+int Dynarec::Run() {
+  /*instrInBlock = 0;
   regs.gpr[0] = 0;
   regs.prevDelaySlot = regs.delaySlot;
   regs.delaySlot = false;
@@ -128,6 +130,13 @@ int Dynarec::Step(Mem &mem) {
     FireException(regs, ExceptionCode::Interrupt, 0, false);
   }
 
-  return instrInBlock;
+  return instrInBlock;*/
+  Util::panic("JIT RECOMPILER NOT YET IMPLEMENTED!\n");
+}
+
+void Dynarec::Reset() {
+  code.reset();
+  regs.Reset();
+  InvalidateCache();
 }
 }

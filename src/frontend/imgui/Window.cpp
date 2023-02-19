@@ -12,7 +12,7 @@ namespace fs = std::filesystem;
 
 Window::Window(n64::Core& core) : settings(core) {
   InitSDL();
-  InitParallelRDP(core.mem.GetRDRAM(), window);
+  InitParallelRDP(core.cpu->mem.GetRDRAM(), window);
   InitImgui();
   NFD::Init();
 }
@@ -199,13 +199,13 @@ void Window::RenderMainMenuBar(n64::Core &core) {
       }
     }
     if (ImGui::MenuItem("Dump RDRAM")) {
-      core.mem.DumpRDRAM();
+      core.cpu->mem.DumpRDRAM();
     }
     if (ImGui::MenuItem("Dump IMEM")) {
-      core.mem.DumpIMEM();
+      core.cpu->mem.DumpIMEM();
     }
     if (ImGui::MenuItem("Dump DMEM")) {
-      core.mem.DumpDMEM();
+      core.cpu->mem.DumpDMEM();
     }
     if (ImGui::MenuItem("Exit")) {
       core.done = true;
@@ -250,8 +250,8 @@ void Window::Render(n64::Core& core) {
   static u32 lastFrame = 0;
   if(!core.pause && lastFrame < ticks - 1000) {
     lastFrame = ticks;
-    windowTitle += fmt::format("  | {:02d} VI/s", core.mem.mmio.vi.swaps);
-    core.mem.mmio.vi.swaps = 0;
+    windowTitle += fmt::format("  | {:02d} VI/s", core.cpu->mem.mmio.vi.swaps);
+    core.cpu->mem.mmio.vi.swaps = 0;
     SDL_SetWindowTitle(window, windowTitle.c_str());
     windowTitle = shadowWindowTitle;
   }

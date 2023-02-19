@@ -2,16 +2,15 @@
 #include <core/registers/Registers.hpp>
 #include <Mem.hpp>
 #include <vector>
+#include <BaseCPU.hpp>
 
 namespace n64 {
-struct Interpreter {
+struct Core;
+struct Interpreter : BaseCPU {
   Interpreter() = default;
   ~Interpreter() = default;
-  int Run(Mem&);
-  void Reset() {
-    regs.Reset();
-  }
-  Registers regs;
+  int Run() override;
+  void Reset() override;
 private:
   u64 cop2Latch{};
   friend struct Cop1;
@@ -19,7 +18,7 @@ private:
   void cop2Decode(u32);
   void special(u32);
   void regimm(u32);
-  void Exec(Mem&, u32);
+  void Exec(u32);
   void add(u32);
   void addu(u32);
   void addi(u32);
@@ -58,19 +57,19 @@ private:
   void jal(u32);
   void jalr(u32);
   void lui(u32);
-  void lbu(Mem&, u32);
-  void lb(Mem&, u32);
-  void ld(Mem&, u32);
-  void ldl(Mem&, u32);
-  void ldr(Mem&, u32);
-  void lh(Mem&, u32);
-  void lhu(Mem&, u32);
-  void ll(Mem&, u32);
-  void lld(Mem&, u32);
-  void lw(Mem&, u32);
-  void lwl(Mem&, u32);
-  void lwu(Mem&, u32);
-  void lwr(Mem&, u32);
+  void lbu(u32);
+  void lb(u32);
+  void ld(u32);
+  void ldl(u32);
+  void ldr(u32);
+  void lh(u32);
+  void lhu(u32);
+  void ll(u32);
+  void lld(u32);
+  void lw(u32);
+  void lwl(u32);
+  void lwu(u32);
+  void lwr(u32);
   void mfhi(u32);
   void mflo(u32);
   void mult(u32);
@@ -78,16 +77,16 @@ private:
   void mthi(u32);
   void mtlo(u32);
   void nor(u32);
-  void sb(Mem&, u32);
-  void sc(Mem&, u32);
-  void scd(Mem&, u32);
-  void sd(Mem&, u32);
-  void sdl(Mem&, u32);
-  void sdr(Mem&, u32);
-  void sh(Mem&, u32);
-  void sw(Mem&, u32);
-  void swl(Mem&, u32);
-  void swr(Mem&, u32);
+  void sb(u32);
+  void sc(u32);
+  void scd(u32);
+  void sd(u32);
+  void sdl(u32);
+  void sdr(u32);
+  void sh(u32);
+  void sw(u32);
+  void swl(u32);
+  void swr(u32);
   void slti(u32);
   void sltiu(u32);
   void slt(u32);

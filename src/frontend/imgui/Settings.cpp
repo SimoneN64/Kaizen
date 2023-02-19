@@ -65,10 +65,10 @@ Settings::Settings(n64::Core& core) {
 
   switch(core.cpuType) {
     case n64::CpuType::Interpreter:
-      core.cpuInterp = new n64::Interpreter;
+      core.cpu = std::make_unique<n64::Interpreter>();
       break;
     case n64::CpuType::Dynarec:
-      core.cpuDynarec = new n64::JIT::Dynarec;
+      core.cpu = std::make_unique<n64::Dynarec>();
       break;
     case n64::CpuType::NONE:
       Util::panic("BRUH\n");

@@ -2,11 +2,9 @@
 #include <xbyak/xbyak.h>
 #include <backend/core/Mem.hpp>
 #include <fstream>
-#include <Registers.hpp>
+#include <BaseCPU.hpp>
 
-namespace n64 { struct Cop1; }
-
-namespace n64::JIT {
+namespace n64 {
 using namespace Xbyak;
 using namespace Xbyak::util;
 using Fn = void (*)();
@@ -16,18 +14,13 @@ using Fn = void (*)();
 #define CODECACHE_SIZE (2 << 25)
 #define CODECACHE_OVERHEAD (CODECACHE_SIZE - 1_kb)
 
-struct Dynarec {
+struct Dynarec : BaseCPU {
   Dynarec();
-  ~Dynarec();
-  int Step(Mem&);
-  void Reset() {
-    code.reset();
-    regs.Reset();
-    InvalidateCache();
-  }
+  ~Dynarec() override;
+  int Run() override;
+  void Reset() override;
   u64 cop2Latch{};
   CodeGenerator code;
-  n64::Registers regs;
   void InvalidatePage(u32);
   void InvalidateCache();
 private:

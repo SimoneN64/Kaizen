@@ -1,6 +1,6 @@
 #include <core/Dynarec.hpp>
 
-namespace n64::JIT {
+namespace n64 {
 void Dynarec::InvalidatePage(u32 paddr) {
   blockCache[paddr >> 20] = nullptr;
 }

@@ -2,8 +2,8 @@
 #include <Registers.hpp>
 #include <dynarec/cop/cop0instructions.hpp>
 
-namespace n64::JIT {
-void cop0Decode(n64::Registers& regs, u32 instr, Dynarec& cpu) {
+namespace n64 {
+void cop0Decode(Registers& regs, Dynarec& cpu, u32 instr) {
   u8 mask_cop = (instr >> 21) & 0x1F;
   u8 mask_cop2 = instr & 0x3F;
   Xbyak::CodeGenerator& code = cpu.code;
@@ -36,14 +36,13 @@ void cop0Decode(n64::Registers& regs, u32 instr, Dynarec& cpu) {
           code.call(code.rax);
           break;
         case 0x02:
-          code.and_(code.dword[code.rdi + offsetof(n64::Registers, cop0.index)], 0x3F);
+          code.and_(code.dword[code.rdi + offsetof(Registers, cop0.index)], 0x3F);
           code.mov(code.rsi, code.dword[code.rdi]);
           code.mov(code.rax, (u64)tlbw);
           code.call(code.rax);
           break;
         case 0x06:
           code.mov(code.rax, (u64)regs.cop0.GetRandom());
-          code.call(code.rax);
           code.mov(code.rsi, code.rax);
           code.mov(code.rax, (u64)tlbw);
           code.call(code.rax);

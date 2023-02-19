@@ -107,7 +107,7 @@ void Interpreter::cop2Decode(u32 instr) {
   }
 }
 
-void Interpreter::Exec(Mem& mem, u32 instr) {
+void Interpreter::Exec(u32 instr) {
   u8 mask = (instr >> 26) & 0x3f;
   // 00rr_rccc
   switch(mask) { // TODO: named constants for clearer code
@@ -139,35 +139,35 @@ void Interpreter::Exec(Mem& mem, u32 instr) {
     case 0x17: bl(instr, regs.gpr[RS(instr)] > 0); break;
     case 0x18: daddi(instr); break;
     case 0x19: daddiu(instr); break;
-    case 0x1A: ldl(mem, instr); break;
-    case 0x1B: ldr(mem, instr); break;
+    case 0x1A: ldl(instr); break;
+    case 0x1B: ldr(instr); break;
     case 0x1F: FireException(regs, ExceptionCode::ReservedInstruction, 0, true); break;
-    case 0x20: lb(mem, instr); break;
-    case 0x21: lh(mem, instr); break;
-    case 0x22: lwl(mem, instr); break;
-    case 0x23: lw(mem, instr); break;
-    case 0x24: lbu(mem, instr); break;
-    case 0x25: lhu(mem, instr); break;
-    case 0x26: lwr(mem, instr); break;
-    case 0x27: lwu(mem, instr); break;
-    case 0x28: sb(mem, instr); break;
-    case 0x29: sh(mem, instr); break;
-    case 0x2A: swl(mem, instr); break;
-    case 0x2B: sw(mem, instr); break;
-    case 0x2C: sdl(mem, instr); break;
-    case 0x2D: sdr(mem, instr); break;
-    case 0x2E: swr(mem, instr); break;
+    case 0x20: lb(instr); break;
+    case 0x21: lh(instr); break;
+    case 0x22: lwl(instr); break;
+    case 0x23: lw(instr); break;
+    case 0x24: lbu(instr); break;
+    case 0x25: lhu(instr); break;
+    case 0x26: lwr(instr); break;
+    case 0x27: lwu(instr); break;
+    case 0x28: sb(instr); break;
+    case 0x29: sh(instr); break;
+    case 0x2A: swl(instr); break;
+    case 0x2B: sw(instr); break;
+    case 0x2C: sdl(instr); break;
+    case 0x2D: sdr(instr); break;
+    case 0x2E: swr(instr); break;
     case 0x2F: break; // CACHE
-    case 0x30: ll(mem, instr); break;
+    case 0x30: ll(instr); break;
     case 0x31: regs.cop1.lwc1(regs, mem, instr); break;
-    case 0x34: lld(mem, instr); break;
+    case 0x34: lld(instr); break;
     case 0x35: regs.cop1.ldc1(regs, mem, instr); break;
-    case 0x37: ld(mem, instr); break;
-    case 0x38: sc(mem, instr); break;
+    case 0x37: ld(instr); break;
+    case 0x38: sc(instr); break;
     case 0x39: regs.cop1.swc1(regs, mem, instr); break;
-    case 0x3C: scd(mem, instr); break;
+    case 0x3C: scd(instr); break;
     case 0x3D: regs.cop1.sdc1(regs, mem, instr); break;
-    case 0x3F: sd(mem, instr); break;
+    case 0x3F: sd(instr); break;
     default:
       Util::panic("Unimplemented instruction {:02X} ({:08X}) (pc: {:016X})\n", mask, instr, (u64)regs.oldPC);
   }

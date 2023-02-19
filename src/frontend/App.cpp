@@ -9,7 +9,7 @@ App::App() : window(core) {
 
 void App::Run() {
   SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
-  n64::SI& si = core.mem.mmio.si;
+  n64::SI& si = core.cpu->mem.mmio.si;
 
   while (!core.done) {
     core.Run(window, window.settings.GetVolumeL(), window.settings.GetVolumeL());

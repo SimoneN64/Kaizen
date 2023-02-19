@@ -3,7 +3,7 @@
 #include <dynarec/cop/cop0decode.hpp>
 #include <Registers.hpp>
 
-namespace n64::JIT {
+namespace n64 {
 void Dynarec::cop2Decode(u32 instr) {
   code.mov(rdi, (u64)this);
   code.mov(rsi, (u64)&regs);
@@ -560,8 +560,8 @@ bool Dynarec::Exec(Mem& mem, u32 instr) {
       code.mov(rax, (u64)lui);
       code.call(rax);
       break;
-    case 0x10: cop0Decode(regs, instr, *this); break;
-    case 0x11: res = cop1Decode(regs, instr, *this); break;
+    case 0x10: cop0Decode(regs, *this, instr); break;
+    case 0x11: res = cop1Decode(regs, *this, instr); break;
     case 0x12: cop2Decode(instr); break;
     case 0x14:
       code.mov(rsi, instr);

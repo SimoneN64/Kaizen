@@ -22,34 +22,7 @@ struct Core {
   CartInfo LoadROM(const std::string&);
   void Run(Window&, float volumeL, float volumeR);
   void TogglePause() { pause = !pause; }
-  VI& GetVI() { return mem.mmio.vi; }
-
-  void CpuReset() const {
-    switch(cpuType) {
-      case CpuType::Dynarec: cpuDynarec->Reset(); break;
-      case CpuType::Interpreter: cpuInterp->Reset(); break;
-      case CpuType::NONE: break;
-    }
-  }
-
-  [[nodiscard]] Registers& CpuGetRegs() const {
-    switch(cpuType) {
-      case CpuType::Dynarec: return cpuDynarec->regs;
-      case CpuType::Interpreter: return cpuInterp->regs;
-      case CpuType::NONE:
-        Util::panic("BRUH\n");
-    }
-  }
-
-  static int CpuStep(Core& core) {
-    switch(core.cpuType) {
-      case CpuType::Dynarec:
-        return core.cpuDynarec->Step(core.mem);
-      case CpuType::Interpreter:
-        return core.cpuInterp->Run(core.mem);
-      case CpuType::NONE: return 0;
-    }
-  }
+  VI& GetVI() { return cpu->mem.mmio.vi; }
 
   u32 breakpoint = 0;
 
@@ -58,10 +31,8 @@ struct Core {
   bool romLoaded = false;
   bool done = false;
   std::string rom;
-  Mem mem;
   CpuType cpuType = CpuType::NONE;
-  Interpreter* cpuInterp = nullptr;
-  JIT::Dynarec* cpuDynarec = nullptr;
+  std::unique_ptr<BaseCPU> cpu;
   Debugger debugger{*this};
 };
 }

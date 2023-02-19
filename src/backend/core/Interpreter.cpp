@@ -1,4 +1,4 @@
-#include <core/Interpreter.hpp>
+#include <Core.hpp>
 #include <log.hpp>
 
 namespace n64 {
@@ -21,10 +21,13 @@ inline void CheckCompareInterrupt(MI& mi, Registers& regs) {
   }
 }
 
-int Interpreter::Run(Mem& mem) {
-  MMIO& mmio = mem.mmio;
-  int count = 0;
-  for(;count <= mmio.vi.cyclesPerHalfline; count++) {
+void Interpreter::Reset() {
+  regs.Reset();
+}
+
+int Interpreter::Run() {
+  int cycles = 0;
+  for(; cycles <= mem.mmio.vi.cyclesPerHalfline; cycles++) {
     CheckCompareInterrupt(mem.mmio.mi, regs);
 
     regs.prevDelaySlot = regs.delaySlot;
@@ -34,23 +37,23 @@ int Interpreter::Run(Mem& mem) {
     if(!MapVAddr(regs, LOAD, regs.pc, paddr)) {
       HandleTLBException(regs, regs.pc);
       FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, false);
-      return count;
+      return cycles;
     }
 
     u32 instruction = mem.Read32(regs, paddr);
 
     if(ShouldServiceInterrupt(regs)) {
       FireException(regs, ExceptionCode::Interrupt, 0, false);
-      return count;
+      return cycles;
     }
 
     regs.oldPC = regs.pc;
     regs.pc = regs.nextPC;
     regs.nextPC += 4;
 
-    Exec(mem, instruction);
+    Exec(instruction);
   }
 
-  return count;
+  return cycles;
 }
 }

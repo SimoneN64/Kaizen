@@ -1,13 +1,13 @@
 #pragma once
 #include <Dynarec.hpp>
 
-namespace n64::JIT {
-void mtc0(n64::Registers&, u32);
-void dmtc0(n64::Registers&, u32);
-void mfc0(n64::Registers&, u32);
-void dmfc0(n64::Registers&, u32);
-void eret(n64::Registers&);
-void tlbr(n64::Registers&);
-void tlbw(n64::Registers&, int);
-void tlbp(n64::Registers&);
+namespace n64 {
+void mtc0(Dynarec&, u32);
+void dmtc0(Dynarec&, u32);
+void mfc0(Dynarec&, u32);
+void dmfc0(Dynarec&, u32);
+void eret(Dynarec&);
+void tlbr(Dynarec&);
+void tlbw(Dynarec&, int);
+void tlbp(Dynarec&);
 }

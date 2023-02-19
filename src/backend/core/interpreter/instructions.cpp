@@ -203,7 +203,7 @@ void Interpreter::lui(u32 instr) {
   regs.gpr[RT(instr)] = val;
 }
 
-void Interpreter::lb(Mem& mem, u32 instr) {
+void Interpreter::lb(u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr = 0;
   if(!MapVAddr(regs, LOAD, address, paddr)) {
@@ -214,7 +214,7 @@ void Interpreter::lb(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::lh(Mem& mem, u32 instr) {
+void Interpreter::lh(u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   if ((address & 0b1) > 0) {
     HandleTLBException(regs, address);
@@ -231,7 +231,7 @@ void Interpreter::lh(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::lw(Mem& mem, u32 instr) {
+void Interpreter::lw(u32 instr) {
   s16 offset = instr;
   u64 address = regs.gpr[RS(instr)] + offset;
   if (check_address_error(0b11, address)) {
@@ -249,7 +249,7 @@ void Interpreter::lw(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::ll(Mem& mem, u32 instr) {
+void Interpreter::ll(u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 physical;
   if (!MapVAddr(regs, LOAD, address, physical)) {
@@ -268,7 +268,7 @@ void Interpreter::ll(Mem& mem, u32 instr) {
   regs.cop0.LLAddr = physical >> 4;
 }
 
-void Interpreter::lwl(Mem& mem, u32 instr) {
+void Interpreter::lwl(u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr = 0;
   if(!MapVAddr(regs, LOAD, address, paddr)) {
@@ -283,7 +283,7 @@ void Interpreter::lwl(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::lwr(Mem& mem, u32 instr) {
+void Interpreter::lwr(u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr = 0;
   if(!MapVAddr(regs, LOAD, address, paddr)) {
@@ -298,7 +298,7 @@ void Interpreter::lwr(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::ld(Mem& mem, u32 instr) {
+void Interpreter::ld(u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(0b111, address)) {
     HandleTLBException(regs, address);
@@ -316,7 +316,7 @@ void Interpreter::ld(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::lld(Mem& mem, u32 instr) {
+void Interpreter::lld(u32 instr) {
   if (!regs.cop0.is_64bit_addressing && !regs.cop0.kernel_mode) {
     FireException(regs, ExceptionCode::ReservedInstruction, 0, true);
     return;
@@ -338,7 +338,7 @@ void Interpreter::lld(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::ldl(Mem& mem, u32 instr) {
+void Interpreter::ldl(u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr = 0;
   if (!MapVAddr(regs, LOAD, address, paddr)) {
@@ -353,7 +353,7 @@ void Interpreter::ldl(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::ldr(Mem& mem, u32 instr) {
+void Interpreter::ldr(u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, LOAD, address, paddr)) {
@@ -368,7 +368,7 @@ void Interpreter::ldr(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::lbu(Mem& mem, u32 instr) {
+void Interpreter::lbu(u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, LOAD, address, paddr)) {
@@ -380,7 +380,7 @@ void Interpreter::lbu(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::lhu(Mem& mem, u32 instr) {
+void Interpreter::lhu(u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if ((address & 0b1) > 0) {
     HandleTLBException(regs, address);
@@ -397,7 +397,7 @@ void Interpreter::lhu(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::lwu(Mem& mem, u32 instr) {
+void Interpreter::lwu(u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if ((address & 0b11) > 0) {
     HandleTLBException(regs, address);
@@ -415,7 +415,7 @@ void Interpreter::lwu(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::sb(Mem& mem, u32 instr) {
+void Interpreter::sb(u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, STORE, address, paddr)) {
@@ -426,7 +426,7 @@ void Interpreter::sb(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::sc(Mem& mem, u32 instr) {
+void Interpreter::sc(u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
 
   if ((address & 0b11) > 0) {
@@ -449,7 +449,7 @@ void Interpreter::sc(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::scd(Mem& mem, u32 instr) {
+void Interpreter::scd(u32 instr) {
   if (!regs.cop0.is_64bit_addressing && !regs.cop0.kernel_mode) {
     FireException(regs, ExceptionCode::ReservedInstruction, 0, true);
     return;
@@ -477,7 +477,7 @@ void Interpreter::scd(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::sh(Mem& mem, u32 instr) {
+void Interpreter::sh(u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
 
   u32 physical;
@@ -489,7 +489,7 @@ void Interpreter::sh(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::sw(Mem& mem, u32 instr) {
+void Interpreter::sw(u32 instr) {
   s16 offset = instr;
   u64 address = regs.gpr[RS(instr)] + offset;
   if (check_address_error(0b11, address)) {
@@ -507,7 +507,7 @@ void Interpreter::sw(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::sd(Mem& mem, u32 instr) {
+void Interpreter::sd(u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
   if (check_address_error(0b111, address)) {
     HandleTLBException(regs, address);
@@ -524,7 +524,7 @@ void Interpreter::sd(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::sdl(Mem& mem, u32 instr) {
+void Interpreter::sdl(u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, STORE, address, paddr)) {
@@ -539,7 +539,7 @@ void Interpreter::sdl(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::sdr(Mem& mem, u32 instr) {
+void Interpreter::sdr(u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, STORE, address, paddr)) {
@@ -554,7 +554,7 @@ void Interpreter::sdr(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::swl(Mem& mem, u32 instr) {
+void Interpreter::swl(u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, STORE, address, paddr)) {
@@ -569,7 +569,7 @@ void Interpreter::swl(Mem& mem, u32 instr) {
   }
 }
 
-void Interpreter::swr(Mem& mem, u32 instr) {
+void Interpreter::swr(u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
   u32 paddr;
   if (!MapVAddr(regs, STORE, address, paddr)) {

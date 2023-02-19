@@ -242,7 +242,7 @@ void Mem::Write64(Registers& regs, n64::JIT::Dynarec& dyn, u32 paddr, u64 val) {
 void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
   const auto page = paddr >> 12;
   auto offset = paddr & 0xFFF;
-  const auto pointer = readPages[page];
+  const auto pointer = writePages[page];
 
   if(pointer) {
     ((u8*)pointer)[BYTE_ADDRESS(offset)] = val;
@@ -287,13 +287,9 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
 }
 
 void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
-  if(paddr >= 0x04000000 && paddr <= 0x0403FFFF) {
-
-  }
-
   const auto page = paddr >> 12;
   auto offset = paddr & 0xFFF;
-  const auto pointer = readPages[page];
+  const auto pointer = writePages[page];
 
   if(pointer) {
     Util::WriteAccess<u16>((u8*)pointer, HALF_ADDRESS(offset), val);
@@ -340,7 +336,7 @@ void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
 void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
   const auto page = paddr >> 12;
   auto offset = paddr & 0xFFF;
-  const auto pointer = readPages[page];
+  const auto pointer = writePages[page];
 
   if(pointer) {
     Util::WriteAccess<u32>((u8*)pointer, offset, val);
@@ -385,7 +381,7 @@ void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
 void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
   const auto page = paddr >> 12;
   auto offset = paddr & 0xFFF;
-  const auto pointer = readPages[page];
+  const auto pointer = writePages[page];
 
   if(pointer) {
     Util::WriteAccess<u64>((u8*)pointer, offset, val);

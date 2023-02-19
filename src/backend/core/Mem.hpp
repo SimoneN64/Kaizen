@@ -127,7 +127,4 @@ private:
     // return false;
   }
 };
-
-template <bool tlb = true>
-bool MapVAddr(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr);
 }

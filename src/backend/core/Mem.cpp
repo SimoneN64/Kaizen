@@ -65,26 +65,6 @@ CartInfo Mem::LoadROM(const std::string& filename) {
   return result;
 }
 
-template <bool tlb>
-bool MapVAddr(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr) {
-  paddr = vaddr & 0x1FFFFFFF;
-  if constexpr(!tlb) return true;
-
-  switch(u32(vaddr) >> 29) {
-    case 0 ... 3: case 7:
-      return ProbeTLB(regs, accessType, vaddr, paddr, nullptr);
-    case 4 ... 5: return true;
-    case 6: Util::panic("Unimplemented virtual mapping in KSSEG! ({:08X})\n", vaddr);
-    default:
-      Util::panic("Should never end up in default case in map_vaddr! ({:08X})\n", vaddr);
-  }
-
-  return false;
-}
-
-template bool MapVAddr<true>(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr);
-template bool MapVAddr<false>(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr);
-
 u8 Mem::Read8(n64::Registers &regs, u32 paddr) {
   const auto page = paddr >> 12;
   const auto offset = paddr & 0xFFF;

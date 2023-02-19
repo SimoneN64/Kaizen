@@ -250,7 +250,7 @@ void Window::Render(n64::Core& core) {
   static u32 lastFrame = 0;
   if(!core.pause && lastFrame < ticks - 1000) {
     lastFrame = ticks;
-    windowTitle += fmt::format("  | {:02d} In-Game FPS", core.mem.mmio.vi.swaps);
+    windowTitle += fmt::format("  | {:02d} VI/s", core.mem.mmio.vi.swaps);
     core.mem.mmio.vi.swaps = 0;
     SDL_SetWindowTitle(window, windowTitle.c_str());
     windowTitle = shadowWindowTitle;

@@ -32,6 +32,7 @@ struct SI {
 
   auto Read(MI&, u32) const -> u32;
   void Write(Mem&, Registers&, u32, u32);
+  PIF pif;
 };
 
 static void DMA(Mem& mem, Registers& regs);

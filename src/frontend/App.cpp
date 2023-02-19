@@ -8,12 +8,11 @@ App::App() : window(core) {
 }
 
 void App::Run() {
-  const u8* state = SDL_GetKeyboardState(nullptr);
   SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
+  n64::SI& si = core.mem.mmio.si;
 
   while (!core.done) {
     core.Run(window, window.settings.GetVolumeL(), window.settings.GetVolumeL());
-    core.UpdateController(state);
 
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -27,12 +26,12 @@ void App::Run() {
           break;
         case SDL_CONTROLLERDEVICEADDED: {
           const int index = event.cdevice.which;
-          core.gamepad = SDL_GameControllerOpen(index);
-          core.gamepadConnected = true;
+          si.pif.gamepad = SDL_GameControllerOpen(index);
+          si.pif.gamepadConnected = true;
         } break;
         case SDL_CONTROLLERDEVICEREMOVED:
-          SDL_GameControllerClose(core.gamepad);
-          core.gamepadConnected = false;
+          SDL_GameControllerClose(si.pif.gamepad);
+          si.pif.gamepadConnected = false;
           break;
         case SDL_KEYDOWN:
           switch(event.key.keysym.sym) {

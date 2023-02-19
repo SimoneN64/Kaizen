@@ -1,5 +1,6 @@
 #pragma once
-#include <common.hpp>
+#include <MemoryRegions.hpp>
+#include <SDL_gamecontroller.h>
 
 namespace n64 {
 
@@ -61,6 +62,14 @@ enum CICType {
 
 struct CartInfo;
 
-void ProcessPIFCommands(u8*, Controller&, Mem&);
-void ExecutePIF(Mem& mem, Registers& regs, CartInfo cartInfo);
+struct PIF {
+  void ProcessPIFCommands(Mem&);
+  void ExecutePIF(Mem& mem, Registers& regs, CartInfo cartInfo);
+  void DoPIFHLE(Mem& mem, Registers& regs, CartInfo cartInfo);
+  void UpdateController();
+  bool gamepadConnected = false;
+  SDL_GameController* gamepad;
+  Controller controller;
+  u8 pifBootrom[PIF_BOOTROM_SIZE]{}, pifRam[PIF_RAM_SIZE];
+};
 }

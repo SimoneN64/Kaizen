@@ -33,20 +33,19 @@ auto SI::Read(MI& mi, u32 addr) const -> u32 {
 }
 
 void DMA(Mem& mem, Registers& regs) {
-  MMIO& mmio = mem.mmio;
-  SI& si = mmio.si;
+  SI& si = mem.mmio.si;
   si.status.dmaBusy = false;
   if(si.toDram) {
-    ProcessPIFCommands(mem.pifRam, si.controller, mem);
+    si.pif.ProcessPIFCommands(mem);
     for(int i = 0; i < 64; i++) {
-      mem.mmio.rdp.rdram[BYTE_ADDRESS(si.dramAddr + i)] = mem.pifRam[i];
+      mem.mmio.rdp.rdram[BYTE_ADDRESS(si.dramAddr + i)] = si.pif.pifRam[i];
     }
   } else {
     for(int i = 0; i < 64; i++) {
-      mem.pifRam[i] = mem.mmio.rdp.rdram[BYTE_ADDRESS(si.dramAddr + i)];
+      si.pif.pifRam[i] = mem.mmio.rdp.rdram[BYTE_ADDRESS(si.dramAddr + i)];
     }
     Util::debug("SI DMA from PIF RAM to RDRAM ({:08X} to {:08X})\n", si.pifAddr, si.dramAddr);
-    ProcessPIFCommands(mem.pifRam, si.controller, mem);
+    si.pif.ProcessPIFCommands(mem);
   }
   InterruptRaise(mem.mmio.mi, regs, Interrupt::SI);
 }

@@ -33,6 +33,7 @@ void RSP::Reset() {
   divInLoaded = false;
 }
 
+/*
 inline void logRSP(const RSP& rsp, const u32 instr) {
   Util::print("{:04X} {:08X} ", rsp.oldPC, instr);
   for (auto gpr : rsp.gpr) {
@@ -63,6 +64,7 @@ inline void logRSP(const RSP& rsp, const u32 instr) {
   Util::print(" {:04X} {:04X} {:02X}\n", rsp.GetVCC(), rsp.GetVCO(), rsp.GetVCE());
   Util::print("DMEM: {:02X}{:02X}\n", rsp.dmem[0x3c4], rsp.dmem[0x3c5]);
 }
+*/
 
 void RSP::Step(Registers& regs, Mem& mem) {
   gpr[0] = 0;

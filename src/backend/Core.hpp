@@ -21,11 +21,10 @@ struct Core {
   void Stop();
   CartInfo LoadROM(const std::string&);
   void Run(Window&, float volumeL, float volumeR);
-  void UpdateController(const u8*);
   void TogglePause() { pause = !pause; }
   VI& GetVI() { return mem.mmio.vi; }
 
-  void CpuReset() {
+  void CpuReset() const {
     switch(cpuType) {
       case CpuType::Dynarec: cpuDynarec->Reset(); break;
       case CpuType::Interpreter: cpuInterp->Reset(); break;
@@ -33,7 +32,7 @@ struct Core {
     }
   }
 
-  Registers& CpuGetRegs() {
+  [[nodiscard]] Registers& CpuGetRegs() const {
     switch(cpuType) {
       case CpuType::Dynarec: return cpuDynarec->regs;
       case CpuType::Interpreter: return cpuInterp->regs;
@@ -43,13 +42,6 @@ struct Core {
   }
 
   static int CpuStep(Core& core) {
-    if (core.debugger.enabled && core.debugger.checkBreakpoint(core.CpuGetRegs().pc)) {
-      core.debugger.breakpointHit();
-    }
-    while (core.debugger.broken) {
-      SDL_Delay(1);
-      core.debugger.tick();
-    }
     switch(core.cpuType) {
       case CpuType::Dynarec: return core.cpuDynarec->Step(core.mem);
       case CpuType::Interpreter: core.cpuInterp->Step(core.mem); return 1;
@@ -63,8 +55,6 @@ struct Core {
   bool pause = true;
   bool isPAL = false;
   bool romLoaded = false;
-  SDL_GameController* gamepad;
-  bool gamepadConnected = false;
   bool done = false;
   std::string rom;
   Mem mem;

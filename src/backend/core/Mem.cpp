@@ -69,6 +69,7 @@ u8 Mem::Read8(n64::Registers &regs, u32 paddr) {
   const auto page = paddr >> 12;
   const auto offset = paddr & 0xFFF;
   const auto pointer = readPages[page];
+  SI& si = mmio.si;
 
   if(pointer) {
     return ((u8*)pointer)[BYTE_ADDRESS(offset)];
@@ -95,9 +96,9 @@ u8 Mem::Read8(n64::Registers &regs, u32 paddr) {
         paddr = (paddr + 2) & ~2;
         return cart[BYTE_ADDRESS(paddr) & romMask];
       case 0x1FC00000 ... 0x1FC007BF:
-        return pifBootrom[BYTE_ADDRESS(paddr) - 0x1FC00000];
+        return si.pif.pifBootrom[BYTE_ADDRESS(paddr) - 0x1FC00000];
       case PIF_RAM_REGION:
-        return pifRam[paddr - PIF_RAM_REGION_START];
+        return si.pif.pifRam[paddr - PIF_RAM_REGION_START];
       case 0x00800000 ... 0x03FFFFFF:
       case 0x04200000 ... 0x042FFFFF:
       case 0x04900000 ... 0x0FFFFFFF:
@@ -113,6 +114,7 @@ u16 Mem::Read16(n64::Registers &regs, u32 paddr) {
   const auto page = paddr >> 12;
   const auto offset = paddr & 0xFFF;
   const auto pointer = readPages[page];
+  SI& si = mmio.si;
 
   if(pointer) {
     return Util::ReadAccess<u16>((u8*)pointer, HALF_ADDRESS(offset));
@@ -134,9 +136,9 @@ u16 Mem::Read16(n64::Registers &regs, u32 paddr) {
         paddr = (paddr + 2) & ~3;
         return Util::ReadAccess<u16>(cart, HALF_ADDRESS(paddr) & romMask);
       case 0x1FC00000 ... 0x1FC007BF:
-        return Util::ReadAccess<u16>(pifBootrom, HALF_ADDRESS(paddr) - 0x1FC00000);
+        return Util::ReadAccess<u16>(si.pif.pifBootrom, HALF_ADDRESS(paddr) - 0x1FC00000);
       case PIF_RAM_REGION:
-        return be16toh(Util::ReadAccess<u16>(pifRam, paddr - PIF_RAM_REGION_START));
+        return be16toh(Util::ReadAccess<u16>(si.pif.pifRam, paddr - PIF_RAM_REGION_START));
       case 0x00800000 ... 0x03FFFFFF:
       case 0x04200000 ... 0x042FFFFF:
       case 0x04900000 ... 0x0FFFFFFF:
@@ -152,6 +154,7 @@ u32 Mem::Read32(n64::Registers &regs, u32 paddr) {
   const auto page = paddr >> 12;
   const auto offset = paddr & 0xFFF;
   const auto pointer = readPages[page];
+  SI& si = mmio.si;
 
   if(pointer) {
     return Util::ReadAccess<u32>((u8*)pointer, offset);
@@ -170,9 +173,9 @@ u32 Mem::Read32(n64::Registers &regs, u32 paddr) {
       case 0x10000000 ... 0x1FBFFFFF:
         return Util::ReadAccess<u32>(cart, paddr & romMask);
       case 0x1FC00000 ... 0x1FC007BF:
-        return Util::ReadAccess<u32>(pifBootrom, paddr - 0x1FC00000);
+        return Util::ReadAccess<u32>(si.pif.pifBootrom, paddr - 0x1FC00000);
       case PIF_RAM_REGION:
-        return be32toh(Util::ReadAccess<u32>(pifRam, paddr - PIF_RAM_REGION_START));
+        return be32toh(Util::ReadAccess<u32>(si.pif.pifRam, paddr - PIF_RAM_REGION_START));
       case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
       case 0x04900000 ... 0x0FFFFFFF: case 0x1FC00800 ... 0xFFFFFFFF: return 0;
       default:
@@ -185,6 +188,7 @@ u64 Mem::Read64(n64::Registers &regs, u32 paddr) {
   const auto page = paddr >> 12;
   const auto offset = paddr & 0xFFF;
   const auto pointer = readPages[page];
+  SI& si = mmio.si;
 
   if(pointer) {
     return Util::ReadAccess<u64>((u8*)pointer, offset);
@@ -205,9 +209,9 @@ u64 Mem::Read64(n64::Registers &regs, u32 paddr) {
       case 0x10000000 ... 0x1FBFFFFF:
         return Util::ReadAccess<u64>(cart, paddr & romMask);
       case 0x1FC00000 ... 0x1FC007BF:
-        return Util::ReadAccess<u64>(pifBootrom, paddr - 0x1FC00000);
+        return Util::ReadAccess<u64>(si.pif.pifBootrom, paddr - 0x1FC00000);
       case PIF_RAM_REGION:
-        return be64toh(Util::ReadAccess<u64>(pifRam, paddr - PIF_RAM_REGION_START));
+        return be64toh(Util::ReadAccess<u64>(si.pif.pifRam, paddr - PIF_RAM_REGION_START));
       case 0x00800000 ... 0x03FFFFFF:
       case 0x04200000 ... 0x042FFFFF:
       case 0x04900000 ... 0x0FFFFFFF:
@@ -243,6 +247,7 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
   const auto page = paddr >> 12;
   auto offset = paddr & 0xFFF;
   const auto pointer = writePages[page];
+  SI& si = mmio.si;
 
   if(pointer) {
     ((u8*)pointer)[BYTE_ADDRESS(offset)] = val;
@@ -269,8 +274,8 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
       case PIF_RAM_REGION:
         val = val << (8 * (3 - (paddr & 3)));
         paddr = (paddr - PIF_RAM_REGION_START) & ~3;
-        Util::WriteAccess<u32>(pifRam, paddr, htobe32(val));
-        ProcessPIFCommands(pifRam, mmio.si.controller, *this);
+        Util::WriteAccess<u32>(si.pif.pifRam, paddr, htobe32(val));
+        si.pif.ProcessPIFCommands(*this);
         break;
       case 0x00800000 ... 0x03FFFFFF:
       case 0x04200000 ... 0x042FFFFF:
@@ -290,6 +295,7 @@ void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
   const auto page = paddr >> 12;
   auto offset = paddr & 0xFFF;
   const auto pointer = writePages[page];
+  SI& si = mmio.si;
 
   if(pointer) {
     Util::WriteAccess<u16>((u8*)pointer, HALF_ADDRESS(offset), val);
@@ -316,8 +322,8 @@ void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
       case PIF_RAM_REGION:
         val = val << (16 * !(paddr & 2));
         paddr &= ~3;
-        Util::WriteAccess<u32>(pifRam, paddr - PIF_RAM_REGION_START, htobe32(val));
-        ProcessPIFCommands(pifRam, mmio.si.controller, *this);
+        Util::WriteAccess<u32>(si.pif.pifRam, paddr - PIF_RAM_REGION_START, htobe32(val));
+        si.pif.ProcessPIFCommands(*this);
         break;
       case 0x00800000 ... 0x03FFFFFF:
       case 0x04200000 ... 0x042FFFFF:
@@ -337,6 +343,7 @@ void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
   const auto page = paddr >> 12;
   auto offset = paddr & 0xFFF;
   const auto pointer = writePages[page];
+  SI& si = mmio.si;
 
   if(pointer) {
     Util::WriteAccess<u32>((u8*)pointer, offset, val);
@@ -367,8 +374,8 @@ void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
         break;
       case 0x14000000 ... 0x1FBFFFFF: break;
       case PIF_RAM_REGION:
-        Util::WriteAccess<u32>(pifRam, paddr - PIF_RAM_REGION_START, htobe32(val));
-        ProcessPIFCommands(pifRam, mmio.si.controller, *this);
+        Util::WriteAccess<u32>(si.pif.pifRam, paddr - PIF_RAM_REGION_START, htobe32(val));
+        si.pif.ProcessPIFCommands(*this);
         break;
       case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
       case 0x08000000 ... 0x0FFFFFFF: case 0x04900000 ... 0x07FFFFFF:
@@ -382,6 +389,7 @@ void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
   const auto page = paddr >> 12;
   auto offset = paddr & 0xFFF;
   const auto pointer = writePages[page];
+  SI& si = mmio.si;
 
   if(pointer) {
     Util::WriteAccess<u64>((u8*)pointer, offset, val);
@@ -405,8 +413,8 @@ void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
       case 0x10000000 ... 0x1FBFFFFF:
         break;
       case PIF_RAM_REGION:
-        Util::WriteAccess<u64>(pifRam, paddr - PIF_RAM_REGION_START, htobe64(val));
-        ProcessPIFCommands(pifRam, mmio.si.controller, *this);
+        Util::WriteAccess<u64>(si.pif.pifRam, paddr - PIF_RAM_REGION_START, htobe64(val));
+        si.pif.ProcessPIFCommands(*this);
         break;
       case 0x00800000 ... 0x03FFFFFF:
       case 0x04200000 ... 0x042FFFFF:

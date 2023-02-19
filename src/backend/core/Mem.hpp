@@ -44,7 +44,6 @@ struct Mem {
   void Write64(Registers&, u32, u64);
 
   MMIO mmio;
-  u8 pifRam[PIF_RAM_SIZE]{};
 
   inline void DumpRDRAM() const {
     FILE *fp = fopen("rdram.dump", "wb");
@@ -83,7 +82,6 @@ private:
   friend struct RSP;
   friend struct Core;
   u8* sram, *cart;
-  u8 pifBootrom[PIF_BOOTROM_SIZE]{};
   u8 isviewer[ISVIEWER_SIZE]{};
   size_t romMask = 0;
 
@@ -119,12 +117,6 @@ private:
     return std::any_of(std::begin(pal_codes), std::end(pal_codes), [this](char a) {
       return cart[0x3e] == a;
     });
-    // for (char pal_code : pal_codes) {
-    //   if (cart[0x3e] == pal_code) {
-    //     return true;
-    //   }
-    // }
-    // return false;
   }
 };
 }

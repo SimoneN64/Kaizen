@@ -113,7 +113,7 @@ struct Registers;
 struct RSP {
   RSP();
   void Reset();
-  void Step(Registers& regs, Mem& mem);
+  void Run(int, Registers& regs, Mem& mem);
   auto Read(u32 addr) -> u32;
   void Write(Mem& mem, Registers& regs, u32 addr, u32 value);
   void Exec(Registers& regs, Mem& mem, u32 instr);

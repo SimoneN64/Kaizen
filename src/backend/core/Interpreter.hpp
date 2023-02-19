@@ -7,7 +7,7 @@ namespace n64 {
 struct Interpreter {
   Interpreter() = default;
   ~Interpreter() = default;
-  void Step(Mem&);
+  int Run(Mem&);
   void Reset() {
     regs.Reset();
   }

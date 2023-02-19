@@ -66,16 +66,28 @@ inline void logRSP(const RSP& rsp, const u32 instr) {
 }
 */
 
-void RSP::Step(Registers& regs, Mem& mem) {
-  gpr[0] = 0;
-  u32 instr = Util::ReadAccess<u32>(imem, pc & IMEM_DSIZE);
-  oldPC = pc & 0xFFC;
-  pc = nextPC & 0xFFC;
-  nextPC += 4;
+void RSP::Run(int cpuCount, Registers& regs, Mem& mem) {
+  while(cpuCount--) {
+    if (!spStatus.halt) {
+      regs.steps++;
+      if (regs.steps > 2) {
+        steps += 2;
+        regs.steps -= 3;
+      }
 
-  Exec(regs, mem, instr);
+      while (steps > 0) {
+        steps--;
+        gpr[0] = 0;
+        u32 instr = Util::ReadAccess<u32>(imem, pc & IMEM_DSIZE);
+        oldPC = pc & 0xFFC;
+        pc = nextPC & 0xFFC;
+        nextPC += 4;
 
-  //logRSP(*this, instr);
+        Exec(regs, mem, instr);
+        //logRSP(*this, instr);
+      }
+    }
+  }
 }
 
 auto RSP::Read(u32 addr) -> u32{

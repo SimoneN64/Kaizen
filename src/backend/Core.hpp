@@ -43,14 +43,15 @@ struct Core {
 
   static int CpuStep(Core& core) {
     switch(core.cpuType) {
-      case CpuType::Dynarec: return core.cpuDynarec->Step(core.mem);
-      case CpuType::Interpreter: core.cpuInterp->Step(core.mem); return 1;
+      case CpuType::Dynarec:
+        return core.cpuDynarec->Step(core.mem);
+      case CpuType::Interpreter:
+        return core.cpuInterp->Run(core.mem);
       case CpuType::NONE: return 0;
     }
   }
 
   u32 breakpoint = 0;
-  int cycles = 0;
 
   bool pause = true;
   bool isPAL = false;

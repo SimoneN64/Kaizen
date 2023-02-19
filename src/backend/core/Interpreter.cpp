@@ -21,30 +21,36 @@ inline void CheckCompareInterrupt(MI& mi, Registers& regs) {
   }
 }
 
-void Interpreter::Step(Mem& mem) {
-  CheckCompareInterrupt(mem.mmio.mi, regs);
+int Interpreter::Run(Mem& mem) {
+  MMIO& mmio = mem.mmio;
+  int count = 0;
+  for(;count <= mmio.vi.cyclesPerHalfline; count++) {
+    CheckCompareInterrupt(mem.mmio.mi, regs);
 
-  regs.prevDelaySlot = regs.delaySlot;
-  regs.delaySlot = false;
+    regs.prevDelaySlot = regs.delaySlot;
+    regs.delaySlot = false;
 
-  u32 paddr = 0;
-  if(!MapVAddr(regs, LOAD, regs.pc, paddr)) {
-    HandleTLBException(regs, regs.pc);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, false);
-    return;
+    u32 paddr = 0;
+    if(!MapVAddr(regs, LOAD, regs.pc, paddr)) {
+      HandleTLBException(regs, regs.pc);
+      FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, false);
+      return count;
+    }
+
+    u32 instruction = mem.Read32(regs, paddr);
+
+    if(ShouldServiceInterrupt(regs)) {
+      FireException(regs, ExceptionCode::Interrupt, 0, false);
+      return count;
+    }
+
+    regs.oldPC = regs.pc;
+    regs.pc = regs.nextPC;
+    regs.nextPC += 4;
+
+    Exec(mem, instruction);
   }
 
-  u32 instruction = mem.Read32(regs, paddr);
-
-  if(ShouldServiceInterrupt(regs)) {
-    FireException(regs, ExceptionCode::Interrupt, 0, false);
-    return;
-  }
-
-  regs.oldPC = regs.pc;
-  regs.pc = regs.nextPC;
-  regs.nextPC += 4;
-
-  Exec(mem, instruction);
+  return count;
 }
 }

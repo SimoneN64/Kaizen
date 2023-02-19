@@ -47,29 +47,12 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
           InterruptRaise(mmio.mi, regs, Interrupt::VI);
         }
 
-        for(;cycles <= mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
-          int cpuCount = CpuStep(*this);
-          int oldCpuCount = cpuCount;
-          while(cpuCount--) {
-            if (!mmio.rsp.spStatus.halt) {
-              regs.steps++;
-              if (regs.steps > 2) {
-                mmio.rsp.steps += 2;
-                regs.steps -= 3;
-              }
+        int cpuCount = CpuStep(*this);
+        frameCycles += cpuCount;
 
-              while (mmio.rsp.steps > 0) {
-                mmio.rsp.steps--;
-                mmio.rsp.Step(regs, mem);
-              }
-            }
-          }
-
-          mmio.ai.Step(mem, regs, oldCpuCount, volumeL, volumeR);
-          scheduler.tick(1, mem, regs);
-        }
-
-        cycles -= mmio.vi.cyclesPerHalfline;
+        mmio.rsp.Run(cpuCount, regs, mem);
+        mmio.ai.Step(mem, regs, cpuCount, volumeL, volumeR);
+        scheduler.tick(cpuCount, mem, regs);
       }
 
       if ((mmio.vi.current & 0x3FE) == mmio.vi.intr) {

@@ -5,8 +5,6 @@
 #include <Audio.hpp>
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
-#include <iostream>
-#include <fstream>
 #include <Discord.hpp>
 
 VkInstance instance{};

@@ -9,6 +9,8 @@ RSP::RSP() {
 }
 
 void RSP::Reset() {
+  lastSuccessfulSPAddr.raw = 0;
+  lastSuccessfulDRAMAddr.raw = 0;
   spStatus.raw = 0x1;
   spStatus.halt = true;
   oldPC = 0;
@@ -33,29 +35,29 @@ void RSP::Reset() {
 
 inline void logRSP(const RSP& rsp, const u32 instr) {
   Util::print("{:04X} {:08X} ", rsp.oldPC, instr);
-  for (int i = 0; i < 32; i++) {
-    Util::print("{:08X} ", (u32)rsp.gpr[i]);
+  for (auto gpr : rsp.gpr) {
+    Util::print("{:08X} ", gpr);
   }
 
-  for (int i = 0; i < 32; i++) {
-    for (int e = 0; e < 8; e++) {
-      Util::print("{:04X}", rsp.vpr[i].element[e]);
+  for (auto vpr : rsp.vpr) {
+    for (int i = 0; i < 8; i++) {
+      Util::print("{:04X}", vpr.element[i]);
     }
     Util::print(" ");
   }
 
-  for (int e = 0; e < 8; e++) {
-    Util::print("{:04X}", rsp.acc.h.element[e]);
+  for (int i = 0; i < 8; i++) {
+    Util::print("{:04X}", rsp.acc.h.element[i]);
   }
   Util::print(" ");
 
-  for (int e = 0; e < 8; e++) {
-    Util::print("{:04X}", rsp.acc.m.element[e]);
+  for (int i = 0; i < 8; i++) {
+    Util::print("{:04X}", rsp.acc.m.element[i]);
   }
   Util::print(" ");
 
-  for (int e = 0; e < 8; e++) {
-    Util::print("{:04X}", rsp.acc.l.element[e]);
+  for (int i = 0; i < 8; i++) {
+    Util::print("{:04X}", rsp.acc.l.element[i]);
   }
 
   Util::print(" {:04X} {:04X} {:02X}\n", rsp.GetVCC(), rsp.GetVCO(), rsp.GetVCE());

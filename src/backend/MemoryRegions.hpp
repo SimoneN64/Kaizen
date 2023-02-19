@@ -1,4 +1,6 @@
 #pragma once
+#include <common.hpp>
+
 #define RDRAM_SIZE 0x800000
 #define RDRAM_DSIZE (RDRAM_SIZE - 1)
 #define SRAM_SIZE 0x8000000
@@ -44,15 +46,15 @@
 #define PIF_ROM_REGION 0x1FC00000 ... 0x1FC007BF
 #define PIF_RAM_REGION PIF_RAM_REGION_START ... PIF_RAM_REGION_END
 
-constexpr size_t operator""_kb(unsigned long long int x) {
+constexpr u64 operator""_kb(unsigned long long int x) {
   return 1024ULL * x;
 }
 
-constexpr size_t operator""_mb(unsigned long long int x) {
+constexpr u64 operator""_mb(unsigned long long int x) {
   return 1024_kb * x;
 }
 
-constexpr size_t operator""_gb(unsigned long long int x) {
+constexpr u64 operator""_gb(unsigned long long int x) {
   return 1024_mb * x;
 }
 

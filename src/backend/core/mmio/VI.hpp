@@ -23,16 +23,6 @@ union VIHsyncLeap {
   u32 raw;
 } ;
 
-union VIVideo {
-  struct {
-    unsigned end:10;
-    unsigned:6;
-    unsigned start:10;
-    unsigned:6;
-  };
-  u32 raw;
-};
-
 union AxisScale {
   u32 raw;
   struct {

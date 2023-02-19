@@ -21,10 +21,10 @@ void Cop0::dmfc0(Registers& regs, u32 instr) {
 
 void Cop0::eret(Registers& regs) {
   if(status.erl) {
-    regs.SetPC(ErrorEPC);
+    regs.SetPC64(ErrorEPC);
     status.erl = false;
   } else {
-    regs.SetPC(EPC);
+    regs.SetPC64(EPC);
     status.exl = false;
   }
   llbit = false;

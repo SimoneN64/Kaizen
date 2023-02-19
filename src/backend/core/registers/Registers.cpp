@@ -9,14 +9,17 @@ void Registers::Reset() {
   delaySlot = false;
   prevDelaySlot = false;
   memset(gpr, 0, 32*sizeof(s64));
-  oldPC = (s64)0xFFFFFFFFA4000040;
-  pc = oldPC;
+}
+
+void Registers::SetPC64(s64 val) {
+  oldPC = pc;
+  pc = val;
   nextPC = pc + 4;
 }
 
-void Registers::SetPC(s64 val) {
+void Registers::SetPC32(s32 val) {
   oldPC = pc;
-  pc = val;
+  pc = s64(val);
   nextPC = pc + 4;
 }
 }

@@ -274,15 +274,15 @@ void FireException(Registers& regs, ExceptionCode code, int cop, bool useOldPC) 
       case ExceptionCode::ReservedInstruction: case ExceptionCode::CoprocessorUnusable:
       case ExceptionCode::Overflow: case ExceptionCode::Trap:
       case ExceptionCode::FloatingPointError: case ExceptionCode::Watch:
-        regs.SetPC(s64(s32(0x80000180)));
+        regs.SetPC32(0x80000180);
         break;
       case ExceptionCode::TLBLoad: case ExceptionCode::TLBStore:
         if(old_exl || regs.cop0.tlbError == INVALID) {
-          regs.SetPC(s64(s32(0x80000180)));
+          regs.SetPC32(0x80000180);
         } else if(Is64BitAddressing(regs.cop0, regs.cop0.badVaddr)) {
-          regs.SetPC(s64(s32(0x80000080)));
+          regs.SetPC32(0x80000080);
         } else {
-          regs.SetPC(s64(s32(0x80000000)));
+          regs.SetPC32(0x80000000);
         }
         break;
       default: Util::panic("Unhandled exception! {}\n", static_cast<u8>(code));

@@ -21,10 +21,10 @@ void dmfc0(n64::Registers& regs, u32 instr) {
 
 void eret(n64::Registers& regs) {
   if(regs.cop0.status.erl) {
-    regs.SetPC(regs.cop0.ErrorEPC);
+    regs.SetPC64(regs.cop0.ErrorEPC);
     regs.cop0.status.erl = false;
   } else {
-    regs.SetPC(regs.cop0.EPC);
+    regs.SetPC64(regs.cop0.EPC);
     regs.cop0.status.exl = false;
   }
   regs.cop0.llbit = false;

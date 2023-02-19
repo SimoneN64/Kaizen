@@ -333,6 +333,7 @@ void DoPIFHLE(Mem& mem, Registers& regs, CartInfo cartInfo) {
   regs.gpr[22] = (cicSeeds[cicType] >> 8) & 0xFF;
   regs.cop0.Reset();
   mem.Write32(regs, 0x04300004, 0x01010101);
+  regs.SetPC32(0xA4000040);
 }
 
 void ExecutePIF(Mem& mem, Registers& regs, CartInfo cartInfo) {

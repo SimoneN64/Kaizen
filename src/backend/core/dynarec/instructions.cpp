@@ -164,7 +164,7 @@ void branch_likely(Registers& regs, bool cond, s64 address) {
   if (cond) {
     regs.nextPC = address;
   } else {
-    regs.SetPC(regs.nextPC);
+    regs.SetPC64(regs.nextPC);
   }
 }
 

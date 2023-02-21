@@ -57,7 +57,7 @@ struct RDP {
   RDP();
   void Reset();
 
-  u8* rdram;
+  u8* rdram = nullptr;
   [[nodiscard]] auto Read(u32 addr) const -> u32;
   void Write(MI& mi, Registers& regs, RSP& rsp, u32 addr, u32 val);
   void WriteStatus(MI& mi, Registers& regs, RSP& rsp, u32 val);

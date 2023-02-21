@@ -37,3 +37,4 @@ using m128i = __m128i;
 
 #define unlikely(exp) __builtin_expect(exp, 0)
 #define likely(exp) __builtin_expect(exp, 1)
+#define INLINE static inline __attribute__((always_inline))

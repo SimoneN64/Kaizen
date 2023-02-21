@@ -26,8 +26,8 @@ void Interpreter::Reset() {
 }
 
 int Interpreter::Run() {
-  int cycles = 0;
-  for(; cycles <= mem.mmio.vi.cyclesPerHalfline; cycles++) {
+  int cycles = 1;
+  for(; cycles < mem.mmio.vi.cyclesPerHalfline; cycles++) {
     CheckCompareInterrupt(mem.mmio.mi, regs);
 
     regs.prevDelaySlot = regs.delaySlot;

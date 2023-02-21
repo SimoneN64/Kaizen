@@ -58,6 +58,6 @@ constexpr u64 operator""_gb(unsigned long long int x) {
   return 1024_mb * x;
 }
 
-#define ADDRESS_RANGE_SIZE 4_gb
+#define ADDRESS_RANGE_SIZE 0x80000000ull
 #define PAGE_SIZE 4_kb
 #define PAGE_COUNT ((ADDRESS_RANGE_SIZE) / (PAGE_SIZE))

@@ -8,6 +8,8 @@
 
 namespace n64 {
 Mem::Mem() {
+  cart = (u8*)calloc(CART_SIZE, 1);
+  sram = (u8*)calloc(SRAM_SIZE, 1);
   Reset();
 }
 
@@ -22,16 +24,8 @@ void Mem::Reset() {
     writePages[i] = pointer;
   }
 
-  if(sram) {
-    free(sram);
-  }
-
-  if(cart) {
-    free(cart);
-  }
-
-  cart = (u8*)calloc(CART_SIZE, 1);
-  sram = (u8*)calloc(SRAM_SIZE, 1);
+  memset(cart, 0, CART_SIZE);
+  memset(sram, 0, SRAM_SIZE);
   mmio.Reset();
 }
 

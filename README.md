@@ -1,21 +1,21 @@
 # Gadolinium
 
-[![CodeFactor](https://www.codefactor.io/repository/github/cocosimone/Gadolinium/badge/master)](https://www.codefactor.io/repository/github/cocosimone/Gadolinium/overview/master)
-[![build](https://github.com/CocoSimone/Gadolinium/actions/workflows/build.yml/badge.svg)](https://github.com/CocoSimone/Gadolinium/actions/workflows/build.yml)
+[![CodeFactor](https://www.codefactor.io/repository/github/SimoneN64/Gadolinium/badge/master)](https://www.codefactor.io/repository/github/SimoneN64/Gadolinium/overview/master)
+[![build](https://github.com/SimoneN64/Gadolinium/actions/workflows/build.yml/badge.svg)](https://github.com/SimoneN64/Gadolinium/actions/workflows/build.yml)
 
-Rewrite of my Nintendo 64 emulator "[shibumi](https://github.com/CocoSimone/shibumi)".
+Rewrite of my Nintendo 64 emulator "[shibumi](https://github.com/SimoneN64/shibumi)".
 
 ![Mario's face](resources/mario.png?raw=true)
 
 ## Pre-built binaries
 | Release                                                                                                       |
 |---------------------------------------------------------------------------------------------------------------|
-| [Windows (Release)](https://nightly.link/CocoSimone/Gadolinium/workflows/build/master/gadolinium-windows.zip) |
-| [Linux   (Release)](https://nightly.link/CocoSimone/Gadolinium/workflows/build/master/gadolinium-linux.zip)   |
+| [Windows (Release)](https://nightly.link/SimoneN64/Gadolinium/workflows/build/master/gadolinium-windows.zip) |
+| [Linux   (Release)](https://nightly.link/SimoneN64/Gadolinium/workflows/build/master/gadolinium-linux.zip)   |
 
 
 ## Build instructions:
-First clone the repository: `git clone --recursive https://github.com/CocoSimone/Gadolinium`
+First clone the repository: `git clone --recursive https://github.com/SimoneN64/Gadolinium`
 
 ### Windows
 

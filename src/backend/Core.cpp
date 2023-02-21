@@ -36,8 +36,8 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
   MMIO& mmio = cpu->mem.mmio;
 
   for (int field = 0; field < mmio.vi.numFields; field++) {
-    int frameCycles = 0;
     if (!pause && romLoaded) {
+      int frameCycles = 0;
       for (int i = 0; i < mmio.vi.numHalflines; i++) {
         mmio.vi.current = (i << 1) + field;
 
@@ -46,10 +46,8 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
         }
 
         int cpuCount = cpu->Run();
+        cpu->RunRSP(cpuCount);
         frameCycles += cpuCount;
-        mmio.rsp.Run(cpuCount, cpu->regs, cpu->mem);
-        mmio.ai.Step(cpu->mem, cpu->regs, cpuCount, volumeL, volumeR);
-        scheduler.tick(cpuCount, cpu->mem, cpu->regs);
       }
 
       if ((mmio.vi.current & 0x3FE) == mmio.vi.intr) {
@@ -58,8 +56,8 @@ void Core::Run(Window& window, float volumeL, float volumeR) {
 
       UpdateScreenParallelRdp(*this, window, GetVI());
 
-      int missedCycles = N64_CYCLES_PER_FRAME(isPAL) - frameCycles;
-      mmio.ai.Step(cpu->mem, cpu->regs, missedCycles, volumeL, volumeR);
+      mmio.ai.Step(cpu->mem, cpu->regs, frameCycles, volumeL, volumeR);
+      scheduler.tick(frameCycles, cpu->mem, cpu->regs);
     } else if (pause && romLoaded) {
       UpdateScreenParallelRdp(*this, window, GetVI());
     } else if (pause && !romLoaded) {

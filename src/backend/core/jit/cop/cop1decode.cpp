@@ -1,9 +1,9 @@
-#include <dynarec/cop/cop1decode.hpp>
-#include <dynarec/instructions.hpp>
+#include <jit/cop/cop1decode.hpp>
+#include <jit/instructions.hpp>
 #include <Registers.hpp>
 
 namespace n64 {
-bool cop1Decode(Registers& regs, Dynarec& cpu, u32 instr) {
+bool cop1Decode(Registers& regs, JIT& cpu, u32 instr) {
   Xbyak::CodeGenerator& code = cpu.code;
 
   u8 mask_sub = (instr >> 21) & 0x1F;

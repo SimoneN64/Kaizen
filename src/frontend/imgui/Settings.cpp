@@ -30,8 +30,8 @@ Settings::Settings(n64::Core& core) {
     auto entryCpuType = settings["cpu"]["type"];
     if(!entryCpuType.empty()) {
       cpuType = entryCpuType.get<std::string>();
-      if(cpuType == "dynarec") {
-        core.cpuType = n64::CpuType::Dynarec;
+      if(cpuType == "jit") {
+        core.cpuType = n64::CpuType::JIT;
       } else if(cpuType == "interpreter") {
         core.cpuType = n64::CpuType::Interpreter;
       } else {
@@ -67,10 +67,10 @@ Settings::Settings(n64::Core& core) {
     case n64::CpuType::Interpreter:
       core.cpu = std::make_unique<n64::Interpreter>();
       break;
-    case n64::CpuType::Dynarec:
-      core.cpu = std::make_unique<n64::Dynarec>();
+    case n64::CpuType::JIT:
+      core.cpu = std::make_unique<n64::JIT>();
       break;
-    case n64::CpuType::NONE:
+    case n64::CpuType::COUNT:
       Util::panic("BRUH\n");
   }
 }
@@ -103,37 +103,46 @@ void Settings::RenderWidget(bool& show) {
   if(show) {
     ImGui::OpenPopup("Settings");
     if(ImGui::BeginPopupModal("Settings", &show)) {
-      const char *categories[] = {"General", "CPU", "Audio"};
-      enum Category { General, CPU, Audio };
-      static int category = General;
-      CreateComboList("##", &category, categories, 3);
+      enum class SelectedSetting { CPU, Audio, COUNT };
+      static SelectedSetting selectedSetting = SelectedSetting::Audio;
+      const char *categories[(int)SelectedSetting::COUNT] = { "CPU", "Audio" };
+      CreateComboList("##", (int*)&selectedSetting, categories, (int)SelectedSetting::COUNT);
       ImGui::Separator();
-      switch (category) {
-        case General:
-          break;
-        case CPU: {
-          const char *cpuTypes[] = {"JIT", "Interpreter"};
-          static int currentType = 0;
-          if (cpuType == "interpreter") currentType = 1;
+      switch (selectedSetting) {
+        case SelectedSetting::CPU: {
+            const char* cpuTypes[(int)n64::CpuType::COUNT] = { "Interpreter", "JIT" };
+            static n64::CpuType currentType = n64::CpuType::Interpreter;
+            if (cpuType == "jit") currentType = n64::CpuType::JIT;
 
-          if (CreateComboList("Core type", &currentType, cpuTypes, 2)) {
-            if(currentType == 0) cpuType = "dynarec";
-            if(currentType == 1) cpuType = "interpreter";
-          }
-        } break;
-        case Audio:
-          ImGui::Checkbox("Lock channels", &lockChannels);
-          ImGui::SliderFloat("Volume L", &volumeL, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
-          if (!lockChannels) {
-            ImGui::SliderFloat("Volume R", &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
-          } else {
-            volumeR = volumeL;
-            ImGui::BeginDisabled();
-            ImGui::SliderFloat("Volume R", &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
-            ImGui::EndDisabled();
-          }
-          break;
+            if (CreateComboList("Core type", (int*)&currentType, cpuTypes, (int)n64::CpuType::COUNT)) {
+              switch (currentType) {
+                case n64::CpuType::Interpreter:
+                  cpuType = "interpreter";
+                  break;
+                case n64::CpuType::JIT:
+                  cpuType = "jit";
+                  break;
+                case n64::CpuType::COUNT:
+                  Util::panic("BRUH\n");
+              }
+            }
+          } break;
+        case SelectedSetting::Audio:
+            ImGui::Checkbox("Lock channels", &lockChannels);
+            ImGui::SliderFloat("Volume L", &volumeL, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+            if (!lockChannels) {
+              ImGui::SliderFloat("Volume R", &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+            } else {
+              volumeR = volumeL;
+              ImGui::BeginDisabled();
+              ImGui::SliderFloat("Volume R", &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+              ImGui::EndDisabled();
+            }
+            break;
+        case SelectedSetting::COUNT:
+          Util::panic("BRUH\n");
       }
+
       ImGui::EndPopup();
     }
   }

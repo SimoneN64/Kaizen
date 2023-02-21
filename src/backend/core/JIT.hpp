@@ -14,9 +14,9 @@ using Fn = void (*)();
 #define CODECACHE_SIZE (2 << 25)
 #define CODECACHE_OVERHEAD (CODECACHE_SIZE - 1_kb)
 
-struct Dynarec : BaseCPU {
-  Dynarec();
-  ~Dynarec() override;
+struct JIT : BaseCPU {
+  JIT();
+  ~JIT() override;
   int Run() override;
   void Reset() override;
   u64 cop2Latch{};

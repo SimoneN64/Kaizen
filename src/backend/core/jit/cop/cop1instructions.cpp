@@ -1,4 +1,4 @@
-#include <dynarec/cop/cop1instructions.hpp>
+#include <jit/cop/cop1instructions.hpp>
 #include <cfenv>
 #include <cmath>
 #include <Cop1.hpp>
@@ -29,31 +29,31 @@ inline int PushRoundingMode(const FCR31& fcr31) {
   }                               \
 } while(0)
 
-void absd(Dynarec& cpu, u32 instr) {
+void absd(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   auto fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   regs.cop1.SetCop1Reg<double>(regs.cop0, FD(instr), std::abs(fs));
 }
 
-void abss(Dynarec& cpu, u32 instr) {
+void abss(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   auto fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   regs.cop1.SetCop1Reg<float>(regs.cop0, FD(instr), std::abs(fs));
 }
 
-void absw(Dynarec& cpu, u32 instr) {
+void absw(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   s32 fs = regs.cop1.GetReg<s32>(regs.cop0, FS(instr));
   regs.cop1.SetReg<u32>(regs.cop0, FD(instr), std::abs(fs));
 }
 
-void absl(Dynarec& cpu, u32 instr) {
+void absl(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   s64 fs = regs.cop1.GetReg<s64>(regs.cop0, FS(instr));
   regs.cop1.SetReg(regs.cop0, FD(instr), std::abs(fs));
 }
 
-void adds(Dynarec& cpu, u32 instr) {
+void adds(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   auto fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   auto ft = regs.cop1.GetCop1Reg<float>(regs.cop0, FT(instr));
@@ -62,7 +62,7 @@ void adds(Dynarec& cpu, u32 instr) {
   regs.cop1.SetCop1Reg<float>(regs.cop0, FD(instr), result);
 }
 
-void addd(Dynarec& cpu, u32 instr) {
+void addd(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   auto fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   auto ft = regs.cop1.GetCop1Reg<double>(regs.cop0, FT(instr));
@@ -71,35 +71,35 @@ void addd(Dynarec& cpu, u32 instr) {
   regs.cop1.SetCop1Reg<double>(regs.cop0, FD(instr), result);
 }
 
-void ceills(Dynarec& cpu, u32 instr) {
+void ceills(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   auto fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   s64 result = std::ceil(fs);
   regs.cop1.SetReg<u64>(regs.cop0, FD(instr), result);
 }
 
-void ceilws(Dynarec& cpu, u32 instr) {
+void ceilws(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   auto fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   s32 result = std::ceil(fs);
   regs.cop1.SetReg<u32>(regs.cop0, FD(instr), result);
 }
 
-void ceilld(Dynarec& cpu, u32 instr) {
+void ceilld(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   auto fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   s64 result = std::ceil(fs);
   regs.cop1.SetReg<u64>(regs.cop0, FD(instr), result);
 }
 
-void ceilwd(Dynarec& cpu, u32 instr) {
+void ceilwd(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   auto fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   s32 result = std::ceil(fs);
   regs.cop1.SetReg<u32>(regs.cop0, FD(instr), result);
 }
 
-void cfc1(Dynarec& cpu, u32 instr) {
+void cfc1(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   u8 fd = RD(instr);
   s32 val = 0;
@@ -111,7 +111,7 @@ void cfc1(Dynarec& cpu, u32 instr) {
   regs.gpr[RT(instr)] = val;
 }
 
-void ctc1(Dynarec& cpu, u32 instr) {
+void ctc1(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   u8 fs = FS(instr);
   u32 val = regs.gpr[RT(instr)];
@@ -125,7 +125,7 @@ void ctc1(Dynarec& cpu, u32 instr) {
   }
 }
 
-void cvtds(Dynarec& cpu, u32 instr) {
+void cvtds(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.cop1.SetCop1Reg<double>(
     regs.cop0,
@@ -137,7 +137,7 @@ void cvtds(Dynarec& cpu, u32 instr) {
   );
 }
 
-void cvtsd(Dynarec& cpu, u32 instr) {
+void cvtsd(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.cop1.SetCop1Reg<float>(
     regs.cop0,
@@ -149,7 +149,7 @@ void cvtsd(Dynarec& cpu, u32 instr) {
   );
 }
 
-void cvtwd(Dynarec& cpu, u32 instr) {
+void cvtwd(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.cop1.SetReg<u32>(
     regs.cop0,
@@ -161,7 +161,7 @@ void cvtwd(Dynarec& cpu, u32 instr) {
   );
 }
 
-void cvtws(Dynarec& cpu, u32 instr) {
+void cvtws(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.cop1.SetReg<u32>(
     regs.cop0,
@@ -173,7 +173,7 @@ void cvtws(Dynarec& cpu, u32 instr) {
   );
 }
 
-void cvtls(Dynarec& cpu, u32 instr) {
+void cvtls(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.cop1.SetReg<u64>(
     regs.cop0,
@@ -185,7 +185,7 @@ void cvtls(Dynarec& cpu, u32 instr) {
   );
 }
 
-void cvtsl(Dynarec& cpu, u32 instr) {
+void cvtsl(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.cop1.SetCop1Reg<float>(
     regs.cop0,
@@ -197,7 +197,7 @@ void cvtsl(Dynarec& cpu, u32 instr) {
   );
 }
 
-void cvtdw(Dynarec& cpu, u32 instr) {
+void cvtdw(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.cop1.SetCop1Reg<double>(
     regs.cop0,
@@ -209,7 +209,7 @@ void cvtdw(Dynarec& cpu, u32 instr) {
   );
 }
 
-void cvtsw(Dynarec& cpu, u32 instr) {
+void cvtsw(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.cop1.SetCop1Reg<float>(
     regs.cop0,
@@ -221,7 +221,7 @@ void cvtsw(Dynarec& cpu, u32 instr) {
   );
 }
 
-void cvtdl(Dynarec& cpu, u32 instr) {
+void cvtdl(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.cop1.SetCop1Reg<double>(
     regs.cop0,
@@ -233,7 +233,7 @@ void cvtdl(Dynarec& cpu, u32 instr) {
   );
 }
 
-void cvtld(Dynarec& cpu, u32 instr) {
+void cvtld(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.cop1.SetReg<u64>(
     regs.cop0,
@@ -246,7 +246,7 @@ void cvtld(Dynarec& cpu, u32 instr) {
 }
 
 template <typename T>
-inline bool CalculateCondition(Dynarec& cpu, T fs, T ft, CompConds cond) {
+inline bool CalculateCondition(JIT& cpu, T fs, T ft, CompConds cond) {
   Registers& regs = cpu.regs;
   switch(cond) {
     case F: return false;
@@ -270,7 +270,7 @@ inline bool CalculateCondition(Dynarec& cpu, T fs, T ft, CompConds cond) {
 }
 
 template <typename T>
-void ccond(Dynarec& cpu, u32 instr, CompConds cond) {
+void ccond(JIT& cpu, u32 instr, CompConds cond) {
   Registers& regs = cpu.regs;
   T fs = regs.cop1.GetCop1Reg<T>(regs.cop0, FS(instr));
   T ft = regs.cop1.GetCop1Reg<T>(regs.cop0, FT(instr));
@@ -278,80 +278,80 @@ void ccond(Dynarec& cpu, u32 instr, CompConds cond) {
   regs.cop1.fcr31.compare = CalculateCondition(cpu, fs, ft, cond);
 }
 
-template void ccond<float>(Dynarec& cpu, u32 instr, CompConds cond);
-template void ccond<double>(Dynarec& cpu, u32 instr, CompConds cond);
+template void ccond<float>(JIT& cpu, u32 instr, CompConds cond);
+template void ccond<double>(JIT& cpu, u32 instr, CompConds cond);
 
-void divs(Dynarec& cpu, u32 instr) {
+void divs(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   float ft = regs.cop1.GetCop1Reg<float>(regs.cop0, FT(instr));
   regs.cop1.SetCop1Reg<float>(regs.cop0, FD(instr), fs / ft);
 }
 
-void divd(Dynarec& cpu, u32 instr) {
+void divd(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   double ft = regs.cop1.GetCop1Reg<double>(regs.cop0, FT(instr));
   regs.cop1.SetCop1Reg<double>(regs.cop0, FD(instr), fs / ft);
 }
 
-void muls(Dynarec& cpu, u32 instr) {
+void muls(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   float ft = regs.cop1.GetCop1Reg<float>(regs.cop0, FT(instr));
   regs.cop1.SetCop1Reg<float>(regs.cop0, FD(instr), fs * ft);
 }
 
-void muld(Dynarec& cpu, u32 instr) {
+void muld(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   double ft = regs.cop1.GetCop1Reg<double>(regs.cop0, FT(instr));
   regs.cop1.SetCop1Reg<double>(regs.cop0, FD(instr), fs * ft);
 }
 
-void mulw(Dynarec& cpu, u32 instr) {
+void mulw(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   u32 fs = regs.cop1.GetReg<u32>(regs.cop0, FS(instr));
   u32 ft = regs.cop1.GetReg<u32>(regs.cop0, FT(instr));
   regs.cop1.SetReg<u32>(regs.cop0, FD(instr), fs * ft);
 }
 
-void mull(Dynarec& cpu, u32 instr) {
+void mull(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   u64 fs = regs.cop1.GetReg<u64>(regs.cop0, FS(instr));
   u64 ft = regs.cop1.GetReg<u64>(regs.cop0, FT(instr));
   regs.cop1.SetReg<u64>(regs.cop0, FD(instr), fs * ft);
 }
 
-void subs(Dynarec& cpu, u32 instr) {
+void subs(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   float ft = regs.cop1.GetCop1Reg<float>(regs.cop0, FT(instr));
   regs.cop1.SetCop1Reg<float>(regs.cop0, FD(instr), fs - ft);
 }
 
-void subd(Dynarec& cpu, u32 instr) {
+void subd(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   double ft = regs.cop1.GetCop1Reg<double>(regs.cop0, FT(instr));
   regs.cop1.SetCop1Reg<double>(regs.cop0, FD(instr), fs - ft);
 }
 
-void subw(Dynarec& cpu, u32 instr) {
+void subw(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   u32 fs = regs.cop1.GetReg<u32>(regs.cop0, FS(instr));
   u32 ft = regs.cop1.GetReg<u32>(regs.cop0, FT(instr));
   regs.cop1.SetReg<u32>(regs.cop0, FD(instr), fs - ft);
 }
 
-void subl(Dynarec& cpu, u32 instr) {
+void subl(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   u64 fs = regs.cop1.GetReg<u64>(regs.cop0, FS(instr));
   u64 ft = regs.cop1.GetReg<u64>(regs.cop0, FT(instr));
   regs.cop1.SetReg<u64>(regs.cop0, FD(instr), fs - ft);
 }
 
-void movs(Dynarec& cpu, u32 instr) {
+void movs(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.cop1.SetCop1Reg<float>(
     regs.cop0,
@@ -363,7 +363,7 @@ void movs(Dynarec& cpu, u32 instr) {
   );
 }
 
-void movd(Dynarec& cpu, u32 instr) {
+void movd(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.cop1.SetCop1Reg<double>(
     regs.cop0,
@@ -375,7 +375,7 @@ void movd(Dynarec& cpu, u32 instr) {
   );
 }
 
-void movw(Dynarec& cpu, u32 instr) {
+void movw(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.cop1.SetReg<u32>(
     regs.cop0,
@@ -387,7 +387,7 @@ void movw(Dynarec& cpu, u32 instr) {
   );
 }
 
-void movl(Dynarec& cpu, u32 instr) {
+void movl(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.cop1.SetReg<u64>(
     regs.cop0,
@@ -399,7 +399,7 @@ void movl(Dynarec& cpu, u32 instr) {
   );
 }
 
-void negs(Dynarec& cpu, u32 instr) {
+void negs(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.cop1.SetCop1Reg<float>(
     regs.cop0,
@@ -411,7 +411,7 @@ void negs(Dynarec& cpu, u32 instr) {
   );
 }
 
-void negd(Dynarec& cpu, u32 instr) {
+void negd(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.cop1.SetCop1Reg<double>(
     regs.cop0,
@@ -423,19 +423,19 @@ void negd(Dynarec& cpu, u32 instr) {
   );
 }
 
-void sqrts(Dynarec& cpu, u32 instr) {
+void sqrts(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   regs.cop1.SetCop1Reg<float>(regs.cop0, FD(instr), std::sqrt(fs));
 }
 
-void sqrtd(Dynarec& cpu, u32 instr) {
+void sqrtd(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   regs.cop1.SetCop1Reg<double>(regs.cop0, FD(instr), std::sqrt(fs));
 }
 
-void roundls(Dynarec& cpu, u32 instr) {
+void roundls(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   PUSHROUNDINGMODE;
@@ -443,7 +443,7 @@ void roundls(Dynarec& cpu, u32 instr) {
   POPROUNDINGMODE;
 }
 
-void roundld(Dynarec& cpu, u32 instr) {
+void roundld(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   PUSHROUNDINGMODE;
@@ -451,7 +451,7 @@ void roundld(Dynarec& cpu, u32 instr) {
   POPROUNDINGMODE;
 }
 
-void roundws(Dynarec& cpu, u32 instr) {
+void roundws(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   PUSHROUNDINGMODE;
@@ -459,7 +459,7 @@ void roundws(Dynarec& cpu, u32 instr) {
   POPROUNDINGMODE;
 }
 
-void roundwd(Dynarec& cpu, u32 instr) {
+void roundwd(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   PUSHROUNDINGMODE;
@@ -467,31 +467,31 @@ void roundwd(Dynarec& cpu, u32 instr) {
   POPROUNDINGMODE;
 }
 
-void floorls(Dynarec& cpu, u32 instr) {
+void floorls(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   regs.cop1.SetReg<u64>(regs.cop0, FD(instr), (s64)std::floor(fs));
 }
 
-void floorld(Dynarec& cpu, u32 instr) {
+void floorld(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   regs.cop1.SetReg<u64>(regs.cop0, FD(instr), (s64)std::floor(fs));
 }
 
-void floorws(Dynarec& cpu, u32 instr) {
+void floorws(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   regs.cop1.SetReg<u32>(regs.cop0, FD(instr), (s64)std::floor(fs));
 }
 
-void floorwd(Dynarec& cpu, u32 instr) {
+void floorwd(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   regs.cop1.SetReg<u32>(regs.cop0, FD(instr), (s64)std::floor(fs));
 }
 
-void lwc1(Dynarec& cpu, u32 instr) {
+void lwc1(JIT& cpu, u32 instr) {
   Mem& mem = cpu.mem;
   Registers& regs = cpu.regs;
   if(!regs.cop0.status.cu1) {
@@ -511,7 +511,7 @@ void lwc1(Dynarec& cpu, u32 instr) {
   }
 }
 
-void swc1(Dynarec& cpu, u32 instr) {
+void swc1(JIT& cpu, u32 instr) {
   Mem& mem = cpu.mem;
   Registers& regs = cpu.regs;
   if(!regs.cop0.status.cu1) {
@@ -530,7 +530,7 @@ void swc1(Dynarec& cpu, u32 instr) {
   }
 }
 
-void ldc1(Dynarec& cpu, u32 instr) {
+void ldc1(JIT& cpu, u32 instr) {
   Mem& mem = cpu.mem;
   Registers& regs = cpu.regs;
   if(!regs.cop0.status.cu1) {
@@ -550,7 +550,7 @@ void ldc1(Dynarec& cpu, u32 instr) {
   }
 }
 
-void sdc1(Dynarec& cpu, u32 instr) {
+void sdc1(JIT& cpu, u32 instr) {
   Mem& mem = cpu.mem;
   Registers& regs = cpu.regs;
   if(!regs.cop0.status.cu1) {
@@ -569,50 +569,50 @@ void sdc1(Dynarec& cpu, u32 instr) {
   }
 }
 
-void truncws(Dynarec& cpu, u32 instr) {
+void truncws(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   s32 result = (s32)std::trunc(fs);
   regs.cop1.SetReg<u32>(regs.cop0, FD(instr), result);
 }
 
-void truncwd(Dynarec& cpu, u32 instr) {
+void truncwd(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   s32 result = (s32)std::trunc(fs);
   regs.cop1.SetReg<u32>(regs.cop0, FD(instr), result);
 }
 
-void truncls(Dynarec& cpu, u32 instr) {
+void truncls(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   s64 result = (s64)std::trunc(fs);
   regs.cop1.SetReg<u64>(regs.cop0, FD(instr), result);
 }
 
-void truncld(Dynarec& cpu, u32 instr) {
+void truncld(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   s64 result = (s64)std::trunc(fs);
   regs.cop1.SetReg<u64>(regs.cop0, FD(instr), result);
 }
 
-void mfc1(Dynarec& cpu, u32 instr) {
+void mfc1(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.gpr[RT(instr)] = (s32)regs.cop1.GetReg<u32>(regs.cop0, FS(instr));
 }
 
-void dmfc1(Dynarec& cpu, u32 instr) {
+void dmfc1(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.gpr[RT(instr)] = (s64)regs.cop1.GetReg<u64>(regs.cop0, FS(instr));
 }
 
-void mtc1(Dynarec& cpu, u32 instr) {
+void mtc1(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.cop1.SetReg<u32>(regs.cop0, FS(instr), regs.gpr[RT(instr)]);
 }
 
-void dmtc1(Dynarec& cpu, u32 instr) {
+void dmtc1(JIT& cpu, u32 instr) {
   Registers& regs = cpu.regs;
   regs.cop1.SetReg<u64>(regs.cop0, FS(instr), regs.gpr[RT(instr)]);
 }

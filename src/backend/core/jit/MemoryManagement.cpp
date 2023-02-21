@@ -1,18 +1,18 @@
-#include <core/Dynarec.hpp>
+#include <core/JIT.hpp>
 
 namespace n64 {
-void Dynarec::InvalidatePage(u32 paddr) {
+void JIT::InvalidatePage(u32 paddr) {
   blockCache[paddr >> 20] = nullptr;
 }
 
-void Dynarec::InvalidateCache() {
+void JIT::InvalidateCache() {
   sizeUsed = 0;
   for(int i = 0; i < 0x80000; i++) {
     blockCache[i] = nullptr;
   }
 }
 
-void* Dynarec::bumpAlloc(u64 size, u8 val) {
+void* JIT::bumpAlloc(u64 size, u8 val) {
   if(sizeUsed + size >= CODECACHE_SIZE) {
     InvalidateCache();
   }

@@ -1,10 +1,10 @@
-#include <dynarec/instructions.hpp>
-#include <dynarec/cop/cop1decode.hpp>
-#include <dynarec/cop/cop0decode.hpp>
+#include <jit/instructions.hpp>
+#include <jit/cop/cop1decode.hpp>
+#include <jit/cop/cop0decode.hpp>
 #include <Registers.hpp>
 
 namespace n64 {
-void Dynarec::cop2Decode(u32 instr) {
+void JIT::cop2Decode(u32 instr) {
   code.mov(rdi, (u64)this);
   code.mov(rsi, (u64)&regs);
   code.mov(rdx, instr);
@@ -32,7 +32,7 @@ void Dynarec::cop2Decode(u32 instr) {
   }
 }
 
-bool Dynarec::special(u32 instr) {
+bool JIT::special(u32 instr) {
   u8 mask = (instr & 0x3F);
   bool res = false;
 
@@ -327,7 +327,7 @@ bool Dynarec::special(u32 instr) {
   return res;
 }
 
-bool Dynarec::regimm(u32 instr) {
+bool JIT::regimm(u32 instr) {
   u8 mask = ((instr >> 16) & 0x1F);
   // 000r_rccc
   switch (mask) { // TODO: named constants for clearer code
@@ -458,7 +458,7 @@ bool Dynarec::regimm(u32 instr) {
   return true;
 }
 
-bool Dynarec::Exec(Mem& mem, u32 instr) {
+bool JIT::Exec(Mem& mem, u32 instr) {
   u8 mask = (instr >> 26) & 0x3f;
   bool res = false;
 

@@ -3,7 +3,7 @@
 #include <backend/core/Interpreter.hpp>
 #include <backend/core/Mem.hpp>
 #include <string>
-#include <backend/core/Dynarec.hpp>
+#include <backend/core/JIT.hpp>
 #include <backend/core/registers/Registers.hpp>
 #include <Debugger.hpp>
 #include <SDL2/SDL_timer.h>
@@ -12,7 +12,7 @@ struct Window;
 
 namespace n64 {
 enum class CpuType {
-  Dynarec, Interpreter, NONE
+  Interpreter, JIT, COUNT
 };
 
 struct Core {
@@ -31,7 +31,7 @@ struct Core {
   bool romLoaded = false;
   bool done = false;
   std::string rom;
-  CpuType cpuType = CpuType::NONE;
+  CpuType cpuType = CpuType::COUNT;
   std::unique_ptr<BaseCPU> cpu;
   Debugger debugger{*this};
 };

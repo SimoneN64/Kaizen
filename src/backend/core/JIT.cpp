@@ -1,18 +1,17 @@
-#include <Core.hpp>
 #include <Registers.hpp>
 #include <filesystem>
-#include "Dynarec.hpp"
+#include <JIT.hpp>
 
 
 namespace n64 {
 namespace fs = std::filesystem;
 
-Dynarec::~Dynarec() {
+JIT::~JIT() {
   Util::aligned_free(codeCache);
   dump.close();
 }
 
-Dynarec::Dynarec() : code(CODECACHE_SIZE, codeCache) {
+JIT::JIT() : code(CODECACHE_SIZE, codeCache) {
   codeCache = (u8*)Util::aligned_alloc(4096, CODECACHE_SIZE);
   CodeArray::protect(
     codeCache,
@@ -47,7 +46,7 @@ inline void CheckCompareInterrupt(MI& mi, Registers& regs) {
   }
 }
 
-void Dynarec::Recompile(Mem& mem, u32 pc) {
+void JIT::Recompile(Mem& mem, u32 pc) {
   bool branch = false, prevBranch = false;
   u32 startPC = pc;
   u32 loopPC = pc;
@@ -95,11 +94,11 @@ void Dynarec::Recompile(Mem& mem, u32 pc) {
   blockCache[startPC >> 20][startPC & 0xFFF]();
 }
 
-void Dynarec::AllocateOuter(u32 pc) {
+void JIT::AllocateOuter(u32 pc) {
   blockCache[pc >> 20] = (Fn*)bumpAlloc(0x1000 * sizeof(Fn));
 }
 
-int Dynarec::Run() {
+int JIT::Run() {
   /*instrInBlock = 0;
   regs.gpr[0] = 0;
   regs.prevDelaySlot = regs.delaySlot;
@@ -134,7 +133,7 @@ int Dynarec::Run() {
   Util::panic("JIT RECOMPILER NOT YET IMPLEMENTED!\n");
 }
 
-void Dynarec::Reset() {
+void JIT::Reset() {
   code.reset();
   regs.Reset();
   InvalidateCache();

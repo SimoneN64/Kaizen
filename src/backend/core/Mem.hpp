@@ -15,7 +15,7 @@ struct CartInfo {
   u32 crc;
 };
 
-struct Dynarec;
+struct JIT;
 
 struct Mem {
   ~Mem() {
@@ -32,10 +32,10 @@ struct Mem {
   u16 Read16(Registers&, u32);
   u32 Read32(Registers&, u32);
   u64 Read64(Registers&, u32);
-  void Write8(Registers&, Dynarec&, u32, u32);
-  void Write16(Registers&, Dynarec&, u32, u32);
-  void Write32(Registers&, Dynarec&, u32, u32);
-  void Write64(Registers&, Dynarec&, u32, u64);
+  void Write8(Registers&, JIT&, u32, u32);
+  void Write16(Registers&, JIT&, u32, u32);
+  void Write32(Registers&, JIT&, u32, u32);
+  void Write64(Registers&, JIT&, u32, u64);
   void Write8(Registers&, u32, u32);
   void Write16(Registers&, u32, u32);
   void Write32(Registers&, u32, u32);

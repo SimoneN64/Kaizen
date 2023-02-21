@@ -1,4 +1,4 @@
-#include <core/Dynarec.hpp>
+#include <core/JIT.hpp>
 
 #define se_imm(x) ((s16)((x) & 0xFFFF))
 #define check_address_error(mask, addr) (((!regs.cop0.is_64bit_addressing) && (s32)(addr) != (addr)) || (((addr) & (mask)) != 0))
@@ -6,7 +6,7 @@
 #define check_signed_underflow(op1, op2, res) (((((op1) ^ (op2)) & ((op1) ^ (res))) >> ((sizeof(res) * 8) - 1)) & 1)
 
 namespace n64 {
-void add(Dynarec& dyn, u32 instr) {
+void add(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   u32 rs = (s32)regs.gpr[RS(instr)];
   u32 rt = (s32)regs.gpr[RT(instr)];
@@ -20,7 +20,7 @@ void add(Dynarec& dyn, u32 instr) {
   }
 }
 
-void addu(Dynarec& dyn, u32 instr) {
+void addu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     s32 rs = (s32)regs.gpr[RS(instr)];
@@ -30,7 +30,7 @@ void addu(Dynarec& dyn, u32 instr) {
   }
 }
 
-void addi(Dynarec& dyn, u32 instr) {
+void addi(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   u32 rs = regs.gpr[RS(instr)];
   u32 imm = s32(s16(instr));
@@ -42,7 +42,7 @@ void addi(Dynarec& dyn, u32 instr) {
   }
 }
 
-void addiu(Dynarec& dyn, u32 instr) {
+void addiu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   s32 rs = (s32)regs.gpr[RS(instr)];
   s16 imm = (s16)(instr);
@@ -50,7 +50,7 @@ void addiu(Dynarec& dyn, u32 instr) {
   regs.gpr[RT(instr)] = result;
 }
 
-void dadd(Dynarec& dyn, u32 instr) {
+void dadd(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   u64 rs = regs.gpr[RS(instr)];
   u64 rt = regs.gpr[RT(instr)];
@@ -64,7 +64,7 @@ void dadd(Dynarec& dyn, u32 instr) {
   }
 }
 
-void daddu(Dynarec& dyn, u32 instr) {
+void daddu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     s64 rs = regs.gpr[RS(instr)];
@@ -73,7 +73,7 @@ void daddu(Dynarec& dyn, u32 instr) {
   }
 }
 
-void daddi(Dynarec& dyn, u32 instr) {
+void daddi(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   u64 imm = s64(s16(instr));
   u64 rs = regs.gpr[RS(instr)];
@@ -85,14 +85,14 @@ void daddi(Dynarec& dyn, u32 instr) {
   }
 }
 
-void daddiu(Dynarec& dyn, u32 instr) {
+void daddiu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   s16 imm = (s16)(instr);
   s64 rs = regs.gpr[RS(instr)];
   regs.gpr[RT(instr)] = rs + imm;
 }
 
-void div(Dynarec& dyn, u32 instr) {
+void div(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   s64 dividend = (s32)regs.gpr[RS(instr)];
   s64 divisor = (s32)regs.gpr[RT(instr)];
@@ -112,7 +112,7 @@ void div(Dynarec& dyn, u32 instr) {
   }
 }
 
-void divu(Dynarec& dyn, u32 instr) {
+void divu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   u32 dividend = regs.gpr[RS(instr)];
   u32 divisor = regs.gpr[RT(instr)];
@@ -127,7 +127,7 @@ void divu(Dynarec& dyn, u32 instr) {
   }
 }
 
-void ddiv(Dynarec& dyn, u32 instr) {
+void ddiv(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   s64 dividend = regs.gpr[RS(instr)];
   s64 divisor = regs.gpr[RT(instr)];
@@ -149,7 +149,7 @@ void ddiv(Dynarec& dyn, u32 instr) {
   }
 }
 
-void ddivu(Dynarec& dyn, u32 instr) {
+void ddivu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   u64 dividend = regs.gpr[RS(instr)];
   u64 divisor = regs.gpr[RT(instr)];
@@ -164,7 +164,7 @@ void ddivu(Dynarec& dyn, u32 instr) {
   }
 }
 
-void branch(Dynarec& dyn, bool cond, s64 address) {
+void branch(JIT& dyn, bool cond, s64 address) {
   Registers& regs = dyn.regs;
   regs.delaySlot = true;
   if (cond) {
@@ -172,7 +172,7 @@ void branch(Dynarec& dyn, bool cond, s64 address) {
   }
 }
 
-void branch_likely(Dynarec& dyn, bool cond, s64 address) {
+void branch_likely(JIT& dyn, bool cond, s64 address) {
   Registers& regs = dyn.regs;
   regs.delaySlot = true;
   if (cond) {
@@ -182,14 +182,14 @@ void branch_likely(Dynarec& dyn, bool cond, s64 address) {
   }
 }
 
-void b(Dynarec& dyn, u32 instr, bool cond) {
+void b(JIT& dyn, u32 instr, bool cond) {
   Registers& regs = dyn.regs;
   s64 offset = (s64)se_imm(instr) << 2;
   s64 address = regs.pc + offset;
   branch(dyn, cond, address);
 }
 
-void blink(Dynarec& dyn, u32 instr, bool cond) {
+void blink(JIT& dyn, u32 instr, bool cond) {
   Registers& regs = dyn.regs;
   regs.gpr[31] = regs.nextPC;
   s64 offset = (s64)se_imm(instr) << 2;
@@ -197,14 +197,14 @@ void blink(Dynarec& dyn, u32 instr, bool cond) {
   branch(dyn, cond, address);
 }
 
-void bl(Dynarec& dyn, u32 instr, bool cond) {
+void bl(JIT& dyn, u32 instr, bool cond) {
   Registers& regs = dyn.regs;
   s64 offset = (s64)se_imm(instr) << 2;
   s64 address = regs.pc + offset;
   branch_likely(dyn, cond, address);
 }
 
-void bllink(Dynarec& dyn, u32 instr, bool cond) {
+void bllink(JIT& dyn, u32 instr, bool cond) {
   Registers& regs = dyn.regs;
   regs.gpr[31] = regs.nextPC;
   s64 offset = (s64)se_imm(instr) << 2;
@@ -212,14 +212,14 @@ void bllink(Dynarec& dyn, u32 instr, bool cond) {
   branch_likely(dyn, cond, address);
 }
 
-void lui(Dynarec& dyn, u32 instr) {
+void lui(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   s64 val = (s16)instr;
   val <<= 16;
   regs.gpr[RT(instr)] = val;
 }
 
-void lb(Dynarec& dyn, u32 instr) {
+void lb(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -232,7 +232,7 @@ void lb(Dynarec& dyn, u32 instr) {
   }
 }
 
-void lh(Dynarec& dyn, u32 instr) {
+void lh(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -251,7 +251,7 @@ void lh(Dynarec& dyn, u32 instr) {
   }
 }
 
-void lw(Dynarec& dyn, u32 instr) {
+void lw(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   s16 offset = instr;
@@ -271,7 +271,7 @@ void lw(Dynarec& dyn, u32 instr) {
   }
 }
 
-void ll(Dynarec& dyn, u32 instr) {
+void ll(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -292,7 +292,7 @@ void ll(Dynarec& dyn, u32 instr) {
   regs.cop0.LLAddr = physical >> 4;
 }
 
-void lwl(Dynarec& dyn, u32 instr) {
+void lwl(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -309,7 +309,7 @@ void lwl(Dynarec& dyn, u32 instr) {
   }
 }
 
-void lwr(Dynarec& dyn, u32 instr) {
+void lwr(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -326,7 +326,7 @@ void lwr(Dynarec& dyn, u32 instr) {
   }
 }
 
-void ld(Dynarec& dyn, u32 instr) {
+void ld(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -340,7 +340,7 @@ void ld(Dynarec& dyn, u32 instr) {
   regs.gpr[RT(instr)] = value;
 }
 
-void lld(Dynarec& dyn, u32 instr) {
+void lld(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   if (!regs.cop0.is_64bit_addressing && !regs.cop0.kernel_mode) {
@@ -364,7 +364,7 @@ void lld(Dynarec& dyn, u32 instr) {
   }
 }
 
-void ldl(Dynarec& dyn, u32 instr) {
+void ldl(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -381,7 +381,7 @@ void ldl(Dynarec& dyn, u32 instr) {
   }
 }
 
-void ldr(Dynarec& dyn, u32 instr) {
+void ldr(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -398,7 +398,7 @@ void ldr(Dynarec& dyn, u32 instr) {
   }
 }
 
-void lbu(Dynarec& dyn, u32 instr) {
+void lbu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -406,7 +406,7 @@ void lbu(Dynarec& dyn, u32 instr) {
   regs.gpr[RT(instr)] = value;
 }
 
-void lhu(Dynarec& dyn, u32 instr) {
+void lhu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -420,7 +420,7 @@ void lhu(Dynarec& dyn, u32 instr) {
   regs.gpr[RT(instr)] = value;
 }
 
-void lwu(Dynarec& dyn, u32 instr) {
+void lwu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -434,14 +434,14 @@ void lwu(Dynarec& dyn, u32 instr) {
   regs.gpr[RT(instr)] = value;
 }
 
-void sb(Dynarec& dyn, u32 instr) {
+void sb(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   u32 address = regs.gpr[RS(instr)] + (s16)instr;
   mem.Write8(regs, dyn, address, regs.gpr[RT(instr)]);
 }
 
-void sc(Dynarec& dyn, u32 instr) {
+void sc(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -466,7 +466,7 @@ void sc(Dynarec& dyn, u32 instr) {
   }
 }
 
-void scd(Dynarec& dyn, u32 instr) {
+void scd(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -484,7 +484,7 @@ void scd(Dynarec& dyn, u32 instr) {
   regs.cop0.llbit = false;
 }
 
-void sh(Dynarec& dyn, u32 instr) {
+void sh(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -503,7 +503,7 @@ void sh(Dynarec& dyn, u32 instr) {
   }
 }
 
-void sw(Dynarec& dyn, u32 instr) {
+void sw(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   s16 offset = instr;
@@ -523,7 +523,7 @@ void sw(Dynarec& dyn, u32 instr) {
   }
 }
 
-void sd(Dynarec& dyn, u32 instr) {
+void sd(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -543,7 +543,7 @@ void sd(Dynarec& dyn, u32 instr) {
 
 }
 
-void sdl(Dynarec& dyn, u32 instr) {
+void sdl(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -560,7 +560,7 @@ void sdl(Dynarec& dyn, u32 instr) {
   }
 }
 
-void sdr(Dynarec& dyn, u32 instr) {
+void sdr(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -577,7 +577,7 @@ void sdr(Dynarec& dyn, u32 instr) {
   }
 }
 
-void swl(Dynarec& dyn, u32 instr) {
+void swl(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -594,7 +594,7 @@ void swl(Dynarec& dyn, u32 instr) {
   }
 }
 
-void swr(Dynarec& dyn, u32 instr) {
+void swr(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
@@ -611,28 +611,28 @@ void swr(Dynarec& dyn, u32 instr) {
   }
 }
 
-void ori(Dynarec& dyn, u32 instr) {
+void ori(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   s64 imm = (u16)instr;
   s64 result = imm | regs.gpr[RS(instr)];
   regs.gpr[RT(instr)] = result;
 }
 
-void or_(Dynarec& dyn, u32 instr) {
+void or_(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     regs.gpr[RD(instr)] = regs.gpr[RS(instr)] | regs.gpr[RT(instr)];
   }
 }
 
-void nor(Dynarec& dyn, u32 instr) {
+void nor(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     regs.gpr[RD(instr)] = ~(regs.gpr[RS(instr)] | regs.gpr[RT(instr)]);
   }
 }
 
-void j(Dynarec& dyn, u32 instr) {
+void j(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   u64 target = (instr & 0x3ffffff) << 2;
   u64 address = ((regs.pc - 4) & ~0xfffffff) | target;
@@ -640,13 +640,13 @@ void j(Dynarec& dyn, u32 instr) {
   branch(dyn, true, address);
 }
 
-void jal(Dynarec& dyn, u32 instr) {
+void jal(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   regs.gpr[31] = regs.nextPC;
   j(dyn, instr);
 }
 
-void jalr(Dynarec& dyn, u32 instr) {
+void jalr(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   branch(dyn, true, regs.gpr[RS(instr)]);
   if(likely(RD(instr) != 0)) {
@@ -654,57 +654,57 @@ void jalr(Dynarec& dyn, u32 instr) {
   }
 }
 
-void slti(Dynarec& dyn, u32 instr) {
+void slti(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   regs.gpr[RT(instr)] = regs.gpr[RS(instr)] < se_imm(instr);
 }
 
-void sltiu(Dynarec& dyn, u32 instr) {
+void sltiu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   regs.gpr[RT(instr)] = (u64)regs.gpr[RS(instr)] < se_imm(instr);
 }
 
-void slt(Dynarec& dyn, u32 instr) {
+void slt(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     regs.gpr[RD(instr)] = regs.gpr[RS(instr)] < regs.gpr[RT(instr)];
   }
 }
 
-void sltu(Dynarec& dyn, u32 instr) {
+void sltu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     regs.gpr[RD(instr)] = (u64) regs.gpr[RS(instr)] < (u64) regs.gpr[RT(instr)];
   }
 }
 
-void xori(Dynarec& dyn, u32 instr) {
+void xori(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   s64 imm = (u16)instr;
   regs.gpr[RT(instr)] = regs.gpr[RS(instr)] ^ imm;
 }
 
-void xor_(Dynarec& dyn, u32 instr) {
+void xor_(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     regs.gpr[RD(instr)] = regs.gpr[RT(instr)] ^ regs.gpr[RS(instr)];
   }
 }
 
-void andi(Dynarec& dyn, u32 instr) {
+void andi(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   s64 imm = (u16)instr;
   regs.gpr[RT(instr)] = regs.gpr[RS(instr)] & imm;
 }
 
-void and_(Dynarec& dyn, u32 instr) {
+void and_(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     regs.gpr[RD(instr)] = regs.gpr[RS(instr)] & regs.gpr[RT(instr)];
   }
 }
 
-void sll(Dynarec& dyn, u32 instr) {
+void sll(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     u8 sa = ((instr >> 6) & 0x1f);
@@ -713,7 +713,7 @@ void sll(Dynarec& dyn, u32 instr) {
   }
 }
 
-void sllv(Dynarec& dyn, u32 instr) {
+void sllv(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     u8 sa = (regs.gpr[RS(instr)]) & 0x1F;
@@ -723,7 +723,7 @@ void sllv(Dynarec& dyn, u32 instr) {
   }
 }
 
-void dsll32(Dynarec& dyn, u32 instr) {
+void dsll32(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     u8 sa = ((instr >> 6) & 0x1f);
@@ -732,7 +732,7 @@ void dsll32(Dynarec& dyn, u32 instr) {
   }
 }
 
-void dsll(Dynarec& dyn, u32 instr) {
+void dsll(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     u8 sa = ((instr >> 6) & 0x1f);
@@ -741,7 +741,7 @@ void dsll(Dynarec& dyn, u32 instr) {
   }
 }
 
-void dsllv(Dynarec& dyn, u32 instr) {
+void dsllv(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     s64 sa = regs.gpr[RS(instr)] & 63;
@@ -750,7 +750,7 @@ void dsllv(Dynarec& dyn, u32 instr) {
   }
 }
 
-void srl(Dynarec& dyn, u32 instr) {
+void srl(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     u32 rt = regs.gpr[RT(instr)];
@@ -760,7 +760,7 @@ void srl(Dynarec& dyn, u32 instr) {
   }
 }
 
-void srlv(Dynarec& dyn, u32 instr) {
+void srlv(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     u8 sa = (regs.gpr[RS(instr)] & 0x1F);
@@ -770,7 +770,7 @@ void srlv(Dynarec& dyn, u32 instr) {
   }
 }
 
-void dsrl(Dynarec& dyn, u32 instr) {
+void dsrl(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     u64 rt = regs.gpr[RT(instr)];
@@ -780,7 +780,7 @@ void dsrl(Dynarec& dyn, u32 instr) {
   }
 }
 
-void dsrlv(Dynarec& dyn, u32 instr) {
+void dsrlv(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     u8 amount = (regs.gpr[RS(instr)] & 63);
@@ -790,7 +790,7 @@ void dsrlv(Dynarec& dyn, u32 instr) {
   }
 }
 
-void dsrl32(Dynarec& dyn, u32 instr) {
+void dsrl32(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     u64 rt = regs.gpr[RT(instr)];
@@ -800,7 +800,7 @@ void dsrl32(Dynarec& dyn, u32 instr) {
   }
 }
 
-void sra(Dynarec& dyn, u32 instr) {
+void sra(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     s64 rt = regs.gpr[RT(instr)];
@@ -810,7 +810,7 @@ void sra(Dynarec& dyn, u32 instr) {
   }
 }
 
-void srav(Dynarec& dyn, u32 instr) {
+void srav(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     s64 rt = regs.gpr[RT(instr)];
@@ -821,7 +821,7 @@ void srav(Dynarec& dyn, u32 instr) {
   }
 }
 
-void dsra(Dynarec& dyn, u32 instr) {
+void dsra(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     s64 rt = regs.gpr[RT(instr)];
@@ -831,7 +831,7 @@ void dsra(Dynarec& dyn, u32 instr) {
   }
 }
 
-void dsrav(Dynarec& dyn, u32 instr) {
+void dsrav(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     s64 rt = regs.gpr[RT(instr)];
@@ -842,7 +842,7 @@ void dsrav(Dynarec& dyn, u32 instr) {
   }
 }
 
-void dsra32(Dynarec& dyn, u32 instr) {
+void dsra32(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     s64 rt = regs.gpr[RT(instr)];
@@ -852,7 +852,7 @@ void dsra32(Dynarec& dyn, u32 instr) {
   }
 }
 
-void jr(Dynarec& dyn, u32 instr) {
+void jr(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   s64 address = regs.gpr[RS(instr)];
   if (check_address_error(address, 0b11)) {
@@ -863,7 +863,7 @@ void jr(Dynarec& dyn, u32 instr) {
   branch(dyn, true, address);
 }
 
-void dsub(Dynarec& dyn, u32 instr) {
+void dsub(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   s64 rt = regs.gpr[RT(instr)];
   s64 rs = regs.gpr[RS(instr)];
@@ -877,7 +877,7 @@ void dsub(Dynarec& dyn, u32 instr) {
   }
 }
 
-void dsubu(Dynarec& dyn, u32 instr) {
+void dsubu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     u64 rt = regs.gpr[RT(instr)];
@@ -887,7 +887,7 @@ void dsubu(Dynarec& dyn, u32 instr) {
   }
 }
 
-void sub(Dynarec& dyn, u32 instr) {
+void sub(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   s32 rt = regs.gpr[RT(instr)];
   s32 rs = regs.gpr[RS(instr)];
@@ -901,7 +901,7 @@ void sub(Dynarec& dyn, u32 instr) {
   }
 }
 
-void subu(Dynarec& dyn, u32 instr) {
+void subu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     u32 rt = regs.gpr[RT(instr)];
@@ -911,7 +911,7 @@ void subu(Dynarec& dyn, u32 instr) {
   }
 }
 
-void dmultu(Dynarec& dyn, u32 instr) {
+void dmultu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   u64 rt = regs.gpr[RT(instr)];
   u64 rs = regs.gpr[RS(instr)];
@@ -920,7 +920,7 @@ void dmultu(Dynarec& dyn, u32 instr) {
   regs.hi = (s64)(result >> 64);
 }
 
-void dmult(Dynarec& dyn, u32 instr) {
+void dmult(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   s64 rt = regs.gpr[RT(instr)];
   s64 rs = regs.gpr[RS(instr)];
@@ -929,7 +929,7 @@ void dmult(Dynarec& dyn, u32 instr) {
   regs.hi = result >> 64;
 }
 
-void multu(Dynarec& dyn, u32 instr) {
+void multu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   u32 rt = regs.gpr[RT(instr)];
   u32 rs = regs.gpr[RS(instr)];
@@ -938,7 +938,7 @@ void multu(Dynarec& dyn, u32 instr) {
   regs.hi = (s64)((s32)(result >> 32));
 }
 
-void mult(Dynarec& dyn, u32 instr) {
+void mult(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   s32 rt = regs.gpr[RT(instr)];
   s32 rs = regs.gpr[RS(instr)];
@@ -947,54 +947,54 @@ void mult(Dynarec& dyn, u32 instr) {
   regs.hi = (s64)((s32)(result >> 32));
 }
 
-void mflo(Dynarec& dyn, u32 instr) {
+void mflo(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     regs.gpr[RD(instr)] = regs.lo;
   }
 }
 
-void mfhi(Dynarec& dyn, u32 instr) {
+void mfhi(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   if(likely(RD(instr) != 0)) {
     regs.gpr[RD(instr)] = regs.hi;
   }
 }
 
-void mtlo(Dynarec& dyn, u32 instr) {
+void mtlo(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   regs.lo = regs.gpr[RS(instr)];
 }
 
-void mthi(Dynarec& dyn, u32 instr) {
+void mthi(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   regs.hi = regs.gpr[RS(instr)];
 }
 
-void trap(Dynarec& dyn, bool cond) {
+void trap(JIT& dyn, bool cond) {
   Registers& regs = dyn.regs;
   if(cond) {
     FireException(regs, ExceptionCode::Trap, 0, true);
   }
 }
 
-void mtc2(Dynarec& dyn, u32 instr) {
+void mtc2(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   dyn.cop2Latch = regs.gpr[RT(instr)];
 }
 
-void mfc2(Dynarec& dyn, u32 instr) {
+void mfc2(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   s32 value = dyn.cop2Latch;
   regs.gpr[RT(instr)] = value;
 }
 
-void dmtc2(Dynarec& dyn, u32 instr) {
+void dmtc2(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   dyn.cop2Latch = regs.gpr[RT(instr)];
 }
 
-void dmfc2(Dynarec& dyn, u32 instr) {
+void dmfc2(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   regs.gpr[RT(instr)] = dyn.cop2Latch;
 }

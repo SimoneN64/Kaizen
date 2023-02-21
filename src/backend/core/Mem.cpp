@@ -3,7 +3,7 @@
 #include <core/registers/Registers.hpp>
 #include <core/registers/Cop0.hpp>
 #include <core/Interpreter.hpp>
-#include <core/Dynarec.hpp>
+#include <core/JIT.hpp>
 #include <File.hpp>
 
 namespace n64 {
@@ -217,22 +217,22 @@ u64 Mem::Read64(n64::Registers &regs, u32 paddr) {
   }
 }
 
-void Mem::Write8(Registers& regs, n64::Dynarec& dyn, u32 paddr, u32 val) {
+void Mem::Write8(Registers& regs, JIT& dyn, u32 paddr, u32 val) {
   dyn.InvalidatePage(BYTE_ADDRESS(paddr));
   return Write8(regs, paddr, val);
 }
 
-void Mem::Write16(Registers& regs, n64::Dynarec& dyn, u32 paddr, u32 val) {
+void Mem::Write16(Registers& regs, JIT& dyn, u32 paddr, u32 val) {
   dyn.InvalidatePage(HALF_ADDRESS(paddr));
   return Write16(regs, paddr, val);
 }
 
-void Mem::Write32(Registers& regs, n64::Dynarec& dyn, u32 paddr, u32 val) {
+void Mem::Write32(Registers& regs, JIT& dyn, u32 paddr, u32 val) {
   dyn.InvalidatePage(paddr);
   return Write32(regs, paddr, val);
 }
 
-void Mem::Write64(Registers& regs, n64::Dynarec& dyn, u32 paddr, u64 val) {
+void Mem::Write64(Registers& regs, JIT& dyn, u32 paddr, u64 val) {
   dyn.InvalidatePage(paddr);
   return Write64(regs, paddr, val);
 }

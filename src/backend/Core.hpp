@@ -19,7 +19,7 @@ struct Core {
   ~Core() { Stop(); }
   Core();
   void Stop();
-  CartInfo LoadROM(const std::string&);
+  void LoadROM(const std::string&);
   void Run(Window&, float volumeL, float volumeR);
   void TogglePause() { pause = !pause; }
   VI& GetVI() { return cpu->mem.mmio.vi; }

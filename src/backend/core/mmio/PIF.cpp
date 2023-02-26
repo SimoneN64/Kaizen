@@ -55,7 +55,22 @@ void PIF::ProcessPIFCommands(Mem& mem) {
             res[2] = controller.joy_x;
             res[3] = controller.joy_y;
             break;
-          case 2: case 3: res[0] = 0; break;
+          case 2:
+            Util::print("MEMPAK READ\n");
+            res[0] = 0;
+            break;
+          case 3:
+            Util::print("MEMPAK WRITE\n");
+            res[0] = 0;
+            break;
+          case 4:
+            Util::print("EEPROM READ\n");
+            res[0] = 0;
+            break;
+          case 5:
+            Util::print("EEPROM WRITE\n");
+            res[0] = 0;
+            break;
           default: Util::panic("Unimplemented PIF command {}", cmd[2]);
         }
 
@@ -163,9 +178,7 @@ void PIF::UpdateController() {
   }
 }
 
-void PIF::DoPIFHLE(Mem& mem, Registers& regs, CartInfo cartInfo) {
-  u32 cicType = cartInfo.cicType;
-  bool pal = cartInfo.isPAL;
+void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
   mem.Write32(regs, PIF_RAM_REGION_START + 0x24, cicSeeds[cicType]);
 
   switch(cicType) {
@@ -426,12 +439,13 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, CartInfo cartInfo) {
   regs.gpr[22] = (cicSeeds[cicType] >> 8) & 0xFF;
   regs.cop0.Reset();
   mem.Write32(regs, 0x04300004, 0x01010101);
+  memcpy(mem.mmio.rsp.dmem, mem.rom.cart, 0x1000);
   regs.SetPC32(0xA4000040);
 }
 
-void PIF::ExecutePIF(Mem& mem, Registers& regs, CartInfo cartInfo) {
-  u32 cicType = cartInfo.cicType;
-  bool pal = cartInfo.isPAL;
+void PIF::ExecutePIF(Mem& mem, Registers& regs) {
+  CICType cicType = mem.rom.cicType;
+  bool pal = mem.rom.pal;
   mem.Write32(regs, PIF_RAM_REGION_START + 0x24, cicSeeds[cicType]);
   switch(cicType) {
     case UNKNOWN_CIC_TYPE:
@@ -447,6 +461,6 @@ void PIF::ExecutePIF(Mem& mem, Registers& regs, CartInfo cartInfo) {
       break;
   }
 
-  DoPIFHLE(mem, regs, cartInfo);
+  DoPIFHLE(mem, regs, pal, cicType);
 }
 }

@@ -7,6 +7,7 @@
 #include <log.hpp>
 #include <Registers.hpp>
 #include <algorithm>
+#include <GameDB.hpp>
 
 namespace n64 {
 struct CartInfo {
@@ -17,13 +18,41 @@ struct CartInfo {
 
 struct JIT;
 
+struct ROMHeader {
+  u8 initialValues[4];
+  u32 clockRate;
+  u32 programCounter;
+  u32 release;
+  u32 crc1;
+  u32 crc2;
+  u64 unknown;
+  char imageName[20];
+  u32 unknown2;
+  u32 manufacturerId;
+  u16 cartridgeId;
+  char countryCode[2];
+  u8 bootCode[4032];
+};
+
+struct ROM {
+  u8* cart;
+  size_t size;
+  size_t mask;
+  ROMHeader header;
+  CICType cicType;
+  char gameNameCart[20];
+  std::string gameNameDB;
+  char code[4];
+  bool pal;
+};
+
 struct Mem {
   ~Mem() {
     free(sram);
   }
   Mem();
   void Reset();
-  CartInfo LoadROM(const std::string&);
+  void LoadROM(const std::string&);
   [[nodiscard]] auto GetRDRAM() const -> u8* {
     return mmio.rdp.rdram;
   }
@@ -73,47 +102,21 @@ struct Mem {
     fclose(fp);
   }
   uintptr_t writePages[PAGE_COUNT], readPages[PAGE_COUNT];
+  ROM rom;
+  SaveType saveType;
 private:
   friend struct SI;
   friend struct PI;
   friend struct AI;
   friend struct RSP;
   friend struct Core;
-  u8* sram, *cart;
+  u8* sram;
   u8 isviewer[ISVIEWER_SIZE]{};
-  size_t romMask = 0;
-
-  static void SetCICType(u32& cicType, u32 checksum) {
-    switch(checksum) {
-      case 0xEC8B1325: // 7102
-        cicType = CIC_NUS_7102;
-        break;
-      case 0x1DEB51A9: // 6101
-        cicType = CIC_NUS_6101;
-        break;
-      case 0xC08E5BD6:
-        cicType = CIC_NUS_6102_7101;
-        break;
-      case 0x03B8376A:
-        cicType = CIC_NUS_6103_7103;
-        break;
-      case 0xCF7F41DC:
-        cicType = CIC_NUS_6105_7105;
-        break;
-      case 0xD1059C6A:
-        cicType = CIC_NUS_6106_7106;
-        break;
-      default:
-        Util::warn("Could not determine CIC TYPE! Checksum: {:08X} is unknown!\n", checksum);
-        cicType = UNKNOWN_CIC_TYPE;
-        break;
-    }
-  }
 
   bool IsROMPAL() {
     static const char pal_codes[] = {'D', 'F', 'I', 'P', 'S', 'U', 'X', 'Y'};
     return std::any_of(std::begin(pal_codes), std::end(pal_codes), [this](char a) {
-      return cart[0x3e] == a;
+      return rom.cart[0x3e] == a;
     });
   }
 };

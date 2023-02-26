@@ -52,7 +52,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       }
       rdLen = len;
       for(int i = 0; i < len; i++) {
-        mem.cart[BYTE_ADDRESS(cart_addr + i) & mem.romMask] = mem.mmio.rdp.rdram[BYTE_ADDRESS(dram_addr + i) & RDRAM_DSIZE];
+        mem.rom.cart[BYTE_ADDRESS(cart_addr + i) & mem.rom.mask] = mem.mmio.rdp.rdram[BYTE_ADDRESS(dram_addr + i) & RDRAM_DSIZE];
       }
       dramAddr = dram_addr + len;
       cartAddr = cart_addr + len;
@@ -68,7 +68,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       }
       wrLen = len;
       for(int i = 0; i < len; i++) {
-        mem.mmio.rdp.rdram[BYTE_ADDRESS(dram_addr + i) & RDRAM_DSIZE] = mem.cart[BYTE_ADDRESS(cart_addr + i) & mem.romMask];
+        mem.mmio.rdp.rdram[BYTE_ADDRESS(dram_addr + i) & RDRAM_DSIZE] = mem.rom.cart[BYTE_ADDRESS(cart_addr + i) & mem.rom.mask];
       }
       dramAddr = dram_addr + len;
       cartAddr = cart_addr + len;

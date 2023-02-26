@@ -151,22 +151,8 @@ ImDrawData* Window::Present(n64::Core& core) {
 
 void Window::LoadROM(n64::Core& core, const std::string &path) {
   if(!path.empty()) {
-    n64::CartInfo cartInfo = core.LoadROM(path);
-    std::ifstream gameDbFile("resources/db.json");
-    json gameDb = json::parse(gameDbFile);
-    gameName = "";
-
-    for(const auto& item : gameDb["items"]) {
-      auto crc = item["crc"];
-      if(!crc.empty()) {
-        if(crc.get<std::string>() == fmt::format("{:08X}", cartInfo.crc)) {
-          auto name = item["name"];
-          if(!name.empty()) {
-            gameName = name.get<std::string>();
-          }
-        }
-      }
-    };
+    core.LoadROM(path);
+    gameName = core.cpu->mem.rom.gameNameDB;
 
     if(gameName.empty()) {
       gameName = fs::path(path).stem().string();
@@ -177,7 +163,6 @@ void Window::LoadROM(n64::Core& core, const std::string &path) {
     shadowWindowTitle = windowTitle;
 
     SDL_SetWindowTitle(window, windowTitle.c_str());
-    gameDbFile.close();
   }
 }
 

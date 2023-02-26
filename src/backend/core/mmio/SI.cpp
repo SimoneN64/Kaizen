@@ -44,7 +44,6 @@ void DMA(Mem& mem, Registers& regs) {
     for(int i = 0; i < 64; i++) {
       si.pif.pifRam[i] = mem.mmio.rdp.rdram[BYTE_ADDRESS(si.dramAddr + i)];
     }
-    Util::debug("SI DMA from PIF RAM to RDRAM ({:08X} to {:08X})\n", si.pifAddr, si.dramAddr);
     si.pif.ProcessPIFCommands(mem);
   }
   InterruptRaise(mem.mmio.mi, regs, Interrupt::SI);
@@ -66,7 +65,7 @@ void SI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       pifAddr = val & 0x1FFFFFFF;
       status.dmaBusy = true;
       toDram = false;
-      scheduler.enqueueRelative({SI_DMA_DELAY, DMA});
+      scheduler.enqueueRelative({4065*3, DMA});
       Util::debug("SI DMA from RDRAM to PIF RAM ({:08X} to {:08X})\n", dramAddr, pifAddr);
     } break;
     case 0x04800018:

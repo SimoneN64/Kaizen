@@ -44,10 +44,10 @@ constexpr u32 cicSeeds[] = {
   0x0,
   0x00043F3F, // CIC_NUS_6101
   0x00043F3F, // CIC_NUS_7102
-  0x00003F3F, // CIC_NUS_6102_7101
-  0x0000783F, // CIC_NUS_6103_7103
-  0x0000913F, // CIC_NUS_6105_7105
-  0x0000853F, // CIC_NUS_6106_7106
+  0x00043F3F, // CIC_NUS_6102_7101
+  0x00047878, // CIC_NUS_6103_7103
+  0x00049191, // CIC_NUS_6105_7105
+  0x00048585, // CIC_NUS_6106_7106
 };
 
 enum CICType {
@@ -64,12 +64,23 @@ struct CartInfo;
 
 struct PIF {
   void ProcessPIFCommands(Mem&);
-  void ExecutePIF(Mem& mem, Registers& regs, CartInfo cartInfo);
-  void DoPIFHLE(Mem& mem, Registers& regs, CartInfo cartInfo);
+  void ExecutePIF(Mem& mem, Registers& regs);
+  void DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType);
   void UpdateController();
   bool gamepadConnected = false;
   SDL_GameController* gamepad;
   Controller controller;
   u8 pifBootrom[PIF_BOOTROM_SIZE]{}, pifRam[PIF_RAM_SIZE];
+  u8 Read(u32 addr) {
+    addr &= 0x7FF;
+    if(addr < 0x7c0) return pifBootrom[addr];
+    return pifRam[addr];
+  }
+
+  void Write(u32 addr, u8 val) {
+    addr &= 0x7FF;
+    if(addr < 0x7c0) return;
+    pifRam[addr] = val;
+  }
 };
 }

@@ -1,7 +1,6 @@
 #include <Core.hpp>
 #include <ParallelRDPWrapper.hpp>
 #include <Window.hpp>
-#include <algorithm>
 #include <Scheduler.hpp>
 
 namespace n64 {
@@ -18,18 +17,17 @@ void Core::Stop() {
   romLoaded = false;
 }
 
-CartInfo Core::LoadROM(const std::string& rom_) {
+void Core::LoadROM(const std::string& rom_) {
   rom = rom_;
   cpu->Reset();
   cpu->mem.Reset();
   pause = false;
   romLoaded = true;
   
-  CartInfo cartInfo = cpu->mem.LoadROM(rom);
-  isPAL = cartInfo.isPAL;
-  cpu->mem.mmio.si.pif.ExecutePIF(cpu->mem, cpu->regs, cartInfo);
-
-  return cartInfo;
+  cpu->mem.LoadROM(rom);
+  GameDB::match(cpu->mem);
+  isPAL = cpu->mem.IsROMPAL();
+  cpu->mem.mmio.si.pif.ExecutePIF(cpu->mem, cpu->regs);
 }
 
 void Core::Run(Window& window, float volumeL, float volumeR) {

@@ -3,7 +3,6 @@
 #include <nfd.hpp>
 #include <Core.hpp>
 #include <Audio.hpp>
-#define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 #include <Discord.hpp>
 
@@ -22,6 +21,12 @@ Window::Window(n64::Core& core) : settings(core) {
       && event.window.windowID == SDL_GetWindowID(window);
 }
 
+static void check_vk_result(VkResult err) {
+  if (err) {
+    Util::panic("[vulkan] Error: VkResult = {}", err);
+  }
+}
+
 void Window::InitSDL() {
   SDL_Init(SDL_INIT_EVERYTHING);
   n64::InitAudio();
@@ -35,15 +40,7 @@ void Window::InitSDL() {
     SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI
   );
 
-  if(volkInitialize() != VK_SUCCESS) {
-    Util::panic("Failed to load Volk!");
-  }
-}
-
-static void check_vk_result(VkResult err) {
-  if (err) {
-    Util::panic("[vulkan] Error: VkResult = {}", err);
-  }
+  check_vk_result(volkInitialize());
 }
 
 void Window::InitImgui() {

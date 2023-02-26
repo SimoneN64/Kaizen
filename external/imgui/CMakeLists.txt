@@ -7,10 +7,12 @@ add_library(imgui
   imgui/imgui.cpp
   imgui/imgui.h
   imgui/imconfig.h
-  imgui/backends/imgui_impl_sdl.h
-  imgui/backends/imgui_impl_sdl.cpp
+  imgui/backends/imgui_impl_sdl2.h
+  imgui/backends/imgui_impl_sdl2.cpp
   imgui/backends/imgui_impl_vulkan.h
   imgui/backends/imgui_impl_vulkan.cpp)
+
+add_compile_definitions(IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
 
 if(WIN32)
   target_compile_definitions(imgui PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)

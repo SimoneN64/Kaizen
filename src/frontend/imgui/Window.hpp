@@ -1,7 +1,7 @@
 #pragma once
 #include <ParallelRDPWrapper.hpp>
 #include <imgui.h>
-#include <imgui_impl_sdl.h>
+#include <imgui_impl_sdl2.h>
 #include <imgui_impl_vulkan.h>
 #include <SDL2/SDL.h>
 #include <backend/Core.hpp>

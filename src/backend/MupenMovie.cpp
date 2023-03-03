@@ -115,7 +115,7 @@ void LoadTAS(const char* filename) {
   loaded_tas_movie_index = sizeof(TASMovieHeader) - 4; // skip header
 }
 
-bool tas_movie_loaded() {
+bool TasMovieLoaded() {
   return loaded_tas_movie != nullptr;
 }
 
@@ -138,7 +138,7 @@ inline void LogController(const n64::Controller& controller) {
   Util::print("joy_y: {}\n\n", controller.joy_y);
 }
 
-n64::Controller tas_next_inputs() {
+n64::Controller TasNextInputs() {
   if (loaded_tas_movie_index + sizeof(TASMovieControllerData) > loaded_tas_movie_size) {
     loaded_tas_movie = nullptr;
     n64::Controller empty_controller{};

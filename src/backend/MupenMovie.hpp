@@ -3,5 +3,5 @@
 
 void LoadTAS(const char* filename);
 void UnloadTAS();
-n64::Controller tas_next_inputs();
-bool tas_movie_loaded();
+n64::Controller TasNextInputs();
+bool TasMovieLoaded();

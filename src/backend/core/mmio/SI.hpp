@@ -26,7 +26,6 @@ struct SI {
   SIStatus status{};
   u32 dramAddr{};
   u32 pifAddr{};
-  Controller controller{};
 
   bool toDram = false;
 

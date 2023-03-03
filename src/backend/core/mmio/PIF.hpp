@@ -1,8 +1,15 @@
 #pragma once
 #include <MemoryRegions.hpp>
 #include <SDL_gamecontroller.h>
+#include <GameDB.hpp>
 
 namespace n64 {
+
+enum AccessoryType {
+  ACCESSORY_NONE,
+  ACCESSORY_MEMPACK,
+  ACCESSORY_RUMBLE_PACK
+};
 
 struct Controller {
   union {
@@ -31,11 +38,29 @@ struct Controller {
       bool joy_reset:1;
     };
   };
-  s8 joy_x;
-  s8 joy_y;
+  s8 joy_x{};
+  s8 joy_y{};
 };
 
 static_assert(sizeof(Controller) == 4);
+
+enum JoybusType {
+  JOYBUS_NONE,
+  JOYBUS_CONTROLLER,
+  JOYBUS_DANCEPAD,
+  JOYBUS_VRU,
+  JOYBUS_MOUSE,
+  JOYBUS_RANDNET_KEYBOARD,
+  JOYBUS_DENSHA_DE_GO,
+  JOYBUS_4KB_EEPROM,
+  JOYBUS_16KB_EEPROM
+};
+
+struct JoybusDevice {
+  JoybusType type{};
+  AccessoryType accessoryType{};
+  Controller controller{};
+};
 
 struct Mem;
 struct Registers;
@@ -64,23 +89,29 @@ struct CartInfo;
 
 struct PIF {
   void ProcessPIFCommands(Mem&);
+  void InitDevices(SaveType);
+  void CICChallenge();
   void ExecutePIF(Mem& mem, Registers& regs);
   void DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType);
   void UpdateController();
+  bool ReadButtons(u8*);
   bool gamepadConnected = false;
+  void ControllerID(u8* res);
   SDL_GameController* gamepad;
-  Controller controller;
-  u8 pifBootrom[PIF_BOOTROM_SIZE]{}, pifRam[PIF_RAM_SIZE];
+  JoybusDevice joybusDevices[6]{};
+  u8 pifBootrom[PIF_BOOTROM_SIZE]{}, pifRam[PIF_RAM_SIZE]{};
+  int channel = 0;
+
   u8 Read(u32 addr) {
     addr &= 0x7FF;
     if(addr < 0x7c0) return pifBootrom[addr];
-    return pifRam[addr];
+    return pifRam[addr & PIF_RAM_DSIZE];
   }
 
   void Write(u32 addr, u8 val) {
     addr &= 0x7FF;
     if(addr < 0x7c0) return;
-    pifRam[addr] = val;
+    pifRam[addr & PIF_RAM_DSIZE] = val;
   }
 };
 }

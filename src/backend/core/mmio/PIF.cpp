@@ -2,84 +2,98 @@
 #include <core/Mem.hpp>
 #include <core/registers/Registers.hpp>
 #include <log.hpp>
-#include <MupenMovie.hpp>
 #include <SDL_keyboard.h>
+#include <cic_nus_6105/n64_cic_nus_6105.hpp>
+#include <cassert>
 
 namespace n64 {
-static int channel = 0;
+void PIF::CICChallenge() {
+  u8 challenge[30];
+  u8 response[30];
 
-void PIF::ProcessPIFCommands(Mem& mem) {
+  // Split 15 bytes into 30 nibbles
+  for (int i = 0; i < 15; i++) {
+    challenge[i * 2 + 0]   = (pifRam[0x30 + i] >> 4) & 0x0F;
+    challenge[i * 2 + 1]  =  (pifRam[0x30 + i] >> 0) & 0x0F;
+  }
+
+  n64_cic_nus_6105((char*)challenge, (char*)response, CHL_LEN - 2);
+
+  for (int i = 0; i < 15; i++) {
+    pifRam[0x30 + i] = (response[i * 2] << 4) + response[i * 2 + 1];
+  }
+}
+
+void PIF::ProcessPIFCommands(Mem &mem) {
   u8 control = pifRam[63];
-
-  if(control & 1) {
+  if (control & 1) {
     channel = 0;
-    for(int i = 0; i < 63;) {
+    int i = 0;
+    while (i < 63) {
       u8* cmd = &pifRam[i++];
-      u8 t = cmd[0] & 0x3f;
+      u8 cmdlen = cmd[0] & 0x3F;
 
-      if(t == 0 || t == 0x3D) {
+      if (cmdlen == 0) {
         channel++;
-      } else if (t == 0x3E) {
+      } else if (cmdlen == 0x3D) { // 0xFD in PIF RAM = send reset signal to this pif channel
+        channel++;
+      } else if (cmdlen == 0x3E) { // 0xFE in PIF RAM = end of commands
         break;
-      } else if (t == 0x3F) {
+      } else if (cmdlen == 0x3F) {
         continue;
       } else {
         u8 r = pifRam[i++];
         r |= (1 << 7);
-        if(r == 0xFE) {
+        if (r == 0xFE) { // 0xFE in PIF RAM = end of commands.
           break;
         }
+        u8 reslen = r & 0x3F; // TODO: out of bounds access possible on invalid data
+        u8* res = &pifRam[i + cmdlen];
 
-        u8 rlen = r & 0x3F;
-        u8* res = &pifRam[i + t];
-        switch(cmd[2]) {
+        switch (cmd[2]) {
           case 0xff:
-            res[0] = 0x05;
-            res[1] = 0x00;
-            res[2] = 0x01;
-            channel++;
+            ControllerID(res);
             break;
           case 0:
-            res[0] = 0x05;
-            res[1] = 0x00;
-            res[2] = 0x01;
+            ControllerID(res);
             break;
           case 1:
-            if(tas_movie_loaded()) {
-              controller = tas_next_inputs();
-            } else {
-              UpdateController();
+            UpdateController();
+            if(!ReadButtons(res)) {
+              cmd[1] |= 0x80;
             }
-            res[0] = controller.byte1;
-            res[1] = controller.byte2;
-            res[2] = controller.joy_x;
-            res[3] = controller.joy_y;
+            channel++;
             break;
           case 2:
-            Util::print("MEMPAK READ\n");
-            res[0] = 0;
-            break;
+            //pif_mempack_read(cmd, res);
+            //break;
           case 3:
-            Util::print("MEMPAK WRITE\n");
-            res[0] = 0;
-            break;
+            //pif_mempack_write(cmd, res);
+            //break;
           case 4:
-            Util::print("EEPROM READ\n");
-            res[0] = 0;
-            break;
+            //assert(mem.saveData != NULL && "EEPROM read when save data is uninitialized! Is this game in the game DB?");
+            //pif_eeprom_read(cmd, res);
+            //break;
           case 5:
-            Util::print("EEPROM WRITE\n");
+            //assert(mem.saveData != NULL && "EEPROM write when save data is uninitialized! Is this game in the game DB?");
+            //pif_eeprom_write(cmd, res);
             res[0] = 0;
             break;
-          default: Util::panic("Unimplemented PIF command {}", cmd[2]);
+          default:
+            Util::panic("Invalid PIF command: {:X}", cmd[2]);
         }
 
-        i += t + rlen;
+        i += cmdlen + reslen;
       }
     }
   }
 
-  if(control & 8) {
+  //if (control & 2) {
+  //  CICChallenge();
+  //  pifRam[63] &= ~2;
+  //}
+
+  if (control & 0x08) {
     pifRam[63] &= ~8;
   }
 
@@ -92,13 +106,12 @@ void PIF::ProcessPIFCommands(Mem& mem) {
 #define GET_AXIS(gamepad, axis) SDL_GameControllerGetAxis(gamepad, axis)
 
 void PIF::UpdateController() {
-  const uint8_t* state = SDL_GetKeyboardState(nullptr);
   s8 xaxis = 0, yaxis = 0;
 
   if(gamepadConnected) {
     bool A = GET_BUTTON(gamepad, SDL_CONTROLLER_BUTTON_A);
     bool B = GET_BUTTON(gamepad, SDL_CONTROLLER_BUTTON_X);
-    bool Z = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_TRIGGERLEFT) == 32767;
+    bool Z = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_TRIGGERLEFT) == SDL_JOYSTICK_AXIS_MAX;
     bool START = GET_BUTTON(gamepad, SDL_CONTROLLER_BUTTON_START);
     bool DUP = GET_BUTTON(gamepad, SDL_CONTROLLER_BUTTON_DPAD_UP);
     bool DDOWN = GET_BUTTON(gamepad, SDL_CONTROLLER_BUTTON_DPAD_DOWN);
@@ -106,54 +119,55 @@ void PIF::UpdateController() {
     bool DRIGHT = GET_BUTTON(gamepad, SDL_CONTROLLER_BUTTON_DPAD_RIGHT);
     bool L = GET_BUTTON(gamepad, SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
     bool R = GET_BUTTON(gamepad, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-    bool CUP = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_RIGHTY) <= -128;
+    bool CUP = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_RIGHTY) <= -127;
     bool CDOWN = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_RIGHTY) >= 127;
-    bool CLEFT = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_RIGHTX) <= -128;
+    bool CLEFT = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_RIGHTX) <= -127;
     bool CRIGHT = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_RIGHTX) >= 127;
 
-    controller.a = A;
-    controller.b = B;
-    controller.z = Z;
-    controller.start = START;
-    controller.dp_up = DUP;
-    controller.dp_down = DDOWN;
-    controller.dp_left = DLEFT;
-    controller.dp_right = DRIGHT;
-    controller.joy_reset = L && R && START;
-    controller.l = L;
-    controller.r = R;
-    controller.c_up = CUP;
-    controller.c_down = CDOWN;
-    controller.c_left = CLEFT;
-    controller.c_right = CRIGHT;
+    joybusDevices[channel].controller.a = A;
+    joybusDevices[channel].controller.b = B;
+    joybusDevices[channel].controller.z = Z;
+    joybusDevices[channel].controller.start = START;
+    joybusDevices[channel].controller.dp_up = DUP;
+    joybusDevices[channel].controller.dp_down = DDOWN;
+    joybusDevices[channel].controller.dp_left = DLEFT;
+    joybusDevices[channel].controller.dp_right = DRIGHT;
+    joybusDevices[channel].controller.joy_reset = L && R && START;
+    joybusDevices[channel].controller.l = L;
+    joybusDevices[channel].controller.r = R;
+    joybusDevices[channel].controller.c_up = CUP;
+    joybusDevices[channel].controller.c_down = CDOWN;
+    joybusDevices[channel].controller.c_left = CLEFT;
+    joybusDevices[channel].controller.c_right = CRIGHT;
 
-    xaxis = (s8) std::clamp((GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_LEFTX) >> 8), -86, 86);
-    yaxis = (s8) std::clamp(-(GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_LEFTY) >> 8), -86, 86);
+    xaxis = (s8) std::clamp<s16>(GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_LEFTX), -86, 86);
+    yaxis = (s8) std::clamp<s16>(GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_LEFTY), -86, 86);
 
-    controller.joy_x = xaxis;
-    controller.joy_y = yaxis;
+    joybusDevices[channel].controller.joy_x = xaxis;
+    joybusDevices[channel].controller.joy_y = -yaxis;
 
-    if (controller.joy_reset) {
-      controller.start = false;
-      controller.joy_x = 0;
-      controller.joy_y = 0;
+    if (joybusDevices[channel].controller.joy_reset) {
+      joybusDevices[channel].controller.start = false;
+      joybusDevices[channel].controller.joy_x = 0;
+      joybusDevices[channel].controller.joy_y = 0;
     }
   } else {
-    controller.a = state[SDL_SCANCODE_X];
-    controller.b = state[SDL_SCANCODE_C];
-    controller.z = state[SDL_SCANCODE_Z];
-    controller.start = state[SDL_SCANCODE_RETURN];
-    controller.dp_up = state[SDL_SCANCODE_KP_8];
-    controller.dp_down = state[SDL_SCANCODE_KP_5];
-    controller.dp_left = state[SDL_SCANCODE_KP_4];
-    controller.dp_right = state[SDL_SCANCODE_KP_6];
-    controller.joy_reset = state[SDL_SCANCODE_RETURN] && state[SDL_SCANCODE_A] && state[SDL_SCANCODE_S];
-    controller.l = state[SDL_SCANCODE_A];
-    controller.r = state[SDL_SCANCODE_S];
-    controller.c_up = state[SDL_SCANCODE_I];
-    controller.c_down = state[SDL_SCANCODE_J];
-    controller.c_left = state[SDL_SCANCODE_K];
-    controller.c_right = state[SDL_SCANCODE_L];
+    const uint8_t* state = SDL_GetKeyboardState(nullptr);
+    joybusDevices[channel].controller.a = state[SDL_SCANCODE_X];
+    joybusDevices[channel].controller.b = state[SDL_SCANCODE_C];
+    joybusDevices[channel].controller.z = state[SDL_SCANCODE_Z];
+    joybusDevices[channel].controller.start = state[SDL_SCANCODE_RETURN];
+    joybusDevices[channel].controller.dp_up = state[SDL_SCANCODE_KP_8];
+    joybusDevices[channel].controller.dp_down = state[SDL_SCANCODE_KP_5];
+    joybusDevices[channel].controller.dp_left = state[SDL_SCANCODE_KP_4];
+    joybusDevices[channel].controller.dp_right = state[SDL_SCANCODE_KP_6];
+    joybusDevices[channel].controller.joy_reset = state[SDL_SCANCODE_RETURN] && state[SDL_SCANCODE_A] && state[SDL_SCANCODE_S];
+    joybusDevices[channel].controller.l = state[SDL_SCANCODE_A];
+    joybusDevices[channel].controller.r = state[SDL_SCANCODE_S];
+    joybusDevices[channel].controller.c_up = state[SDL_SCANCODE_I];
+    joybusDevices[channel].controller.c_down = state[SDL_SCANCODE_J];
+    joybusDevices[channel].controller.c_left = state[SDL_SCANCODE_K];
+    joybusDevices[channel].controller.c_right = state[SDL_SCANCODE_L];
 
     if (state[SDL_SCANCODE_LEFT]) {
       xaxis = -86;
@@ -167,13 +181,13 @@ void PIF::UpdateController() {
       yaxis = 86;
     }
 
-    controller.joy_x = xaxis;
-    controller.joy_y = yaxis;
+    joybusDevices[channel].controller.joy_x = xaxis;
+    joybusDevices[channel].controller.joy_y = yaxis;
 
-    if (controller.joy_reset) {
-      controller.start = false;
-      controller.joy_x = 0;
-      controller.joy_y = 0;
+    if (joybusDevices[channel].controller.joy_reset) {
+      joybusDevices[channel].controller.start = false;
+      joybusDevices[channel].controller.joy_x = 0;
+      joybusDevices[channel].controller.joy_y = 0;
     }
   }
 }

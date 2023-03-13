@@ -159,8 +159,8 @@ void Interpreter::branch(bool cond, s64 address) {
 }
 
 void Interpreter::branch_likely(bool cond, s64 address) {
-  regs.delaySlot = true;
   if (cond) {
+    regs.delaySlot = true;
     regs.nextPC = address;
   } else {
     regs.SetPC64(regs.nextPC);

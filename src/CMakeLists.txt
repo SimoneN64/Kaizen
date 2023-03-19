@@ -40,6 +40,10 @@ include_directories(
 
 add_compile_definitions(SIMD_SUPPORT)
 add_compile_options(-mssse3 -msse4.1)
+if(${CMAKE_BUILD_TYPE} MATCHES Debug)
+  add_compile_options(-fsanitize=address -fsanitize=undefined)
+  add_link_options(-fsanitize=address -fsanitize=undefined)
+endif()
 
 add_subdirectory(frontend)
 add_subdirectory(frontend/imgui)
@@ -65,11 +69,6 @@ file(REMOVE
 
 target_link_libraries(gadolinium PUBLIC frontend frontend-imgui
   discord-rpc imgui nfd parallel-rdp backend fmt::fmt nlohmann_json::nlohmann_json core jit registers interpreter mmio rsp SDL2::SDL2main SDL2::SDL2)
-
-if(${CMAKE_BUILD_TYPE} MATCHES Debug)
-  add_compile_options(-fsanitize=address -fsanitize=undefined)
-  add_link_options(-fsanitize=address -fsanitize=undefined)
-endif()
 
 if(WIN32)
   target_compile_definitions(gadolinium PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)

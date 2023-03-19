@@ -169,7 +169,7 @@ void Cop0::SetReg64(u8 addr, u64 value) {
   }
 }
 
-u64 getVPN(u64 addr, u64 pageMask) {
+static inline u64 getVPN(u64 addr, u64 pageMask) {
   u64 mask = pageMask | 0x1fff;
   u64 vpn = (addr & 0xFFFFFFFFFF) | ((addr >> 22) & 0x30000000000);
 

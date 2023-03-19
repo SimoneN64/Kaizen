@@ -10,9 +10,6 @@ bool cop1Decode(Registers& regs, JIT& cpu, u32 instr) {
   u8 mask_fun = instr & 0x3F;
   u8 mask_branch = (instr >> 16) & 0x1F;
 
-  code.mov(code.rdi, (u64)&regs);
-  code.mov(code.esi, instr);
-
   switch(mask_sub) {
     // 000r_rccc
     case 0x00:
@@ -28,7 +25,7 @@ bool cop1Decode(Registers& regs, JIT& cpu, u32 instr) {
       code.call(code.rax);
       break;
     case 0x03:
-      Util::panic("[RECOMPILER] FPU Reserved instruction exception!\n");
+      Util::panic("[RECOMPILER] FPU Reserved instruction exception! {:08X}\n", instr);
     case 0x04:
       code.mov(code.rax, (u64)mtc1);
       code.call(code.rax);
@@ -42,26 +39,26 @@ bool cop1Decode(Registers& regs, JIT& cpu, u32 instr) {
       code.call(code.rax);
       break;
     case 0x07:
-      Util::panic("[RECOMPILER] FPU Reserved instruction exception!\n");
+      Util::panic("[RECOMPILER] FPU Reserved instruction exception! {:08X}\n", instr);
     case 0x08:
       switch(mask_branch) {
         case 0:
-          code.mov(code.rdi, !regs.cop1.fcr31.compare);
+          code.mov(code.rdx, !regs.cop1.fcr31.compare);
           code.mov(code.rax, (u64)b);
           code.call(code.rax);
           return true;
         case 1:
-          code.mov(code.rdi, regs.cop1.fcr31.compare);
+          code.mov(code.rdx, regs.cop1.fcr31.compare);
           code.mov(code.rax, (u64)b);
           code.call(code.rax);
           return true;
         case 2:
-          code.mov(code.rdi, !regs.cop1.fcr31.compare);
+          code.mov(code.rdx, !regs.cop1.fcr31.compare);
           code.mov(code.rax, (u64)bl);
           code.call(code.rax);
           return true;
         case 3:
-          code.mov(code.rdi, regs.cop1.fcr31.compare);
+          code.mov(code.rdx, regs.cop1.fcr31.compare);
           code.mov(code.rax, (u64)bl);
           code.call(code.rax);
           return true;
@@ -135,7 +132,7 @@ bool cop1Decode(Registers& regs, JIT& cpu, u32 instr) {
           code.call(code.rax);
           break;
         case 0x20:
-          Util::panic("[RECOMPILER] FPU Reserved instruction exception!\n");
+          Util::panic("[RECOMPILER] FPU Reserved instruction exception! {:08X}\n", instr);
         case 0x21:
           code.mov(code.rax, (u64)cvtds);
           code.call(code.rax);
@@ -302,7 +299,7 @@ bool cop1Decode(Registers& regs, JIT& cpu, u32 instr) {
           code.call(code.rax);
           break;
         case 0x21:
-          Util::panic("[RECOMPILER] FPU Reserved instruction exception!\n");
+          Util::panic("[RECOMPILER] FPU Reserved instruction exception! {:08X}\n", instr);
         case 0x24:
           code.mov(code.rax, (u64)cvtwd);
           code.call(code.rax);
@@ -421,7 +418,7 @@ bool cop1Decode(Registers& regs, JIT& cpu, u32 instr) {
           code.call(code.rax);
           break;
         case 0x24:
-          Util::panic("[RECOMPILER] FPU reserved instruction exception!\n");
+          Util::panic("[RECOMPILER] FPU Reserved instruction exception! {:08X}\n", instr);
         default: Util::panic("Unimplemented COP1 function W[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
       }
       break;
@@ -452,9 +449,9 @@ bool cop1Decode(Registers& regs, JIT& cpu, u32 instr) {
           code.call(code.rax);
           break;
         case 0x24:
-          Util::panic("[RECOMPILER] FPU reserved instruction exception!\n");
+          Util::panic("[RECOMPILER] FPU Reserved instruction exception! {:08X}\n", instr);
         case 0x25:
-          Util::panic("[RECOMPILER] FPU reserved instruction exception!\n");
+          Util::panic("[RECOMPILER] FPU Reserved instruction exception! {:08X}\n", instr);
         default: Util::panic("Unimplemented COP1 function L[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
       }
       break;

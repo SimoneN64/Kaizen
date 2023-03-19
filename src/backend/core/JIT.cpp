@@ -58,7 +58,6 @@ void JIT::Recompile(Mem& mem, u32 pc) {
     InvalidateCache();
   }
 
-  Util::debug("Start of block @ PC {:08X}\n", loopPC);
   code.sub(rsp, 8);
 
   while(!prevBranch) {
@@ -67,9 +66,9 @@ void JIT::Recompile(Mem& mem, u32 pc) {
     u32 instr = mem.Read32(regs, loopPC);
 
     emitBreakpoint();
-    code.mov(rdi, (uintptr_t)&regs);
+    code.mov(rdi, (uintptr_t)this);
+    code.mov(rsi, instr);
 
-    Util::debug("\tInstr: {:08X}, PC: {:08X}\n", instr, loopPC);
     code.mov(r8, qword[rdi + REG_OFFSET(oldPC)]);
     code.mov(r9, qword[rdi + REG_OFFSET(pc)]);
     code.mov(r10, qword[rdi + REG_OFFSET(nextPC)]);
@@ -87,7 +86,6 @@ void JIT::Recompile(Mem& mem, u32 pc) {
 
   code.add(rsp, 8);
   code.ret();
-  Util::debug("End of block @ PC {:08X}, len: {}\n", loopPC, instrInBlock);
   dump.write(code.getCode<char*>(), code.getSize());
 
   blockCache[startPC >> 20][startPC & 0xFFF] = block;
@@ -99,7 +97,7 @@ void JIT::AllocateOuter(u32 pc) {
 }
 
 int JIT::Run() {
-  /*instrInBlock = 0;
+  instrInBlock = 0;
   regs.gpr[0] = 0;
   regs.prevDelaySlot = regs.delaySlot;
   regs.delaySlot = false;
@@ -129,8 +127,7 @@ int JIT::Run() {
     FireException(regs, ExceptionCode::Interrupt, 0, false);
   }
 
-  return instrInBlock;*/
-  Util::panic("JIT RECOMPILER NOT YET IMPLEMENTED!\n");
+  return instrInBlock;
 }
 
 void JIT::Reset() {

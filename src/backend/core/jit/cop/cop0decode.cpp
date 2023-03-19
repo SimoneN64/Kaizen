@@ -10,22 +10,18 @@ void cop0Decode(Registers& regs, JIT& cpu, u32 instr) {
 
   switch(mask_cop) {
     case 0x00:
-      code.mov(code.rsi, (u64)instr);
       code.mov(code.rax, (u64)mfc0);
       code.call(code.rax);
       break;
     case 0x01:
-      code.mov(code.rsi, (u64)instr);
       code.mov(code.rax, (u64)dmfc0);
       code.call(code.rax);
       break;
     case 0x04:
-      code.mov(code.rsi, (u64)instr);
       code.mov(code.rax, (uintptr_t)mtc0);
       code.call(code.rax);
       break;
     case 0x05:
-      code.mov(code.rsi, (u64)instr);
       code.mov(code.rax, (u64)dmtc0);
       code.call(code.rax);
       break;
@@ -36,14 +32,14 @@ void cop0Decode(Registers& regs, JIT& cpu, u32 instr) {
           code.call(code.rax);
           break;
         case 0x02:
-          code.and_(code.dword[code.rdi + offsetof(Registers, cop0.index)], 0x3F);
-          code.mov(code.rsi, code.dword[code.rdi]);
+          code.mov(code.rcx, code.dword[code.rdi + offsetof(Registers, cop0.index)]);
+          code.and_(code.rcx, 0x3F);
+          code.mov(code.rsi, code.rcx);
           code.mov(code.rax, (u64)tlbw);
           code.call(code.rax);
           break;
         case 0x06:
-          code.mov(code.rax, (u64)regs.cop0.GetRandom());
-          code.mov(code.rsi, code.rax);
+          code.mov(code.rsi, (u64)regs.cop0.GetRandom());
           code.mov(code.rax, (u64)tlbw);
           code.call(code.rax);
           break;

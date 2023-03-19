@@ -5,8 +5,94 @@
 #include <SDL_keyboard.h>
 #include <cic_nus_6105/n64_cic_nus_6105.hpp>
 #include <cassert>
+#include <MupenMovie.hpp>
+
+#define MEMPAK_SIZE 32768
 
 namespace n64 {
+void PIF::LoadMempak(fs::path path) {
+  if (mempak)
+    free(mempak);
+  mempak = (u8*)calloc(MEMPAK_SIZE, 1);
+  mempakPath = path.replace_extension(".mempak").string();
+  FILE* f = fopen(mempakPath.c_str(), "rb");
+  if (!f) {
+    f = fopen(mempakPath.c_str(), "wb");
+    fwrite(mempak, 1, MEMPAK_SIZE, f);
+    fclose(f);
+    f = fopen(mempakPath.c_str(), "rb");
+  }
+
+  fseek(f, 0, SEEK_END);
+  size_t actualSize = ftell(f);
+  fseek(f, 0, SEEK_SET);
+  if (actualSize != MEMPAK_SIZE) {
+    Util::panic("Corrupt mempak!\n");
+  }
+
+  fread(mempak, 1, MEMPAK_SIZE, f);
+  fclose(f);
+}
+
+inline size_t getSaveSize(SaveType saveType) {
+  switch (saveType) {
+    case SAVE_NONE:
+      return 0;
+    case SAVE_EEPROM_4k:
+      return 512;
+    case SAVE_EEPROM_16k:
+      return 2048;
+    case SAVE_SRAM_256k:
+      return 32768;
+    case SAVE_FLASH_1m:
+      return 131072;
+    default:
+      Util::panic("Unknown save type!\n");
+  }
+}
+
+void PIF::LoadEeprom(SaveType saveType, fs::path path) {
+  if (eeprom)
+    free(eeprom);
+
+  eepromSize = getSaveSize(saveType);
+  eeprom = (u8*)calloc(eepromSize, 1);
+  eepromPath = path.replace_extension(".eeprom").string();
+  FILE* f = fopen(eepromPath.c_str(), "rb");
+  if (!f) {
+    f = fopen(eepromPath.c_str(), "wb");
+    fwrite(eeprom, 1, eepromSize, f);
+    fclose(f);
+    f = fopen(eepromPath.c_str(), "rb");
+  }
+
+  fseek(f, 0, SEEK_END);
+  size_t actualSize = ftell(f);
+  fseek(f, 0, SEEK_SET);
+  if (actualSize != eepromSize) {
+    Util::panic("Corrupt eeprom!\n");
+  }
+
+  fread(eeprom, 1, eepromSize, f);
+  fclose(f);
+}
+
+PIF::~PIF() {
+  FILE* f = fopen(mempakPath.c_str(), "wb");
+  fwrite(mempak, 1, MEMPAK_SIZE, f);
+  fclose(f);
+  f = fopen(eepromPath.c_str(), "wb");
+  fwrite(eeprom, 1, eepromSize, f);
+  fclose(f);
+}
+
+enum CMDIndexes {
+  CMD_LEN = 0,
+  CMD_RES_LEN,
+  CMD_IDX,
+  CMD_START
+};
+
 void PIF::CICChallenge() {
   u8 challenge[30];
   u8 response[30];
@@ -24,8 +110,28 @@ void PIF::CICChallenge() {
   }
 }
 
-void PIF::ProcessPIFCommands(Mem &mem) {
-  u8 control = pifRam[63];
+inline u8 data_crc(const u8* data) {
+  u8 crc = 0;
+  for (int i = 0; i <= 32; i++) {
+    for (int j = 7; j >= 0; j--) {
+      u8 xor_val = ((crc & 0x80) != 0) ? 0x85 : 0x00;
+
+      crc <<= 1;
+      if (i < 32) {
+        if ((data[i] & (1 << j)) != 0) {
+          crc |= 1;
+        }
+      }
+
+      crc ^= xor_val;
+    }
+  }
+
+  return crc;
+}
+
+void PIF::ProcessCommands(Mem &mem) {
+  u8 control = ram[63];
   if (control & 1) {
     channel = 0;
     int i = 0;
@@ -66,19 +172,16 @@ void PIF::ProcessPIFCommands(Mem &mem) {
             channel++;
             break;
           case 2:
-            //pif_mempack_read(cmd, res);
-            //break;
+            MempakRead(cmd, res);
+            break;
           case 3:
-            //pif_mempack_write(cmd, res);
-            //break;
+            MempakWrite(cmd, res);
+            break;
           case 4:
-            //assert(mem.saveData != NULL && "EEPROM read when save data is uninitialized! Is this game in the game DB?");
-            //pif_eeprom_read(cmd, res);
-            //break;
+            EepromRead(cmd, res, mem);
+            break;
           case 5:
-            //assert(mem.saveData != NULL && "EEPROM write when save data is uninitialized! Is this game in the game DB?");
-            //pif_eeprom_write(cmd, res);
-            res[0] = 0;
+            EepromWrite(cmd, res, mem);
             break;
           default:
             Util::panic("Invalid PIF command: {:X}", cmd[2]);
@@ -99,12 +202,104 @@ void PIF::ProcessPIFCommands(Mem &mem) {
   }
 
   if (control & 0x30) {
-    pifRam[63] = 0x80;
+    ram[63] = 0x80;
   }
 }
 
-#define GET_BUTTON(gamepad, i) SDL_GameControllerGetButton(gamepad, i)
-#define GET_AXIS(gamepad, axis) SDL_GameControllerGetAxis(gamepad, axis)
+void PIF::MempakRead(u8* cmd, u8* res) {
+  u16 offset = cmd[3] << 8;
+  offset |= cmd[4];
+
+  // low 5 bits are the CRC
+  //byte crc = offset & 0x1F;
+  // offset must be 32-byte aligned
+  offset &= ~0x1F;
+
+  switch (getAccessoryType()) {
+    case ACCESSORY_NONE:
+      break;
+    case ACCESSORY_MEMPACK:
+      if (offset <= MEMPAK_SIZE - 0x20) {
+        for (int i = 0; i < 32; i++) {
+          res[i] = mempak[offset + i];
+        }
+      }
+      break;
+    case ACCESSORY_RUMBLE_PACK:
+      for (int i = 0; i < 32; i++) {
+        res[i] = 0x80;
+      }
+      break;
+  }
+
+  // CRC byte
+  res[32] = data_crc(&res[0]);
+}
+
+void PIF::MempakWrite(u8* cmd, u8* res) {
+  // First two bytes in the command are the offset
+  u16 offset = cmd[3] << 8;
+  offset |= cmd[4];
+
+  // low 5 bits are the CRC
+  //byte crc = offset & 0x1F;
+  // offset must be 32-byte aligned
+  offset &= ~0x1F;
+
+  switch (getAccessoryType()) {
+    case ACCESSORY_NONE:
+      break;
+    case ACCESSORY_MEMPACK:
+      if (offset <= MEMPAK_SIZE - 0x20) {
+        for (int i = 0; i < 32; i++) {
+          mempak[offset + i] = cmd[5 + i];
+        }
+      }
+      break;
+    case ACCESSORY_RUMBLE_PACK: break;
+  }
+  // CRC byte
+  res[0] = data_crc(&cmd[5]);
+}
+
+void PIF::EepromRead(u8* cmd, u8* res, const Mem& mem) {
+  assert(mem.saveType == SAVE_EEPROM_4k || mem.saveType == SAVE_EEPROM_16k);
+  if (channel == 4) {
+    u8 offset = cmd[3];
+    if ((offset * 8) >= getSaveSize(mem.saveType)) {
+      Util::panic("Out of range EEPROM read! offset: {:02X}", offset);
+    }
+
+    for (int i = 0; i < 8; i++) {
+      res[i] = eeprom[(offset * 8) + i];
+    }
+  }
+  else {
+    Util::panic("EEPROM read on bad channel {}", channel);
+  }
+}
+
+void PIF::EepromWrite(u8* cmd, u8* res, const Mem& mem) {
+  assert(mem.saveType == SAVE_EEPROM_4k || mem.saveType == SAVE_EEPROM_16k);
+  if (channel == 4) {
+    u8 offset = cmd[3];
+    if ((offset * 8) >= getSaveSize(mem.saveType)) {
+      Util::panic("Out of range EEPROM write! offset: {:02X}\n", offset);
+    }
+
+    for (int i = 0; i < 8; i++) {
+      eeprom[(offset * 8) + i] = cmd[4 + i];
+    }
+
+    res[0] = 0; // Error byte, I guess it always succeeds?
+  }
+  else {
+    Util::panic("EEPROM write on bad channel {}", channel);
+  }
+}
+
+#define GET_BUTTON(gamecontroller, i) SDL_GameControllerGetButton(gamecontroller, i)
+#define GET_AXIS(gamecontroller, axis) SDL_GameControllerGetAxis(gamecontroller, axis)
 
 void PIF::UpdateController() {
   s8 xaxis = 0, yaxis = 0;

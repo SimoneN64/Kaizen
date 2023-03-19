@@ -27,6 +27,8 @@ void Core::LoadROM(const std::string& rom_) {
   cpu->mem.LoadROM(rom);
   GameDB::match(cpu->mem);
   cpu->mem.mmio.si.pif.InitDevices(cpu->mem.saveType);
+  cpu->mem.mmio.si.pif.LoadMempak(rom_);
+  cpu->mem.mmio.si.pif.LoadEeprom(cpu->mem.saveType, rom_);
   isPAL = cpu->mem.IsROMPAL();
   cpu->mem.mmio.si.pif.ExecutePIF(cpu->mem, cpu->regs);
 }

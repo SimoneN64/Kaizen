@@ -2,6 +2,9 @@
 #include <MemoryRegions.hpp>
 #include <SDL_gamecontroller.h>
 #include <GameDB.hpp>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 namespace n64 {
 
@@ -88,19 +91,29 @@ enum CICType {
 struct CartInfo;
 
 struct PIF {
-  void ProcessPIFCommands(Mem&);
+  ~PIF();
+  void LoadMempak(fs::path);
+  void LoadEeprom(SaveType, fs::path);
+  void ProcessCommands(Mem&);
   void InitDevices(SaveType);
   void CICChallenge();
   void ExecutePIF(Mem& mem, Registers& regs);
   void DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType);
   void UpdateController();
-  bool ReadButtons(u8*);
+  bool ReadButtons(u8*) const;
+  void ControllerID(u8*) const;
+  void MempakRead(u8*, u8*);
+  void MempakWrite(u8*, u8*);
+  void EepromRead(u8*, u8*, const Mem&);
+  void EepromWrite(u8*, u8*, const Mem&);
+
   bool gamepadConnected = false;
-  void ControllerID(u8* res);
-  SDL_GameController* gamepad;
+  SDL_GameController* gamepad{};
   JoybusDevice joybusDevices[6]{};
   u8 bootrom[PIF_BOOTROM_SIZE]{}, ram[PIF_RAM_SIZE]{}, *mempak, *eeprom;
   int channel = 0;
+  std::string mempakPath{}, eepromPath{};
+  size_t eepromSize{};
 
   u8 Read(u32 addr) {
     addr &= 0x7FF;

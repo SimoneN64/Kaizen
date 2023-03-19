@@ -35,34 +35,34 @@ void RSP::Reset() {
 
 /*
 inline void logRSP(const RSP& rsp, const u32 instr) {
-  Util::print("{:04X} {:08X} ", rsp.oldPC, instr);
+  Util::debug("{:04X} {:08X} ", rsp.oldPC, instr);
   for (auto gpr : rsp.gpr) {
-    Util::print("{:08X} ", gpr);
+    Util::debug("{:08X} ", gpr);
   }
 
   for (auto vpr : rsp.vpr) {
     for (int i = 0; i < 8; i++) {
-      Util::print("{:04X}", vpr.element[i]);
+      Util::debug("{:04X}", vpr.element[i]);
     }
-    Util::print(" ");
+    Util::debug(" ");
   }
 
   for (int i = 0; i < 8; i++) {
-    Util::print("{:04X}", rsp.acc.h.element[i]);
+    Util::debug("{:04X}", rsp.acc.h.element[i]);
   }
-  Util::print(" ");
+  Util::debug(" ");
 
   for (int i = 0; i < 8; i++) {
-    Util::print("{:04X}", rsp.acc.m.element[i]);
+    Util::debug("{:04X}", rsp.acc.m.element[i]);
   }
-  Util::print(" ");
+  Util::debug(" ");
 
   for (int i = 0; i < 8; i++) {
-    Util::print("{:04X}", rsp.acc.l.element[i]);
+    Util::debug("{:04X}", rsp.acc.l.element[i]);
   }
 
-  Util::print(" {:04X} {:04X} {:02X}\n", rsp.GetVCC(), rsp.GetVCO(), rsp.GetVCE());
-  Util::print("DMEM: {:02X}{:02X}\n", rsp.dmem[0x3c4], rsp.dmem[0x3c5]);
+  Util::debug(" {:04X} {:04X} {:02X}\n", rsp.GetVCC(), rsp.GetVCO(), rsp.GetVCE());
+  Util::debug("DMEM: {:02X}{:02X}\n", rsp.dmem[0x3c4], rsp.dmem[0x3c5]);
 }
 */
 

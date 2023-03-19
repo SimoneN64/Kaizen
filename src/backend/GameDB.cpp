@@ -18,7 +18,6 @@ void GameDB::match(Mem& mem) {
       if (matches_region) {
         mem.saveType = i.saveType;
         mem.rom.gameNameDB = i.name;
-        Util::debug("Loaded {}\n", i.name);
         return;
       } else {
         Util::warn("Matched code for %s, but not region! Game supposedly exists in regions [{}] but this image has region {}\n",

@@ -82,7 +82,7 @@ bool JIT::special(u32 instr) {
       code.call(rax);
       res = true;
       break;
-    case 0x0C: Util::print<Util::Error>("[RECOMPILER] Unhandled syscall instruction {:016X}\n", (u64)regs.pc); /*dumpCode.close();*/ exit(1);
+    case 0x0C: Util::panic("[RECOMPILER] Unhandled syscall instruction {:016X}\n", (u64)regs.pc);
     case 0x0D: Util::panic("[RECOMPILER] Unhandled break instruction {:016X}\n", (u64)regs.pc);
     case 0x0F: break; // SYNC
     case 0x10:

@@ -74,41 +74,41 @@ void RDP::WriteStatus(MI& mi, Registers& regs, RSP& rsp, u32 val) {
 
 inline void logCommand(u8 cmd) {
   switch(cmd) {
-    case 0x08: Util::print("Fill triangle\n"); break;
-    case 0x09: Util::print("Fill, zbuf triangle\n"); break;
-    case 0x0a: Util::print("Texture triangle\n"); break;
-    case 0x0b: Util::print("Texture, zbuf triangle\n"); break;
-    case 0x0c: Util::print("Shade triangle\n"); break;
-    case 0x0d: Util::print("Shade, zbuf triangle\n"); break;
-    case 0x0e: Util::print("Shade, texture triangle\n"); break;
-    case 0x0f: Util::print("Shade, texture, zbuf triangle\n"); break;
-    case 0x24: Util::print("Texture rectangle\n"); break;
-    case 0x25: Util::print("Texture rectangle flip\n"); break;
-    case 0x26: Util::print("Sync load\n"); break;
-    case 0x27: Util::print("Sync pipe\n"); break;
-    case 0x28: Util::print("Sync tile\n"); break;
-    case 0x29: Util::print("Sync full\n"); break;
-    case 0x2a: Util::print("Set key gb\n"); break;
-    case 0x2b: Util::print("Set key r\n"); break;
-    case 0x2c: Util::print("Set convert\n"); break;
-    case 0x2d: Util::print("Set scissor\n"); break;
-    case 0x2e: Util::print("Set prim depth\n"); break;
-    case 0x2f: Util::print("Set other modes\n"); break;
-    case 0x30: Util::print("Load TLUT\n"); break;
-    case 0x32: Util::print("Set tile size\n"); break;
-    case 0x33: Util::print("Load block\n"); break;
-    case 0x34: Util::print("Load tile\n"); break;
-    case 0x35: Util::print("Set tile\n"); break;
-    case 0x36: Util::print("Fill rectangle\n"); break;
-    case 0x37: Util::print("Set fill color\n"); break;
-    case 0x38: Util::print("Set fog color\n"); break;
-    case 0x39: Util::print("Set blend color\n"); break;
-    case 0x3a: Util::print("Set prim color\n"); break;
-    case 0x3b: Util::print("Set env color\n"); break;
-    case 0x3c: Util::print("Set combine\n"); break;
-    case 0x3d: Util::print("Set texture image\n"); break;
-    case 0x3e: Util::print("Set mask image\n"); break;
-    case 0x3f: Util::print("Set color image\n"); break;
+    case 0x08: Util::debug("Fill triangle\n"); break;
+    case 0x09: Util::debug("Fill, zbuf triangle\n"); break;
+    case 0x0a: Util::debug("Texture triangle\n"); break;
+    case 0x0b: Util::debug("Texture, zbuf triangle\n"); break;
+    case 0x0c: Util::debug("Shade triangle\n"); break;
+    case 0x0d: Util::debug("Shade, zbuf triangle\n"); break;
+    case 0x0e: Util::debug("Shade, texture triangle\n"); break;
+    case 0x0f: Util::debug("Shade, texture, zbuf triangle\n"); break;
+    case 0x24: Util::debug("Texture rectangle\n"); break;
+    case 0x25: Util::debug("Texture rectangle flip\n"); break;
+    case 0x26: Util::debug("Sync load\n"); break;
+    case 0x27: Util::debug("Sync pipe\n"); break;
+    case 0x28: Util::debug("Sync tile\n"); break;
+    case 0x29: Util::debug("Sync full\n"); break;
+    case 0x2a: Util::debug("Set key gb\n"); break;
+    case 0x2b: Util::debug("Set key r\n"); break;
+    case 0x2c: Util::debug("Set convert\n"); break;
+    case 0x2d: Util::debug("Set scissor\n"); break;
+    case 0x2e: Util::debug("Set prim depth\n"); break;
+    case 0x2f: Util::debug("Set other modes\n"); break;
+    case 0x30: Util::debug("Load TLUT\n"); break;
+    case 0x32: Util::debug("Set tile size\n"); break;
+    case 0x33: Util::debug("Load block\n"); break;
+    case 0x34: Util::debug("Load tile\n"); break;
+    case 0x35: Util::debug("Set tile\n"); break;
+    case 0x36: Util::debug("Fill rectangle\n"); break;
+    case 0x37: Util::debug("Set fill color\n"); break;
+    case 0x38: Util::debug("Set fog color\n"); break;
+    case 0x39: Util::debug("Set blend color\n"); break;
+    case 0x3a: Util::debug("Set prim color\n"); break;
+    case 0x3b: Util::debug("Set env color\n"); break;
+    case 0x3c: Util::debug("Set combine\n"); break;
+    case 0x3d: Util::debug("Set texture image\n"); break;
+    case 0x3e: Util::debug("Set mask image\n"); break;
+    case 0x3f: Util::debug("Set color image\n"); break;
   }
 }
 
@@ -156,7 +156,6 @@ void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
 
     while (buf_index < word_len) {
       u8 cmd = (cmd_buf[buf_index] >> 24) & 0x3F;
-      //logCommand(cmd);
 
       int cmd_len = cmd_lens[cmd];
       if ((buf_index + cmd_len) * 4 > len + (remaining_cmds * 4)) {

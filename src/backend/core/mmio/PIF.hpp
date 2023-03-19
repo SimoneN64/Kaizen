@@ -99,19 +99,27 @@ struct PIF {
   void ControllerID(u8* res);
   SDL_GameController* gamepad;
   JoybusDevice joybusDevices[6]{};
-  u8 pifBootrom[PIF_BOOTROM_SIZE]{}, pifRam[PIF_RAM_SIZE]{};
+  u8 bootrom[PIF_BOOTROM_SIZE]{}, ram[PIF_RAM_SIZE]{}, *mempak, *eeprom;
   int channel = 0;
 
   u8 Read(u32 addr) {
     addr &= 0x7FF;
-    if(addr < 0x7c0) return pifBootrom[addr];
-    return pifRam[addr & PIF_RAM_DSIZE];
+    if(addr < 0x7c0) return bootrom[addr];
+    return ram[addr & PIF_RAM_DSIZE];
   }
 
   void Write(u32 addr, u8 val) {
     addr &= 0x7FF;
     if(addr < 0x7c0) return;
-    pifRam[addr & PIF_RAM_DSIZE] = val;
+    ram[addr & PIF_RAM_DSIZE] = val;
+  }
+
+  inline AccessoryType getAccessoryType() const {
+    if (channel >= 4 || joybusDevices[channel].type != JOYBUS_CONTROLLER) {
+      return ACCESSORY_NONE;
+    } else {
+      return joybusDevices[channel].accessoryType;
+    }
   }
 };
 }

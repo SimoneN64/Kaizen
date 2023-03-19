@@ -13,14 +13,14 @@ void PIF::CICChallenge() {
 
   // Split 15 bytes into 30 nibbles
   for (int i = 0; i < 15; i++) {
-    challenge[i * 2 + 0]   = (pifRam[0x30 + i] >> 4) & 0x0F;
-    challenge[i * 2 + 1]  =  (pifRam[0x30 + i] >> 0) & 0x0F;
+    challenge[i * 2 + 0] = (ram[0x30 + i] >> 4) & 0x0F;
+    challenge[i * 2 + 1] = (ram[0x30 + i] >> 0) & 0x0F;
   }
 
   n64_cic_nus_6105((char*)challenge, (char*)response, CHL_LEN - 2);
 
   for (int i = 0; i < 15; i++) {
-    pifRam[0x30 + i] = (response[i * 2] << 4) + response[i * 2 + 1];
+    ram[0x30 + i] = (response[i * 2] << 4) + response[i * 2 + 1];
   }
 }
 
@@ -30,32 +30,33 @@ void PIF::ProcessPIFCommands(Mem &mem) {
     channel = 0;
     int i = 0;
     while (i < 63) {
-      u8* cmd = &pifRam[i++];
-      u8 cmdlen = cmd[0] & 0x3F;
+      u8* cmd = &ram[i++];
+      u8 cmdlen = cmd[CMD_LEN] & 0x3F;
 
       if (cmdlen == 0) {
         channel++;
-      } else if (cmdlen == 0x3D) { // 0xFD in PIF RAM = send reset signal to this pif channel
+      } else if (cmdlen == 0x3D) {
         channel++;
-      } else if (cmdlen == 0x3E) { // 0xFE in PIF RAM = end of commands
+      } else if (cmdlen == 0x3E) {
         break;
       } else if (cmdlen == 0x3F) {
         continue;
       } else {
-        u8 r = pifRam[i++];
-        r |= (1 << 7);
-        if (r == 0xFE) { // 0xFE in PIF RAM = end of commands.
+        u8 r = ram[i++];
+        if (r == 0xFE) {
           break;
         }
-        u8 reslen = r & 0x3F; // TODO: out of bounds access possible on invalid data
-        u8* res = &pifRam[i + cmdlen];
+        u8 reslen = r & 0x3F;
+        u8* res = &ram[i + cmdlen];
 
-        switch (cmd[2]) {
+        switch (cmd[CMD_IDX]) {
           case 0xff:
             ControllerID(res);
+            channel++;
             break;
           case 0:
             ControllerID(res);
+            channel++;
             break;
           case 1:
             UpdateController();
@@ -88,13 +89,13 @@ void PIF::ProcessPIFCommands(Mem &mem) {
     }
   }
 
-  //if (control & 2) {
-  //  CICChallenge();
-  //  pifRam[63] &= ~2;
-  //}
+  if (control & 0x02) {
+    CICChallenge();
+    ram[63] &= ~2;
+  }
 
   if (control & 0x08) {
-    pifRam[63] &= ~8;
+    ram[63] &= ~8;
   }
 
   if (control & 0x30) {

@@ -8,10 +8,10 @@ struct Settings {
   Settings(n64::Core&);
   ~Settings();
 
-  float GetVolumeL() const { return volumeL; };
-  float GetVolumeR() const { return volumeR; };
-  bool GetLockChannels() const { return lockChannels; }
-  std::string GetCpuType() const { return cpuType; }
+  inline float GetVolumeL() const { return volumeL; };
+  inline float GetVolumeR() const { return volumeR; };
+  inline bool GetLockChannels() const { return lockChannels; }
+  inline std::string GetCpuType() const { return cpuType; }
 
   void RenderWidget(bool& show);
 private:

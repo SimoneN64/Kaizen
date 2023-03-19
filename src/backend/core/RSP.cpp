@@ -11,7 +11,7 @@ RSP::RSP() {
 void RSP::Reset() {
   lastSuccessfulSPAddr.raw = 0;
   lastSuccessfulDRAMAddr.raw = 0;
-  spStatus.raw = 0x1;
+  spStatus.raw = 0;
   spStatus.halt = true;
   oldPC = 0;
   pc = 0;

@@ -4,13 +4,12 @@
 
 namespace n64 {
 void PIF::InitDevices(SaveType saveType) {
-  for (int i = 0; i < 4; i++) {
-    joybusDevices[i].type = JOYBUS_CONTROLLER; //TODO
-    if (joybusDevices[i].type) {
-      // TODO: make this configurable
-      joybusDevices[i].accessoryType = ACCESSORY_MEMPACK;
-    }
+  for (int i = 0; i < 4; i++) { //TODO: make this configurable
+    joybusDevices[i].type = JOYBUS_NONE; 
+    joybusDevices[i].accessoryType = ACCESSORY_NONE;
   }
+  joybusDevices[0].type = JOYBUS_CONTROLLER;
+  joybusDevices[0].accessoryType = ACCESSORY_MEMPACK;
 
   if (saveType == SAVE_EEPROM_4k) {
     joybusDevices[4].type = JOYBUS_4KB_EEPROM;
@@ -22,7 +21,7 @@ void PIF::InitDevices(SaveType saveType) {
   joybusDevices[5].type = JOYBUS_NONE;
 }
 
-void PIF::ControllerID(u8 *res) {
+void PIF::ControllerID(u8 *res) const {
   if (channel < 6) {
     switch (joybusDevices[channel].type) {
       case JOYBUS_NONE:
@@ -74,11 +73,9 @@ void PIF::ControllerID(u8 *res) {
   } else {
     Util::panic("Device ID on unknown channel {}", channel);
   }
-
-  channel++;
 }
 
-bool PIF::ReadButtons(u8* res) {
+bool PIF::ReadButtons(u8* res) const {
   if(channel >= 6) {
     res[0] = 0;
     res[1] = 0;
@@ -96,20 +93,18 @@ bool PIF::ReadButtons(u8* res) {
       return false; // Device not present
     case JOYBUS_CONTROLLER:
       if (TasMovieLoaded()) {
-        // Load inputs from TAS movie
         Controller controller = TasNextInputs();
         res[0] = controller.byte1;
         res[1] = controller.byte2;
         res[2] = controller.joy_x;
         res[3] = controller.joy_y;
       } else {
-        // Load inputs normally
         res[0] = joybusDevices[channel].controller.byte1;
         res[1] = joybusDevices[channel].controller.byte2;
         res[2] = joybusDevices[channel].controller.joy_x;
         res[3] = joybusDevices[channel].controller.joy_y;
       }
-      break;
+      return true;
     case JOYBUS_DANCEPAD:
     case JOYBUS_VRU:
     case JOYBUS_MOUSE:
@@ -120,6 +115,6 @@ bool PIF::ReadButtons(u8* res) {
       return false;
   }
 
-  return true; // Success!
+  return true;
 }
 }

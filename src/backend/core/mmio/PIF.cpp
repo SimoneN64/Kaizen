@@ -302,8 +302,6 @@ void PIF::EepromWrite(u8* cmd, u8* res, const Mem& mem) {
 #define GET_AXIS(gamecontroller, axis) SDL_GameControllerGetAxis(gamecontroller, axis)
 
 void PIF::UpdateController() {
-  s8 xaxis = 0, yaxis = 0;
-
   if(gamepadConnected) {
     bool A = GET_BUTTON(gamepad, SDL_CONTROLLER_BUTTON_A);
     bool B = GET_BUTTON(gamepad, SDL_CONTROLLER_BUTTON_X);
@@ -336,11 +334,25 @@ void PIF::UpdateController() {
     joybusDevices[channel].controller.c_left = CLEFT;
     joybusDevices[channel].controller.c_right = CRIGHT;
 
-    xaxis = (s8) std::clamp<s16>(GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_LEFTX), -86, 86);
-    yaxis = (s8) std::clamp<s16>(GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_LEFTY), -86, 86);
+    float xclamped = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_LEFTX);
+    if(xclamped < 0) {
+      xclamped /= float(std::abs(SDL_JOYSTICK_AXIS_MIN));
+    } else {
+      xclamped /= SDL_JOYSTICK_AXIS_MAX;
+    }
 
-    joybusDevices[channel].controller.joy_x = xaxis;
-    joybusDevices[channel].controller.joy_y = -yaxis;
+    xclamped *= 86;
+
+    float yclamped = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_LEFTY);
+    if(yclamped < 0) {
+      yclamped /= float(std::abs(SDL_JOYSTICK_AXIS_MIN));
+    } else {
+      yclamped /= SDL_JOYSTICK_AXIS_MAX;
+    }
+    yclamped *= 86;
+
+    joybusDevices[channel].controller.joy_x = xclamped;
+    joybusDevices[channel].controller.joy_y = -yclamped;
 
     if (joybusDevices[channel].controller.joy_reset) {
       joybusDevices[channel].controller.start = false;
@@ -365,6 +377,7 @@ void PIF::UpdateController() {
     joybusDevices[channel].controller.c_left = state[SDL_SCANCODE_K];
     joybusDevices[channel].controller.c_right = state[SDL_SCANCODE_L];
 
+    s16 xaxis = 0, yaxis = 0;
     if (state[SDL_SCANCODE_LEFT]) {
       xaxis = -86;
     } else if (state[SDL_SCANCODE_RIGHT]) {

@@ -206,7 +206,7 @@ void PIF::ProcessCommands(Mem &mem) {
   }
 }
 
-void PIF::MempakRead(u8* cmd, u8* res) {
+void PIF::MempakRead(u8* cmd, u8* res) const {
   u16 offset = cmd[3] << 8;
   offset |= cmd[4];
 
@@ -236,7 +236,7 @@ void PIF::MempakRead(u8* cmd, u8* res) {
   res[32] = data_crc(&res[0]);
 }
 
-void PIF::MempakWrite(u8* cmd, u8* res) {
+void PIF::MempakWrite(u8* cmd, u8* res) const {
   // First two bytes in the command are the offset
   u16 offset = cmd[3] << 8;
   offset |= cmd[4];
@@ -262,7 +262,7 @@ void PIF::MempakWrite(u8* cmd, u8* res) {
   res[0] = data_crc(&cmd[5]);
 }
 
-void PIF::EepromRead(u8* cmd, u8* res, const Mem& mem) {
+void PIF::EepromRead(u8* cmd, u8* res, const Mem& mem) const {
   assert(mem.saveType == SAVE_EEPROM_4k || mem.saveType == SAVE_EEPROM_16k);
   if (channel == 4) {
     u8 offset = cmd[3];
@@ -279,7 +279,7 @@ void PIF::EepromRead(u8* cmd, u8* res, const Mem& mem) {
   }
 }
 
-void PIF::EepromWrite(u8* cmd, u8* res, const Mem& mem) {
+void PIF::EepromWrite(u8* cmd, u8* res, const Mem& mem) const {
   assert(mem.saveType == SAVE_EEPROM_4k || mem.saveType == SAVE_EEPROM_16k);
   if (channel == 4) {
     u8 offset = cmd[3];

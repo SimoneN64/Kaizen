@@ -8,10 +8,10 @@ Rewrite of my Nintendo 64 emulator "[shibumi](https://github.com/SimoneN64/shibu
 ![Mario's face](resources/mario.png?raw=true)
 
 ## Pre-built binaries
-| Release                                                                                                       |
-|---------------------------------------------------------------------------------------------------------------|
-| [Windows (Release)](https://nightly.link/SimoneN64/Gadolinium/workflows/build/master/gadolinium-windows.zip) |
-| [Linux   (Release)](https://nightly.link/SimoneN64/Gadolinium/workflows/build/master/gadolinium-linux.zip)   |
+| Release                                                                                              |
+|------------------------------------------------------------------------------------------------------|
+| [Windows](https://nightly.link/SimoneN64/Gadolinium/workflows/build/master/gadolinium-windows.zip)   |
+| [ Linux ](https://nightly.link/SimoneN64/Gadolinium/workflows/build/master/gadolinium-linux.zip)     |
 
 
 ## Build instructions:
@@ -53,7 +53,29 @@ cmake -DCMAKE_BUILD_TYPE=Release -S ../src
 cmake --build . --config Release
 ```
 
-Special thanks:
+## Running:
+```
+./path/to/gadolinium [ROM] [Mupen Movie]
+```
+
+Your GPU needs to support Vulkan 1.1+, because the RDP is implemented via [ParaLLEl-RDP](https://github.com/Themaister/parallel-rdp).
+
+## Roadmap
+- [x] Full R4300i emulation
+- [x] Full RCP emulation
+- [x] Full TLB emulation
+- [x] Full joybus emulation (but it's not configurable by the user at the moment)
+- [x] TAS replay (using Mupen's format)
+- [ ] Qt or wxWidgets for native GUI (keeping ImGui as opt-in).
+- [ ] JIT, with support for x86_64 and ARM (using an IR).
+- [ ] Debug tools: disassembly, breakpoints, single-step and memory editor
+- [ ] TAS tools: TAS input, recording (using Mupen's format), save-states, rewind and frame-advance
+- [ ] Cheat support
+- [ ] Allow to optionally pass a PIF image for the boot process (it's HLE'd at the moment)
+
+This list will probably grow with time!
+
+## Special thanks:
 
 - [Dillonb](https://github.com/Dillonb) and [KieronJ](https://github.com/KieronJ) for bearing with me and my recurring brainfarts, and for the support :heart:
 - [WhoBrokeTheBuild](https://github.com/WhoBrokeTheBuild) for the shader that allows letterboxing :rocket:

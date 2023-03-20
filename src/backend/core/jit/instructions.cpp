@@ -1,7 +1,6 @@
 #include <core/JIT.hpp>
 
-#define se_imm(x) ((s16)((x) & 0xFFFF))
-#define check_address_error(mask, addr) (((!regs.cop0.is_64bit_addressing) && (s32)(addr) != (addr)) || (((addr) & (mask)) != 0))
+#define check_address_error(mask, vaddr) (((!regs.cop0.is_64bit_addressing) && (s32)(vaddr) != (vaddr)) || (((vaddr) & (mask)) != 0))
 #define check_signed_overflow(op1, op2, res) (((~((op1) ^ (op2)) & ((op1) ^ (res))) >> ((sizeof(res) * 8) - 1)) & 1)
 #define check_signed_underflow(op1, op2, res) (((((op1) ^ (op2)) & ((op1) ^ (res))) >> ((sizeof(res) * 8) - 1)) & 1)
 
@@ -11,6 +10,9 @@ void add(JIT& dyn, u32 instr) {
   u32 rs = (s32)regs.gpr[RS(instr)];
   u32 rt = (s32)regs.gpr[RT(instr)];
   u32 result = rs + rt;
+
+  Util::debug("add r{}, r{}, r{} = {:08X}\n", RD(instr), RS(instr), RT(instr), result);
+
   if(check_signed_overflow(rs, rt, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
@@ -27,6 +29,7 @@ void addu(JIT& dyn, u32 instr) {
     s32 rt = (s32)regs.gpr[RT(instr)];
     s32 result = rs + rt;
     regs.gpr[RD(instr)] = result;
+    Util::debug("addu r{}, r{}, r{} = {:08X}\n", RD(instr), RS(instr), RT(instr), (u32)result);
   }
 }
 
@@ -35,6 +38,7 @@ void addi(JIT& dyn, u32 instr) {
   u32 rs = regs.gpr[RS(instr)];
   u32 imm = s32(s16(instr));
   u32 result = rs + imm;
+  Util::debug("addi r{}, r{}, {:08X} = {:08X}\n", RT(instr), RS(instr), imm, result);
   if(check_signed_overflow(rs, imm, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
@@ -174,8 +178,8 @@ void branch(JIT& dyn, bool cond, s64 address) {
 
 void branch_likely(JIT& dyn, bool cond, s64 address) {
   Registers& regs = dyn.regs;
-  regs.delaySlot = true;
   if (cond) {
+    regs.delaySlot = true;
     regs.nextPC = address;
   } else {
     regs.SetPC64(regs.nextPC);
@@ -184,7 +188,8 @@ void branch_likely(JIT& dyn, bool cond, s64 address) {
 
 void b(JIT& dyn, u32 instr, bool cond) {
   Registers& regs = dyn.regs;
-  s64 offset = (s64)se_imm(instr) << 2;
+  s16 imm = instr;
+  s64 offset = (s64)imm << 2;
   s64 address = regs.pc + offset;
   branch(dyn, cond, address);
 }
@@ -192,14 +197,16 @@ void b(JIT& dyn, u32 instr, bool cond) {
 void blink(JIT& dyn, u32 instr, bool cond) {
   Registers& regs = dyn.regs;
   regs.gpr[31] = regs.nextPC;
-  s64 offset = (s64)se_imm(instr) << 2;
+  s16 imm = instr;
+  s64 offset = (s64)imm << 2;
   s64 address = regs.pc + offset;
   branch(dyn, cond, address);
 }
 
 void bl(JIT& dyn, u32 instr, bool cond) {
   Registers& regs = dyn.regs;
-  s64 offset = (s64)se_imm(instr) << 2;
+  s16 imm = instr;
+  s64 offset = (s64)imm << 2;
   s64 address = regs.pc + offset;
   branch_likely(dyn, cond, address);
 }
@@ -207,7 +214,8 @@ void bl(JIT& dyn, u32 instr, bool cond) {
 void bllink(JIT& dyn, u32 instr, bool cond) {
   Registers& regs = dyn.regs;
   regs.gpr[31] = regs.nextPC;
-  s64 offset = (s64)se_imm(instr) << 2;
+  s16 imm = instr;
+  s64 offset = (s64)imm << 2;
   s64 address = regs.pc + offset;
   branch_likely(dyn, cond, address);
 }
@@ -247,7 +255,7 @@ void lh(JIT& dyn, u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
-    regs.gpr[RT(instr)] = (s16)mem.Read16(regs, address);
+    regs.gpr[RT(instr)] = (s16)mem.Read16(regs, paddr);
   }
 }
 
@@ -256,7 +264,7 @@ void lw(JIT& dyn, u32 instr) {
   Mem& mem = dyn.mem;
   s16 offset = instr;
   u64 address = regs.gpr[RS(instr)] + offset;
-  if (check_address_error(address, 0b11)) {
+  if (check_address_error(0b11, address)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
     return;
@@ -330,14 +338,20 @@ void ld(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(address, 0b111)) {
+  if (check_address_error(0b111, address)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
     return;
   }
 
-  s64 value = mem.Read64(regs, address);
-  regs.gpr[RT(instr)] = value;
+  u32 paddr = 0;
+  if(!MapVAddr(regs, LOAD, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
+  } else {
+    s64 value = mem.Read64(regs, paddr);
+    regs.gpr[RT(instr)] = value;
+  }
 }
 
 void lld(JIT& dyn, u32 instr) {
@@ -402,43 +416,66 @@ void lbu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  u8 value = mem.Read8(regs, address);
-  regs.gpr[RT(instr)] = value;
+  u32 paddr;
+  if (!MapVAddr(regs, LOAD, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
+  } else {
+    u8 value = mem.Read8(regs, paddr);
+    regs.gpr[RT(instr)] = value;
+  }
 }
 
 void lhu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(address, 0b1)) {
+  if ((address & 0b1) > 0) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
     return;
   }
-
-  u16 value = mem.Read16(regs, address);
-  regs.gpr[RT(instr)] = value;
+  u32 paddr;
+  if (!MapVAddr(regs, LOAD, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
+  } else {
+    u16 value = mem.Read16(regs, paddr);
+    regs.gpr[RT(instr)] = value;
+  }
 }
 
 void lwu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(address, 0b11)) {
+  if ((address & 0b11) > 0) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
     return;
   }
 
-  u32 value = mem.Read32(regs, address);
-  regs.gpr[RT(instr)] = value;
+  u32 paddr;
+  if (!MapVAddr(regs, LOAD, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
+  } else {
+    u32 value = mem.Read32(regs, paddr);
+    regs.gpr[RT(instr)] = value;
+  }
 }
 
 void sb(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
-  u32 address = regs.gpr[RS(instr)] + (s16)instr;
-  mem.Write8(regs, dyn, address, regs.gpr[RT(instr)]);
+  u64 address = regs.gpr[RS(instr)] + (s16)instr;
+  u32 paddr;
+  if (!MapVAddr(regs, STORE, address, paddr)) {
+    HandleTLBException(regs, address);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
+  } else {
+    mem.Write8(regs, paddr, regs.gpr[RT(instr)]);
+  }
 }
 
 void sc(JIT& dyn, u32 instr) {
@@ -458,7 +495,7 @@ void sc(JIT& dyn, u32 instr) {
       HandleTLBException(regs, address);
       FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
     } else {
-      mem.Write32(regs, dyn, paddr, regs.gpr[RT(instr)]);
+      mem.Write32(regs, paddr, regs.gpr[RT(instr)]);
       regs.gpr[RT(instr)] = 1;
     }
   } else {
@@ -469,37 +506,44 @@ void sc(JIT& dyn, u32 instr) {
 void scd(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
+  if (!regs.cop0.is_64bit_addressing && !regs.cop0.kernel_mode) {
+    FireException(regs, ExceptionCode::ReservedInstruction, 0, true);
+    return;
+  }
+
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(address, 0b111)) {
+  if ((address & 0b111) > 0) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, true);
     return;
   }
 
   if(regs.cop0.llbit) {
-    mem.Write64(regs, dyn, address, regs.gpr[RT(instr)]);
+    regs.cop0.llbit = false;
+    u32 paddr = 0;
+    if(!MapVAddr(regs, STORE, address, paddr)) {
+      HandleTLBException(regs, address);
+      FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
+    } else {
+      mem.Write32(regs, paddr, regs.gpr[RT(instr)]);
+      regs.gpr[RT(instr)] = 1;
+    }
+  } else {
+    regs.gpr[RT(instr)] = 0;
   }
-
-  regs.gpr[RT(instr)] = (s64)((u64)regs.cop0.llbit);
-  regs.cop0.llbit = false;
 }
 
 void sh(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(address, 0b1)) {
-    HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorStore, 0, true);
-    return;
-  }
 
   u32 physical;
   if(!MapVAddr(regs, STORE, address, physical)) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write16(regs, dyn, physical, regs.gpr[RT(instr)]);
+    mem.Write16(regs, physical, regs.gpr[RT(instr)]);
   }
 }
 
@@ -508,7 +552,7 @@ void sw(JIT& dyn, u32 instr) {
   Mem& mem = dyn.mem;
   s16 offset = instr;
   u64 address = regs.gpr[RS(instr)] + offset;
-  if (check_address_error(address, 0b11)) {
+  if (check_address_error(0b11, address)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, true);
     return;
@@ -519,7 +563,7 @@ void sw(JIT& dyn, u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write32(regs, dyn, physical, regs.gpr[RT(instr)]);
+    mem.Write32(regs, physical, regs.gpr[RT(instr)]);
   }
 }
 
@@ -527,7 +571,7 @@ void sd(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   Mem& mem = dyn.mem;
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(address, 0b11)) {
+  if (check_address_error(0b111, address)) {
     HandleTLBException(regs, address);
     FireException(regs, ExceptionCode::AddressErrorStore, 0, true);
     return;
@@ -538,9 +582,8 @@ void sd(JIT& dyn, u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write64(regs, dyn, physical, regs.gpr[RT(instr)]);
+    mem.Write64(regs, physical, regs.gpr[RT(instr)]);
   }
-
 }
 
 void sdl(JIT& dyn, u32 instr) {
@@ -556,7 +599,7 @@ void sdl(JIT& dyn, u32 instr) {
     u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
     u64 data = mem.Read64(regs, paddr & ~7);
     u64 rt = regs.gpr[RT(instr)];
-    mem.Write64(regs, dyn, paddr & ~7, (data & ~mask) | (rt >> shift));
+    mem.Write64(regs, paddr & ~7, (data & ~mask) | (rt >> shift));
   }
 }
 
@@ -573,7 +616,7 @@ void sdr(JIT& dyn, u32 instr) {
     u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
     u64 data = mem.Read64(regs, paddr & ~7);
     u64 rt = regs.gpr[RT(instr)];
-    mem.Write64(regs, dyn, paddr & ~7, (data & ~mask) | (rt << shift));
+    mem.Write64(regs, paddr & ~7, (data & ~mask) | (rt << shift));
   }
 }
 
@@ -590,7 +633,7 @@ void swl(JIT& dyn, u32 instr) {
     u32 mask = 0xFFFFFFFF >> shift;
     u32 data = mem.Read32(regs, paddr & ~3);
     u32 rt = regs.gpr[RT(instr)];
-    mem.Write32(regs, dyn, paddr & ~3, (data & ~mask) | (rt >> shift));
+    mem.Write32(regs, paddr & ~3, (data & ~mask) | (rt >> shift));
   }
 }
 
@@ -607,7 +650,7 @@ void swr(JIT& dyn, u32 instr) {
     u32 mask = 0xFFFFFFFF << shift;
     u32 data = mem.Read32(regs, paddr & ~3);
     u32 rt = regs.gpr[RT(instr)];
-    mem.Write32(regs, dyn, paddr & ~3, (data & ~mask) | (rt << shift));
+    mem.Write32(regs, paddr & ~3, (data & ~mask) | (rt << shift));
   }
 }
 
@@ -634,8 +677,9 @@ void nor(JIT& dyn, u32 instr) {
 
 void j(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  u64 target = (instr & 0x3ffffff) << 2;
-  u64 address = ((regs.pc - 4) & ~0xfffffff) | target;
+  Mem& mem = dyn.mem;
+  s32 target = (instr & 0x3ffffff) << 2;
+  s64 address = (regs.oldPC & ~0xfffffff) | target;
 
   branch(dyn, true, address);
 }
@@ -648,6 +692,7 @@ void jal(JIT& dyn, u32 instr) {
 
 void jalr(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
+  Mem& mem = dyn.mem;
   branch(dyn, true, regs.gpr[RS(instr)]);
   if(likely(RD(instr) != 0)) {
     regs.gpr[RD(instr)] = regs.pc + 4;
@@ -656,12 +701,14 @@ void jalr(JIT& dyn, u32 instr) {
 
 void slti(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  regs.gpr[RT(instr)] = regs.gpr[RS(instr)] < se_imm(instr);
+  s16 imm = instr;
+  regs.gpr[RT(instr)] = regs.gpr[RS(instr)] < imm;
 }
 
 void sltiu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  regs.gpr[RT(instr)] = (u64)regs.gpr[RS(instr)] < se_imm(instr);
+  s16 imm = instr;
+  regs.gpr[RT(instr)] = (u64)regs.gpr[RS(instr)] < imm;
 }
 
 void slt(JIT& dyn, u32 instr) {
@@ -812,8 +859,8 @@ void sra(JIT& dyn, u32 instr) {
 
 void srav(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
+  s64 rt = regs.gpr[RT(instr)];
   if(likely(RD(instr) != 0)) {
-    s64 rt = regs.gpr[RT(instr)];
     s64 rs = regs.gpr[RS(instr)];
     u8 sa = rs & 0x1f;
     s32 result = rt >> sa;
@@ -855,11 +902,6 @@ void dsra32(JIT& dyn, u32 instr) {
 void jr(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   s64 address = regs.gpr[RS(instr)];
-  if (check_address_error(address, 0b11)) {
-    HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::DataBusError, 0, true);
-  }
-
   branch(dyn, true, address);
 }
 
@@ -972,9 +1014,8 @@ void mthi(JIT& dyn, u32 instr) {
 }
 
 void trap(JIT& dyn, bool cond) {
-  Registers& regs = dyn.regs;
   if(cond) {
-    FireException(regs, ExceptionCode::Trap, 0, true);
+    FireException(dyn.regs, ExceptionCode::Trap, 0, true);
   }
 }
 

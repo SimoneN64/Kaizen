@@ -6,6 +6,8 @@ Registers::Registers() {
 }
 
 void Registers::Reset() {
+  hi = 0;
+  lo = 0;
   delaySlot = false;
   prevDelaySlot = false;
   memset(gpr, 0, 32*sizeof(s64));

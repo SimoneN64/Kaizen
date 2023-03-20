@@ -2,7 +2,6 @@
 #include <filesystem>
 #include <JIT.hpp>
 
-
 namespace n64 {
 namespace fs = std::filesystem;
 
@@ -25,6 +24,7 @@ JIT::JIT() : code(CODECACHE_SIZE, codeCache) {
 
   dump.open("jit.dump", std::ios::ate | std::ios::binary);
   dump.unsetf(std::ios::skipws);
+  regs.Reset();
 }
 
 inline bool ShouldServiceInterrupt(Registers& regs) {
@@ -64,23 +64,21 @@ void JIT::Recompile(Mem& mem, u32 pc) {
     instrInBlock++;
     prevBranch = branch;
     u32 instr = mem.Read32(regs, loopPC);
+    loopPC += 4;
 
-    emitBreakpoint();
     code.mov(rdi, (uintptr_t)this);
-    code.mov(rsi, instr);
-
-    code.mov(r8, qword[rdi + REG_OFFSET(oldPC)]);
-    code.mov(r9, qword[rdi + REG_OFFSET(pc)]);
-    code.mov(r10, qword[rdi + REG_OFFSET(nextPC)]);
+    code.mov(qword[rdi + GPR_OFFSET(0, this)], 0);
+    code.mov(r8, qword[rdi + REG_OFFSET(oldPC, this)]);
+    code.mov(r9, qword[rdi + REG_OFFSET(pc, this)]);
+    code.mov(r10, qword[rdi + REG_OFFSET(nextPC, this)]);
     code.mov(r8, r9);
     code.mov(r9, r10);
     code.add(r10, 4);
-    code.mov(qword[rdi + REG_OFFSET(oldPC)], r8);
-    code.mov(qword[rdi + REG_OFFSET(pc)], r9);
-    code.mov(qword[rdi + REG_OFFSET(nextPC)], r10);
+    code.mov(qword[rdi + REG_OFFSET(oldPC, this)], r8);
+    code.mov(qword[rdi + REG_OFFSET(pc, this)], r9);
+    code.mov( qword[rdi + REG_OFFSET(nextPC, this)], r10);
 
-    loopPC += 4;
-
+    code.mov(esi, instr);
     branch = Exec(mem, instr);
   }
 
@@ -89,7 +87,6 @@ void JIT::Recompile(Mem& mem, u32 pc) {
   dump.write(code.getCode<char*>(), code.getSize());
 
   blockCache[startPC >> 20][startPC & 0xFFF] = block;
-  blockCache[startPC >> 20][startPC & 0xFFF]();
 }
 
 void JIT::AllocateOuter(u32 pc) {
@@ -98,7 +95,6 @@ void JIT::AllocateOuter(u32 pc) {
 
 int JIT::Run() {
   instrInBlock = 0;
-  regs.gpr[0] = 0;
   regs.prevDelaySlot = regs.delaySlot;
   regs.delaySlot = false;
 
@@ -110,22 +106,21 @@ int JIT::Run() {
     return 0;
   }
 
-  if(blockCache[pc >> 20]) {
-    if(blockCache[pc >> 20][pc & 0xfff]) {
-      blockCache[pc >> 20][pc & 0xfff]();
-    } else {
-      Recompile(mem, pc);
-    }
-  } else {
+  if(!blockCache[pc >> 20]) {
     AllocateOuter(pc);
+  }
+
+  if(!blockCache[pc >> 20][pc & 0xfff]) {
     Recompile(mem, pc);
   }
 
   CheckCompareInterrupt(mem.mmio.mi, regs);
-
   if(ShouldServiceInterrupt(regs)) {
     FireException(regs, ExceptionCode::Interrupt, 0, false);
+    return 0;
   }
+
+  blockCache[pc >> 20][pc & 0xfff]();
 
   return instrInBlock;
 }

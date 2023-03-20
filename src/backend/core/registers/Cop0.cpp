@@ -323,7 +323,7 @@ ExceptionCode GetTLBExceptionCode(TLBError error, TLBAccessType accessType) {
   }
 }
 
-void Cop0::decode(Registers& regs, Mem& mem, u32 instr) {
+void Cop0::decode(Registers& regs, u32 instr) {
   u8 mask_cop = (instr >> 21) & 0x1F;
   u8 mask_cop2 = instr & 0x3F;
   switch(mask_cop) {

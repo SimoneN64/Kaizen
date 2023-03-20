@@ -74,7 +74,7 @@ void SI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       InterruptLower(mem.mmio.mi, regs, Interrupt::SI);
       break;
     default:
-      Util::panic("Unhandled SI[%08X] write (%08X)\n", addr, val);
+      Util::panic("Unhandled SI[{:08X}] write ({:08X})\n", addr, val);
   }
 }
 }

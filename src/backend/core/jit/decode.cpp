@@ -190,8 +190,8 @@ bool JIT::special(u32 instr) {
       code.call(rax);
       break;
     case 0x30:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
-      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr), this)]);
       code.xor_(rsi, rsi);
       code.cmp(r8, rcx);
       code.setge(sil);
@@ -200,8 +200,8 @@ bool JIT::special(u32 instr) {
       res = true;
       break;
     case 0x31:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
-      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr), this)]);
       code.xor_(rsi, rsi);
       code.cmp(r8, rcx);
       code.setae(sil);
@@ -210,8 +210,8 @@ bool JIT::special(u32 instr) {
       res = true;
       break;
     case 0x32:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
-      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr), this)]);
       code.xor_(rsi, rsi);
       code.cmp(r8, rcx);
       code.setl(sil);
@@ -220,8 +220,8 @@ bool JIT::special(u32 instr) {
       res = true;
       break;
     case 0x33:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
-      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr), this)]);
       code.xor_(rsi, rsi);
       code.cmp(r8, rcx);
       code.setb(sil);
@@ -230,8 +230,8 @@ bool JIT::special(u32 instr) {
       res = true;
       break;
     case 0x34:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
-      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr), this)]);
       code.xor_(rsi, rsi);
       code.cmp(r8, rcx);
       code.sete(sil);
@@ -240,8 +240,8 @@ bool JIT::special(u32 instr) {
       res = true;
       break;
     case 0x36:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
-      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr), this)]);
       code.xor_(rsi, rsi);
       code.cmp(r8, rcx);
       code.setne(sil);
@@ -285,7 +285,7 @@ bool JIT::regimm(u32 instr) {
   // 000r_rccc
   switch (mask) { // TODO: named constants for clearer code
     case 0x00:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.xor_(rdx, rdx);
       code.cmp(r8, 0);
       code.setl(dl);
@@ -293,7 +293,7 @@ bool JIT::regimm(u32 instr) {
       code.call(rax);
       break;
     case 0x01:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.xor_(rdx, rdx);
       code.cmp(r8, 0);
       code.setge(dl);
@@ -301,7 +301,7 @@ bool JIT::regimm(u32 instr) {
       code.call(rax);
       break;
     case 0x02:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.xor_(rdx, rdx);
       code.cmp(r8, 0);
       code.setl(dl);
@@ -309,7 +309,7 @@ bool JIT::regimm(u32 instr) {
       code.call(rax);
       break;
     case 0x03:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.xor_(rdx, rdx);
       code.cmp(r8, 0);
       code.setge(dl);
@@ -317,7 +317,7 @@ bool JIT::regimm(u32 instr) {
       code.call(rax);
       break;
     case 0x08:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.xor_(rsi, rsi);
       code.cmp(r8, s64(s16(instr)));
       code.setge(sil);
@@ -325,7 +325,7 @@ bool JIT::regimm(u32 instr) {
       code.call(rax);
       break;
     case 0x09:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.xor_(rsi, rsi);
       code.cmp(r8, u64(s64(s16(instr))));
       code.setae(sil);
@@ -333,7 +333,7 @@ bool JIT::regimm(u32 instr) {
       code.call(rax);
       break;
     case 0x0A:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.xor_(rsi, rsi);
       code.cmp(r8, s64(s16(instr)));
       code.setl(sil);
@@ -341,7 +341,7 @@ bool JIT::regimm(u32 instr) {
       code.call(rax);
       break;
     case 0x0B:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.xor_(rsi, rsi);
       code.cmp(r8, u64(s64(s16(instr))));
       code.setb(sil);
@@ -349,7 +349,7 @@ bool JIT::regimm(u32 instr) {
       code.call(rax);
       break;
     case 0x0C:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.xor_(rsi, rsi);
       code.cmp(r8, s64(s16(instr)));
       code.sete(sil);
@@ -357,7 +357,7 @@ bool JIT::regimm(u32 instr) {
       code.call(rax);
       break;
     case 0x0E:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.xor_(rsi, rsi);
       code.cmp(r8, s64(s16(instr)));
       code.setne(sil);
@@ -365,7 +365,7 @@ bool JIT::regimm(u32 instr) {
       code.call(rax);
       break;
     case 0x10:
-      code.mov(rcx, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.xor_(rdx, rdx);
       code.cmp(rcx, 0);
       code.setl(dl);
@@ -373,7 +373,7 @@ bool JIT::regimm(u32 instr) {
       code.call(rax);
       break;
     case 0x11:
-      code.mov(rcx, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.xor_(rdx, rdx);
       code.cmp(rcx, 0);
       code.setge(dl);
@@ -381,7 +381,7 @@ bool JIT::regimm(u32 instr) {
       code.call(rax);
       break;
     case 0x12:
-      code.mov(rcx, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.xor_(rdx, rdx);
       code.cmp(rcx, 0);
       code.setl(dl);
@@ -389,7 +389,7 @@ bool JIT::regimm(u32 instr) {
       code.call(rax);
       break;
     case 0x13:
-      code.mov(rcx, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.xor_(rdx, rdx);
       code.cmp(rcx, 0);
       code.setge(dl);
@@ -422,27 +422,27 @@ bool JIT::Exec(Mem& mem, u32 instr) {
       res = true;
       break;
     case 0x04:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
-      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
+      code.mov(r9, qword[rdi + GPR_OFFSET(RT(instr), this)]);
       code.xor_(rdx, rdx);
-      code.cmp(r8, rcx);
+      code.cmp(r8, r9);
       code.sete(dl);
       code.mov(rax, (u64)b);
       code.call(rax);
       res = true;
       break;
     case 0x05:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
-      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
+      code.mov(r9, qword[rdi + GPR_OFFSET(RT(instr), this)]);
       code.xor_(rdx, rdx);
-      code.cmp(r8, rcx);
+      code.cmp(r8, r9);
       code.setne(dl);
       code.mov(rax, (u64)b);
       code.call(rax);
       res = true;
       break;
     case 0x06:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.xor_(rdx, rdx);
       code.test(r8, r8);
       code.setnz(dl);
@@ -451,7 +451,7 @@ bool JIT::Exec(Mem& mem, u32 instr) {
       res = true;
       break;
     case 0x07:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.xor_(rdx, rdx);
       code.test(r8, r8);
       code.setg(dl);
@@ -491,12 +491,12 @@ bool JIT::Exec(Mem& mem, u32 instr) {
       code.mov(rax, (u64)lui);
       code.call(rax);
       break;
-    case 0x10: cop0Decode(regs, *this, instr); break;
-    case 0x11: res = cop1Decode(regs, *this, instr); break;
+    case 0x10: cop0Decode(*this, instr); break;
+    case 0x11: res = cop1Decode(*this, instr); break;
     case 0x12: cop2Decode(instr); break;
     case 0x14:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
-      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr), this)]);
       code.xor_(rdx, rdx);
       code.cmp(r8, rcx);
       code.sete(dl);
@@ -504,8 +504,8 @@ bool JIT::Exec(Mem& mem, u32 instr) {
       code.call(rax);
       break;
     case 0x15:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
-      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
+      code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr), this)]);
       code.xor_(rdx, rdx);
       code.cmp(r8, rcx);
       code.setne(dl);
@@ -513,7 +513,7 @@ bool JIT::Exec(Mem& mem, u32 instr) {
       code.call(rax);
       break;
     case 0x16:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.xor_(rdx, rdx);
       code.cmp(r8, 0);
       code.setle(dl);
@@ -521,7 +521,7 @@ bool JIT::Exec(Mem& mem, u32 instr) {
       code.call(rax);
       break;
     case 0x17:
-      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr))]);
+      code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.xor_(rdx, rdx);
       code.cmp(r8, 0);
       code.setg(dl);

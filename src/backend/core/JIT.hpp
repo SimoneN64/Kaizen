@@ -9,8 +9,8 @@ using namespace Xbyak;
 using namespace Xbyak::util;
 using Fn = void (*)();
 
-#define GPR_OFFSET(x) ((uintptr_t)&regs.gpr[(x)] - (uintptr_t)&regs)
-#define REG_OFFSET(kind) ((uintptr_t)&regs.kind - (uintptr_t)&regs)
+#define GPR_OFFSET(x, jit) ((uintptr_t)&regs.gpr[(x)] - (uintptr_t)jit)
+#define REG_OFFSET(kind, jit) ((uintptr_t)&regs.kind - (uintptr_t)jit)
 #define CODECACHE_SIZE (2 << 25)
 #define CODECACHE_OVERHEAD (CODECACHE_SIZE - 1_kb)
 
@@ -28,16 +28,8 @@ private:
   Fn* blockCache[0x80000]{};
   u8* codeCache;
   int instrInBlock = 0;
-  bool enableBreakpoints = false;
   u64 sizeUsed = 0;
   std::ofstream dump;
-
-  inline void emitBreakpoint() {
-    #ifndef NDEBUG
-    if(enableBreakpoints)
-      code.int3();
-    #endif
-  }
 
   void* bumpAlloc(u64 size, u8 val = 0);
   void Recompile(Mem&, u32 pc);

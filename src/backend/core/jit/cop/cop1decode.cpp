@@ -3,8 +3,9 @@
 #include <Registers.hpp>
 
 namespace n64 {
-bool cop1Decode(Registers& regs, JIT& cpu, u32 instr) {
+bool cop1Decode(JIT& cpu, u32 instr) {
   Xbyak::CodeGenerator& code = cpu.code;
+  Registers& regs = cpu.regs;
 
   u8 mask_sub = (instr >> 21) & 0x1F;
   u8 mask_fun = instr & 0x3F;

@@ -3,5 +3,5 @@
 
 namespace n64 {
 struct Registers;
-void cop0Decode(Registers&, JIT& cpu, u32 instr);
+void cop0Decode(JIT& cpu, u32 instr);
 }

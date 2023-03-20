@@ -235,7 +235,7 @@ struct Cop0 {
   TLBEntry tlb[32]{};
   TLBError tlbError = NONE;
   s64 openbus{};
-  void decode(Registers&, Mem&, u32);
+  void decode(Registers&, u32);
   inline u32 GetRandom() {
     int val = rand();
     int wired = GetWired();

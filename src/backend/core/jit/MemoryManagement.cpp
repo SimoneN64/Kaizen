@@ -7,8 +7,8 @@ void JIT::InvalidatePage(u32 paddr) {
 
 void JIT::InvalidateCache() {
   sizeUsed = 0;
-  for(int i = 0; i < 0x80000; i++) {
-    blockCache[i] = nullptr;
+  for(auto &i : blockCache) {
+    i = nullptr;
   }
 }
 

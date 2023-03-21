@@ -192,9 +192,9 @@ bool JIT::special(u32 instr) {
     case 0x30:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr), this)]);
-      code.xor_(rsi, rsi);
+      code.xor_(regArg1, regArg1);
       code.cmp(r8, rcx);
-      code.setge(sil);
+      code.setge(regArg1.cvt8());
       code.mov(rax, (u64)trap);
       code.call(rax);
       res = true;
@@ -202,9 +202,9 @@ bool JIT::special(u32 instr) {
     case 0x31:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr), this)]);
-      code.xor_(rsi, rsi);
+      code.xor_(regArg1, regArg1);
       code.cmp(r8, rcx);
-      code.setae(sil);
+      code.setae(regArg1.cvt8());
       code.mov(rax, (u64)trap);
       code.call(rax);
       res = true;
@@ -212,9 +212,9 @@ bool JIT::special(u32 instr) {
     case 0x32:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr), this)]);
-      code.xor_(rsi, rsi);
+      code.xor_(regArg1, regArg1);
       code.cmp(r8, rcx);
-      code.setl(sil);
+      code.setl(regArg1.cvt8());
       code.mov(rax, (u64)trap);
       code.call(rax);
       res = true;
@@ -222,9 +222,9 @@ bool JIT::special(u32 instr) {
     case 0x33:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr), this)]);
-      code.xor_(rsi, rsi);
+      code.xor_(regArg1, regArg1);
       code.cmp(r8, rcx);
-      code.setb(sil);
+      code.setb(regArg1.cvt8());
       code.mov(rax, (u64)trap);
       code.call(rax);
       res = true;
@@ -232,9 +232,9 @@ bool JIT::special(u32 instr) {
     case 0x34:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr), this)]);
-      code.xor_(rsi, rsi);
+      code.xor_(regArg1, regArg1);
       code.cmp(r8, rcx);
-      code.sete(sil);
+      code.sete(regArg1.cvt8());
       code.mov(rax, (u64)trap);
       code.call(rax);
       res = true;
@@ -242,9 +242,9 @@ bool JIT::special(u32 instr) {
     case 0x36:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr), this)]);
-      code.xor_(rsi, rsi);
+      code.xor_(regArg1, regArg1);
       code.cmp(r8, rcx);
-      code.setne(sil);
+      code.setne(regArg1.cvt8());
       code.mov(rax, (u64)trap);
       code.call(rax);
       res = true;
@@ -286,23 +286,23 @@ bool JIT::regimm(u32 instr) {
   switch (mask) { // TODO: named constants for clearer code
     case 0x00:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
-      code.xor_(rdx, rdx);
+      code.xor_(regArg2, regArg2);
       code.cmp(r8, 0);
-      code.setl(dl);
+      code.setl(regArg2.cvt8());
       code.mov(rax, (u64)b);
       code.call(rax);
       break;
     case 0x01:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
-      code.xor_(rdx, rdx);
+      code.xor_(regArg2, regArg2);
       code.cmp(r8, 0);
-      code.setge(dl);
+      code.setge(regArg2.cvt8());
       code.mov(rax, (u64)b);
       code.call(rax);
       break;
     case 0x02:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
-      code.xor_(rdx, rdx);
+      code.xor_(regArg2, regArg2);
       code.cmp(r8, 0);
       code.setl(dl);
       code.mov(rax, (u64)bl);
@@ -310,89 +310,89 @@ bool JIT::regimm(u32 instr) {
       break;
     case 0x03:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
-      code.xor_(rdx, rdx);
+      code.xor_(regArg2, regArg2);
       code.cmp(r8, 0);
-      code.setge(dl);
+      code.setge(regArg2.cvt8());
       code.mov(rax, (u64)bl);
       code.call(rax);
       break;
     case 0x08:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
-      code.xor_(rsi, rsi);
+      code.xor_(regArg1, regArg1);
       code.cmp(r8, s64(s16(instr)));
-      code.setge(sil);
+      code.setge(regArg1.cvt8());
       code.mov(rax, (u64)trap);
       code.call(rax);
       break;
     case 0x09:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
-      code.xor_(rsi, rsi);
+      code.xor_(regArg1, regArg1);
       code.cmp(r8, u64(s64(s16(instr))));
-      code.setae(sil);
+      code.setae(regArg1.cvt8());
       code.mov(rax, (u64)trap);
       code.call(rax);
       break;
     case 0x0A:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
-      code.xor_(rsi, rsi);
+      code.xor_(regArg1, regArg1);
       code.cmp(r8, s64(s16(instr)));
-      code.setl(sil);
+      code.setl(regArg1.cvt8());
       code.mov(rax, (u64)trap);
       code.call(rax);
       break;
     case 0x0B:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
-      code.xor_(rsi, rsi);
+      code.xor_(regArg1, regArg1);
       code.cmp(r8, u64(s64(s16(instr))));
-      code.setb(sil);
+      code.setb(regArg1.cvt8());
       code.mov(rax, (u64)trap);
       code.call(rax);
       break;
     case 0x0C:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
-      code.xor_(rsi, rsi);
+      code.xor_(regArg1, regArg1);
       code.cmp(r8, s64(s16(instr)));
-      code.sete(sil);
+      code.sete(regArg1.cvt8());
       code.mov(rax, (u64)trap);
       code.call(rax);
       break;
     case 0x0E:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
-      code.xor_(rsi, rsi);
+      code.xor_(regArg1, regArg1);
       code.cmp(r8, s64(s16(instr)));
-      code.setne(sil);
+      code.setne(regArg1.cvt8());
       code.mov(rax, (u64)trap);
       code.call(rax);
       break;
     case 0x10:
       code.mov(rcx, qword[rdi + GPR_OFFSET(RS(instr), this)]);
-      code.xor_(rdx, rdx);
+      code.xor_(regArg2, regArg2);
       code.cmp(rcx, 0);
-      code.setl(dl);
+      code.setl(regArg2.cvt8());
       code.mov(rax, (u64)blink);
       code.call(rax);
       break;
     case 0x11:
       code.mov(rcx, qword[rdi + GPR_OFFSET(RS(instr), this)]);
-      code.xor_(rdx, rdx);
+      code.xor_(regArg2, regArg2);
       code.cmp(rcx, 0);
-      code.setge(dl);
+      code.setge(regArg2.cvt8());
       code.mov(rax, (u64)blink);
       code.call(rax);
       break;
     case 0x12:
       code.mov(rcx, qword[rdi + GPR_OFFSET(RS(instr), this)]);
-      code.xor_(rdx, rdx);
+      code.xor_(regArg2, regArg2);
       code.cmp(rcx, 0);
-      code.setl(dl);
+      code.setl(regArg2.cvt8());
       code.mov(rax, (u64)bllink);
       code.call(rax);
       break;
     case 0x13:
       code.mov(rcx, qword[rdi + GPR_OFFSET(RS(instr), this)]);
-      code.xor_(rdx, rdx);
+      code.xor_(regArg2, regArg2);
       code.cmp(rcx, 0);
-      code.setge(dl);
+      code.setge(regArg2.cvt8());
       code.mov(rax, (u64)bllink);
       code.call(rax);
       break;
@@ -424,9 +424,9 @@ bool JIT::Exec(Mem& mem, u32 instr) {
     case 0x04:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.mov(r9, qword[rdi + GPR_OFFSET(RT(instr), this)]);
-      code.xor_(rdx, rdx);
+      code.xor_(regArg2, regArg2);
       code.cmp(r8, r9);
-      code.sete(dl);
+      code.sete(regArg2.cvt8());
       code.mov(rax, (u64)b);
       code.call(rax);
       res = true;
@@ -434,27 +434,27 @@ bool JIT::Exec(Mem& mem, u32 instr) {
     case 0x05:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.mov(r9, qword[rdi + GPR_OFFSET(RT(instr), this)]);
-      code.xor_(rdx, rdx);
+      code.xor_(regArg2, regArg2);
       code.cmp(r8, r9);
-      code.setne(dl);
+      code.setne(regArg2.cvt8());
       code.mov(rax, (u64)b);
       code.call(rax);
       res = true;
       break;
     case 0x06:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
-      code.xor_(rdx, rdx);
+      code.xor_(regArg2, regArg2);
       code.test(r8, r8);
-      code.setnz(dl);
+      code.setnz(regArg2.cvt8());
       code.mov(rax, (u64)b);
       code.call(rax);
       res = true;
       break;
     case 0x07:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
-      code.xor_(rdx, rdx);
+      code.xor_(regArg2, regArg2);
       code.test(r8, r8);
-      code.setg(dl);
+      code.setg(regArg2.cvt8());
       code.mov(rax, (u64)b);
       code.call(rax);
       res = true;
@@ -497,34 +497,34 @@ bool JIT::Exec(Mem& mem, u32 instr) {
     case 0x14:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr), this)]);
-      code.xor_(rdx, rdx);
+      code.xor_(regArg2, regArg2);
       code.cmp(r8, rcx);
-      code.sete(dl);
+      code.sete(regArg2.cvt8());
       code.mov(rax, (u64)bl);
       code.call(rax);
       break;
     case 0x15:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
       code.mov(rcx, qword[rdi + GPR_OFFSET(RT(instr), this)]);
-      code.xor_(rdx, rdx);
+      code.xor_(regArg2, regArg2);
       code.cmp(r8, rcx);
-      code.setne(dl);
+      code.setne(regArg2.cvt8());
       code.mov(rax, (u64)bl);
       code.call(rax);
       break;
     case 0x16:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
-      code.xor_(rdx, rdx);
+      code.xor_(regArg2, regArg2);
       code.cmp(r8, 0);
-      code.setle(dl);
+      code.setle(regArg2.cvt8());
       code.mov(rax, (u64)bl);
       code.call(rax);
       break;
     case 0x17:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
-      code.xor_(rdx, rdx);
+      code.xor_(regArg2, regArg2);
       code.cmp(r8, 0);
-      code.setg(dl);
+      code.setg(regArg2.cvt8());
       code.mov(rax, (u64)b);
       code.call(rax);
       break;

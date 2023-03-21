@@ -58,7 +58,18 @@ void JIT::Recompile(Mem& mem, u32 pc) {
     InvalidateCache();
   }
 
+  code.push(rbx);
+  code.push(rbp);
+  code.push(r12);
+  code.push(r13);
+  code.push(r14);
+  code.push(r15);
+#ifdef ABI_MSVC
+  code.push(rsi);
+  code.push(rdi);
+#endif
   code.sub(rsp, 8);
+  code.mov(rbp, rsp);
 
   while(!prevBranch) {
     instrInBlock++;
@@ -67,7 +78,7 @@ void JIT::Recompile(Mem& mem, u32 pc) {
     Util::trace("{:08X}", instr);
     loopPC += 4;
 
-    code.mov(rdi, (uintptr_t)this);
+    code.mov(regArg0, (uintptr_t)this);
     code.mov(qword[rdi + GPR_OFFSET(0, this)], 0);
     code.mov(r8, qword[rdi + REG_OFFSET(oldPC, this)]);
     code.mov(r9, qword[rdi + REG_OFFSET(pc, this)]);
@@ -77,13 +88,23 @@ void JIT::Recompile(Mem& mem, u32 pc) {
     code.add(r10, 4);
     code.mov(qword[rdi + REG_OFFSET(oldPC, this)], r8);
     code.mov(qword[rdi + REG_OFFSET(pc, this)], r9);
-    code.mov( qword[rdi + REG_OFFSET(nextPC, this)], r10);
+    code.mov(qword[rdi + REG_OFFSET(nextPC, this)], r10);
 
-    code.mov(esi, instr);
+    code.mov(regArg1, instr);
     branch = Exec(mem, instr);
   }
 
   code.add(rsp, 8);
+#ifdef ABI_MSVC
+  code.pop(rdi);
+  code.pop(rsi);
+#endif
+  code.pop(r15);
+  code.pop(r14);
+  code.pop(r13);
+  code.pop(r12);
+  code.pop(rbp);
+  code.pop(rbx);
   code.ret();
   dump.write(code.getCode<char*>(), code.getSize());
 

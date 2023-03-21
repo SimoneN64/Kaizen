@@ -9,6 +9,26 @@ using namespace Xbyak;
 using namespace Xbyak::util;
 using Fn = void (*)();
 
+#ifdef _WIN64
+#define ABI_MSVC
+#else
+#define ABI_SYSV
+#endif
+
+#ifdef ABI_MSVC
+static constexpr Xbyak::Reg64 regArg0 = rcx;
+static constexpr Xbyak::Reg64 regArg1 = rdx;
+static constexpr Xbyak::Reg64 regArg2 = r8;
+static constexpr Xbyak::Reg64 regArg3 = r9;
+#else
+static constexpr Xbyak::Reg64 regArg0 = rdi;
+static constexpr Xbyak::Reg64 regArg1 = rsi;
+static constexpr Xbyak::Reg64 regArg2 = rdx;
+static constexpr Xbyak::Reg64 regArg3 = rcx;
+static constexpr Xbyak::Reg64 regArg4 = r8;
+static constexpr Xbyak::Reg64 regArg5 = r9;
+#endif
+
 #define GPR_OFFSET(x, jit) ((uintptr_t)&regs.gpr[(x)] - (uintptr_t)jit)
 #define REG_OFFSET(kind, jit) ((uintptr_t)&regs.kind - (uintptr_t)jit)
 #define CODECACHE_SIZE (2 << 25)

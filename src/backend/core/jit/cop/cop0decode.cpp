@@ -11,46 +11,45 @@ void cop0Decode(JIT& cpu, u32 instr) {
 
   switch(mask_cop) {
     case 0x00:
-      code.mov(code.rax, (u64)mfc0);
-      code.call(code.rax);
+      code.mov(rax, (u64)mfc0);
+      code.call(rax);
       break;
     case 0x01:
-      code.mov(code.rax, (u64)dmfc0);
-      code.call(code.rax);
+      code.mov(rax, (u64)dmfc0);
+      code.call(rax);
       break;
     case 0x04:
-      code.mov(code.rax, (uintptr_t)mtc0);
-      code.call(code.rax);
+      code.mov(rax, (uintptr_t)mtc0);
+      code.call(rax);
       break;
     case 0x05:
-      code.mov(code.rax, (u64)dmtc0);
-      code.call(code.rax);
+      code.mov(rax, (u64)dmtc0);
+      code.call(rax);
       break;
     case 0x10 ... 0x1F:
       switch(mask_cop2) {
         case 0x01:
-          code.mov(code.rax, (u64)tlbr);
-          code.call(code.rax);
+          code.mov(rax, (u64)tlbr);
+          code.call(rax);
           break;
         case 0x02:
-          code.mov(code.rcx, code.dword[code.rdi + REG_OFFSET(cop0.index, &cpu)]);
-          code.and_(code.rcx, 0x3F);
-          code.mov(code.rsi, code.rcx);
-          code.mov(code.rax, (u64)tlbw);
-          code.call(code.rax);
+          code.mov(regArg1, dword[rdi + REG_OFFSET(cop0.index, &cpu)]);
+          code.and_(regArg1, 0x3F);
+          code.mov(rax, (u64)tlbw);
+          code.call(rax);
           break;
         case 0x06:
-          code.mov(code.rsi, (u64)regs.cop0.GetRandom());
-          code.mov(code.rax, (u64)tlbw);
-          code.call(code.rax);
+          code.mov(regArg1, (u64)regs.cop0.GetRandom());
+          code.mov(rax, (u64)tlbw);
+          code.call(rax);
           break;
         case 0x08:
-          code.mov(code.rax, (u64)tlbp);
-          code.call(code.rax);
+          code.mov(rax, (u64)tlbp);
+          code.call(rax);
           break;
         case 0x18:
-          code.mov(code.rax, (u64)eret);
-          code.call(code.rax);
+          code.mov(rax, (u64)eret);
+          code.call(rax);
           break;
         default: Util::panic("Unimplemented COP0 function {} {} ({:08X}) ({:016lX})", mask_cop2 >> 3, mask_cop2 & 7, instr, regs.oldPC);
       }

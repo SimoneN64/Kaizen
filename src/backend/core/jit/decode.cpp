@@ -24,7 +24,7 @@ void JIT::cop2Decode(u32 instr) {
       code.call(rax);
       break;
     default:
-      Util::panic("[RECOMPILER] Unhandled reserved instruction exception {:016X}\n", (u64)regs.pc);
+      Util::panic("[RECOMPILER] Unhandled reserved instruction exception {:016X}", (u64)regs.pc);
   }
 }
 
@@ -70,8 +70,8 @@ bool JIT::special(u32 instr) {
       code.call(rax);
       res = true;
       break;
-    case 0x0C: Util::panic("[RECOMPILER] Unhandled syscall instruction {:016X}\n", (u64)regs.pc);
-    case 0x0D: Util::panic("[RECOMPILER] Unhandled break instruction {:016X}\n", (u64)regs.pc);
+    case 0x0C: Util::panic("[RECOMPILER] Unhandled syscall instruction {:016X}", (u64)regs.pc);
+    case 0x0D: Util::panic("[RECOMPILER] Unhandled break instruction {:016X}", (u64)regs.pc);
     case 0x0F: break; // SYNC
     case 0x10:
       code.mov(rax, (u64)mfhi);
@@ -274,7 +274,7 @@ bool JIT::special(u32 instr) {
       code.call(rax);
       break;
     default:
-      Util::panic("Unimplemented special {} {} ({:08X}) (pc: {:016X})\n", (mask >> 3) & 7, mask & 7, instr, (u64)regs.oldPC);
+      Util::panic("Unimplemented special {} {} ({:08X}) (pc: {:016X})", (mask >> 3) & 7, mask & 7, instr, (u64)regs.oldPC);
   }
 
   return res;
@@ -397,7 +397,7 @@ bool JIT::regimm(u32 instr) {
       code.call(rax);
       break;
     default:
-      Util::panic("Unimplemented regimm {} {} ({:08X}) (pc: {:016X})\n", (mask >> 3) & 3, mask & 7, instr, (u64)regs.oldPC);
+      Util::panic("Unimplemented regimm {} {} ({:08X}) (pc: {:016X})", (mask >> 3) & 3, mask & 7, instr, (u64)regs.oldPC);
   }
 
   return true;
@@ -544,7 +544,7 @@ bool JIT::Exec(Mem& mem, u32 instr) {
       code.mov(rax, (u64)ldr);
       code.call(rax);
       break;
-    case 0x1F: Util::panic("[RECOMPILER] Unhandled reserved instruction exception {:016X}\n", regs.oldPC); break;
+    case 0x1F: Util::panic("[RECOMPILER] Unhandled reserved instruction exception {:016X}", regs.oldPC); break;
     case 0x20:
       code.mov(rax, (u64)lb);
       code.call(rax);
@@ -647,7 +647,7 @@ bool JIT::Exec(Mem& mem, u32 instr) {
       code.call(rax);
       break;
     default:
-      Util::panic("Unimplemented instruction {:02X} ({:08X}) (pc: {:016X})\n", mask, instr, (u64)regs.oldPC);
+      Util::panic("Unimplemented instruction {:02X} ({:08X}) (pc: {:016X})", mask, instr, (u64)regs.oldPC);
   }
 
   return res;

@@ -20,14 +20,14 @@ void GameDB::match(Mem& mem) {
         mem.rom.gameNameDB = i.name;
         return;
       } else {
-        Util::warn("Matched code for %s, but not region! Game supposedly exists in regions [{}] but this image has region {}\n",
+        Util::warn("Matched code for %s, but not region! Game supposedly exists in regions [{}] but this image has region {}",
                 i.name, i.regions, rom.header.countryCode[0]);
       }
     }
 
   }
 
-  Util::debug("Did not match any Game DB entries. Code: {} Region: {}\n", mem.rom.code, mem.rom.header.countryCode[0]);
+  Util::debug("Did not match any Game DB entries. Code: {} Region: {}", mem.rom.code, mem.rom.header.countryCode[0]);
 
   mem.rom.gameNameDB = "";
   mem.saveType = SAVE_NONE;

@@ -63,7 +63,7 @@ void Interpreter::special(u32 instr) {
     case 0x3E: dsrl32(instr); break;
     case 0x3F: dsra32(instr); break;
     default:
-      Util::panic("Unimplemented special {} {} ({:08X}) (pc: {:016X})\n", (mask >> 3) & 7, mask & 7, instr, (u64)regs.oldPC);
+      Util::panic("Unimplemented special {} {} ({:08X}) (pc: {:016X})", (mask >> 3) & 7, mask & 7, instr, (u64)regs.oldPC);
   }
 }
 
@@ -86,7 +86,7 @@ void Interpreter::regimm(u32 instr) {
     case 0x12: bllink(instr, regs.gpr[RS(instr)] < 0); break;
     case 0x13: bllink(instr, regs.gpr[RS(instr)] >= 0); break;
     default:
-      Util::panic("Unimplemented regimm {} {} ({:08X}) (pc: {:016X})\n", (mask >> 3) & 3, mask & 7, instr, (u64)regs.oldPC);
+      Util::panic("Unimplemented regimm {} {} ({:08X}) (pc: {:016X})", (mask >> 3) & 3, mask & 7, instr, (u64)regs.oldPC);
   }
 }
 
@@ -117,7 +117,7 @@ void Interpreter::Exec(u32 instr) {
     case 0x03: jal(instr); break;
     case 0x04: b(instr, regs.gpr[RS(instr)] == regs.gpr[RT(instr)]); break;
     case 0x05: {
-      //fmt::print("RS: {:016X}, RT: {:016X}\n", (u64)regs.gpr[RS(instr)], (u64)regs.gpr[RT(instr)]);
+      //fmt::print("RS: {:016X}, RT: {:016X}", (u64)regs.gpr[RS(instr)], (u64)regs.gpr[RT(instr)]);
       b(instr, regs.gpr[RS(instr)] != regs.gpr[RT(instr)]);
     } break;
     case 0x06: b(instr, regs.gpr[RS(instr)] <= 0); break;
@@ -169,7 +169,7 @@ void Interpreter::Exec(u32 instr) {
     case 0x3D: regs.cop1.sdc1(regs, mem, instr); break;
     case 0x3F: sd(instr); break;
     default:
-      Util::panic("Unimplemented instruction {:02X} ({:08X}) (pc: {:016X})\n", mask, instr, (u64)regs.oldPC);
+      Util::panic("Unimplemented instruction {:02X} ({:08X}) (pc: {:016X})", mask, instr, (u64)regs.oldPC);
   }
 }
 }

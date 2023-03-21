@@ -46,7 +46,7 @@ inline auto GetCop0Reg(RSP& rsp, RDP& rdp, u8 index) -> u32{
     case 13: return rdp.dpc.status.cmdBusy;
     case 14: return rdp.dpc.status.pipeBusy;
     case 15: return rdp.dpc.status.tmemBusy;
-    default: Util::panic("Unhandled RSP COP0 register read at index {}\n", index);
+    default: Util::panic("Unhandled RSP COP0 register read at index {}", index);
   }
 }
 
@@ -71,13 +71,13 @@ inline void SetCop0Reg(Registers& regs, Mem& mem, u8 index, u32 val) {
       if(val == 0) {
         ReleaseSemaphore(rsp);
       } else {
-        Util::panic("Write with non-zero value to RSP_COP0_RESERVED ({})\n", val);
+        Util::panic("Write with non-zero value to RSP_COP0_RESERVED ({})", val);
       }
       break;
     case 8: rdp.WriteStart(val); break;
     case 9: rdp.WriteEnd(mi, regs, rsp, val); break;
     case 11: rdp.WriteStatus(mi, regs, rsp, val); break;
-    default: Util::panic("Unhandled RSP COP0 register write at index {}\n", index);
+    default: Util::panic("Unhandled RSP COP0 register write at index {}", index);
   }
 }
 
@@ -899,7 +899,7 @@ void RSP::vmov(u32 instr) {
       se = (e & 0b111) | (vs & 0b000);
       break;
     default:
-      Util::panic("VMOV: This should be unreachable!\n");
+      Util::panic("VMOV: This should be unreachable!");
   }
 
   u8 de = vs & 7;

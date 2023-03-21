@@ -39,7 +39,7 @@ void Cop1::decode(Registers& regs, Interpreter& cpu, u32 instr) {
         case 1: cpu.b(instr, regs.cop1.fcr31.compare); break;
         case 2: cpu.bl(instr, !regs.cop1.fcr31.compare); break;
         case 3: cpu.bl(instr, regs.cop1.fcr31.compare); break;
-        default: Util::panic("Undefined BC COP1 {:02X}\n", mask_branch);
+        default: Util::panic("Undefined BC COP1 {:02X}", mask_branch);
       }
       break;
     case 0x10: // s

@@ -6,7 +6,7 @@
 namespace n64 {
 Core::Core() {
   if(SDL_GameControllerAddMappingsFromFile("resources/gamecontrollerdb.txt") < 0) {
-    Util::warn("Failed to load game controller DB\n");
+    Util::warn("Failed to load game controller DB");
   }
 }
 

@@ -27,7 +27,7 @@ void PIF::LoadMempak(fs::path path) {
   size_t actualSize = ftell(f);
   fseek(f, 0, SEEK_SET);
   if (actualSize != MEMPAK_SIZE) {
-    Util::panic("Corrupt mempak!\n");
+    Util::panic("Corrupt mempak!");
   }
 
   fread(mempak, 1, MEMPAK_SIZE, f);
@@ -47,7 +47,7 @@ inline size_t getSaveSize(SaveType saveType) {
     case SAVE_FLASH_1m:
       return 131072;
     default:
-      Util::panic("Unknown save type!\n");
+      Util::panic("Unknown save type!");
   }
 }
 
@@ -70,7 +70,7 @@ void PIF::LoadEeprom(SaveType saveType, fs::path path) {
   size_t actualSize = ftell(f);
   fseek(f, 0, SEEK_SET);
   if (actualSize != eepromSize) {
-    Util::panic("Corrupt eeprom!\n");
+    Util::panic("Corrupt eeprom!");
   }
 
   fread(eeprom, 1, eepromSize, f);
@@ -284,7 +284,7 @@ void PIF::EepromWrite(u8* cmd, u8* res, const Mem& mem) const {
   if (channel == 4) {
     u8 offset = cmd[3];
     if ((offset * 8) >= getSaveSize(mem.saveType)) {
-      Util::panic("Out of range EEPROM write! offset: {:02X}\n", offset);
+      Util::panic("Out of range EEPROM write! offset: {:02X}", offset);
     }
 
     for (int i = 0; i < 8; i++) {
@@ -406,7 +406,7 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
 
   switch(cicType) {
     case UNKNOWN_CIC_TYPE:
-      Util::warn("Unknown CIC type!\n");
+      Util::warn("Unknown CIC type!");
       break;
     case CIC_NUS_6101:
       regs.gpr[0] = 0x0000000000000000;
@@ -672,7 +672,7 @@ void PIF::ExecutePIF(Mem& mem, Registers& regs) {
   mem.Write32(regs, PIF_RAM_REGION_START + 0x24, cicSeeds[cicType]);
   switch(cicType) {
     case UNKNOWN_CIC_TYPE:
-      Util::warn("Unknown CIC type!\n");
+      Util::warn("Unknown CIC type!");
       break;
     case CIC_NUS_6101 ... CIC_NUS_6103_7103:
       mem.Write32(regs, 0x318, RDRAM_SIZE);

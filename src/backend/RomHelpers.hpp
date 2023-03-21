@@ -24,7 +24,7 @@ inline void SwapN64Rom(size_t size, u8 *rom, u32 endianness) {
         SwapBuffer32(size, rom);
       break;
     default:
-      panic("Unrecognized rom format! Make sure this is a valid Nintendo 64 ROM dump!\n");
+      panic("Unrecognized rom format! Make sure this is a valid Nintendo 64 ROM dump!");
   }
 }
 }

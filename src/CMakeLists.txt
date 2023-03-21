@@ -41,8 +41,14 @@ include_directories(
 add_compile_definitions(SIMD_SUPPORT)
 add_compile_options(-mssse3 -msse4.1)
 if(${CMAKE_BUILD_TYPE} MATCHES Debug)
-  add_compile_options(-fsanitize=address -fsanitize=undefined)
-  add_link_options(-fsanitize=address -fsanitize=undefined)
+  add_compile_options(
+    -fsanitize=address
+    #-fsanitize=undefined
+  )
+  add_link_options(
+    -fsanitize=address
+    #-fsanitize=undefined
+  )
 endif()
 
 add_subdirectory(frontend)

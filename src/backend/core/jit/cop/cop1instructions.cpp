@@ -108,7 +108,7 @@ void cfc1(JIT& dyn, u32 instr) {
     case 31:
       val = regs.cop1.fcr31.raw;
       break;
-    default: Util::panic("Undefined CFC1 with rd != 0 or 31\n");
+    default: Util::panic("Undefined CFC1 with rd != 0 or 31");
   }
   regs.gpr[RT(instr)] = val;
 }
@@ -123,7 +123,7 @@ void ctc1(JIT& dyn, u32 instr) {
       val &= 0x183ffff;
       regs.cop1.fcr31.raw = val;
     } break;
-    default: Util::panic("Undefined CTC1 with rd != 0 or 31\n");
+    default: Util::panic("Undefined CTC1 with rd != 0 or 31");
   }
 }
 

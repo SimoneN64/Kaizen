@@ -69,7 +69,7 @@ void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       dac.precision = bitrate + 1;
       break;
     default:
-      Util::panic("Unhandled AI write at addr {:08X} with val {:08X}\n", addr, val);
+      Util::panic("Unhandled AI write at addr {:08X} with val {:08X}", addr, val);
   }
 }
 

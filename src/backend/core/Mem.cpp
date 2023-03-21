@@ -38,7 +38,7 @@ inline void SetROMCIC(u32 checksum, ROM& rom) {
     case 0xCF7F41DC: rom.cicType = CIC_NUS_6105_7105; break;
     case 0xD1059C6A: rom.cicType = CIC_NUS_6106_7106; break;
     default:
-      Util::warn("Could not determine CIC TYPE! Checksum: 0x{:08X} is unknown!\n", checksum);
+      Util::warn("Could not determine CIC TYPE! Checksum: 0x{:08X} is unknown!", checksum);
       rom.cicType = UNKNOWN_CIC_TYPE;
       break;
   }
@@ -136,7 +136,7 @@ u8 Mem::Read8(n64::Registers &regs, u32 paddr) {
       case 0x1FC00800 ... 0xFFFFFFFF:
         return 0;
       default:
-        Util::panic("Unimplemented 8-bit read at address {:08X} (PC = {:016X})\n", paddr, (u64) regs.pc);
+        Util::panic("Unimplemented 8-bit read at address {:08X} (PC = {:016X})", paddr, (u64) regs.pc);
     }
   }
 }
@@ -176,7 +176,7 @@ u16 Mem::Read16(n64::Registers &regs, u32 paddr) {
       case 0x1FC00800 ... 0xFFFFFFFF:
         return 0;
       default:
-        Util::panic("Unimplemented 16-bit read at address {:08X} (PC = {:016X})\n", paddr, (u64) regs.pc);
+        Util::panic("Unimplemented 16-bit read at address {:08X} (PC = {:016X})", paddr, (u64) regs.pc);
     }
   }
 }
@@ -210,7 +210,7 @@ u32 Mem::Read32(n64::Registers &regs, u32 paddr) {
       case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
       case 0x04900000 ... 0x0FFFFFFF: case 0x1FC00800 ... 0xFFFFFFFF: return 0;
       default:
-        Util::panic("Unimplemented 32-bit read at address {:08X} (PC = {:016X})\n", paddr, (u64) regs.pc);
+        Util::panic("Unimplemented 32-bit read at address {:08X} (PC = {:016X})", paddr, (u64) regs.pc);
     }
   }
 }
@@ -249,7 +249,7 @@ u64 Mem::Read64(n64::Registers &regs, u32 paddr) {
       case 0x1FC00800 ... 0xFFFFFFFF:
         return 0;
       default:
-        Util::panic("Unimplemented 32-bit read at address {:08X} (PC = {:016X})\n", paddr, (u64) regs.pc);
+        Util::panic("Unimplemented 32-bit read at address {:08X} (PC = {:016X})", paddr, (u64) regs.pc);
     }
   }
 }
@@ -299,7 +299,7 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
       case 0x04100000 ... 0x041FFFFF:
       case 0x04300000 ...  0x044FFFFF:
       case 0x04500000 ... 0x048FFFFF:
-        Util::panic("MMIO Write8!\n");
+        Util::panic("MMIO Write8!");
       case 0x10000000 ... 0x1FBFFFFF:
         break;
       case PIF_RAM_REGION:
@@ -311,7 +311,7 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
       case 0x00800000 ... 0x03FFFFFF:
       case 0x04200000 ... 0x042FFFFF:
       case 0x08000000 ... 0x0FFFFFFF:
-        Util::debug("SRAM 8 bit write {:02X}\n", val);
+        Util::debug("SRAM 8 bit write {:02X}", val);
         break;
       case 0x04900000 ... 0x07FFFFFF:
       case 0x1FC00000 ... 0x1FC007BF:
@@ -319,7 +319,7 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
       case 0x80000000 ... 0xFFFFFFFF:
         break;
       default:
-        Util::panic("Unimplemented 8-bit write at address {:08X} with value {:0X} (PC = {:016X})\n", paddr, val,
+        Util::panic("Unimplemented 8-bit write at address {:08X} with value {:0X} (PC = {:016X})", paddr, val,
                     (u64) regs.pc);
     }
   }
@@ -350,7 +350,7 @@ void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
       case 0x04100000 ... 0x041FFFFF:
       case 0x04300000 ...  0x044FFFFF:
       case 0x04500000 ... 0x048FFFFF:
-        Util::panic("MMIO Write16!\n");
+        Util::panic("MMIO Write16!");
       case 0x10000000 ... 0x1FBFFFFF:
         break;
       case PIF_RAM_REGION:
@@ -368,7 +368,7 @@ void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
       case 0x80000000 ... 0xFFFFFFFF:
         break;
       default:
-        Util::panic("Unimplemented 16-bit write at address {:08X} with value {:0X} (PC = {:016X})\n", paddr, val,
+        Util::panic("Unimplemented 16-bit write at address {:08X} with value {:0X} (PC = {:016X})", paddr, val,
                     (u64) regs.pc);
     }
   }
@@ -416,7 +416,7 @@ void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
       case 0x08000000 ... 0x0FFFFFFF: case 0x04900000 ... 0x07FFFFFF:
       case 0x1FC00000 ... 0x1FC007BF: case 0x1FC00800 ... 0x7FFFFFFF:
       case 0x80000000 ... 0xFFFFFFFF: break;
-      default: Util::panic("Unimplemented 32-bit write at address {:08X} with value {:0X} (PC = {:016X})\n", paddr, val, (u64)regs.pc);
+      default: Util::panic("Unimplemented 32-bit write at address {:08X} with value {:0X} (PC = {:016X})", paddr, val, (u64)regs.pc);
     }
   }
 }
@@ -445,7 +445,7 @@ void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
       case 0x04100000 ... 0x041FFFFF:
       case 0x04300000 ...  0x044FFFFF:
       case 0x04500000 ... 0x048FFFFF:
-        Util::panic("MMIO Write64!\n");
+        Util::panic("MMIO Write64!");
       case 0x10000000 ... 0x1FBFFFFF:
         break;
       case PIF_RAM_REGION:
@@ -461,7 +461,7 @@ void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
       case 0x80000000 ... 0xFFFFFFFF:
         break;
       default:
-        Util::panic("Unimplemented 64-bit write at address {:08X} with value {:0X} (PC = {:016X})\n", paddr, val,
+        Util::panic("Unimplemented 64-bit write at address {:08X} with value {:0X} (PC = {:016X})", paddr, val,
                     (u64) regs.pc);
     }
   }

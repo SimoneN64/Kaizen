@@ -5,37 +5,25 @@
 
 namespace Util {
 enum MessageType : u8 {
-  Info, Debug, Warn, Error
+  Trace, Debug, Info, Warn, Panic
 };
 
-template <MessageType messageType = Info, typename ...Args>
-constexpr void print(const std::string& fmt, Args... args) {
-#ifndef _WIN32
-  if constexpr(messageType == Error) {
-    fmt::print(fmt::emphasis::bold | fg(fmt::color::red), fmt, args...);
-  } else if constexpr(messageType == Warn) {
-    fmt::print(fg(fmt::color::yellow), fmt, args...);
-  } else if constexpr(messageType == Info) {
-    fmt::print(fmt, args...);
-  } else if constexpr(messageType == Debug) {
-#ifndef NDEBUG
-    fmt::print(fmt, args...);
-#endif
-  }
+#ifdef NDEBUG
+static constexpr MessageType globalLogLevel = Panic;
 #else
-  if constexpr(messageType == Debug) {
-#ifndef NDEBUG
-    fmt::print(fmt, args...);
+static constexpr MessageType globalLogLevel = Trace;
 #endif
-  } else {
-    fmt::print(fmt, args...);
+
+template <MessageType logLevel, typename ...Args>
+constexpr void print(const std::string& fmt, Args... args) {
+  if(logLevel >= globalLogLevel) {
+    fmt::print(fmt + "\n", args...);
   }
-#endif
 }
 
 template <typename ...Args>
 constexpr void panic(const std::string& fmt, Args... args) {
-  print<Error>(fmt, args...);
+  print<Panic>(fmt, args...);
   exit(-1);
 }
 
@@ -46,7 +34,12 @@ constexpr void warn(const std::string& fmt, Args... args) {
 
 template <typename ...Args>
 constexpr void info(const std::string& fmt, Args... args) {
-  print(fmt, args...);
+  print<Info>(fmt, args...);
+}
+
+template <typename ...Args>
+constexpr void trace(const std::string& fmt, Args... args) {
+  print<Trace>(fmt, args...);
 }
 
 template <typename ...Args>

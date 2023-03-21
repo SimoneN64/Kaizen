@@ -53,7 +53,7 @@ void JIT::Recompile(Mem& mem, u32 pc) {
   Fn block = code.getCurr<Fn>();
 
   if(code.getSize() >= CODECACHE_OVERHEAD) {
-    Util::debug("Code cache overflow!\n");
+    Util::debug("Code cache overflow!");
     code.setSize(0);
     InvalidateCache();
   }
@@ -64,6 +64,7 @@ void JIT::Recompile(Mem& mem, u32 pc) {
     instrInBlock++;
     prevBranch = branch;
     u32 instr = mem.Read32(regs, loopPC);
+    Util::trace("{:08X}", instr);
     loopPC += 4;
 
     code.mov(rdi, (uintptr_t)this);

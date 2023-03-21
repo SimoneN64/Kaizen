@@ -9,6 +9,7 @@ void Interpreter::add(u32 instr) {
   u32 rs = (s32)regs.gpr[RS(instr)];
   u32 rt = (s32)regs.gpr[RT(instr)];
   u32 result = rs + rt;
+  Util::trace("add r{}, r{}, r{} = {:08X}", RS(instr), RT(instr), RD(instr), result);
   if(check_signed_overflow(rs, rt, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
@@ -24,6 +25,7 @@ void Interpreter::addu(u32 instr) {
     s32 rt = (s32)regs.gpr[RT(instr)];
     s32 result = rs + rt;
     regs.gpr[RD(instr)] = result;
+    Util::trace("addu r{}, r{}, r{} = {:08X}", RS(instr), RT(instr), RD(instr), (u32)result);
   }
 }
 
@@ -31,6 +33,7 @@ void Interpreter::addi(u32 instr) {
   u32 rs = regs.gpr[RS(instr)];
   u32 imm = s32(s16(instr));
   u32 result = rs + imm;
+  Util::trace("addi r{}, r{}, {:08X} = {:08X}", RT(instr), RS(instr), imm, (u32)result);
   if(check_signed_overflow(rs, imm, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
@@ -43,12 +46,14 @@ void Interpreter::addiu(u32 instr) {
   s16 imm = (s16)(instr);
   s32 result = rs + imm;
   regs.gpr[RT(instr)] = result;
+  Util::trace("addiu r{}, r{}, {:08X} = {:08X}", RT(instr), RS(instr), (u32)imm, (u32)result);
 }
 
 void Interpreter::dadd(u32 instr) {
   u64 rs = regs.gpr[RS(instr)];
   u64 rt = regs.gpr[RT(instr)];
   u64 result = rt + rs;
+  Util::trace("dadd r{}, r{}, r{} = {:016X}", RD(instr), RS(instr), RT(instr), result);
   if(check_signed_overflow(rs, rt, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
@@ -70,6 +75,7 @@ void Interpreter::daddi(u32 instr) {
   u64 imm = s64(s16(instr));
   u64 rs = regs.gpr[RS(instr)];
   u64 result = imm + rs;
+  Util::trace("daddi r{}, r{}, {:016X} = {:016X}", RT(instr), RS(instr), imm, result);
   if(check_signed_overflow(rs, imm, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
@@ -80,7 +86,9 @@ void Interpreter::daddi(u32 instr) {
 void Interpreter::daddiu(u32 instr) {
   s16 imm = (s16)(instr);
   s64 rs = regs.gpr[RS(instr)];
-  regs.gpr[RT(instr)] = rs + imm;
+  u64 result = rs + imm;
+  regs.gpr[RT(instr)] = result;
+  Util::trace("daddiu r{}, r{}, {:016X} = {:016X}", RT(instr), RS(instr), imm, result);
 }
 
 void Interpreter::div(u32 instr) {
@@ -100,6 +108,11 @@ void Interpreter::div(u32 instr) {
     regs.lo = quotient;
     regs.hi = remainder;
   }
+
+  regs.lo = quotient;
+  regs.hi = remainder;
+
+  Util::trace("div r{}, r{} = q:{:08X}, r:{:08X}", RS(instr), RT(instr), (u32)quotient, (u32)remainder);
 }
 
 void Interpreter::divu(u32 instr) {
@@ -114,6 +127,11 @@ void Interpreter::divu(u32 instr) {
     regs.lo = quotient;
     regs.hi = remainder;
   }
+
+  regs.lo = quotient;
+  regs.hi = remainder;
+
+  Util::trace("div r{}, r{} = q:{:08X}, r:{:08X}", RS(instr), RT(instr), (u32)quotient, (u32)remainder);
 }
 
 void Interpreter::ddiv(u32 instr) {
@@ -155,6 +173,7 @@ void Interpreter::branch(bool cond, s64 address) {
   regs.delaySlot = true;
   if (cond) {
     regs.nextPC = address;
+    Util::trace("b {:016X}", (u64)address);
   }
 }
 
@@ -162,6 +181,7 @@ void Interpreter::branch_likely(bool cond, s64 address) {
   if (cond) {
     regs.delaySlot = true;
     regs.nextPC = address;
+    Util::trace("bl {:016X}", (u64)address);
   } else {
     regs.SetPC64(regs.nextPC);
   }
@@ -201,6 +221,7 @@ void Interpreter::lui(u32 instr) {
   s64 val = (s16)instr;
   val <<= 16;
   regs.gpr[RT(instr)] = val;
+  Util::trace("lui r{}, {:016X}", RT(instr), (u64)val);
 }
 
 void Interpreter::lb(u32 instr) {

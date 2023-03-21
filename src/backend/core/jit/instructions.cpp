@@ -10,9 +10,6 @@ void add(JIT& dyn, u32 instr) {
   u32 rs = (s32)regs.gpr[RS(instr)];
   u32 rt = (s32)regs.gpr[RT(instr)];
   u32 result = rs + rt;
-
-  Util::debug("add r{}, r{}, r{} = {:08X}\n", RD(instr), RS(instr), RT(instr), result);
-
   if(check_signed_overflow(rs, rt, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
@@ -29,7 +26,6 @@ void addu(JIT& dyn, u32 instr) {
     s32 rt = (s32)regs.gpr[RT(instr)];
     s32 result = rs + rt;
     regs.gpr[RD(instr)] = result;
-    Util::debug("addu r{}, r{}, r{} = {:08X}\n", RD(instr), RS(instr), RT(instr), (u32)result);
   }
 }
 
@@ -38,7 +34,6 @@ void addi(JIT& dyn, u32 instr) {
   u32 rs = regs.gpr[RS(instr)];
   u32 imm = s32(s16(instr));
   u32 result = rs + imm;
-  Util::debug("addi r{}, r{}, {:08X} = {:08X}\n", RT(instr), RS(instr), imm, result);
   if(check_signed_overflow(rs, imm, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {

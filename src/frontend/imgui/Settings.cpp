@@ -35,7 +35,7 @@ Settings::Settings(n64::Core& core) {
       } else if(cpuType == "interpreter") {
         core.cpuType = n64::CpuType::Interpreter;
       } else {
-        Util::panic("Unrecognized cpu type: {}\n", cpuType);
+        Util::panic("Unrecognized cpu type: {}", cpuType);
       }
     } else {
       settingsFile.clear();
@@ -71,7 +71,7 @@ Settings::Settings(n64::Core& core) {
       core.cpu = std::make_unique<n64::JIT>();
       break;
     case n64::CpuType::COUNT:
-      Util::panic("BRUH\n");
+      Util::panic("BRUH!");
   }
 }
 
@@ -123,7 +123,7 @@ void Settings::RenderWidget(bool& show) {
                   cpuType = "jit";
                   break;
                 case n64::CpuType::COUNT:
-                  Util::panic("BRUH\n");
+                  Util::panic("BRUH!");
               }
             }
           } break;
@@ -140,7 +140,7 @@ void Settings::RenderWidget(bool& show) {
             }
             break;
         case SelectedSetting::COUNT:
-          Util::panic("BRUH\n");
+          Util::panic("BRUH!");
       }
 
       ImGui::EndPopup();

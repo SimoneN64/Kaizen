@@ -116,7 +116,7 @@ void JIT::AllocateOuter(u32 pc) {
 }
 
 int JIT::Run() {
-  /*instrInBlock = 0;
+  instrInBlock = 0;
   regs.prevDelaySlot = regs.delaySlot;
   regs.delaySlot = false;
 
@@ -144,8 +144,6 @@ int JIT::Run() {
 
   blockCache[pc >> 20][pc & 0xfff]();
   return instrInBlock;
-  */
-  Util::panic("JIT is unimplemented!");
 }
 
 void JIT::Reset() {

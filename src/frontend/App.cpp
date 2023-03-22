@@ -12,7 +12,14 @@ void App::Run() {
   n64::SI& si = core.cpu->mem.mmio.si;
 
   while (!core.done) {
-    core.Run(window, window.settings.GetVolumeL(), window.settings.GetVolumeL());
+    if(core.romLoaded) {
+      if(!core.pause) {
+        core.Run(window, window.settings.GetVolumeL(), window.settings.GetVolumeL());
+      }
+      UpdateScreenParallelRdp(core, window, core.GetVI());
+    } else {
+      UpdateScreenParallelRdpNoGame(core, window);
+    }
 
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -49,6 +56,16 @@ void App::Run() {
                 NFD_FreePath(outpath);
               }
             } break;
+            case SDLK_f:
+              core.pause = true;
+              if(core.romLoaded) {
+                core.Run(window, window.settings.GetVolumeL(), window.settings.GetVolumeL());
+                UpdateScreenParallelRdp(core, window, core.GetVI());
+              }
+              break;
+            case SDLK_p:
+              core.pause = !core.pause;
+              break;
           } break;
           case SDL_DROPFILE: {
             char* droppedDir = event.drop.file;

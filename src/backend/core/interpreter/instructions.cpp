@@ -140,36 +140,50 @@ void Interpreter::divu(u32 instr) {
 void Interpreter::ddiv(u32 instr) {
   s64 dividend = regs.gpr[RS(instr)];
   s64 divisor = regs.gpr[RT(instr)];
+  s64 quotient, remainder;
+
   if (dividend == 0x8000000000000000 && divisor == 0xFFFFFFFFFFFFFFFF) {
-    regs.lo = dividend;
-    regs.hi = 0;
+    quotient = dividend;
+    remainder = 0;
+    regs.lo = quotient;
+    regs.hi = remainder;
   } else if(divisor == 0) {
-    regs.hi = dividend;
+    remainder = dividend;
+    regs.hi = remainder;
     if(dividend >= 0) {
-      regs.lo = -1;
+      quotient = -1;
+      regs.lo = quotient;
     } else {
-      regs.lo = 1;
+      quotient = 1;
+      regs.lo = quotient;
     }
   } else {
-    s64 quotient = dividend / divisor;
-    s64 remainder = dividend % divisor;
+    quotient = dividend / divisor;
+    remainder = dividend % divisor;
     regs.lo = quotient;
     regs.hi = remainder;
   }
+
+  Util::trace("ddiv r{}, r{} = q:{:016X}, r:{:016X}", RS(instr), RT(instr), (u64)quotient, (u64)remainder);
 }
 
 void Interpreter::ddivu(u32 instr) {
   u64 dividend = regs.gpr[RS(instr)];
   u64 divisor = regs.gpr[RT(instr)];
+  u64 quotient, remainder;
   if(divisor == 0) {
-    regs.lo = -1;
-    regs.hi = (s64)dividend;
+    quotient = -1;
+    remainder = dividend;
+    regs.lo = s64(quotient);
+    regs.hi = s64(remainder);
   } else {
-    u64 quotient = dividend / divisor;
-    u64 remainder = dividend % divisor;
-    regs.lo = (s64)quotient;
-    regs.hi = (s64)remainder;
+    quotient = dividend / divisor;
+    remainder = dividend % divisor;
+    regs.lo = s64(quotient);
+    regs.hi = s64(remainder);
   }
+
+  Util::trace("ddivu r{}, r{} = q:{:016X}, r:{:016X}", RS(instr), RT(instr), quotient, remainder);
 }
 
 void Interpreter::branch(bool cond, s64 address) {
@@ -235,6 +249,7 @@ void Interpreter::lb(u32 instr) {
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
     regs.gpr[RT(instr)] = (s8)mem.Read8(regs, paddr);
+    Util::trace("lb r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
@@ -252,6 +267,7 @@ void Interpreter::lh(u32 instr) {
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
     regs.gpr[RT(instr)] = (s16)mem.Read16(regs, paddr);
+    Util::trace("lh r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
@@ -264,19 +280,20 @@ void Interpreter::lw(u32 instr) {
     return;
   }
 
-  u32 physical = 0;
-  if (!MapVAddr(regs, LOAD, address, physical)) {
+  u32 paddr = 0;
+  if (!MapVAddr(regs, LOAD, address, paddr)) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
-    regs.gpr[RT(instr)] = (s32)mem.Read32(regs, physical);
+    regs.gpr[RT(instr)] = (s32)mem.Read32(regs, paddr);
+    Util::trace("lw r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
 void Interpreter::ll(u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 physical;
-  if (!MapVAddr(regs, LOAD, address, physical)) {
+  u32 paddr;
+  if (!MapVAddr(regs, LOAD, address, paddr)) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
@@ -284,12 +301,13 @@ void Interpreter::ll(u32 instr) {
       FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
       return;
     } else {
-      regs.gpr[RT(instr)] = (s32)mem.Read32(regs, physical);
+      regs.gpr[RT(instr)] = (s32)mem.Read32(regs, paddr);
+      Util::trace("lw r{}, [{:08X}]", RT(instr), paddr);
     }
   }
 
   regs.cop0.llbit = true;
-  regs.cop0.LLAddr = physical >> 4;
+  regs.cop0.LLAddr = paddr >> 4;
 }
 
 void Interpreter::lwl(u32 instr) {
@@ -304,6 +322,7 @@ void Interpreter::lwl(u32 instr) {
     u32 data = mem.Read32(regs, paddr & ~3);
     s32 result = s32((regs.gpr[RT(instr)] & ~mask) | (data << shift));
     regs.gpr[RT(instr)] = result;
+    Util::trace("lwl r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
@@ -319,6 +338,7 @@ void Interpreter::lwr(u32 instr) {
     u32 data = mem.Read32(regs, paddr & ~3);
     s32 result = s32((regs.gpr[RT(instr)] & ~mask) | (data >> shift));
     regs.gpr[RT(instr)] = result;
+    Util::trace("lwr r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
@@ -337,6 +357,7 @@ void Interpreter::ld(u32 instr) {
   } else {
     s64 value = mem.Read64(regs, paddr);
     regs.gpr[RT(instr)] = value;
+    Util::trace("ld r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
@@ -356,6 +377,7 @@ void Interpreter::lld(u32 instr) {
       FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
     } else {
       regs.gpr[RT(instr)] = mem.Read64(regs, paddr);
+      Util::trace("lld r{}, [{:08X}]", RT(instr), paddr);
       regs.cop0.llbit = true;
       regs.cop0.LLAddr = paddr >> 4;
     }
@@ -374,6 +396,7 @@ void Interpreter::ldl(u32 instr) {
     u64 data = mem.Read64(regs, paddr & ~7);
     s64 result = (s64) ((regs.gpr[RT(instr)] & ~mask) | (data << shift));
     regs.gpr[RT(instr)] = result;
+    Util::trace("ldl r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
@@ -389,6 +412,7 @@ void Interpreter::ldr(u32 instr) {
     u64 data = mem.Read64(regs, paddr & ~7);
     s64 result = (s64) ((regs.gpr[RT(instr)] & ~mask) | (data >> shift));
     regs.gpr[RT(instr)] = result;
+    Util::trace("ldr r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
@@ -401,6 +425,7 @@ void Interpreter::lbu(u32 instr) {
   } else {
     u8 value = mem.Read8(regs, paddr);
     regs.gpr[RT(instr)] = value;
+    Util::trace("lbu r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
@@ -418,6 +443,7 @@ void Interpreter::lhu(u32 instr) {
   } else {
     u16 value = mem.Read16(regs, paddr);
     regs.gpr[RT(instr)] = value;
+    Util::trace("lhu r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
@@ -436,6 +462,7 @@ void Interpreter::lwu(u32 instr) {
   } else {
     u32 value = mem.Read32(regs, paddr);
     regs.gpr[RT(instr)] = value;
+    Util::trace("lwu r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
@@ -447,6 +474,7 @@ void Interpreter::sb(u32 instr) {
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
     mem.Write8(regs, paddr, regs.gpr[RT(instr)]);
+    Util::trace("sb r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
@@ -466,6 +494,7 @@ void Interpreter::sc(u32 instr) {
       FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
     } else {
       mem.Write32(regs, paddr, regs.gpr[RT(instr)]);
+      Util::trace("sc r{}, [{:08X}]", RT(instr), paddr);
       regs.gpr[RT(instr)] = 1;
     }
   } else {
@@ -494,6 +523,7 @@ void Interpreter::scd(u32 instr) {
       FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
     } else {
       mem.Write32(regs, paddr, regs.gpr[RT(instr)]);
+      Util::trace("scd r{}, [{:08X}]", RT(instr), paddr);
       regs.gpr[RT(instr)] = 1;
     }
   } else {
@@ -504,12 +534,13 @@ void Interpreter::scd(u32 instr) {
 void Interpreter::sh(u32 instr) {
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
 
-  u32 physical;
-  if(!MapVAddr(regs, STORE, address, physical)) {
+  u32 paddr;
+  if(!MapVAddr(regs, STORE, address, paddr)) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write16(regs, physical, regs.gpr[RT(instr)]);
+    mem.Write16(regs, paddr, regs.gpr[RT(instr)]);
+    Util::trace("sh r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
@@ -522,12 +553,13 @@ void Interpreter::sw(u32 instr) {
     return;
   }
 
-  u32 physical;
-  if(!MapVAddr(regs, STORE, address, physical)) {
+  u32 paddr;
+  if(!MapVAddr(regs, STORE, address, paddr)) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write32(regs, physical, regs.gpr[RT(instr)]);
+    mem.Write32(regs, paddr, regs.gpr[RT(instr)]);
+    Util::trace("sw r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
@@ -539,12 +571,13 @@ void Interpreter::sd(u32 instr) {
     return;
   }
 
-  u32 physical;
-  if(!MapVAddr(regs, STORE, address, physical)) {
+  u32 paddr;
+  if(!MapVAddr(regs, STORE, address, paddr)) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write64(regs, physical, regs.gpr[RT(instr)]);
+    mem.Write64(regs, paddr, regs.gpr[RT(instr)]);
+    Util::trace("sd r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
@@ -560,6 +593,7 @@ void Interpreter::sdl(u32 instr) {
     u64 data = mem.Read64(regs, paddr & ~7);
     u64 rt = regs.gpr[RT(instr)];
     mem.Write64(regs, paddr & ~7, (data & ~mask) | (rt >> shift));
+    Util::trace("sdl r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
@@ -575,6 +609,7 @@ void Interpreter::sdr(u32 instr) {
     u64 data = mem.Read64(regs, paddr & ~7);
     u64 rt = regs.gpr[RT(instr)];
     mem.Write64(regs, paddr & ~7, (data & ~mask) | (rt << shift));
+    Util::trace("sdr r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
@@ -590,6 +625,7 @@ void Interpreter::swl(u32 instr) {
     u32 data = mem.Read32(regs, paddr & ~3);
     u32 rt = regs.gpr[RT(instr)];
     mem.Write32(regs, paddr & ~3, (data & ~mask) | (rt >> shift));
+    Util::trace("swl r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
@@ -605,6 +641,7 @@ void Interpreter::swr(u32 instr) {
     u32 data = mem.Read32(regs, paddr & ~3);
     u32 rt = regs.gpr[RT(instr)];
     mem.Write32(regs, paddr & ~3, (data & ~mask) | (rt << shift));
+    Util::trace("swr r{}, [{:08X}]", RT(instr), paddr);
   }
 }
 
@@ -612,17 +649,20 @@ void Interpreter::ori(u32 instr) {
   s64 imm = (u16)instr;
   s64 result = imm | regs.gpr[RS(instr)];
   regs.gpr[RT(instr)] = result;
+  Util::trace("ori r{}, r{}, {:016X}", RT(instr), RS(instr), imm);
 }
 
 void Interpreter::or_(u32 instr) {
   if(likely(RD(instr) != 0)) {
     regs.gpr[RD(instr)] = regs.gpr[RS(instr)] | regs.gpr[RT(instr)];
+    Util::trace("or r{}, r{}, r{}", RD(instr), RS(instr), RT(instr));
   }
 }
 
 void Interpreter::nor(u32 instr) {
   if(likely(RD(instr) != 0)) {
     regs.gpr[RD(instr)] = ~(regs.gpr[RS(instr)] | regs.gpr[RT(instr)]);
+    Util::trace("nor r{}, r{}, r{}", RD(instr), RS(instr), RT(instr));
   }
 }
 
@@ -648,44 +688,52 @@ void Interpreter::jalr(u32 instr) {
 void Interpreter::slti(u32 instr) {
   s16 imm = instr;
   regs.gpr[RT(instr)] = regs.gpr[RS(instr)] < imm;
+  Util::trace("slti r{}, r{}, {:04X}", RT(instr), RS(instr), u16(imm));
 }
 
 void Interpreter::sltiu(u32 instr) {
   s16 imm = instr;
   regs.gpr[RT(instr)] = (u64)regs.gpr[RS(instr)] < imm;
+  Util::trace("sltiu r{}, r{}, {:04X}", RT(instr), RS(instr), u16(imm));
 }
 
 void Interpreter::slt(u32 instr) {
   if(likely(RD(instr) != 0)) {
     regs.gpr[RD(instr)] = regs.gpr[RS(instr)] < regs.gpr[RT(instr)];
+    Util::trace("slt r{}, r{}, r{}", RD(instr), RS(instr), RS(instr));
   }
 }
 
 void Interpreter::sltu(u32 instr) {
   if(likely(RD(instr) != 0)) {
     regs.gpr[RD(instr)] = (u64) regs.gpr[RS(instr)] < (u64) regs.gpr[RT(instr)];
+    Util::trace("sltu r{}, r{}, r{}", RD(instr), RS(instr), RS(instr));
   }
 }
 
 void Interpreter::xori(u32 instr) {
   s64 imm = (u16)instr;
   regs.gpr[RT(instr)] = regs.gpr[RS(instr)] ^ imm;
+  Util::trace("xori r{}, r{}, {:04X}", RT(instr), RS(instr), (u16)imm);
 }
 
 void Interpreter::xor_(u32 instr) {
   if(likely(RD(instr) != 0)) {
     regs.gpr[RD(instr)] = regs.gpr[RT(instr)] ^ regs.gpr[RS(instr)];
+    Util::trace("xor r{}, r{}, r{}", RD(instr), RS(instr), RS(instr));
   }
 }
 
 void Interpreter::andi(u32 instr) {
   s64 imm = (u16)instr;
   regs.gpr[RT(instr)] = regs.gpr[RS(instr)] & imm;
+  Util::trace("andi r{}, r{}, {:04X}", RT(instr), RS(instr), (u16)imm);
 }
 
 void Interpreter::and_(u32 instr) {
   if(likely(RD(instr) != 0)) {
     regs.gpr[RD(instr)] = regs.gpr[RS(instr)] & regs.gpr[RT(instr)];
+    Util::trace("and r{}, r{}, r{}", RD(instr), RS(instr), RS(instr));
   }
 }
 
@@ -694,6 +742,7 @@ void Interpreter::sll(u32 instr) {
     u8 sa = ((instr >> 6) & 0x1f);
     s32 result = regs.gpr[RT(instr)] << sa;
     regs.gpr[RD(instr)] = (s64) result;
+    Util::trace("sll r{}, r{}, {:02X}", RD(instr), RT(instr), sa);
   }
 }
 
@@ -703,6 +752,7 @@ void Interpreter::sllv(u32 instr) {
     u32 rt = regs.gpr[RT(instr)];
     s32 result = rt << sa;
     regs.gpr[RD(instr)] = (s64) result;
+    Util::trace("sllv r{}, r{}, r{}", RD(instr), RT(instr), RS(instr));
   }
 }
 
@@ -711,6 +761,7 @@ void Interpreter::dsll32(u32 instr) {
     u8 sa = ((instr >> 6) & 0x1f);
     s64 result = regs.gpr[RT(instr)] << (sa + 32);
     regs.gpr[RD(instr)] = result;
+    Util::trace("dsll32 r{}, r{}, {:02X}", RD(instr), RT(instr), sa);
   }
 }
 
@@ -719,6 +770,7 @@ void Interpreter::dsll(u32 instr) {
     u8 sa = ((instr >> 6) & 0x1f);
     s64 result = regs.gpr[RT(instr)] << sa;
     regs.gpr[RD(instr)] = result;
+    Util::trace("dsll r{}, r{}, {:02X}", RD(instr), RT(instr), sa);
   }
 }
 
@@ -727,6 +779,7 @@ void Interpreter::dsllv(u32 instr) {
     s64 sa = regs.gpr[RS(instr)] & 63;
     s64 result = regs.gpr[RT(instr)] << sa;
     regs.gpr[RD(instr)] = result;
+    Util::trace("dsllv r{}, r{}, r{}", RD(instr), RT(instr), RS(instr));
   }
 }
 
@@ -736,6 +789,7 @@ void Interpreter::srl(u32 instr) {
     u8 sa = ((instr >> 6) & 0x1f);
     u32 result = rt >> sa;
     regs.gpr[RD(instr)] = (s32) result;
+    Util::trace("srl r{}, r{}, {:02X}", RD(instr), RT(instr), sa);
   }
 }
 
@@ -745,6 +799,7 @@ void Interpreter::srlv(u32 instr) {
     u32 rt = regs.gpr[RT(instr)];
     s32 result = rt >> sa;
     regs.gpr[RD(instr)] = (s64) result;
+    Util::trace("srlv r{}, r{}, r{}", RD(instr), RT(instr), RS(instr));
   }
 }
 
@@ -754,6 +809,7 @@ void Interpreter::dsrl(u32 instr) {
     u8 sa = ((instr >> 6) & 0x1f);
     u64 result = rt >> sa;
     regs.gpr[RD(instr)] = s64(result);
+    Util::trace("dsrl r{}, r{}, {:02X}", RD(instr), RT(instr), sa);
   }
 }
 
@@ -763,6 +819,7 @@ void Interpreter::dsrlv(u32 instr) {
     u64 rt = regs.gpr[RT(instr)];
     u64 result = rt >> amount;
     regs.gpr[RD(instr)] = s64(result);
+    Util::trace("dsrlv r{}, r{}, r{}", RD(instr), RT(instr), RS(instr));
   }
 }
 
@@ -772,6 +829,7 @@ void Interpreter::dsrl32(u32 instr) {
     u8 sa = ((instr >> 6) & 0x1f);
     u64 result = rt >> (sa + 32);
     regs.gpr[RD(instr)] = s64(result);
+    Util::trace("dsrl32 r{}, r{}, {:02X}", RD(instr), RT(instr), sa);
   }
 }
 
@@ -781,6 +839,7 @@ void Interpreter::sra(u32 instr) {
     u8 sa = ((instr >> 6) & 0x1f);
     s32 result = rt >> sa;
     regs.gpr[RD(instr)] = result;
+    Util::trace("sra r{}, r{}, {:02X}", RD(instr), RT(instr), sa);
   }
 }
 
@@ -791,6 +850,7 @@ void Interpreter::srav(u32 instr) {
     u8 sa = rs & 0x1f;
     s32 result = rt >> sa;
     regs.gpr[RD(instr)] = result;
+    Util::trace("srav r{}, r{}, r{}", RD(instr), RT(instr), RS(instr));
   }
 }
 
@@ -800,6 +860,7 @@ void Interpreter::dsra(u32 instr) {
     u8 sa = ((instr >> 6) & 0x1f);
     s64 result = rt >> sa;
     regs.gpr[RD(instr)] = result;
+    Util::trace("dsra r{}, r{}, {:02X}", RD(instr), RT(instr), sa);
   }
 }
 
@@ -810,6 +871,7 @@ void Interpreter::dsrav(u32 instr) {
     s64 sa = rs & 63;
     s64 result = rt >> sa;
     regs.gpr[RD(instr)] = result;
+    Util::trace("dsrav r{}, r{}, r{}", RD(instr), RT(instr), RS(instr));
   }
 }
 
@@ -819,6 +881,7 @@ void Interpreter::dsra32(u32 instr) {
     u8 sa = ((instr >> 6) & 0x1f);
     s64 result = rt >> (sa + 32);
     regs.gpr[RD(instr)] = result;
+    Util::trace("dsra32 r{}, r{}, {:02X}", RD(instr), RT(instr), sa);
   }
 }
 
@@ -836,6 +899,7 @@ void Interpreter::dsub(u32 instr) {
   } else {
     if(likely(RD(instr) != 0)) {
       regs.gpr[RD(instr)] = result;
+      Util::trace("dsub r{}, r{}, r{}", RD(instr), RT(instr), RS(instr));
     }
   }
 }
@@ -846,6 +910,7 @@ void Interpreter::dsubu(u32 instr) {
     u64 rs = regs.gpr[RS(instr)];
     u64 result = rs - rt;
     regs.gpr[RD(instr)] = s64(result);
+    Util::trace("dsubu r{}, r{}, r{}", RD(instr), RT(instr), RS(instr));
   }
 }
 
@@ -858,6 +923,7 @@ void Interpreter::sub(u32 instr) {
   } else {
     if(likely(RD(instr) != 0)) {
       regs.gpr[RD(instr)] = result;
+      Util::trace("sub r{}, r{}, r{}", RD(instr), RT(instr), RS(instr));
     }
   }
 }
@@ -868,6 +934,7 @@ void Interpreter::subu(u32 instr) {
     u32 rs = regs.gpr[RS(instr)];
     u32 result = rs - rt;
     regs.gpr[RD(instr)] = (s64) ((s32) result);
+    Util::trace("subu r{}, r{}, r{}", RD(instr), RT(instr), RS(instr));
   }
 }
 
@@ -877,6 +944,7 @@ void Interpreter::dmultu(u32 instr) {
   u128 result = (u128)rt * (u128)rs;
   regs.lo = (s64)(result & 0xFFFFFFFFFFFFFFFF);
   regs.hi = (s64)(result >> 64);
+  Util::trace("dmultu r{}, r{}", RT(instr), RS(instr));
 }
 
 void Interpreter::dmult(u32 instr) {
@@ -885,6 +953,7 @@ void Interpreter::dmult(u32 instr) {
   s128 result = (s128)rt * (s128)rs;
   regs.lo = result & 0xFFFFFFFFFFFFFFFF;
   regs.hi = result >> 64;
+  Util::trace("dmult r{}, r{}", RT(instr), RS(instr));
 }
 
 void Interpreter::multu(u32 instr) {
@@ -893,6 +962,7 @@ void Interpreter::multu(u32 instr) {
   u64 result = (u64)rt * (u64)rs;
   regs.lo = (s64)((s32)result);
   regs.hi = (s64)((s32)(result >> 32));
+  Util::trace("multu r{}, r{}", RT(instr), RS(instr));
 }
 
 void Interpreter::mult(u32 instr) {
@@ -901,31 +971,37 @@ void Interpreter::mult(u32 instr) {
   s64 result = (s64)rt * (s64)rs;
   regs.lo = (s64)((s32)result);
   regs.hi = (s64)((s32)(result >> 32));
+  Util::trace("mult r{}, r{}", RT(instr), RS(instr));
 }
 
 void Interpreter::mflo(u32 instr) {
   if(likely(RD(instr) != 0)) {
     regs.gpr[RD(instr)] = regs.lo;
+    Util::trace("mflo r{}", RD(instr));
   }
 }
 
 void Interpreter::mfhi(u32 instr) {
   if(likely(RD(instr) != 0)) {
     regs.gpr[RD(instr)] = regs.hi;
+    Util::trace("mfhi r{}", RD(instr));
   }
 }
 
 void Interpreter::mtlo(u32 instr) {
   regs.lo = regs.gpr[RS(instr)];
+  Util::trace("mtlo r{}", RS(instr));
 }
 
 void Interpreter::mthi(u32 instr) {
   regs.hi = regs.gpr[RS(instr)];
+  Util::trace("mthi r{}", RS(instr));
 }
 
 void Interpreter::trap(bool cond) {
   if(cond) {
     FireException(regs, ExceptionCode::Trap, 0, true);
+    Util::trace("trap");
   }
 }
 

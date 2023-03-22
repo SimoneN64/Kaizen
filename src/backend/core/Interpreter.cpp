@@ -40,6 +40,7 @@ int Interpreter::Run() {
       return cycles;
     }
 
+    Util::trace("{:08X}:", paddr);
     u32 instruction = mem.Read32(regs, paddr);
 
     if(ShouldServiceInterrupt(regs)) {

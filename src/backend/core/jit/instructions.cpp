@@ -13,7 +13,7 @@ void add(JIT& dyn, u32 instr) {
   if(check_signed_overflow(rs, rt, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
-    if(likely(RD(instr) != 0)) {
+    if(RD(instr) != 0) [[likely]] {
       regs.gpr[RD(instr)] = s32(result);
     }
   }
@@ -21,7 +21,7 @@ void add(JIT& dyn, u32 instr) {
 
 void addu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     s32 rs = (s32)regs.gpr[RS(instr)];
     s32 rt = (s32)regs.gpr[RT(instr)];
     s32 result = rs + rt;
@@ -57,7 +57,7 @@ void dadd(JIT& dyn, u32 instr) {
   if(check_signed_overflow(rs, rt, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
-    if(likely(RD(instr) != 0)) {
+    if(RD(instr) != 0) [[likely]] {
       regs.gpr[RD(instr)] = result;
     }
   }
@@ -65,7 +65,7 @@ void dadd(JIT& dyn, u32 instr) {
 
 void daddu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     s64 rs = regs.gpr[RS(instr)];
     s64 rt = regs.gpr[RT(instr)];
     regs.gpr[RD(instr)] = rs + rt;
@@ -658,21 +658,20 @@ void ori(JIT& dyn, u32 instr) {
 
 void or_(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     regs.gpr[RD(instr)] = regs.gpr[RS(instr)] | regs.gpr[RT(instr)];
   }
 }
 
 void nor(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     regs.gpr[RD(instr)] = ~(regs.gpr[RS(instr)] | regs.gpr[RT(instr)]);
   }
 }
 
 void j(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  Mem& mem = dyn.mem;
   s32 target = (instr & 0x3ffffff) << 2;
   s64 address = (regs.oldPC & ~0xfffffff) | target;
 
@@ -687,9 +686,8 @@ void jal(JIT& dyn, u32 instr) {
 
 void jalr(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  Mem& mem = dyn.mem;
   branch(dyn, true, regs.gpr[RS(instr)]);
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     regs.gpr[RD(instr)] = regs.pc + 4;
   }
 }
@@ -708,14 +706,14 @@ void sltiu(JIT& dyn, u32 instr) {
 
 void slt(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     regs.gpr[RD(instr)] = regs.gpr[RS(instr)] < regs.gpr[RT(instr)];
   }
 }
 
 void sltu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     regs.gpr[RD(instr)] = (u64) regs.gpr[RS(instr)] < (u64) regs.gpr[RT(instr)];
   }
 }
@@ -728,7 +726,7 @@ void xori(JIT& dyn, u32 instr) {
 
 void xor_(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     regs.gpr[RD(instr)] = regs.gpr[RT(instr)] ^ regs.gpr[RS(instr)];
   }
 }
@@ -741,14 +739,14 @@ void andi(JIT& dyn, u32 instr) {
 
 void and_(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     regs.gpr[RD(instr)] = regs.gpr[RS(instr)] & regs.gpr[RT(instr)];
   }
 }
 
 void sll(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f);
     s32 result = regs.gpr[RT(instr)] << sa;
     regs.gpr[RD(instr)] = (s64) result;
@@ -757,7 +755,7 @@ void sll(JIT& dyn, u32 instr) {
 
 void sllv(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     u8 sa = (regs.gpr[RS(instr)]) & 0x1F;
     u32 rt = regs.gpr[RT(instr)];
     s32 result = rt << sa;
@@ -767,7 +765,7 @@ void sllv(JIT& dyn, u32 instr) {
 
 void dsll32(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f);
     s64 result = regs.gpr[RT(instr)] << (sa + 32);
     regs.gpr[RD(instr)] = result;
@@ -776,7 +774,7 @@ void dsll32(JIT& dyn, u32 instr) {
 
 void dsll(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f);
     s64 result = regs.gpr[RT(instr)] << sa;
     regs.gpr[RD(instr)] = result;
@@ -785,7 +783,7 @@ void dsll(JIT& dyn, u32 instr) {
 
 void dsllv(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     s64 sa = regs.gpr[RS(instr)] & 63;
     s64 result = regs.gpr[RT(instr)] << sa;
     regs.gpr[RD(instr)] = result;
@@ -794,7 +792,7 @@ void dsllv(JIT& dyn, u32 instr) {
 
 void srl(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     u32 rt = regs.gpr[RT(instr)];
     u8 sa = ((instr >> 6) & 0x1f);
     u32 result = rt >> sa;
@@ -804,7 +802,7 @@ void srl(JIT& dyn, u32 instr) {
 
 void srlv(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     u8 sa = (regs.gpr[RS(instr)] & 0x1F);
     u32 rt = regs.gpr[RT(instr)];
     s32 result = rt >> sa;
@@ -814,7 +812,7 @@ void srlv(JIT& dyn, u32 instr) {
 
 void dsrl(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     u64 rt = regs.gpr[RT(instr)];
     u8 sa = ((instr >> 6) & 0x1f);
     u64 result = rt >> sa;
@@ -824,7 +822,7 @@ void dsrl(JIT& dyn, u32 instr) {
 
 void dsrlv(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     u8 amount = (regs.gpr[RS(instr)] & 63);
     u64 rt = regs.gpr[RT(instr)];
     u64 result = rt >> amount;
@@ -834,7 +832,7 @@ void dsrlv(JIT& dyn, u32 instr) {
 
 void dsrl32(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     u64 rt = regs.gpr[RT(instr)];
     u8 sa = ((instr >> 6) & 0x1f);
     u64 result = rt >> (sa + 32);
@@ -844,7 +842,7 @@ void dsrl32(JIT& dyn, u32 instr) {
 
 void sra(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     s64 rt = regs.gpr[RT(instr)];
     u8 sa = ((instr >> 6) & 0x1f);
     s32 result = rt >> sa;
@@ -855,7 +853,7 @@ void sra(JIT& dyn, u32 instr) {
 void srav(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
   s64 rt = regs.gpr[RT(instr)];
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     s64 rs = regs.gpr[RS(instr)];
     u8 sa = rs & 0x1f;
     s32 result = rt >> sa;
@@ -865,7 +863,7 @@ void srav(JIT& dyn, u32 instr) {
 
 void dsra(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     s64 rt = regs.gpr[RT(instr)];
     u8 sa = ((instr >> 6) & 0x1f);
     s64 result = rt >> sa;
@@ -875,7 +873,7 @@ void dsra(JIT& dyn, u32 instr) {
 
 void dsrav(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     s64 rt = regs.gpr[RT(instr)];
     s64 rs = regs.gpr[RS(instr)];
     s64 sa = rs & 63;
@@ -886,7 +884,7 @@ void dsrav(JIT& dyn, u32 instr) {
 
 void dsra32(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     s64 rt = regs.gpr[RT(instr)];
     u8 sa = ((instr >> 6) & 0x1f);
     s64 result = rt >> (sa + 32);
@@ -908,7 +906,7 @@ void dsub(JIT& dyn, u32 instr) {
   if(check_signed_underflow(rs, rt, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
-    if(likely(RD(instr) != 0)) {
+    if(RD(instr) != 0) [[likely]] {
       regs.gpr[RD(instr)] = result;
     }
   }
@@ -916,7 +914,7 @@ void dsub(JIT& dyn, u32 instr) {
 
 void dsubu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     u64 rt = regs.gpr[RT(instr)];
     u64 rs = regs.gpr[RS(instr)];
     u64 result = rs - rt;
@@ -932,7 +930,7 @@ void sub(JIT& dyn, u32 instr) {
   if(check_signed_underflow(rs, rt, result)) {
     FireException(regs, ExceptionCode::Overflow, 0, true);
   } else {
-    if(likely(RD(instr) != 0)) {
+    if(RD(instr) != 0) [[likely]] {
       regs.gpr[RD(instr)] = result;
     }
   }
@@ -940,7 +938,7 @@ void sub(JIT& dyn, u32 instr) {
 
 void subu(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     u32 rt = regs.gpr[RT(instr)];
     u32 rs = regs.gpr[RS(instr)];
     u32 result = rs - rt;
@@ -986,14 +984,14 @@ void mult(JIT& dyn, u32 instr) {
 
 void mflo(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     regs.gpr[RD(instr)] = regs.lo;
   }
 }
 
 void mfhi(JIT& dyn, u32 instr) {
   Registers& regs = dyn.regs;
-  if(likely(RD(instr) != 0)) {
+  if(RD(instr) != 0) [[likely]] {
     regs.gpr[RD(instr)] = regs.hi;
   }
 }

@@ -205,7 +205,7 @@ void Window::RenderMainMenuBar(n64::Core &core) {
       SDL_SetWindowTitle(window, windowTitle.c_str());
       core.Stop();
     }
-    if (ImGui::MenuItem(core.pause ? "Resume" : "Pause", nullptr, false, core.romLoaded)) {
+    if (ImGui::MenuItem(core.pause ? "Resume" : "Pause", "P", false, core.romLoaded)) {
       core.TogglePause();
       if(core.pause) {
         shadowWindowTitle = windowTitle;

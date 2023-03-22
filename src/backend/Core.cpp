@@ -33,7 +33,7 @@ void Core::LoadROM(const std::string& rom_) {
   cpu->mem.mmio.si.pif.ExecutePIF(cpu->mem, cpu->regs);
 }
 
-void Core::Run(Window& window, float volumeL, float volumeR) {
+void Core::Run(float volumeL, float volumeR) const {
   MMIO& mmio = cpu->mem.mmio;
 
   for (int field = 0; field < mmio.vi.numFields; field++) {

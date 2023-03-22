@@ -14,7 +14,7 @@ void App::Run() {
   while (!core.done) {
     if(core.romLoaded) {
       if(!core.pause) {
-        core.Run(window, window.settings.GetVolumeL(), window.settings.GetVolumeL());
+        core.Run(window.settings.GetVolumeL(), window.settings.GetVolumeL());
       }
       UpdateScreenParallelRdp(core, window, core.GetVI());
     } else {
@@ -59,7 +59,7 @@ void App::Run() {
             case SDLK_f:
               core.pause = true;
               if(core.romLoaded) {
-                core.Run(window, window.settings.GetVolumeL(), window.settings.GetVolumeL());
+                core.Run(window.settings.GetVolumeL(), window.settings.GetVolumeL());
                 UpdateScreenParallelRdp(core, window, core.GetVI());
               }
               break;

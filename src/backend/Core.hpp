@@ -20,9 +20,9 @@ struct Core {
   Core();
   void Stop();
   void LoadROM(const std::string&);
-  void Run(Window&, float volumeL, float volumeR);
+  void Run(float volumeL, float volumeR) const;
   void TogglePause() { pause = !pause; }
-  VI& GetVI() { return cpu->mem.mmio.vi; }
+  [[nodiscard]] VI& GetVI() const { return cpu->mem.mmio.vi; }
 
   u32 breakpoint = 0;
 

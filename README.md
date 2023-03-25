@@ -69,9 +69,14 @@ Your GPU needs to support Vulkan 1.1+, because the RDP is implemented via [ParaL
 - [ ] Qt or wxWidgets for native GUI (keeping ImGui as opt-in).
 - [ ] JIT, with support for x86_64 and ARM (using an IR).
 - [ ] Debug tools: disassembly, breakpoints, single-step and memory editor
-- [ ] TAS tools: TAS input, recording (using Mupen's format), save-states, rewind and frame-advance
+- [ ] TAS tools
+    - [ ] TAS input, 
+    - [ ] Recording (using Mupen's format)
+    - [ ] Save-states
+    - [ ] Rewind
+    - [x] Frame-advance
 - [ ] Cheat support
-- [ ] Allow to optionally pass a PIF image for the boot process (it's HLE'd at the moment)
+- [ ] Allow to optionally pass a PIF image for the boot process (it's exclusively HLE'd at the moment)
 
 This list will probably grow with time!
 

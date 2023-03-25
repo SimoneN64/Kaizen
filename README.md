@@ -70,7 +70,7 @@ Your GPU needs to support Vulkan 1.1+, because the RDP is implemented via [ParaL
 - [ ] JIT, with support for x86_64 and ARM (using an IR).
 - [ ] Debug tools: disassembly, breakpoints, single-step and memory editor
 - [ ] TAS tools
-    - [ ] TAS input, 
+    - [ ] TAS input
     - [ ] Recording (using Mupen's format)
     - [ ] Save-states
     - [ ] Rewind

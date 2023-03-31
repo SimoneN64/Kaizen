@@ -58,6 +58,17 @@ void JIT::Recompile(Mem& mem, u32 pc) {
     InvalidateCache();
   }
 
+  std::vector<u32> instrs;
+
+  while (!prevBranch) {
+    instrInBlock++;
+    prevBranch = branch;
+    u32 instr = mem.Read32(regs, loopPC);
+    instrs.push_back(instr);
+    loopPC += 4;
+    branch = isEndBlock(instr);
+  }
+
   code.push(rbx);
   code.push(rbp);
   code.push(r12);
@@ -68,15 +79,11 @@ void JIT::Recompile(Mem& mem, u32 pc) {
   code.push(rsi);
   code.push(rdi);
 #endif
-  code.sub(rsp, 8);
+  code.sub(rsp, instrInBlock * 8);
   code.mov(rbp, rsp);
 
-  while(!prevBranch) {
-    instrInBlock++;
-    prevBranch = branch;
-    u32 instr = mem.Read32(regs, loopPC);
+  for (auto instr : instrs) {
     Util::trace("{:08X}", instr);
-    loopPC += 4;
 
     code.mov(regArg0, (uintptr_t)this);
     code.mov(qword[rdi + GPR_OFFSET(0, this)], 0);
@@ -91,10 +98,10 @@ void JIT::Recompile(Mem& mem, u32 pc) {
     code.mov(qword[rdi + REG_OFFSET(nextPC, this)], r10);
 
     code.mov(regArg1, instr);
-    branch = Exec(mem, instr);
+    Emit(mem, instr);
   }
 
-  code.add(rsp, 8);
+  code.add(rsp, instrInBlock * 8);
 #ifdef ABI_MSVC
   code.pop(rdi);
   code.pop(rsi);

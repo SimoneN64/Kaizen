@@ -28,9 +28,8 @@ void JIT::cop2Decode(u32 instr) {
   }
 }
 
-bool JIT::special(u32 instr) {
+void JIT::special(u32 instr) {
   u8 mask = (instr & 0x3F);
-  bool res = false;
 
   // 00rr_rccc
   switch (mask) { // TODO: named constants for clearer code
@@ -63,12 +62,10 @@ bool JIT::special(u32 instr) {
     case 0x08:
       code.mov(rax, (u64)jr);
       code.call(rax);
-      res = true;
       break;
     case 0x09:
       code.mov(rax, (u64)jalr);
       code.call(rax);
-      res = true;
       break;
     case 0x0C: Util::panic("[RECOMPILER] Unhandled syscall instruction {:016X}", (u64)regs.pc);
     case 0x0D: Util::panic("[RECOMPILER] Unhandled break instruction {:016X}", (u64)regs.pc);
@@ -197,7 +194,6 @@ bool JIT::special(u32 instr) {
       code.setge(regArg1.cvt8());
       code.mov(rax, (u64)trap);
       code.call(rax);
-      res = true;
       break;
     case 0x31:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
@@ -207,7 +203,6 @@ bool JIT::special(u32 instr) {
       code.setae(regArg1.cvt8());
       code.mov(rax, (u64)trap);
       code.call(rax);
-      res = true;
       break;
     case 0x32:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
@@ -217,7 +212,6 @@ bool JIT::special(u32 instr) {
       code.setl(regArg1.cvt8());
       code.mov(rax, (u64)trap);
       code.call(rax);
-      res = true;
       break;
     case 0x33:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
@@ -227,7 +221,6 @@ bool JIT::special(u32 instr) {
       code.setb(regArg1.cvt8());
       code.mov(rax, (u64)trap);
       code.call(rax);
-      res = true;
       break;
     case 0x34:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
@@ -237,7 +230,6 @@ bool JIT::special(u32 instr) {
       code.sete(regArg1.cvt8());
       code.mov(rax, (u64)trap);
       code.call(rax);
-      res = true;
       break;
     case 0x36:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
@@ -247,7 +239,6 @@ bool JIT::special(u32 instr) {
       code.setne(regArg1.cvt8());
       code.mov(rax, (u64)trap);
       code.call(rax);
-      res = true;
       break;
     case 0x38:
       code.mov(rax, (u64)dsll);
@@ -276,11 +267,9 @@ bool JIT::special(u32 instr) {
     default:
       Util::panic("Unimplemented special {} {} ({:08X}) (pc: {:016X})", (mask >> 3) & 7, mask & 7, instr, (u64)regs.oldPC);
   }
-
-  return res;
 }
 
-bool JIT::regimm(u32 instr) {
+void JIT::regimm(u32 instr) {
   u8 mask = ((instr >> 16) & 0x1F);
   // 000r_rccc
   switch (mask) { // TODO: named constants for clearer code
@@ -399,27 +388,93 @@ bool JIT::regimm(u32 instr) {
     default:
       Util::panic("Unimplemented regimm {} {} ({:08X}) (pc: {:016X})", (mask >> 3) & 3, mask & 7, instr, (u64)regs.oldPC);
   }
-
-  return true;
 }
 
-bool JIT::Exec(Mem& mem, u32 instr) {
+bool JIT::isEndBlock(u32 instr) {
   u8 mask = (instr >> 26) & 0x3f;
-  bool res = false;
+
+  // 00rr_rccc
+  switch (mask) { // TODO: named constants for clearer code
+    case 0x00: {
+      u8 special_mask = (instr & 0x3F);
+
+      // 00rr_rccc
+      switch (special_mask) { // TODO: named constants for clearer code
+        case 0:
+        case 0x02: case 0x03: case 0x04: case 0x06:
+        case 0x07:
+          return false;
+        case 0x08: case 0x09:
+          return true;
+        case 0x0C: Util::panic("[RECOMPILER] Unhandled syscall instruction {:016X}", (u64)regs.pc);
+        case 0x0D: Util::panic("[RECOMPILER] Unhandled break instruction {:016X}", (u64)regs.pc);
+        case 0x0F: break; // SYNC
+        case 0x10: case 0x11: case 0x12: case 0x13:
+        case 0x14: case 0x16: case 0x17: case 0x18:
+        case 0x19: case 0x1A: case 0x1B: case 0x1C:
+        case 0x1D: case 0x1E: case 0x1F: case 0x20:
+        case 0x21: case 0x22: case 0x23: case 0x24:
+        case 0x25: case 0x26: case 0x27: case 0x2A:
+        case 0x2B: case 0x2C: case 0x2D: case 0x2E:
+        case 0x2F:
+          return false;
+        case 0x30: case 0x31: case 0x32: case 0x33:
+        case 0x34: case 0x36:
+          return true;
+        case 0x38: case 0x3A: case 0x3B: case 0x3C:
+        case 0x3E: case 0x3F:
+          return false;
+        default:
+          Util::panic("Unimplemented special {} {} ({:08X}) (pc: {:016X})", (mask >> 3) & 7, mask & 7, instr, (u64)regs.oldPC);
+      }
+    }
+    break;
+  case 0x01: case 0x02: case 0x03:
+  case 0x04: case 0x05: case 0x06:
+  case 0x07:
+    return true;
+  case 0x08: case 0x09: case 0x0A: case 0x0B:
+  case 0x0C: case 0x0D: case 0x0E: case 0x0F:
+    return false;
+  case 0x10: 
+    return cop0IsEndBlock(instr);
+  case 0x11: 
+    return cop1IsEndBlock(instr);
+  case 0x18: case 0x19: case 0x1A: case 0x1B:
+  case 0x12: 
+    return false;
+  case 0x14: case 0x15: case 0x16: case 0x17:
+    return true;
+  case 0x1F: Util::panic("[RECOMPILER] Unhandled reserved instruction exception {:016X}", regs.oldPC); break;
+  case 0x20: case 0x21: case 0x22: case 0x23:
+  case 0x24: case 0x25: case 0x26: case 0x27:
+  case 0x28: case 0x29: case 0x2A: case 0x2B:
+  case 0x2C: case 0x2D: case 0x2E: case 0x2F:
+  case 0x30: case 0x31: case 0x34: case 0x35:
+  case 0x37: case 0x38: case 0x39: case 0x3C:
+  case 0x3D: case 0x3F:
+    return false;
+  default:
+    Util::panic("Unimplemented instruction {:02X} ({:08X}) (pc: {:016X})", mask, instr, (u64)regs.oldPC);
+  }
+
+  return false;
+}
+
+void JIT::Emit(Mem& mem, u32 instr) {
+  u8 mask = (instr >> 26) & 0x3f;
 
   // 00rr_rccc
   switch(mask) { // TODO: named constants for clearer code
-    case 0x00: res = special(instr); break;
-    case 0x01: res = regimm(instr); break;
+    case 0x00: special(instr); break;
+    case 0x01: regimm(instr); break;
     case 0x02:
       code.mov(rax, (u64)j);
       code.call(rax);
-      res = true;
       break;
     case 0x03:
       code.mov(rax, (u64)jal);
       code.call(rax);
-      res = true;
       break;
     case 0x04:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
@@ -429,7 +484,6 @@ bool JIT::Exec(Mem& mem, u32 instr) {
       code.sete(regArg2.cvt8());
       code.mov(rax, (u64)b);
       code.call(rax);
-      res = true;
       break;
     case 0x05:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
@@ -439,7 +493,6 @@ bool JIT::Exec(Mem& mem, u32 instr) {
       code.setne(regArg2.cvt8());
       code.mov(rax, (u64)b);
       code.call(rax);
-      res = true;
       break;
     case 0x06:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
@@ -448,7 +501,6 @@ bool JIT::Exec(Mem& mem, u32 instr) {
       code.setnz(regArg2.cvt8());
       code.mov(rax, (u64)b);
       code.call(rax);
-      res = true;
       break;
     case 0x07:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
@@ -457,7 +509,6 @@ bool JIT::Exec(Mem& mem, u32 instr) {
       code.setg(regArg2.cvt8());
       code.mov(rax, (u64)b);
       code.call(rax);
-      res = true;
       break;
     case 0x08:
       code.mov(rax, (u64)addi);
@@ -491,8 +542,8 @@ bool JIT::Exec(Mem& mem, u32 instr) {
       code.mov(rax, (u64)lui);
       code.call(rax);
       break;
-    case 0x10: cop0Decode(*this, instr); break;
-    case 0x11: res = cop1Decode(*this, instr); break;
+    case 0x10: cop0Emit(*this, instr); break;
+    case 0x11: cop1Emit(*this, instr); break;
     case 0x12: cop2Decode(instr); break;
     case 0x14:
       code.mov(r8, qword[rdi + GPR_OFFSET(RS(instr), this)]);
@@ -649,7 +700,5 @@ bool JIT::Exec(Mem& mem, u32 instr) {
     default:
       Util::panic("Unimplemented instruction {:02X} ({:08X}) (pc: {:016X})", mask, instr, (u64)regs.oldPC);
   }
-
-  return res;
 }
 }

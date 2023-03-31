@@ -14,8 +14,8 @@ Mem::Mem() {
 }
 
 void Mem::Reset() {
-  memset(readPages, 0, PAGE_COUNT);
-  memset(writePages, 0, PAGE_COUNT);
+  memset(readPages, 0, PAGE_COUNT * sizeof(uintptr_t));
+  memset(writePages, 0, PAGE_COUNT * sizeof(uintptr_t));
 
   for(int i = 0; i < RDRAM_SIZE / PAGE_SIZE; i++) {
     const auto addr = (i * PAGE_SIZE) & RDRAM_DSIZE;
@@ -256,22 +256,22 @@ u64 Mem::Read64(n64::Registers &regs, u32 paddr) {
 
 void Mem::Write8(Registers& regs, JIT& dyn, u32 paddr, u32 val) {
   dyn.InvalidatePage(BYTE_ADDRESS(paddr));
-  return Write8(regs, paddr, val);
+  Write8(regs, paddr, val);
 }
 
 void Mem::Write16(Registers& regs, JIT& dyn, u32 paddr, u32 val) {
   dyn.InvalidatePage(HALF_ADDRESS(paddr));
-  return Write16(regs, paddr, val);
+  Write16(regs, paddr, val);
 }
 
 void Mem::Write32(Registers& regs, JIT& dyn, u32 paddr, u32 val) {
   dyn.InvalidatePage(paddr);
-  return Write32(regs, paddr, val);
+  Write32(regs, paddr, val);
 }
 
 void Mem::Write64(Registers& regs, JIT& dyn, u32 paddr, u64 val) {
   dyn.InvalidatePage(paddr);
-  return Write64(regs, paddr, val);
+  Write64(regs, paddr, val);
 }
 
 void Mem::Write8(Registers& regs, u32 paddr, u32 val) {

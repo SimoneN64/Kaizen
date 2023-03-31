@@ -10,6 +10,20 @@
 #define MEMPAK_SIZE 32768
 
 namespace n64 {
+void PIF::Reset() {
+  memset(joybusDevices, 0, sizeof(JoybusDevice) * 6);
+  memset(bootrom, 0, PIF_BOOTROM_SIZE);
+  memset(ram, 0, PIF_RAM_SIZE);
+
+  if (mempak)
+    free(mempak);
+
+  mempak = (u8*)calloc(MEMPAK_SIZE, 1);
+
+  if (eeprom)
+    free(eeprom);
+}
+
 void PIF::LoadMempak(fs::path path) {
   if (mempak)
     free(mempak);

@@ -9,14 +9,14 @@ enum MessageType : u8 {
 };
 
 #ifdef NDEBUG
-static constexpr MessageType globalLogLevel = Panic;
+#define GLOBAL_LOG_LEVEL Panic
 #else
-static constexpr MessageType globalLogLevel = Trace;
+#define GLOBAL_LOG_LEVEL Panic
 #endif
 
 template <MessageType logLevel, typename ...Args>
 constexpr void print(const std::string& fmt, Args... args) {
-  if(logLevel >= globalLogLevel) {
+  if(logLevel >= GLOBAL_LOG_LEVEL) {
     fmt::print(fmt + "\n", args...);
   }
 }

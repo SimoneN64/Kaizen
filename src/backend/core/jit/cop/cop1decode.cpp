@@ -3,7 +3,21 @@
 #include <Registers.hpp>
 
 namespace n64 {
-bool cop1Decode(JIT& cpu, u32 instr) {
+bool cop1IsEndBlock(u32 instr) {
+  u8 mask_sub = (instr >> 21) & 0x1F;
+  u8 mask_fun = instr & 0x3F;
+  u8 mask_branch = (instr >> 16) & 0x1F;
+
+  switch (mask_sub) {
+    case 0x03:
+    case 0x07:
+      Util::panic("[RECOMPILER] FPU Reserved instruction exception! {:08X}", instr);
+    case 0x08: return true;
+    default: return false;
+  }
+}
+
+void cop1Emit(JIT& cpu, u32 instr) {
   Xbyak::CodeGenerator& code = cpu.code;
   Registers& regs = cpu.regs;
 
@@ -47,22 +61,22 @@ bool cop1Decode(JIT& cpu, u32 instr) {
           code.mov(regArg2, !regs.cop1.fcr31.compare);
           code.mov(rax, (u64)b);
           code.call(rax);
-          return true;
+          break;
         case 1:
           code.mov(regArg2, regs.cop1.fcr31.compare);
           code.mov(rax, (u64)b);
           code.call(rax);
-          return true;
+          break;
         case 2:
           code.mov(regArg2, !regs.cop1.fcr31.compare);
           code.mov(rax, (u64)bl);
           code.call(rax);
-          return true;
+          break;
         case 3:
           code.mov(regArg2, regs.cop1.fcr31.compare);
           code.mov(rax, (u64)bl);
           code.call(rax);
-          return true;
+          break;
         default: Util::panic("Undefined BC COP1 {:02X}", mask_branch);
       }
       break;
@@ -458,7 +472,5 @@ bool cop1Decode(JIT& cpu, u32 instr) {
       break;
     default: Util::panic("Unimplemented COP1 instruction {} {}", mask_sub >> 3, mask_sub & 7);
   }
-
-  return false;
 }
 }

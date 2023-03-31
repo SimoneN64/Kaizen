@@ -3,5 +3,6 @@
 
 namespace n64 {
 struct Registers;
-void cop0Decode(JIT& cpu, u32 instr);
+void cop0Emit(JIT& cpu, u32 instr);
+bool cop0IsEndBlock(u32 instr);
 }

@@ -3,7 +3,27 @@
 #include <Registers.hpp>
 
 namespace n64 {
-void cop0Decode(JIT& cpu, u32 instr) {
+bool cop0IsEndBlock(u32 instr) {
+  u8 mask_cop = (instr >> 21) & 0x1F;
+  u8 mask_cop2 = instr & 0x3F;
+
+  switch (mask_cop) {
+    case 0x00: case 0x01: case 0x04: case 0x05:
+      return false;
+    case 0x10 ... 0x1F:
+      switch (mask_cop2) {
+        case 0x01: case 0x02: case 0x06: case 0x08:
+          return false;
+        case 0x18:
+          return true;
+        default: Util::panic("Unimplemented COP0 function {} {} ({:08X})", mask_cop2 >> 3, mask_cop2 & 7, instr);
+      }
+      break;
+    default: Util::panic("Unimplemented COP0 instruction {} {}", mask_cop >> 4, mask_cop & 7);
+  }
+}
+
+void cop0Emit(JIT& cpu, u32 instr) {
   u8 mask_cop = (instr >> 21) & 0x1F;
   u8 mask_cop2 = instr & 0x3F;
   Xbyak::CodeGenerator& code = cpu.code;

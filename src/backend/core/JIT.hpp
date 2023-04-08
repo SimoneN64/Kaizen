@@ -31,6 +31,7 @@ using Fn = void (*)();
 
 #define GPR_OFFSET(x, jit) ((uintptr_t)&regs.gpr[(x)] - (uintptr_t)jit)
 #define REG_OFFSET(kind, jit) ((uintptr_t)&regs.kind - (uintptr_t)jit)
+#define THIS_OFFSET(kind, jit) ((uintptr_t)&kind - (uintptr_t)jit)
 #define CODECACHE_SIZE (2 << 25)
 #define CODECACHE_OVERHEAD (CODECACHE_SIZE - 1_kb)
 
@@ -40,7 +41,7 @@ struct JIT : BaseCPU {
   int Run() override;
   void Reset() override;
   u64 cop2Latch{};
-  CodeGenerator code;
+  CodeGenerator* code = nullptr;
   void InvalidatePage(u32);
   void InvalidateCache();
 private:
@@ -49,7 +50,6 @@ private:
   u8* codeCache;
   int instrInBlock = 0;
   u64 sizeUsed = 0;
-  std::ofstream dump;
 
   void* bumpAlloc(u64 size, u8 val = 0);
   void Recompile(Mem&, u32 pc);
@@ -57,7 +57,7 @@ private:
   void cop2Decode(u32);
   void special(u32);
   void regimm(u32);
-  void Emit(Mem&, u32);
+  void Emit(u32);
   bool isEndBlock(u32 instr);
 };
 }

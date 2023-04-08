@@ -18,7 +18,7 @@ bool cop1IsEndBlock(u32 instr) {
 }
 
 void cop1Emit(JIT& cpu, u32 instr) {
-  Xbyak::CodeGenerator& code = cpu.code;
+  Xbyak::CodeGenerator& code = *cpu.code;
   Registers& regs = cpu.regs;
 
   u8 mask_sub = (instr >> 21) & 0x1F;

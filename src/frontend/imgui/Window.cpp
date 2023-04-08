@@ -16,14 +16,9 @@ Window::Window(n64::Core& core) : settings(core) {
   NFD::Init();
 }
 
-[[nodiscard]] bool Window::gotClosed(SDL_Event event) {
-  return event.window.event == SDL_WINDOWEVENT_CLOSE
-      && event.window.windowID == SDL_GetWindowID(window);
-}
-
 static void check_vk_result(VkResult err) {
-  if (err) {
-    Util::panic("[vulkan] Error: VkResult = {}", err);
+  if (err != VK_SUCCESS) {
+    Util::panic("[vulkan] Error: VkResult = {}", (int)err);
   }
 }
 
@@ -112,6 +107,10 @@ void Window::InitImgui() {
   int displayIndex = SDL_GetWindowDisplayIndex(window);
   float ddpi, hdpi, vdpi;
   SDL_GetDisplayDPI(displayIndex, &ddpi, &hdpi, &vdpi);
+
+  ddpi = ddpi <= 0 ? 96 : ddpi;
+  hdpi = hdpi <= 0 ? 96 : hdpi;
+  vdpi = vdpi <= 0 ? 96 : vdpi;
 
   ddpi /= 96.f;
 
@@ -231,8 +230,8 @@ void Window::Render(n64::Core& core) {
   u32 ticks = SDL_GetTicks();
   static u32 lastFrame = 0;
   if(!core.pause && lastFrame < ticks - 1000) {
-    lastFrame = ticks;
-    windowTitle += fmt::format("  | {:02d} VI/s", core.cpu->mem.mmio.vi.swaps);
+    lastFrame = ticks; 
+    windowTitle += fmt::format("  | {} VI/s", core.cpu->mem.mmio.vi.swaps);
     core.cpu->mem.mmio.vi.swaps = 0;
     SDL_SetWindowTitle(window, windowTitle.c_str());
     windowTitle = shadowWindowTitle;

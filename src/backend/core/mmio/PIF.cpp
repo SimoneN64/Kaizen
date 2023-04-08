@@ -66,38 +66,44 @@ inline size_t getSaveSize(SaveType saveType) {
 }
 
 void PIF::LoadEeprom(SaveType saveType, fs::path path) {
-  if (eeprom)
-    free(eeprom);
+  if(saveType != SAVE_NONE) {
+    if (eeprom)
+      free(eeprom);
 
-  eepromSize = getSaveSize(saveType);
-  eeprom = (u8*)calloc(eepromSize, 1);
-  eepromPath = path.replace_extension(".eeprom").string();
-  FILE* f = fopen(eepromPath.c_str(), "rb");
-  if (!f) {
-    f = fopen(eepromPath.c_str(), "wb");
-    fwrite(eeprom, 1, eepromSize, f);
+    eepromSize = getSaveSize(saveType);
+    eeprom = (u8*)calloc(eepromSize, 1);
+    eepromPath = path.replace_extension(".eeprom").string();
+    FILE* f = fopen(eepromPath.c_str(), "rb");
+    if (!f) {
+      f = fopen(eepromPath.c_str(), "wb");
+      fwrite(eeprom, 1, eepromSize, f);
+      fclose(f);
+      f = fopen(eepromPath.c_str(), "rb");
+    }
+
+    fseek(f, 0, SEEK_END);
+    size_t actualSize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    if (actualSize != eepromSize) {
+      Util::panic("Corrupt eeprom!");
+    }
+
+    fread(eeprom, 1, eepromSize, f);
     fclose(f);
-    f = fopen(eepromPath.c_str(), "rb");
   }
-
-  fseek(f, 0, SEEK_END);
-  size_t actualSize = ftell(f);
-  fseek(f, 0, SEEK_SET);
-  if (actualSize != eepromSize) {
-    Util::panic("Corrupt eeprom!");
-  }
-
-  fread(eeprom, 1, eepromSize, f);
-  fclose(f);
 }
 
 PIF::~PIF() {
-  FILE* f = fopen(mempakPath.c_str(), "wb");
-  fwrite(mempak, 1, MEMPAK_SIZE, f);
-  fclose(f);
-  f = fopen(eepromPath.c_str(), "wb");
-  fwrite(eeprom, 1, eepromSize, f);
-  fclose(f);
+  if (!mempakPath.empty()) {
+    FILE* f = fopen(mempakPath.c_str(), "wb");
+    fwrite(mempak, 1, MEMPAK_SIZE, f);
+    fclose(f);
+  }
+  if (!eepromPath.empty()) {
+    FILE* f = fopen(eepromPath.c_str(), "wb");
+    fwrite(eeprom, 1, eepromSize, f);
+    fclose(f);
+  }
 }
 
 enum CMDIndexes {

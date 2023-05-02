@@ -1,29 +1,20 @@
 #include <Registers.hpp>
-#include <filesystem>
 #include <JIT.hpp>
 
 namespace n64 {
-namespace fs = std::filesystem;
-
 JIT::~JIT() {
+  delete code;
   Util::aligned_free(codeCache);
-  dump.close();
 }
 
-JIT::JIT() : code(CODECACHE_SIZE, codeCache) {
+JIT::JIT() {
   codeCache = (u8*)Util::aligned_alloc(4096, CODECACHE_SIZE);
+  code = new CodeGenerator(CODECACHE_SIZE, codeCache);
   CodeArray::protect(
     codeCache,
     CODECACHE_SIZE,
     CodeArray::PROTECT_RWE
   );
-
-  if(fs::exists("jit.dump")) {
-    fs::remove("jit.dump");
-  }
-
-  dump.open("jit.dump", std::ios::ate | std::ios::binary);
-  dump.unsetf(std::ios::skipws);
   regs.Reset();
 }
 
@@ -50,63 +41,70 @@ void JIT::Recompile(Mem& mem, u32 pc) {
   bool branch = false, prevBranch = false;
   u32 startPC = pc;
   u32 loopPC = pc;
-  Fn block = code.getCurr<Fn>();
+  Fn block = code->getCurr<Fn>();
 
-  if(code.getSize() >= CODECACHE_OVERHEAD) {
+  if(code->getSize() >= CODECACHE_OVERHEAD) {
     Util::debug("Code cache overflow!");
-    code.setSize(0);
+    code->setSize(0);
     InvalidateCache();
   }
 
-  code.push(rbx);
-  code.push(rbp);
-  code.push(r12);
-  code.push(r13);
-  code.push(r14);
-  code.push(r15);
+#if 0
+  code->push(rbx);
+  code->push(rbp);
+  code->push(r12);
+  code->push(r13);
+  code->push(r14);
+  code->push(r15);
 #ifdef ABI_MSVC
-  code.push(rsi);
-  code.push(rdi);
+  code->push(rsi);
+  code->push(rdi);
 #endif
-  code.sub(rsp, 8);
-  code.mov(rbp, rsp);
+  code->mov(rbp, rsp);
+#endif
+  code->sub(rsp, 16);
 
-  while(!prevBranch) {
-    instrInBlock++;
+  while (!prevBranch) {
+    code->mov(regArg0, (uintptr_t)this);
+    code->mov(r8, qword[regArg0 + THIS_OFFSET(instrInBlock, this)]);
+    code->inc(r8);
+    code->mov(qword[regArg0 + THIS_OFFSET(instrInBlock, this)], r8);
+
     prevBranch = branch;
     u32 instr = mem.Read32(regs, loopPC);
-    Util::trace("{:08X}", instr);
     loopPC += 4;
+    branch = isEndBlock(instr);
+    Util::trace("{:08X}", instr);
 
-    code.mov(regArg0, (uintptr_t)this);
-    code.mov(qword[rdi + GPR_OFFSET(0, this)], 0);
-    code.mov(r8, qword[rdi + REG_OFFSET(oldPC, this)]);
-    code.mov(r9, qword[rdi + REG_OFFSET(pc, this)]);
-    code.mov(r10, qword[rdi + REG_OFFSET(nextPC, this)]);
-    code.mov(r8, r9);
-    code.mov(r9, r10);
-    code.add(r10, 4);
-    code.mov(qword[rdi + REG_OFFSET(oldPC, this)], r8);
-    code.mov(qword[rdi + REG_OFFSET(pc, this)], r9);
-    code.mov(qword[rdi + REG_OFFSET(nextPC, this)], r10);
+    code->mov(qword[regArg0 + GPR_OFFSET(0, this)], 0);
+    code->mov(r8, qword[regArg0 + REG_OFFSET(oldPC, this)]);
+    code->mov(r9, qword[regArg0 + REG_OFFSET(pc, this)]);
+    code->mov(r10, qword[regArg0 + REG_OFFSET(nextPC, this)]);
+    code->mov(r8, r9);
+    code->mov(r9, r10);
+    code->add(r10, 4);
+    code->mov(qword[regArg0 + REG_OFFSET(oldPC, this)], r8);
+    code->mov(qword[regArg0 + REG_OFFSET(pc, this)], r9);
+    code->mov(qword[regArg0 + REG_OFFSET(nextPC, this)], r10);
 
-    code.mov(regArg1, instr);
-    branch = Exec(mem, instr);
+    code->mov(regArg1, instr);
+    Emit(instr);
   }
 
-  code.add(rsp, 8);
+  code->add(rsp, 16);
+#if 0
 #ifdef ABI_MSVC
-  code.pop(rdi);
-  code.pop(rsi);
+  code->pop(rdi);
+  code->pop(rsi);
 #endif
-  code.pop(r15);
-  code.pop(r14);
-  code.pop(r13);
-  code.pop(r12);
-  code.pop(rbp);
-  code.pop(rbx);
-  code.ret();
-  dump.write(code.getCode<char*>(), code.getSize());
+  code->pop(r15);
+  code->pop(r14);
+  code->pop(r13);
+  code->pop(r12);
+  code->pop(rbp);
+  code->pop(rbx);
+#endif
+  code->ret();
 
   blockCache[startPC >> 20][startPC & 0xFFF] = block;
 }
@@ -147,7 +145,7 @@ int JIT::Run() {
 }
 
 void JIT::Reset() {
-  code.reset();
+  code->reset();
   regs.Reset();
   InvalidateCache();
 }

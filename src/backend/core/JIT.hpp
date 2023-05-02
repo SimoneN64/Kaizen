@@ -16,21 +16,22 @@ using Fn = void (*)();
 #endif
 
 #ifdef ABI_MSVC
-static constexpr Xbyak::Reg64 regArg0 = rcx;
-static constexpr Xbyak::Reg64 regArg1 = rdx;
-static constexpr Xbyak::Reg64 regArg2 = r8;
-static constexpr Xbyak::Reg64 regArg3 = r9;
+#define regArg0 rcx
+#define regArg1 rdx
+#define regArg2 r8
+#define regArg3 r9
 #else
-static constexpr Xbyak::Reg64 regArg0 = rdi;
-static constexpr Xbyak::Reg64 regArg1 = rsi;
-static constexpr Xbyak::Reg64 regArg2 = rdx;
-static constexpr Xbyak::Reg64 regArg3 = rcx;
-static constexpr Xbyak::Reg64 regArg4 = r8;
-static constexpr Xbyak::Reg64 regArg5 = r9;
+#define regArg0 rdi
+#define regArg1 rsi
+#define regArg2 rdx
+#define regArg3 rcx
+#define regArg4 r8
+#define regArg5 r9
 #endif
 
 #define GPR_OFFSET(x, jit) ((uintptr_t)&regs.gpr[(x)] - (uintptr_t)jit)
 #define REG_OFFSET(kind, jit) ((uintptr_t)&regs.kind - (uintptr_t)jit)
+#define THIS_OFFSET(kind, jit) ((uintptr_t)&kind - (uintptr_t)jit)
 #define CODECACHE_SIZE (2 << 25)
 #define CODECACHE_OVERHEAD (CODECACHE_SIZE - 1_kb)
 
@@ -40,7 +41,7 @@ struct JIT : BaseCPU {
   int Run() override;
   void Reset() override;
   u64 cop2Latch{};
-  CodeGenerator code;
+  CodeGenerator* code = nullptr;
   void InvalidatePage(u32);
   void InvalidateCache();
 private:
@@ -49,14 +50,14 @@ private:
   u8* codeCache;
   int instrInBlock = 0;
   u64 sizeUsed = 0;
-  std::ofstream dump;
 
   void* bumpAlloc(u64 size, u8 val = 0);
   void Recompile(Mem&, u32 pc);
   void AllocateOuter(u32 pc);
   void cop2Decode(u32);
-  bool special(u32);
-  bool regimm(u32);
-  bool Exec(Mem&, u32);
+  void special(u32);
+  void regimm(u32);
+  void Emit(u32);
+  bool isEndBlock(u32 instr);
 };
 }

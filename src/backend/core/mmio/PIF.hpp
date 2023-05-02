@@ -92,6 +92,7 @@ struct CartInfo;
 
 struct PIF {
   ~PIF();
+  void Reset();
   void LoadMempak(fs::path);
   void LoadEeprom(SaveType, fs::path);
   void ProcessCommands(Mem&);
@@ -110,7 +111,7 @@ struct PIF {
   bool gamepadConnected = false;
   SDL_GameController* gamepad{};
   JoybusDevice joybusDevices[6]{};
-  u8 bootrom[PIF_BOOTROM_SIZE]{}, ram[PIF_RAM_SIZE]{}, *mempak, *eeprom;
+  u8 bootrom[PIF_BOOTROM_SIZE]{}, ram[PIF_RAM_SIZE]{}, *mempak = nullptr, *eeprom = nullptr;
   int channel = 0;
   std::string mempakPath{}, eepromPath{};
   size_t eepromSize{};

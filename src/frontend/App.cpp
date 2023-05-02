@@ -28,9 +28,6 @@ void App::Run() {
         case SDL_QUIT:
           core.done = true;
           break;
-        case SDL_WINDOWEVENT:
-          core.done = window.gotClosed(event);
-          break;
         case SDL_CONTROLLERDEVICEADDED: {
           const int index = event.cdevice.which;
           si.pif.gamepad = SDL_GameControllerOpen(index);
@@ -57,14 +54,16 @@ void App::Run() {
               }
             } break;
             case SDLK_f:
-              core.pause = true;
               if(core.romLoaded) {
+                core.pause = true;
                 core.Run(window.settings.GetVolumeL(), window.settings.GetVolumeL());
                 UpdateScreenParallelRdp(core, window, core.GetVI());
               }
               break;
             case SDLK_p:
-              core.pause = !core.pause;
+              if(core.romLoaded) {
+                core.pause = !core.pause;
+              }
               break;
           } break;
           case SDL_DROPFILE: {

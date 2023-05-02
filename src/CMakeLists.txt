@@ -38,19 +38,6 @@ include_directories(
   ${SDL2_INCLUDE_DIRS}
 )
 
-add_compile_definitions(SIMD_SUPPORT)
-add_compile_options(-mssse3 -msse4.1)
-if(${CMAKE_BUILD_TYPE} MATCHES Debug)
-  add_compile_options(
-    -fsanitize=address
-    #-fsanitize=undefined
-  )
-  add_link_options(
-    -fsanitize=address
-    #-fsanitize=undefined
-  )
-endif()
-
 add_subdirectory(frontend)
 add_subdirectory(frontend/imgui)
 add_subdirectory(backend)
@@ -65,6 +52,9 @@ add_subdirectory(../external/imgui imgui)
 add_subdirectory(../external/nativefiledialog-extended nfd)
 add_subdirectory(../external/parallel-rdp parallel-rdp)
 
+add_compile_definitions(SIMD_SUPPORT)
+add_compile_options(-mssse3 -msse4.1)
+
 add_executable(gadolinium main.cpp)
 
 file(COPY ${PROJECT_SOURCE_DIR}/../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)
@@ -76,9 +66,22 @@ file(REMOVE
 target_link_libraries(gadolinium PUBLIC frontend frontend-imgui
   discord-rpc imgui nfd parallel-rdp backend fmt::fmt nlohmann_json::nlohmann_json core jit registers interpreter mmio rsp SDL2::SDL2main SDL2::SDL2)
 
-if(WIN32)
-  target_compile_definitions(gadolinium PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
-  if(MSVC)
+if(MSVC)
+    target_compile_definitions(gadolinium PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
     target_compile_options(parallel-rdp PUBLIC /EHa)
-  endif()
+endif()
+
+if(${CMAKE_BUILD_TYPE} MATCHES Debug)
+  add_compile_options(
+      -fsanitize=address
+      -fsanitize=undefined
+      -fsanitize=memory
+      -fsanitize=leak
+  )
+  add_link_options(
+      -fsanitize=address
+      -fsanitize=undefined
+      -fsanitize=memory
+      -fsanitize=leak
+  )
 endif()

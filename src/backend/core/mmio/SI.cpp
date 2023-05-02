@@ -11,9 +11,7 @@ void SI::Reset() {
   status.raw = 0;
   dramAddr = 0;
   pifAddr = 0;
-  memset(&pif.joybusDevices, 0, sizeof(JoybusDevice) * 6);
-  memset(&pif.bootrom, 0, PIF_BOOTROM_SIZE);
-  memset(&pif.ram, 0, PIF_RAM_SIZE);
+  pif.Reset();
 }
 
 auto SI::Read(MI& mi, u32 addr) const -> u32 {

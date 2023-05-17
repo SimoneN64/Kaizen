@@ -49,20 +49,11 @@ void JIT::Recompile(Mem& mem, u32 pc) {
     InvalidateCache();
   }
 
-#if 0
-  code->push(rbx);
-  code->push(rbp);
-  code->push(r12);
-  code->push(r13);
-  code->push(r14);
-  code->push(r15);
 #ifdef ABI_MSVC
-  code->push(rsi);
-  code->push(rdi);
+  code->sub(rsp, 40);
+#else
+  code->sub(rsp, 8);
 #endif
-  code->mov(rbp, rsp);
-#endif
-  code->sub(rsp, 16);
 
   while (!prevBranch) {
     code->mov(regArg0, (uintptr_t)this);
@@ -91,18 +82,10 @@ void JIT::Recompile(Mem& mem, u32 pc) {
     Emit(instr);
   }
 
-  code->add(rsp, 16);
-#if 0
 #ifdef ABI_MSVC
-  code->pop(rdi);
-  code->pop(rsi);
-#endif
-  code->pop(r15);
-  code->pop(r14);
-  code->pop(r13);
-  code->pop(r12);
-  code->pop(rbp);
-  code->pop(rbx);
+  code->add(rsp, 40);
+#else
+  code->add(rsp, 8);
 #endif
   code->ret();
 

@@ -20,6 +20,9 @@ using Fn = void (*)();
 #define regArg1 rdx
 #define regArg2 r8
 #define regArg3 r9
+#define regScratch0 rax
+#define regScratch1 r10
+#define regScratch2 r11
 #else
 #define regArg0 rdi
 #define regArg1 rsi
@@ -27,6 +30,9 @@ using Fn = void (*)();
 #define regArg3 rcx
 #define regArg4 r8
 #define regArg5 r9
+#define regScratch0 rax
+#define regScratch1 r10
+#define regScratch2 r11
 #endif
 
 #define GPR_OFFSET(x, jit) ((uintptr_t)&regs.gpr[(x)] - (uintptr_t)jit)
@@ -41,7 +47,7 @@ struct JIT : BaseCPU {
   int Run() override;
   void Reset() override;
   u64 cop2Latch{};
-  CodeGenerator* code = nullptr;
+  std::unique_ptr<CodeGenerator> code{};
   void InvalidatePage(u32);
   void InvalidateCache();
 private:

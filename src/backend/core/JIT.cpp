@@ -3,13 +3,12 @@
 
 namespace n64 {
 JIT::~JIT() {
-  delete code;
   Util::aligned_free(codeCache);
 }
 
 JIT::JIT() {
   codeCache = (u8*)Util::aligned_alloc(4096, CODECACHE_SIZE);
-  code = new CodeGenerator(CODECACHE_SIZE, codeCache);
+  code = std::make_unique<CodeGenerator>(CODECACHE_SIZE, codeCache);
   CodeArray::protect(
     codeCache,
     CODECACHE_SIZE,
@@ -44,22 +43,24 @@ void JIT::Recompile(Mem& mem, u32 pc) {
   Fn block = code->getCurr<Fn>();
 
   if(code->getSize() >= CODECACHE_OVERHEAD) {
-    Util::debug("Code cache overflow!");
+    Util::panic("Code cache overflow!");
     code->setSize(0);
     InvalidateCache();
   }
 
+  code->push(rbp);
+  code->mov(rbp, rsp);
 #ifdef ABI_MSVC
-  code->sub(rsp, 40);
+  code->sub(rsp, 8);
 #else
   code->sub(rsp, 8);
 #endif
 
   while (!prevBranch) {
     code->mov(regArg0, (uintptr_t)this);
-    code->mov(r8, qword[regArg0 + THIS_OFFSET(instrInBlock, this)]);
-    code->inc(r8);
-    code->mov(qword[regArg0 + THIS_OFFSET(instrInBlock, this)], r8);
+    code->mov(regScratch0, qword[regArg0 + THIS_OFFSET(instrInBlock, this)]);
+    code->inc(regScratch0);
+    code->mov(qword[regArg0 + THIS_OFFSET(instrInBlock, this)], regScratch0);
 
     prevBranch = branch;
     u32 instr = mem.Read32(regs, loopPC);
@@ -68,25 +69,22 @@ void JIT::Recompile(Mem& mem, u32 pc) {
     Util::trace("{:08X}", instr);
 
     code->mov(qword[regArg0 + GPR_OFFSET(0, this)], 0);
-    code->mov(r8, qword[regArg0 + REG_OFFSET(oldPC, this)]);
-    code->mov(r9, qword[regArg0 + REG_OFFSET(pc, this)]);
-    code->mov(r10, qword[regArg0 + REG_OFFSET(nextPC, this)]);
-    code->mov(r8, r9);
-    code->mov(r9, r10);
-    code->add(r10, 4);
-    code->mov(qword[regArg0 + REG_OFFSET(oldPC, this)], r8);
-    code->mov(qword[regArg0 + REG_OFFSET(pc, this)], r9);
-    code->mov(qword[regArg0 + REG_OFFSET(nextPC, this)], r10);
+    code->mov(regScratch0, qword[regArg0 + REG_OFFSET(oldPC, this)]);
+    code->mov(regScratch1, qword[regArg0 + REG_OFFSET(pc, this)]);
+    code->mov(regScratch2, qword[regArg0 + REG_OFFSET(nextPC, this)]);
+    code->mov(regScratch0, regScratch1);
+    code->mov(regScratch1, regScratch2);
+    code->add(regScratch2, 4);
+    code->mov(qword[regArg0 + REG_OFFSET(oldPC, this)], regScratch0);
+    code->mov(qword[regArg0 + REG_OFFSET(pc, this)], regScratch1);
+    code->mov(qword[regArg0 + REG_OFFSET(nextPC, this)], regScratch2);
 
     code->mov(regArg1, instr);
     Emit(instr);
   }
 
-#ifdef ABI_MSVC
-  code->add(rsp, 40);
-#else
-  code->add(rsp, 8);
-#endif
+  code->mov(rsp, rbp);
+  code->pop(rbp);
   code->ret();
 
   blockCache[startPC >> 20][startPC & 0xFFF] = block;

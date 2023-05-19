@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(SDL2 REQUIRED)
 find_package(fmt REQUIRED)
 find_package(nlohmann_json REQUIRED)
+find_package(capstone CONFIG REQUIRED)
 
 option(RAPIDJSON_BUILD_DOC "Build rapidjson documentation." OFF)
 option(RAPIDJSON_BUILD_EXAMPLES "Build rapidjson examples." OFF)
@@ -63,8 +64,25 @@ file(REMOVE
   ${PROJECT_BINARY_DIR}/resources/shader.frag
   ${PROJECT_BINARY_DIR}/resources/shader.vert)
 
-target_link_libraries(gadolinium PUBLIC frontend frontend-imgui
-  discord-rpc imgui nfd parallel-rdp backend fmt::fmt nlohmann_json::nlohmann_json core jit registers interpreter mmio rsp SDL2::SDL2main SDL2::SDL2)
+target_link_libraries(gadolinium PUBLIC
+        frontend
+        frontend-imgui
+        imgui
+        discord-rpc
+        nfd
+        parallel-rdp
+        backend
+        fmt::fmt
+        nlohmann_json::nlohmann_json
+        capstone::capstone
+        core
+        jit
+        registers
+        interpreter
+        mmio
+        rsp
+        SDL2::SDL2main
+        SDL2::SDL2)
 
 if(MSVC)
     target_compile_definitions(gadolinium PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)

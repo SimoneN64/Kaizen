@@ -10,6 +10,7 @@ roms/
 .vscode/
 vgcore.*
 *.dump
+dump.*
 *.data
 disasm.txt
 *log.txt

@@ -11,39 +11,39 @@ enum MessageType : u8 {
 #ifdef NDEBUG
 #define GLOBAL_LOG_LEVEL Panic
 #else
-#define GLOBAL_LOG_LEVEL Panic
+#define GLOBAL_LOG_LEVEL Debug
 #endif
 
 template <MessageType logLevel, typename ...Args>
 constexpr void print(const std::string& fmt, Args... args) {
-  if(logLevel >= GLOBAL_LOG_LEVEL) {
-    fmt::print(fmt + "\n", args...);
+  if constexpr (logLevel >= GLOBAL_LOG_LEVEL) {
+    fmt::print(fmt, args...);
   }
 }
 
 template <typename ...Args>
 constexpr void panic(const std::string& fmt, Args... args) {
-  print<Panic>(fmt, args...);
+  print<Panic>(fmt + "\n", args...);
   exit(-1);
 }
 
 template <typename ...Args>
 constexpr void warn(const std::string& fmt, Args... args) {
-  print<Warn>(fmt, args...);
+  print<Warn>(fmt + "\n", args...);
 }
 
 template <typename ...Args>
 constexpr void info(const std::string& fmt, Args... args) {
-  print<Info>(fmt, args...);
+  print<Info>(fmt + "\n", args...);
 }
 
 template <typename ...Args>
 constexpr void trace(const std::string& fmt, Args... args) {
-  print<Trace>(fmt, args...);
+  print<Trace>(fmt + "\n", args...);
 }
 
 template <typename ...Args>
 constexpr void debug(const std::string& fmt, Args... args) {
-  print<Debug>(fmt, args...);
+  print<Debug>(fmt + "\n", args...);
 }
 }

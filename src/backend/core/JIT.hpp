@@ -3,6 +3,7 @@
 #include <backend/core/Mem.hpp>
 #include <fstream>
 #include <BaseCPU.hpp>
+#include <capstone/capstone.h>
 
 namespace n64 {
 using namespace Xbyak;
@@ -21,8 +22,12 @@ using Fn = void (*)();
 #define regArg2 r8
 #define regArg3 r9
 #define regScratch0 rax
-#define regScratch1 r10
-#define regScratch2 r11
+#define regScratch1 rcx
+#define regScratch2 rdx
+#define regScratch3 r8
+#define regScratch4 r9
+#define regScratch5 r10
+#define regScratch6 r11
 #else
 #define regArg0 rdi
 #define regArg1 rsi
@@ -31,8 +36,14 @@ using Fn = void (*)();
 #define regArg4 r8
 #define regArg5 r9
 #define regScratch0 rax
-#define regScratch1 r10
-#define regScratch2 r11
+#define regScratch1 rdi
+#define regScratch2 rsi
+#define regScratch3 rcx
+#define regScratch4 rdx
+#define regScratch5 r8
+#define regScratch6 r9
+#define regScratch7 r10
+#define regScratch8 r11
 #endif
 
 #define GPR_OFFSET(x, jit) ((uintptr_t)&regs.gpr[(x)] - (uintptr_t)jit)
@@ -52,10 +63,12 @@ struct JIT : BaseCPU {
   void InvalidateCache();
 private:
   friend struct n64::Cop1;
+  csh capstoneHandle;
   Fn* blockCache[0x80000]{};
   u8* codeCache;
   int instrInBlock = 0;
   u64 sizeUsed = 0;
+  u64 prevSize = 0;
 
   void* bumpAlloc(u64 size, u8 val = 0);
   void Recompile(Mem&, u32 pc);

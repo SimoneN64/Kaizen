@@ -66,7 +66,8 @@ inline size_t getSaveSize(SaveType saveType) {
 }
 
 void PIF::LoadEeprom(SaveType saveType, fs::path path) {
-  if(saveType != SAVE_NONE) {
+  if(saveType == SAVE_EEPROM_16k ||
+     saveType == SAVE_EEPROM_4k) {
     if (eeprom)
       free(eeprom);
 

@@ -10,7 +10,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y build-essential libgtk-3-dev libsdl2-dev git ninja-build nlohmann-json3-dev
+          sudo apt-get install -y build-essential libgtk-3-dev libsdl2-dev git ninja-build nlohmann-json3-dev libcapstone-dev
           sudo apt-get install -y vulkan-tools libvulkan1 libvulkan-dev vulkan-validationlayers-dev spirv-tools
           git clone --recursive https://github.com/fmtlib/fmt
           cd fmt
@@ -46,6 +46,7 @@ jobs:
           vcpkg install sdl2[vulkan]:x64-windows
           vcpkg install fmt:x64-windows
           vcpkg install nlohmann-json:x64-windows
+          vcpkg install capstone[x86]:x64-windows
       - name: Build Gadolinium
         run: |
           cmake -B build -T clangcl -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release -S src

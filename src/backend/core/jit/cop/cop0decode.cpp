@@ -53,7 +53,7 @@ void cop0Emit(JIT& cpu, u32 instr) {
           code.call(rax);
           break;
         case 0x02:
-          code.mov(regArg1, dword[regArg0 + REG_OFFSET(cop0.index, &cpu)]);
+          code.mov(regArg1, dword[JIT_THIS + REG_OFFSET(cop0.index, &cpu)]);
           code.and_(regArg1, 0x3F);
           code.mov(rax, (u64)tlbw);
           code.call(rax);

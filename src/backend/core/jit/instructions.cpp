@@ -469,7 +469,7 @@ void sb(JIT& dyn, u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write8(regs, paddr, regs.gpr[RT(instr)]);
+    mem.Write8(regs, dyn, paddr, regs.gpr[RT(instr)]);
   }
 }
 
@@ -490,7 +490,7 @@ void sc(JIT& dyn, u32 instr) {
       HandleTLBException(regs, address);
       FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
     } else {
-      mem.Write32(regs, paddr, regs.gpr[RT(instr)]);
+      mem.Write32(regs, dyn, paddr, regs.gpr[RT(instr)]);
       regs.gpr[RT(instr)] = 1;
     }
   } else {
@@ -520,7 +520,7 @@ void scd(JIT& dyn, u32 instr) {
       HandleTLBException(regs, address);
       FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
     } else {
-      mem.Write32(regs, paddr, regs.gpr[RT(instr)]);
+      mem.Write32(regs, dyn, paddr, regs.gpr[RT(instr)]);
       regs.gpr[RT(instr)] = 1;
     }
   } else {
@@ -538,7 +538,7 @@ void sh(JIT& dyn, u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write16(regs, physical, regs.gpr[RT(instr)]);
+    mem.Write16(regs, dyn, physical, regs.gpr[RT(instr)]);
   }
 }
 
@@ -558,7 +558,7 @@ void sw(JIT& dyn, u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write32(regs, physical, regs.gpr[RT(instr)]);
+    mem.Write32(regs, dyn, physical, regs.gpr[RT(instr)]);
   }
 }
 
@@ -577,7 +577,7 @@ void sd(JIT& dyn, u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write64(regs, physical, regs.gpr[RT(instr)]);
+    mem.Write64(regs, dyn, physical, regs.gpr[RT(instr)]);
   }
 }
 
@@ -594,7 +594,7 @@ void sdl(JIT& dyn, u32 instr) {
     u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
     u64 data = mem.Read64(regs, paddr & ~7);
     u64 rt = regs.gpr[RT(instr)];
-    mem.Write64(regs, paddr & ~7, (data & ~mask) | (rt >> shift));
+    mem.Write64(regs, dyn, paddr & ~7, (data & ~mask) | (rt >> shift));
   }
 }
 
@@ -611,7 +611,7 @@ void sdr(JIT& dyn, u32 instr) {
     u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
     u64 data = mem.Read64(regs, paddr & ~7);
     u64 rt = regs.gpr[RT(instr)];
-    mem.Write64(regs, paddr & ~7, (data & ~mask) | (rt << shift));
+    mem.Write64(regs, dyn, paddr & ~7, (data & ~mask) | (rt << shift));
   }
 }
 
@@ -628,7 +628,7 @@ void swl(JIT& dyn, u32 instr) {
     u32 mask = 0xFFFFFFFF >> shift;
     u32 data = mem.Read32(regs, paddr & ~3);
     u32 rt = regs.gpr[RT(instr)];
-    mem.Write32(regs, paddr & ~3, (data & ~mask) | (rt >> shift));
+    mem.Write32(regs, dyn, paddr & ~3, (data & ~mask) | (rt >> shift));
   }
 }
 
@@ -645,7 +645,7 @@ void swr(JIT& dyn, u32 instr) {
     u32 mask = 0xFFFFFFFF << shift;
     u32 data = mem.Read32(regs, paddr & ~3);
     u32 rt = regs.gpr[RT(instr)];
-    mem.Write32(regs, paddr & ~3, (data & ~mask) | (rt << shift));
+    mem.Write32(regs, dyn, paddr & ~3, (data & ~mask) | (rt << shift));
   }
 }
 

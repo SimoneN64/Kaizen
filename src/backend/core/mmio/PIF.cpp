@@ -5,7 +5,6 @@
 #include <SDL_keyboard.h>
 #include <cic_nus_6105/n64_cic_nus_6105.hpp>
 #include <cassert>
-#include <MupenMovie.hpp>
 
 #define MEMPAK_SIZE 32768
 

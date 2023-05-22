@@ -525,7 +525,7 @@ void swc1(JIT& dyn, u32 instr) {
     HandleTLBException(regs, addr);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    dyn.mem.Write32(regs, physical, regs.cop1.GetReg<u32>(regs.cop0, FT(instr)));
+    dyn.mem.Write32(regs, dyn, physical, regs.cop1.GetReg<u32>(regs.cop0, FT(instr)));
   }
 }
 
@@ -562,7 +562,7 @@ void sdc1(JIT& dyn, u32 instr) {
     HandleTLBException(regs, addr);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    dyn.mem.Write64(regs, physical, regs.cop1.GetReg<u64>(regs.cop0, FT(instr)));
+    dyn.mem.Write64(regs, dyn, physical, regs.cop1.GetReg<u64>(regs.cop0, FT(instr)));
   }
 }
 

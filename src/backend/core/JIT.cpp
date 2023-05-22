@@ -58,8 +58,13 @@ void JIT::Recompile(Mem& mem, u32 pc) {
 
   code->mov(JIT_THIS, (uintptr_t)this);
 
+  code->mov(JIT_THIS, (uintptr_t)this);
   while (!prevBranch) {
+<<<<<<< HEAD
     code->mov(regScratch0, qword[JIT_THIS + THIS_OFFSET(instrInBlock, this)]);
+=======
+    code->mov(regScratch0, qword[regArg0 + THIS_OFFSET(instrInBlock, this)]);
+>>>>>>> d1e079d (Small fixes to JIT (still crashes though))
     code->inc(regScratch0);
     code->mov(qword[JIT_THIS + THIS_OFFSET(instrInBlock, this)], regScratch0);
 
@@ -77,9 +82,15 @@ void JIT::Recompile(Mem& mem, u32 pc) {
     code->mov(regScratch0, regScratch1);
     code->mov(regScratch1, regScratch2);
     code->add(regScratch2, 4);
+<<<<<<< HEAD
     code->mov(qword[JIT_THIS + REG_OFFSET(oldPC, this)], regScratch0);
     code->mov(qword[JIT_THIS + REG_OFFSET(pc, this)], regScratch1);
     code->mov(qword[JIT_THIS + REG_OFFSET(nextPC, this)], regScratch2);
+=======
+    code->mov(qword[regArg0 + REG_OFFSET(oldPC, this)], regScratch0);
+    code->mov(qword[regArg0 + REG_OFFSET(pc, this)], regScratch1);
+    code->mov(qword[regArg0 + REG_OFFSET(nextPC, this)], regScratch2);
+>>>>>>> d1e079d (Small fixes to JIT (still crashes though))
 
     Emit(instr);
   }

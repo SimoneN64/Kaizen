@@ -19,8 +19,13 @@ using Fn = void (*)();
 #ifdef ABI_MSVC
 #define JIT_THIS rcx
 #define INSTR rdx
+<<<<<<< HEAD
 #define regArg0 JIT_THIS
 #define regArg1 INSTR
+=======
+#define regArg0 rcx
+#define regArg1 rdx
+>>>>>>> d1e079d (Small fixes to JIT (still crashes though))
 #define regArg2 r8
 #define regArg3 r9
 #define regScratch0 rax
@@ -29,8 +34,13 @@ using Fn = void (*)();
 #else
 #define JIT_THIS rdi
 #define INSTR rsi
+<<<<<<< HEAD
 #define regArg0 JIT_THIS
 #define regArg1 INSTR
+=======
+#define regArg0 rdi
+#define regArg1 rsi
+>>>>>>> d1e079d (Small fixes to JIT (still crashes though))
 #define regArg2 rdx
 #define regArg3 rcx
 #define regArg4 r8

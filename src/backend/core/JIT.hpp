@@ -17,33 +17,27 @@ using Fn = void (*)();
 #endif
 
 #ifdef ABI_MSVC
-#define regArg0 rcx
-#define regArg1 rdx
+#define JIT_THIS rcx
+#define INSTR rdx
+#define regArg0 JIT_THIS
+#define regArg1 INSTR
 #define regArg2 r8
 #define regArg3 r9
 #define regScratch0 rax
-#define regScratch1 rcx
-#define regScratch2 rdx
-#define regScratch3 r8
-#define regScratch4 r9
-#define regScratch5 r10
-#define regScratch6 r11
+#define regScratch1 r10
+#define regScratch2 r11
 #else
-#define regArg0 rdi
-#define regArg1 rsi
+#define JIT_THIS rdi
+#define INSTR rsi
+#define regArg0 JIT_THIS
+#define regArg1 INSTR
 #define regArg2 rdx
 #define regArg3 rcx
 #define regArg4 r8
 #define regArg5 r9
 #define regScratch0 rax
-#define regScratch1 rdi
-#define regScratch2 rsi
-#define regScratch3 rcx
-#define regScratch4 rdx
-#define regScratch5 r8
-#define regScratch6 r9
-#define regScratch7 r10
-#define regScratch8 r11
+#define regScratch1 r10
+#define regScratch2 r11
 #endif
 
 #define GPR_OFFSET(x, jit) ((uintptr_t)&regs.gpr[(x)] - (uintptr_t)jit)
@@ -63,7 +57,7 @@ struct JIT : BaseCPU {
   void InvalidateCache();
 private:
   friend struct n64::Cop1;
-  csh capstoneHandle;
+  csh capstoneHandle{};
   Fn* blockCache[0x80000]{};
   u8* codeCache;
   int instrInBlock = 0;

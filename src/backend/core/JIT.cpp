@@ -53,52 +53,44 @@ void JIT::Recompile(Mem& mem, u32 pc) {
     InvalidateCache();
   }
 
-#ifdef ABI_MSVC
-  code->sub(rsp, 40);
-#else
   code->push(rbp);
   code->mov(rbp, rsp);
-#endif
+
+  code->mov(JIT_THIS, (uintptr_t)this);
 
   while (!prevBranch) {
-    code->mov(regArg0, (uintptr_t)this);
-    code->mov(regScratch0, qword[regArg0 + THIS_OFFSET(instrInBlock, this)]);
+    code->mov(regScratch0, qword[JIT_THIS + THIS_OFFSET(instrInBlock, this)]);
     code->inc(regScratch0);
-    code->mov(qword[regArg0 + THIS_OFFSET(instrInBlock, this)], regScratch0);
+    code->mov(qword[JIT_THIS + THIS_OFFSET(instrInBlock, this)], regScratch0);
 
     prevBranch = branch;
     u32 instr = mem.Read32(regs, loopPC);
+    code->mov(INSTR, instr);
     loopPC += 4;
     branch = isEndBlock(instr);
     Util::trace("{:08X}", instr);
 
-    code->mov(qword[regArg0 + GPR_OFFSET(0, this)], 0);
-    code->mov(regScratch0, qword[regArg0 + REG_OFFSET(oldPC, this)]);
-    code->mov(regScratch1, qword[regArg0 + REG_OFFSET(pc, this)]);
-    code->mov(regScratch2, qword[regArg0 + REG_OFFSET(nextPC, this)]);
+    code->mov(qword[JIT_THIS + GPR_OFFSET(0, this)], 0);
+    code->mov(regScratch0, qword[JIT_THIS + REG_OFFSET(oldPC, this)]);
+    code->mov(regScratch1, qword[JIT_THIS + REG_OFFSET(pc, this)]);
+    code->mov(regScratch2, qword[JIT_THIS + REG_OFFSET(nextPC, this)]);
     code->mov(regScratch0, regScratch1);
     code->mov(regScratch1, regScratch2);
     code->add(regScratch2, 4);
-    code->mov(qword[regArg0 + REG_OFFSET(oldPC, this)], regScratch0);
-    code->mov(qword[regArg0 + REG_OFFSET(pc, this)], regScratch1);
-    code->mov(qword[regArg0 + REG_OFFSET(nextPC, this)], regScratch2);
-
-    code->mov(regArg1, instr);
+    code->mov(qword[JIT_THIS + REG_OFFSET(oldPC, this)], regScratch0);
+    code->mov(qword[JIT_THIS + REG_OFFSET(pc, this)], regScratch1);
+    code->mov(qword[JIT_THIS + REG_OFFSET(nextPC, this)], regScratch2);
 
     Emit(instr);
   }
 
-#ifdef ABI_MSVC
-  code->add(rsp, 40);
-#else
   code->pop(rbp);
-#endif
   code->ret();
 
   static const u64 blockSize = code->getSize() - prevSize;
   Util::debug("Compiled {} bytes for block @{:08X}. Code:", blockSize, startPC);
   Util::print<Util::Debug>("\t");
-  for(int i = 1; i < blockSize; i++) {
+  for(int i = 1; i < blockSize + 1; i++) {
     Util::print<Util::Debug>("{:02X} ", ((u8*)block)[i - 1]);
     if(i % 16 == 0) {
       Util::debug("");

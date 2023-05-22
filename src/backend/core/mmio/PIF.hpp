@@ -114,6 +114,7 @@ struct PIF {
   u8 bootrom[PIF_BOOTROM_SIZE]{}, ram[PIF_RAM_SIZE]{}, *mempak = nullptr, *eeprom = nullptr;
   int channel = 0;
   std::string mempakPath{}, eepromPath{};
+
   size_t eepromSize{};
 
   u8 Read(u32 addr) {

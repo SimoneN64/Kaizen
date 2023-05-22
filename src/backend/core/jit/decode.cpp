@@ -187,8 +187,8 @@ void JIT::special(u32 instr) {
       code->call(rax);
       break;
     case 0x30:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
-      code->mov(regScratch1, qword[regArg0 + GPR_OFFSET(RT(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch1, qword[JIT_THIS + GPR_OFFSET(RT(instr), this)]);
       code->xor_(regArg1, regArg1);
       code->cmp(regScratch0, regScratch1);
       code->setge(regArg1.cvt8());
@@ -196,8 +196,8 @@ void JIT::special(u32 instr) {
       code->call(rax);
       break;
     case 0x31:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
-      code->mov(regScratch1, qword[regArg0 + GPR_OFFSET(RT(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch1, qword[JIT_THIS + GPR_OFFSET(RT(instr), this)]);
       code->xor_(regArg1, regArg1);
       code->cmp(regScratch0, regScratch1);
       code->setae(regArg1.cvt8());
@@ -205,8 +205,8 @@ void JIT::special(u32 instr) {
       code->call(rax);
       break;
     case 0x32:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
-      code->mov(regScratch1, qword[regArg0 + GPR_OFFSET(RT(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch1, qword[JIT_THIS + GPR_OFFSET(RT(instr), this)]);
       code->xor_(regArg1, regArg1);
       code->cmp(regScratch0, regScratch1);
       code->setl(regArg1.cvt8());
@@ -214,8 +214,8 @@ void JIT::special(u32 instr) {
       code->call(rax);
       break;
     case 0x33:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
-      code->mov(regScratch1, qword[regArg0 + GPR_OFFSET(RT(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch1, qword[JIT_THIS + GPR_OFFSET(RT(instr), this)]);
       code->xor_(regArg1, regArg1);
       code->cmp(regScratch0, regScratch1);
       code->setb(regArg1.cvt8());
@@ -223,8 +223,8 @@ void JIT::special(u32 instr) {
       code->call(rax);
       break;
     case 0x34:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
-      code->mov(regScratch1, qword[regArg0 + GPR_OFFSET(RT(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch1, qword[JIT_THIS + GPR_OFFSET(RT(instr), this)]);
       code->xor_(regArg1, regArg1);
       code->cmp(regScratch0, regScratch1);
       code->sete(regArg1.cvt8());
@@ -232,8 +232,8 @@ void JIT::special(u32 instr) {
       code->call(rax);
       break;
     case 0x36:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
-      code->mov(regScratch1, qword[regArg0 + GPR_OFFSET(RT(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch1, qword[JIT_THIS + GPR_OFFSET(RT(instr), this)]);
       code->xor_(regArg1, regArg1);
       code->cmp(regScratch0, regScratch1);
       code->setne(regArg1.cvt8());
@@ -282,7 +282,7 @@ void JIT::regimm(u32 instr) {
       code->call(rax);
       break;
     case 0x01:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
       code->xor_(regArg2, regArg2);
       code->cmp(regScratch0, 0);
       code->setge(regArg2.cvt8());
@@ -290,7 +290,7 @@ void JIT::regimm(u32 instr) {
       code->call(rax);
       break;
     case 0x02:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
       code->xor_(regArg2, regArg2);
       code->cmp(regScratch0, 0);
       code->setl(dl);
@@ -298,7 +298,7 @@ void JIT::regimm(u32 instr) {
       code->call(rax);
       break;
     case 0x03:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
       code->xor_(regArg2, regArg2);
       code->cmp(regScratch0, 0);
       code->setge(regArg2.cvt8());
@@ -306,7 +306,7 @@ void JIT::regimm(u32 instr) {
       code->call(rax);
       break;
     case 0x08:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
       code->xor_(regArg1, regArg1);
       code->cmp(regScratch0, s64(s16(instr)));
       code->setge(regArg1.cvt8());
@@ -314,7 +314,7 @@ void JIT::regimm(u32 instr) {
       code->call(rax);
       break;
     case 0x09:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
       code->xor_(regArg1, regArg1);
       code->cmp(regScratch0, u64(s64(s16(instr))));
       code->setae(regArg1.cvt8());
@@ -322,7 +322,7 @@ void JIT::regimm(u32 instr) {
       code->call(rax);
       break;
     case 0x0A:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
       code->xor_(regArg1, regArg1);
       code->cmp(regScratch0, s64(s16(instr)));
       code->setl(regArg1.cvt8());
@@ -330,7 +330,7 @@ void JIT::regimm(u32 instr) {
       code->call(rax);
       break;
     case 0x0B:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
       code->xor_(regArg1, regArg1);
       code->cmp(regScratch0, u64(s64(s16(instr))));
       code->setb(regArg1.cvt8());
@@ -338,7 +338,7 @@ void JIT::regimm(u32 instr) {
       code->call(rax);
       break;
     case 0x0C:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
       code->xor_(regArg1, regArg1);
       code->cmp(regScratch0, s64(s16(instr)));
       code->sete(regArg1.cvt8());
@@ -346,7 +346,7 @@ void JIT::regimm(u32 instr) {
       code->call(rax);
       break;
     case 0x0E:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
       code->xor_(regArg1, regArg1);
       code->cmp(regScratch0, s64(s16(instr)));
       code->setne(regArg1.cvt8());
@@ -354,7 +354,7 @@ void JIT::regimm(u32 instr) {
       code->call(rax);
       break;
     case 0x10:
-      code->mov(regScratch1, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch1, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
       code->xor_(regArg2, regArg2);
       code->cmp(regScratch1, 0);
       code->setl(regArg2.cvt8());
@@ -362,7 +362,7 @@ void JIT::regimm(u32 instr) {
       code->call(rax);
       break;
     case 0x11:
-      code->mov(regScratch1, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch1, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
       code->xor_(regArg2, regArg2);
       code->cmp(regScratch1, 0);
       code->setge(regArg2.cvt8());
@@ -370,7 +370,7 @@ void JIT::regimm(u32 instr) {
       code->call(rax);
       break;
     case 0x12:
-      code->mov(regScratch1, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch1, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
       code->xor_(regArg2, regArg2);
       code->cmp(regScratch1, 0);
       code->setl(regArg2.cvt8());
@@ -378,7 +378,7 @@ void JIT::regimm(u32 instr) {
       code->call(rax);
       break;
     case 0x13:
-      code->mov(regScratch1, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch1, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
       code->xor_(regArg2, regArg2);
       code->cmp(regScratch1, 0);
       code->setge(regArg2.cvt8());
@@ -477,8 +477,8 @@ void JIT::Emit(u32 instr) {
       code->call(rax);
       break;
     case 0x04:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
-      code->mov(regScratch1, qword[regArg0 + GPR_OFFSET(RT(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch1, qword[JIT_THIS + GPR_OFFSET(RT(instr), this)]);
       code->xor_(regArg2, regArg2);
       code->cmp(regScratch0, regScratch1);
       code->sete(regArg2.cvt8());
@@ -486,8 +486,8 @@ void JIT::Emit(u32 instr) {
       code->call(rax);
       break;
     case 0x05:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
-      code->mov(regScratch1, qword[regArg0 + GPR_OFFSET(RT(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch1, qword[JIT_THIS + GPR_OFFSET(RT(instr), this)]);
       code->xor_(regArg2, regArg2);
       code->cmp(regScratch0, regScratch1);
       code->setne(regArg2.cvt8());
@@ -495,7 +495,7 @@ void JIT::Emit(u32 instr) {
       code->call(rax);
       break;
     case 0x06:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
       code->xor_(regArg2, regArg2);
       code->test(regScratch0, regScratch0);
       code->setnz(regArg2.cvt8());
@@ -503,7 +503,7 @@ void JIT::Emit(u32 instr) {
       code->call(rax);
       break;
     case 0x07:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
       code->xor_(regArg2, regArg2);
       code->test(regScratch0, regScratch0);
       code->setg(regArg2.cvt8());
@@ -546,8 +546,8 @@ void JIT::Emit(u32 instr) {
     case 0x11: cop1Emit(*this, instr); break;
     case 0x12: cop2Decode(instr); break;
     case 0x14:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
-      code->mov(regScratch1, qword[regArg0 + GPR_OFFSET(RT(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch1, qword[JIT_THIS + GPR_OFFSET(RT(instr), this)]);
       code->xor_(regArg2, regArg2);
       code->cmp(regScratch0, regScratch1);
       code->sete(regArg2.cvt8());
@@ -555,8 +555,8 @@ void JIT::Emit(u32 instr) {
       code->call(rax);
       break;
     case 0x15:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
-      code->mov(regScratch1, qword[regArg0 + GPR_OFFSET(RT(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch1, qword[JIT_THIS + GPR_OFFSET(RT(instr), this)]);
       code->xor_(regArg2, regArg2);
       code->cmp(regScratch0, regScratch1);
       code->setne(regArg2.cvt8());
@@ -564,7 +564,7 @@ void JIT::Emit(u32 instr) {
       code->call(rax);
       break;
     case 0x16:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
       code->xor_(regArg2, regArg2);
       code->cmp(regScratch0, 0);
       code->setle(regArg2.cvt8());
@@ -572,7 +572,7 @@ void JIT::Emit(u32 instr) {
       code->call(rax);
       break;
     case 0x17:
-      code->mov(regScratch0, qword[regArg0 + GPR_OFFSET(RS(instr), this)]);
+      code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
       code->xor_(regArg2, regArg2);
       code->cmp(regScratch0, 0);
       code->setg(regArg2.cvt8());

@@ -19,36 +19,23 @@ using Fn = void (*)();
 #ifdef ABI_MSVC
 #define JIT_THIS rcx
 #define INSTR rdx
-<<<<<<< HEAD
 #define regArg0 JIT_THIS
 #define regArg1 INSTR
-=======
-#define regArg0 rcx
-#define regArg1 rdx
->>>>>>> d1e079d (Small fixes to JIT (still crashes though))
 #define regArg2 r8
 #define regArg3 r9
-#define regScratch0 rax
-#define regScratch1 r10
-#define regScratch2 r11
 #else
 #define JIT_THIS rdi
 #define INSTR rsi
-<<<<<<< HEAD
 #define regArg0 JIT_THIS
 #define regArg1 INSTR
-=======
-#define regArg0 rdi
-#define regArg1 rsi
->>>>>>> d1e079d (Small fixes to JIT (still crashes though))
 #define regArg2 rdx
 #define regArg3 rcx
 #define regArg4 r8
 #define regArg5 r9
+#endif
 #define regScratch0 rax
 #define regScratch1 r10
 #define regScratch2 r11
-#endif
 
 #define GPR_OFFSET(x, jit) ((uintptr_t)&regs.gpr[(x)] - (uintptr_t)jit)
 #define REG_OFFSET(kind, jit) ((uintptr_t)&regs.kind - (uintptr_t)jit)
@@ -73,6 +60,24 @@ private:
   int instrInBlock = 0;
   u64 sizeUsed = 0;
   u64 prevSize = 0;
+
+  inline void epilogue() {
+#ifdef ABI_MSVC
+    code->add(rsp, 8);
+#else
+    code->pop(rbp);
+#endif
+    code->ret();
+  }
+
+  inline void prologue() {
+#ifdef ABI_MSVC
+    code->sub(rsp, 8);
+#else
+    code->push(rbp);
+    code->mov(rbp, rsp);
+#endif
+  }
 
   void* bumpAlloc(u64 size, u8 val = 0);
   void Recompile(Mem&, u32 pc);

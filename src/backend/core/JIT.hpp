@@ -53,9 +53,13 @@ struct JIT : BaseCPU {
   void InvalidateCache();
 
   inline void emitCall(const Reg64& addr) const {
+    code->sub(rsp, 8);
+    code->push(INSTR);
     code->push(JIT_THIS);
     code->call(addr);
     code->pop(JIT_THIS);
+    code->pop(INSTR);
+    code->add(rsp, 8);
   }
 private:
   friend struct n64::Cop1;
@@ -63,13 +67,14 @@ private:
   u8* codeCache;
   int instrInBlock = 0;
   u64 sizeUsed = 0;
-  u64 prevSize = 0;
 
-  inline void epilogue() const {
-    code->ret();
+  inline void prologue() const {
+    code->sub(rsp, 8);
   }
 
-  inline void prologue() {
+  inline void epilogue() const {
+    code->add(rsp, 8);
+    code->ret();
   }
 
   void* bumpAlloc(u64 size, u8 val = 0);

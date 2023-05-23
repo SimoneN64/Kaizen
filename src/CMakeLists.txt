@@ -90,16 +90,31 @@ if(MSVC)
 endif()
 
 if(${CMAKE_BUILD_TYPE} MATCHES Debug)
-  add_compile_options(
-      -fsanitize=address
-      -fsanitize=undefined
+  if(WIN32)
+    target_compile_options(gadolinium PUBLIC
+      #/fsanitize=address
+      #/fsanitize=undefined
+      /fsanitize=memory
+      /fsanitize=leak
+      )
+    target_link_options(gadolinium PUBLIC
+      #/fsanitize=address
+      #/fsanitize=undefined
+      /fsanitize=memory
+      /fsanitize=leak
+      )
+  else()
+    target_compile_options(gadolinium PUBLIC
+      #-fsanitize=address
+      #-fsanitize=undefined
       -fsanitize=memory
       -fsanitize=leak
-  )
-  add_link_options(
-      -fsanitize=address
-      -fsanitize=undefined
+      )
+    target_link_options(gadolinium PUBLIC
+      #-fsanitize=address
+      #-fsanitize=undefined
       -fsanitize=memory
       -fsanitize=leak
-  )
+      )
+  endif()
 endif()

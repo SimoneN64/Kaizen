@@ -7,10 +7,6 @@ JIT::~JIT() {
 }
 
 JIT::JIT() {
-  if(cs_open(CS_ARCH_X86, CS_MODE_64, &capstoneHandle) != CS_ERR_OK) {
-    Util::panic("Could not initialize capstone!");
-  }
-
   codeCache = (u8*)Util::aligned_alloc(4096, CODECACHE_SIZE);
   code = std::make_unique<CodeGenerator>(CODECACHE_SIZE, codeCache);
   CodeArray::protect(
@@ -82,33 +78,6 @@ void JIT::Recompile(Mem& mem, u32 pc) {
   }
 
   epilogue();
-
-  static const u64 blockSize = code->getSize() - prevSize;
-  Util::debug("Compiled {} bytes for block @{:08X}. Code:", blockSize, startPC);
-  Util::print<Util::Debug>("\t");
-  for(int i = 1; i < blockSize + 1; i++) {
-    Util::print<Util::Debug>("{:02X} ", ((u8*)block)[i - 1]);
-    if(i % 16 == 0) {
-      Util::debug("");
-      Util::print<Util::Debug>("\t");
-    }
-  }
-
-  Util::debug("");
-
-  cs_insn* insn;
-  size_t count = cs_disasm(capstoneHandle, (u8*)block, blockSize, 0, 0, &insn);
-
-  if (count > 0) {
-    size_t j;
-    for (j = 0; j < count; j++) {
-      Util::debug("\t{}\t\t{}", insn[j].mnemonic, insn[j].op_str);
-    }
-
-    cs_free(insn, count);
-  } else {
-    Util::warn("[CPSTN]: Failed to disassemble given code!");
-  }
 
   blockCache[startPC >> 20][startPC & 0xFFF] = block;
 }

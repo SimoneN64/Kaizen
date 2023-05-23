@@ -8,20 +8,20 @@ void JIT::cop2Decode(u32 instr) {
   switch(RS(instr)) {
     case 0x00:
       code->mov(rax, (u64)mfc2);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x01:
       code->mov(rax, (u64)dmfc2);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x02: case 0x06: break;
     case 0x04:
       code->mov(rax, (u64)mtc2);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x05:
       code->mov(rax, (u64)dmtc2);
-      code->call(rax);
+      emitCall(rax);
       break;
     default:
       Util::panic("[RECOMPILER] Unhandled reserved instruction exception {:016X}", (u64)regs.pc);
@@ -36,155 +36,155 @@ void JIT::special(u32 instr) {
     case 0:
       if (instr != 0) {
         code->mov(rax, (u64)sll);
-        code->call(rax);
+        emitCall(rax);
       }
       break;
     case 0x02:
       code->mov(rax, (u64)srl);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x03:
       code->mov(rax, (u64)sra);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x04:
       code->mov(rax, (u64)sllv);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x06:
       code->mov(rax, (u64)srlv);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x07:
       code->mov(rax, (u64)srav);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x08:
       code->mov(rax, (u64)jr);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x09:
       code->mov(rax, (u64)jalr);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x0C: Util::panic("[RECOMPILER] Unhandled syscall instruction {:016X}", (u64)regs.pc);
     case 0x0D: Util::panic("[RECOMPILER] Unhandled break instruction {:016X}", (u64)regs.pc);
     case 0x0F: break; // SYNC
     case 0x10:
       code->mov(rax, (u64)mfhi);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x11:
       code->mov(rax, (u64)mthi);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x12:
       code->mov(rax, (u64)mflo);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x13:
       code->mov(rax, (u64)mtlo);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x14:
       code->mov(rax, (u64)dsllv);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x16:
       code->mov(rax, (u64)dsrlv);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x17:
       code->mov(rax, (u64)dsrav);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x18:
       code->mov(rax, (u64)mult);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x19:
       code->mov(rax, (u64)multu);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x1A:
       code->mov(rax, (u64)div);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x1B:
       code->mov(rax, (u64)divu);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x1C:
       code->mov(rax, (u64)dmult);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x1D:
       code->mov(rax, (u64)dmultu);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x1E:
       code->mov(rax, (u64)ddiv);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x1F:
       code->mov(rax, (u64)ddivu);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x20:
       code->mov(rax, (u64)add);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x21:
       code->mov(rax, (u64)addu);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x22:
       code->mov(rax, (u64)sub);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x23:
       code->mov(rax, (u64)subu);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x24:
       code->mov(rax, (u64)and_);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x25:
       code->mov(rax, (u64)or_);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x26:
       code->mov(rax, (u64)xor_);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x27:
       code->mov(rax, (u64)nor);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x2A:
       code->mov(rax, (u64)slt);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x2B:
       code->mov(rax, (u64)sltu);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x2C:
       code->mov(rax, (u64)dadd);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x2D:
       code->mov(rax, (u64)daddu);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x2E:
       code->mov(rax, (u64)dsub);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x2F:
       code->mov(rax, (u64)dsubu);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x30:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -193,7 +193,7 @@ void JIT::special(u32 instr) {
       code->cmp(regScratch0, regScratch1);
       code->setge(regArg1.cvt8());
       code->mov(rax, (u64)trap);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x31:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -202,7 +202,7 @@ void JIT::special(u32 instr) {
       code->cmp(regScratch0, regScratch1);
       code->setae(regArg1.cvt8());
       code->mov(rax, (u64)trap);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x32:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -211,7 +211,7 @@ void JIT::special(u32 instr) {
       code->cmp(regScratch0, regScratch1);
       code->setl(regArg1.cvt8());
       code->mov(rax, (u64)trap);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x33:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -220,7 +220,7 @@ void JIT::special(u32 instr) {
       code->cmp(regScratch0, regScratch1);
       code->setb(regArg1.cvt8());
       code->mov(rax, (u64)trap);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x34:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -229,7 +229,7 @@ void JIT::special(u32 instr) {
       code->cmp(regScratch0, regScratch1);
       code->sete(regArg1.cvt8());
       code->mov(rax, (u64)trap);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x36:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -238,31 +238,31 @@ void JIT::special(u32 instr) {
       code->cmp(regScratch0, regScratch1);
       code->setne(regArg1.cvt8());
       code->mov(rax, (u64)trap);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x38:
       code->mov(rax, (u64)dsll);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x3A:
       code->mov(rax, (u64)dsrl);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x3B:
       code->mov(rax, (u64)dsra);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x3C:
       code->mov(rax, (u64)dsll32);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x3E:
       code->mov(rax, (u64)dsrl32);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x3F:
       code->mov(rax, (u64)dsra32);
-      code->call(rax);
+      emitCall(rax);
       break;
     default:
       Util::panic("Unimplemented special {} {} ({:08X}) (pc: {:016X})", (mask >> 3) & 7, mask & 7, instr, (u64)regs.oldPC);
@@ -279,7 +279,7 @@ void JIT::regimm(u32 instr) {
       code->cmp(regScratch0, 0);
       code->setl(regArg2.cvt8());
       code->mov(rax, (u64)b);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x01:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -287,7 +287,7 @@ void JIT::regimm(u32 instr) {
       code->cmp(regScratch0, 0);
       code->setge(regArg2.cvt8());
       code->mov(rax, (u64)b);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x02:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -295,7 +295,7 @@ void JIT::regimm(u32 instr) {
       code->cmp(regScratch0, 0);
       code->setl(dl);
       code->mov(rax, (u64)bl);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x03:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -303,7 +303,7 @@ void JIT::regimm(u32 instr) {
       code->cmp(regScratch0, 0);
       code->setge(regArg2.cvt8());
       code->mov(rax, (u64)bl);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x08:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -311,7 +311,7 @@ void JIT::regimm(u32 instr) {
       code->cmp(regScratch0, s64(s16(instr)));
       code->setge(regArg1.cvt8());
       code->mov(rax, (u64)trap);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x09:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -319,7 +319,7 @@ void JIT::regimm(u32 instr) {
       code->cmp(regScratch0, u64(s64(s16(instr))));
       code->setae(regArg1.cvt8());
       code->mov(rax, (u64)trap);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x0A:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -327,7 +327,7 @@ void JIT::regimm(u32 instr) {
       code->cmp(regScratch0, s64(s16(instr)));
       code->setl(regArg1.cvt8());
       code->mov(rax, (u64)trap);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x0B:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -335,7 +335,7 @@ void JIT::regimm(u32 instr) {
       code->cmp(regScratch0, u64(s64(s16(instr))));
       code->setb(regArg1.cvt8());
       code->mov(rax, (u64)trap);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x0C:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -343,7 +343,7 @@ void JIT::regimm(u32 instr) {
       code->cmp(regScratch0, s64(s16(instr)));
       code->sete(regArg1.cvt8());
       code->mov(rax, (u64)trap);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x0E:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -351,7 +351,7 @@ void JIT::regimm(u32 instr) {
       code->cmp(regScratch0, s64(s16(instr)));
       code->setne(regArg1.cvt8());
       code->mov(rax, (u64)trap);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x10:
       code->mov(regScratch1, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -359,7 +359,7 @@ void JIT::regimm(u32 instr) {
       code->cmp(regScratch1, 0);
       code->setl(regArg2.cvt8());
       code->mov(rax, (u64)blink);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x11:
       code->mov(regScratch1, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -367,7 +367,7 @@ void JIT::regimm(u32 instr) {
       code->cmp(regScratch1, 0);
       code->setge(regArg2.cvt8());
       code->mov(rax, (u64)blink);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x12:
       code->mov(regScratch1, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -375,7 +375,7 @@ void JIT::regimm(u32 instr) {
       code->cmp(regScratch1, 0);
       code->setl(regArg2.cvt8());
       code->mov(rax, (u64)bllink);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x13:
       code->mov(regScratch1, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -383,7 +383,7 @@ void JIT::regimm(u32 instr) {
       code->cmp(regScratch1, 0);
       code->setge(regArg2.cvt8());
       code->mov(rax, (u64)bllink);
-      code->call(rax);
+      emitCall(rax);
       break;
     default:
       Util::panic("Unimplemented regimm {} {} ({:08X}) (pc: {:016X})", (mask >> 3) & 3, mask & 7, instr, (u64)regs.oldPC);
@@ -470,11 +470,11 @@ void JIT::Emit(u32 instr) {
     case 0x01: regimm(instr); break;
     case 0x02:
       code->mov(rax, (u64)j);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x03:
       code->mov(rax, (u64)jal);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x04:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -483,7 +483,7 @@ void JIT::Emit(u32 instr) {
       code->cmp(regScratch0, regScratch1);
       code->sete(regArg2.cvt8());
       code->mov(rax, (u64)b);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x05:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -492,7 +492,7 @@ void JIT::Emit(u32 instr) {
       code->cmp(regScratch0, regScratch1);
       code->setne(regArg2.cvt8());
       code->mov(rax, (u64)b);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x06:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -500,7 +500,7 @@ void JIT::Emit(u32 instr) {
       code->test(regScratch0, regScratch0);
       code->setnz(regArg2.cvt8());
       code->mov(rax, (u64)b);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x07:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -508,39 +508,39 @@ void JIT::Emit(u32 instr) {
       code->test(regScratch0, regScratch0);
       code->setg(regArg2.cvt8());
       code->mov(rax, (u64)b);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x08:
       code->mov(rax, (u64)addi);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x09:
       code->mov(rax, (u64)addiu);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x0A:
       code->mov(rax, (u64)slti);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x0B:
       code->mov(rax, (u64)sltiu);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x0C:
       code->mov(rax, (u64)andi);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x0D:
       code->mov(rax, (u64)ori);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x0E:
       code->mov(rax, (u64)xori);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x0F:
       code->mov(rax, (u64)lui);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x10: cop0Emit(*this, instr); break;
     case 0x11: cop1Emit(*this, instr); break;
@@ -552,7 +552,7 @@ void JIT::Emit(u32 instr) {
       code->cmp(regScratch0, regScratch1);
       code->sete(regArg2.cvt8());
       code->mov(rax, (u64)bl);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x15:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -561,7 +561,7 @@ void JIT::Emit(u32 instr) {
       code->cmp(regScratch0, regScratch1);
       code->setne(regArg2.cvt8());
       code->mov(rax, (u64)bl);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x16:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -569,7 +569,7 @@ void JIT::Emit(u32 instr) {
       code->cmp(regScratch0, 0);
       code->setle(regArg2.cvt8());
       code->mov(rax, (u64)bl);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x17:
       code->mov(regScratch0, qword[JIT_THIS + GPR_OFFSET(RS(instr), this)]);
@@ -577,125 +577,125 @@ void JIT::Emit(u32 instr) {
       code->cmp(regScratch0, 0);
       code->setg(regArg2.cvt8());
       code->mov(rax, (u64)b);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x18:
       code->mov(rax, (u64)daddi);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x19:
       code->mov(rax, (u64)daddiu);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x1A:
       code->mov(rax, (u64)ldl);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x1B:
       code->mov(rax, (u64)ldr);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x1F: Util::panic("[RECOMPILER] Unhandled reserved instruction exception {:016X}", regs.oldPC); break;
     case 0x20:
       code->mov(rax, (u64)lb);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x21:
       code->mov(rax, (u64)lh);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x22:
       code->mov(rax, (u64)lwl);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x23:
       code->mov(rax, (u64)lw);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x24:
       code->mov(rax, (u64)lbu);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x25:
       code->mov(rax, (u64)lhu);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x26:
       code->mov(rax, (u64)lwr);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x27:
       code->mov(rax, (u64)lwu);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x28:
       code->mov(rax, (u64)sb);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x29:
       code->mov(rax, (u64)sh);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x2A:
       code->mov(rax, (u64)swl);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x2B:
       code->mov(rax, (u64)sw);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x2C:
       code->mov(rax, (u64)sdl);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x2D:
       code->mov(rax, (u64)sdr);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x2E:
       code->mov(rax, (u64)swr);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x2F: break; // CACHE
     case 0x30:
       code->mov(rax, (u64)ll);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x31:
       code->mov(rax, (u64)lwc1);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x34:
       code->mov(rax, (u64)lld);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x35:
       code->mov(rax, (u64)ldc1);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x37:
       code->mov(rax, (u64)ld);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x38:
       code->mov(rax, (u64)sc);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x39:
       code->mov(rax, (u64)swc1);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x3C:
       code->mov(rax, (u64)scd);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x3D:
       code->mov(rax, (u64)sdc1);
-      code->call(rax);
+      emitCall(rax);
       break;
     case 0x3F:
       code->mov(rax, (u64)sd);
-      code->call(rax);
+      emitCall(rax);
       break;
     default:
       Util::panic("Unimplemented instruction {:02X} ({:08X}) (pc: {:016X})", mask, instr, (u64)regs.oldPC);

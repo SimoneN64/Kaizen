@@ -3,7 +3,6 @@
 #include <backend/core/Mem.hpp>
 #include <fstream>
 #include <BaseCPU.hpp>
-#include <capstone/capstone.h>
 
 namespace n64 {
 using namespace Xbyak;
@@ -52,31 +51,25 @@ struct JIT : BaseCPU {
   std::unique_ptr<CodeGenerator> code{};
   void InvalidatePage(u32);
   void InvalidateCache();
+
+  inline void emitCall(const Reg64& addr) const {
+    code->push(JIT_THIS);
+    code->call(addr);
+    code->pop(JIT_THIS);
+  }
 private:
   friend struct n64::Cop1;
-  csh capstoneHandle{};
   Fn* blockCache[0x80000]{};
   u8* codeCache;
   int instrInBlock = 0;
   u64 sizeUsed = 0;
   u64 prevSize = 0;
 
-  inline void epilogue() {
-#ifdef ABI_MSVC
-    code->add(rsp, 8);
-#else
-    code->pop(rbp);
-#endif
+  inline void epilogue() const {
     code->ret();
   }
 
   inline void prologue() {
-#ifdef ABI_MSVC
-    code->sub(rsp, 8);
-#else
-    code->push(rbp);
-    code->mov(rbp, rsp);
-#endif
   }
 
   void* bumpAlloc(u64 size, u8 val = 0);

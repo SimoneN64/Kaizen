@@ -7,7 +7,7 @@ JIT::~JIT() {
 }
 
 JIT::JIT() {
-  codeCache = (u8*)Util::aligned_alloc(4096, CODECACHE_SIZE);
+  codeCache = (u8*)Util::aligned_alloc(0x1000, CODECACHE_SIZE);
   code = std::make_unique<CodeGenerator>(CODECACHE_SIZE, codeCache);
   CodeArray::protect(
     codeCache,
@@ -41,7 +41,6 @@ void JIT::Recompile(Mem& mem, u32 pc) {
   u32 startPC = pc;
   u32 loopPC = pc;
   Fn block = code->getCurr<Fn>();
-  prevSize = code->getSize();
 
   if(code->getSize() >= CODECACHE_OVERHEAD) {
     Util::panic("Code cache overflow!");
@@ -50,7 +49,6 @@ void JIT::Recompile(Mem& mem, u32 pc) {
   }
 
   prologue();
-
   code->mov(JIT_THIS, (uintptr_t)this);
   while (!prevBranch) {
     code->mov(regScratch0, qword[JIT_THIS + THIS_OFFSET(instrInBlock, this)]);

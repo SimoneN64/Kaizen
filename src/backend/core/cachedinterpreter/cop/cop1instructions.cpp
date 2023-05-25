@@ -1,8 +1,8 @@
-#include <core/registers/Cop1.hpp>
-#include <core/registers/Registers.hpp>
-#include <core/Mem.hpp>
-#include <cmath>
+#include <cachedinterpreter/cop/cop1instructions.hpp>
 #include <cfenv>
+#include <cmath>
+#include <Cop1.hpp>
+#include <Registers.hpp>
 
 namespace n64 {
 inline int PushRoundingMode(const FCR31& fcr31) {
@@ -17,7 +17,7 @@ inline int PushRoundingMode(const FCR31& fcr31) {
   return og;
 }
 
-#define PUSHROUNDINGMODE int og = PushRoundingMode(fcr31)
+#define PUSHROUNDINGMODE int og = PushRoundingMode(regs.cop1.fcr31)
 #define POPROUNDINGMODE fesetround(og)
 
 #define checknanregs(fs, ft) do { \
@@ -29,196 +29,218 @@ inline int PushRoundingMode(const FCR31& fcr31) {
   }                               \
 } while(0)
 
-void Cop1::absd(Registers& regs, u32 instr) {
-  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
-  SetCop1Reg<double>(regs.cop0, FD(instr), std::abs(fs));
+void absd(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
+  regs.cop1.SetCop1Reg<double>(regs.cop0, FD(instr), std::abs(fs));
 }
 
-void Cop1::abss(Registers& regs, u32 instr) {
-  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
-  SetCop1Reg<float>(regs.cop0, FD(instr), std::abs(fs));
+void abss(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
+  regs.cop1.SetCop1Reg<float>(regs.cop0, FD(instr), std::abs(fs));
 }
 
-void Cop1::absw(Registers& regs, u32 instr) {
-  s32 fs = GetReg<s32>(regs.cop0, FS(instr));
-  SetReg<u32>(regs.cop0, FD(instr), std::abs(fs));
+void absw(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  s32 fs = regs.cop1.GetReg<s32>(regs.cop0, FS(instr));
+  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), std::abs(fs));
 }
 
-void Cop1::absl(Registers& regs, u32 instr) {
-  s64 fs = GetReg<s64>(regs.cop0, FS(instr));
-  SetReg(regs.cop0, FD(instr), std::abs(fs));
+void absl(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  s64 fs = regs.cop1.GetReg<s64>(regs.cop0, FS(instr));
+  regs.cop1.SetReg(regs.cop0, FD(instr), std::abs(fs));
 }
 
-void Cop1::adds(Registers& regs, u32 instr) {
-  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
-  float ft = GetCop1Reg<float>(regs.cop0, FT(instr));
+void adds(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
+  float ft = regs.cop1.GetCop1Reg<float>(regs.cop0, FT(instr));
   checknanregs(fs, ft);
   float result = fs + ft;
-  SetCop1Reg<float>(regs.cop0, FD(instr), result);
+  regs.cop1.SetCop1Reg<float>(regs.cop0, FD(instr), result);
 }
 
-void Cop1::addd(Registers& regs, u32 instr) {
-  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
-  double ft = GetCop1Reg<double>(regs.cop0, FT(instr));
+void addd(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
+  double ft = regs.cop1.GetCop1Reg<double>(regs.cop0, FT(instr));
   checknanregs(fs, ft);
   double result = fs + ft;
-  SetCop1Reg<double>(regs.cop0, FD(instr), result);
+  regs.cop1.SetCop1Reg<double>(regs.cop0, FD(instr), result);
 }
 
-void Cop1::ceills(Registers& regs, u32 instr) {
-  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
+void ceills(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   s64 result = std::ceil(fs);
-  SetReg<u64>(regs.cop0, FD(instr), result);
+  regs.cop1.SetReg<u64>(regs.cop0, FD(instr), result);
 }
 
-void Cop1::ceilws(Registers& regs, u32 instr) {
-  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
+void ceilws(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   s32 result = std::ceil(fs);
-  SetReg<u32>(regs.cop0, FD(instr), result);
+  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), result);
 }
 
-void Cop1::ceilld(Registers& regs, u32 instr) {
-  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
+void ceilld(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   s64 result = std::ceil(fs);
-  SetReg<u64>(regs.cop0, FD(instr), result);
+  regs.cop1.SetReg<u64>(regs.cop0, FD(instr), result);
 }
 
-void Cop1::ceilwd(Registers& regs, u32 instr) {
-  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
+void ceilwd(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   s32 result = std::ceil(fs);
-  SetReg<u32>(regs.cop0, FD(instr), result);
+  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), result);
 }
 
-void Cop1::cfc1(Registers& regs, u32 instr) const {
+void cfc1(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
   u8 fd = RD(instr);
   s32 val = 0;
   switch(fd) {
-    case 0: val = fcr0; break;
+    case 0: val = regs.cop1.fcr0; break;
     case 31:
-      val = fcr31.raw;
+      val = regs.cop1.fcr31.raw;
       break;
     default: Util::panic("Undefined CFC1 with rd != 0 or 31");
   }
   regs.gpr[RT(instr)] = val;
 }
 
-void Cop1::ctc1(Registers& regs, u32 instr) {
+void ctc1(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
   u8 fs = RD(instr);
   u32 val = regs.gpr[RT(instr)];
   switch(fs) {
     case 0: break;
     case 31: {
       val &= 0x183ffff;
-      fcr31.raw = val;
+      regs.cop1.fcr31.raw = val;
     } break;
     default: Util::panic("Undefined CTC1 with rd != 0 or 31");
   }
 }
 
-void Cop1::cvtds(Registers& regs, u32 instr) {
-  SetCop1Reg<double>(
-        regs.cop0,
-    FD(instr),
-    GetCop1Reg<float>(
-            regs.cop0,
-      FS(instr)
-    )
-  );
-}
-
-void Cop1::cvtsd(Registers& regs, u32 instr) {
-  SetCop1Reg<float>(
-        regs.cop0,
-    FD(instr),
-    GetCop1Reg<double>(
-            regs.cop0,
-      FS(instr)
-    )
-  );
-}
-
-void Cop1::cvtwd(Registers& regs, u32 instr) {
-  SetReg<u32>(
-        regs.cop0,
-    FD(instr),
-    GetCop1Reg<double>(
-            regs.cop0,
-      FS(instr)
-    )
-  );
-}
-
-void Cop1::cvtws(Registers& regs, u32 instr) {
-  SetReg<u32>(
-        regs.cop0,
-    FD(instr),
-    GetCop1Reg<float>(
-            regs.cop0,
-      FS(instr)
-    )
-  );
-}
-
-void Cop1::cvtls(Registers& regs, u32 instr) {
-  SetReg<u64>(
-        regs.cop0,
-    FD(instr),
-    GetCop1Reg<float>(
-            regs.cop0,
-      FS(instr)
-    )
-  );
-}
-
-void Cop1::cvtsl(Registers& regs, u32 instr) {
-  SetCop1Reg<float>(
-        regs.cop0,
-    FD(instr),
-    (s64)GetReg<u64>(
-            regs.cop0,
-      FS(instr)
-    )
-  );
-}
-
-void Cop1::cvtdw(Registers& regs, u32 instr) {
-  SetCop1Reg<double>(
+void cvtds(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop1.SetCop1Reg<double>(
     regs.cop0,
     FD(instr),
-    (s32)GetReg<u32>(
+    regs.cop1.GetCop1Reg<float>(
       regs.cop0,
       FS(instr)
     )
   );
 }
 
-void Cop1::cvtsw(Registers& regs, u32 instr) {
-  SetCop1Reg<float>(
-        regs.cop0,
-    FD(instr),
-    (s32)GetReg<u32>(
-            regs.cop0,
-      FS(instr)
-    )
-  );
-}
-
-void Cop1::cvtdl(Registers& regs, u32 instr) {
-  SetCop1Reg<double>(
-        regs.cop0,
-    FD(instr),
-    (s64)GetReg<u64>(
-            regs.cop0,
-      FS(instr)
-    )
-  );
-}
-
-void Cop1::cvtld(Registers& regs, u32 instr) {
-  SetReg<u64>(
+void cvtsd(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop1.SetCop1Reg<float>(
     regs.cop0,
     FD(instr),
-    GetCop1Reg<double>(
+    regs.cop1.GetCop1Reg<double>(
+      regs.cop0,
+      FS(instr)
+    )
+  );
+}
+
+void cvtwd(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop1.SetReg<u32>(
+    regs.cop0,
+    FD(instr),
+    regs.cop1.GetCop1Reg<double>(
+      regs.cop0,
+      FS(instr)
+    )
+  );
+}
+
+void cvtws(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop1.SetReg<u32>(
+    regs.cop0,
+    FD(instr),
+    regs.cop1.GetCop1Reg<float>(
+      regs.cop0,
+      FS(instr)
+    )
+  );
+}
+
+void cvtls(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop1.SetReg<u64>(
+    regs.cop0,
+    FD(instr),
+    regs.cop1.GetCop1Reg<float>(
+      regs.cop0,
+      FS(instr)
+    )
+  );
+}
+
+void cvtsl(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop1.SetCop1Reg<float>(
+    regs.cop0,
+    FD(instr),
+    (s64)regs.cop1.GetReg<u64>(
+      regs.cop0,
+      FS(instr)
+    )
+  );
+}
+
+void cvtdw(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop1.SetCop1Reg<double>(
+    regs.cop0,
+    FD(instr),
+    (s32)regs.cop1.GetReg<u32>(
+      regs.cop0,
+      FS(instr)
+    )
+  );
+}
+
+void cvtsw(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop1.SetCop1Reg<float>(
+    regs.cop0,
+    FD(instr),
+    (s32)regs.cop1.GetReg<u32>(
+      regs.cop0,
+      FS(instr)
+    )
+  );
+}
+
+void cvtdl(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop1.SetCop1Reg<double>(
+    regs.cop0,
+    FD(instr),
+    (s64)regs.cop1.GetReg<u64>(
+      regs.cop0,
+      FS(instr)
+    )
+  );
+}
+
+void cvtld(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop1.SetReg<u64>(
+    regs.cop0,
+    FD(instr),
+    regs.cop1.GetCop1Reg<double>(
       regs.cop0,
       FS(instr)
     )
@@ -249,201 +271,229 @@ inline bool CalculateCondition(Registers& regs, T fs, T ft, CompConds cond) {
 }
 
 template <typename T>
-void Cop1::ccond(Registers& regs, u32 instr, CompConds cond) {
-  T fs = GetCop1Reg<T>(regs.cop0, FS(instr));
-  T ft = GetCop1Reg<T>(regs.cop0, FT(instr));
+void ccond(CachedInterpreter& cpu, u32 instr, CompConds cond) {
+  Registers& regs = cpu.regs;
+  T fs = regs.cop1.GetCop1Reg<T>(regs.cop0, FS(instr));
+  T ft = regs.cop1.GetCop1Reg<T>(regs.cop0, FT(instr));
 
-  fcr31.compare = CalculateCondition(regs, fs, ft, cond);
+  regs.cop1.fcr31.compare = CalculateCondition(regs, fs, ft, cond);
 }
 
-template void Cop1::ccond<float>(Registers& regs, u32 instr, CompConds cond);
-template void Cop1::ccond<double>(Registers& regs, u32 instr, CompConds cond);
+template void ccond<float>(CachedInterpreter& cpu, u32 instr, CompConds cond);
+template void ccond<double>(CachedInterpreter& cpu, u32 instr, CompConds cond);
 
-void Cop1::divs(Registers &regs, u32 instr) {
-  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
-  float ft = GetCop1Reg<float>(regs.cop0, FT(instr));
-  SetCop1Reg<float>(regs.cop0, FD(instr), fs / ft);
+void divs(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
+  float ft = regs.cop1.GetCop1Reg<float>(regs.cop0, FT(instr));
+  regs.cop1.SetCop1Reg<float>(regs.cop0, FD(instr), fs / ft);
 }
 
-void Cop1::divd(Registers &regs, u32 instr) {
-  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
-  double ft = GetCop1Reg<double>(regs.cop0, FT(instr));
-  SetCop1Reg<double>(regs.cop0, FD(instr), fs / ft);
+void divd(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
+  double ft = regs.cop1.GetCop1Reg<double>(regs.cop0, FT(instr));
+  regs.cop1.SetCop1Reg<double>(regs.cop0, FD(instr), fs / ft);
 }
 
-void Cop1::muls(Registers &regs, u32 instr) {
-  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
-  float ft = GetCop1Reg<float>(regs.cop0, FT(instr));
-  SetCop1Reg<float>(regs.cop0, FD(instr), fs * ft);
+void muls(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
+  float ft = regs.cop1.GetCop1Reg<float>(regs.cop0, FT(instr));
+  regs.cop1.SetCop1Reg<float>(regs.cop0, FD(instr), fs * ft);
 }
 
-void Cop1::muld(Registers& regs, u32 instr) {
-  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
-  double ft = GetCop1Reg<double>(regs.cop0, FT(instr));
-  SetCop1Reg<double>(regs.cop0, FD(instr), fs * ft);
+void muld(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
+  double ft = regs.cop1.GetCop1Reg<double>(regs.cop0, FT(instr));
+  regs.cop1.SetCop1Reg<double>(regs.cop0, FD(instr), fs * ft);
 }
 
-void Cop1::mulw(Registers &regs, u32 instr) {
-  u32 fs = GetReg<u32>(regs.cop0, FS(instr));
-  u32 ft = GetReg<u32>(regs.cop0, FT(instr));
-  SetReg<u32>(regs.cop0, FD(instr), fs * ft);
+void mulw(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  u32 fs = regs.cop1.GetReg<u32>(regs.cop0, FS(instr));
+  u32 ft = regs.cop1.GetReg<u32>(regs.cop0, FT(instr));
+  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), fs * ft);
 }
 
-void Cop1::mull(Registers &regs, u32 instr) {
-  u64 fs = GetReg<u64>(regs.cop0, FS(instr));
-  u64 ft = GetReg<u64>(regs.cop0, FT(instr));
-  SetReg<u64>(regs.cop0, FD(instr), fs * ft);
+void mull(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  u64 fs = regs.cop1.GetReg<u64>(regs.cop0, FS(instr));
+  u64 ft = regs.cop1.GetReg<u64>(regs.cop0, FT(instr));
+  regs.cop1.SetReg<u64>(regs.cop0, FD(instr), fs * ft);
 }
 
-void Cop1::subs(Registers &regs, u32 instr) {
-  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
-  float ft = GetCop1Reg<float>(regs.cop0, FT(instr));
-  SetCop1Reg<float>(regs.cop0, FD(instr), fs - ft);
+void subs(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
+  float ft = regs.cop1.GetCop1Reg<float>(regs.cop0, FT(instr));
+  regs.cop1.SetCop1Reg<float>(regs.cop0, FD(instr), fs - ft);
 }
 
-void Cop1::subd(Registers &regs, u32 instr) {
-  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
-  double ft = GetCop1Reg<double>(regs.cop0, FT(instr));
-  SetCop1Reg<double>(regs.cop0, FD(instr), fs - ft);
+void subd(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
+  double ft = regs.cop1.GetCop1Reg<double>(regs.cop0, FT(instr));
+  regs.cop1.SetCop1Reg<double>(regs.cop0, FD(instr), fs - ft);
 }
 
-void Cop1::subw(Registers &regs, u32 instr) {
-  u32 fs = GetReg<u32>(regs.cop0, FS(instr));
-  u32 ft = GetReg<u32>(regs.cop0, FT(instr));
-  SetReg<u32>(regs.cop0, FD(instr), fs - ft);
+void subw(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  u32 fs = regs.cop1.GetReg<u32>(regs.cop0, FS(instr));
+  u32 ft = regs.cop1.GetReg<u32>(regs.cop0, FT(instr));
+  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), fs - ft);
 }
 
-void Cop1::subl(Registers &regs, u32 instr) {
-  u64 fs = GetReg<u64>(regs.cop0, FS(instr));
-  u64 ft = GetReg<u64>(regs.cop0, FT(instr));
-  SetReg<u64>(regs.cop0, FD(instr), fs - ft);
+void subl(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  u64 fs = regs.cop1.GetReg<u64>(regs.cop0, FS(instr));
+  u64 ft = regs.cop1.GetReg<u64>(regs.cop0, FT(instr));
+  regs.cop1.SetReg<u64>(regs.cop0, FD(instr), fs - ft);
 }
 
-void Cop1::movs(Registers& regs, u32 instr) {
-  SetCop1Reg<float>(
+void movs(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop1.SetCop1Reg<float>(
     regs.cop0,
     FD(instr),
-    GetCop1Reg<float>(
+    regs.cop1.GetCop1Reg<float>(
       regs.cop0,
       FS(instr)
     )
   );
 }
 
-void Cop1::movd(Registers& regs, u32 instr) {
-  SetCop1Reg<double>(
+void movd(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop1.SetCop1Reg<double>(
     regs.cop0,
     FD(instr),
-    GetCop1Reg<double>(
+    regs.cop1.GetCop1Reg<double>(
       regs.cop0,
       FS(instr)
     )
   );
 }
 
-void Cop1::movw(Registers& regs, u32 instr) {
-  SetReg<u32>(
+void movw(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop1.SetReg<u32>(
     regs.cop0,
     FD(instr),
-    GetReg<u32>(
+    regs.cop1.GetReg<u32>(
       regs.cop0,
       FS(instr)
     )
   );
 }
 
-void Cop1::movl(Registers& regs, u32 instr) {
-  SetReg<u64>(
+void movl(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop1.SetReg<u64>(
     regs.cop0,
     FD(instr),
-    GetReg<u64>(
+    regs.cop1.GetReg<u64>(
       regs.cop0,
       FS(instr)
     )
   );
 }
 
-void Cop1::negs(Registers &regs, u32 instr) {
-  SetCop1Reg<float>(
+void negs(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop1.SetCop1Reg<float>(
     regs.cop0,
     FD(instr),
-    -GetCop1Reg<float>(
+    -regs.cop1.GetCop1Reg<float>(
       regs.cop0,
       FS(instr)
     )
   );
 }
 
-void Cop1::negd(Registers &regs, u32 instr) {
-  SetCop1Reg<double>(
+void negd(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop1.SetCop1Reg<double>(
     regs.cop0,
     FD(instr),
-    -GetCop1Reg<double>(
+    -regs.cop1.GetCop1Reg<double>(
       regs.cop0,
       FS(instr)
     )
   );
 }
 
-void Cop1::sqrts(Registers &regs, u32 instr) {
-  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
-  SetCop1Reg<float>(regs.cop0, FD(instr), std::sqrt(fs));
+void sqrts(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
+  regs.cop1.SetCop1Reg<float>(regs.cop0, FD(instr), std::sqrt(fs));
 }
 
-void Cop1::sqrtd(Registers &regs, u32 instr) {
-  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
-  SetCop1Reg<double>(regs.cop0, FD(instr), std::sqrt(fs));
+void sqrtd(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
+  regs.cop1.SetCop1Reg<double>(regs.cop0, FD(instr), std::sqrt(fs));
 }
 
-void Cop1::roundls(Registers& regs, u32 instr) {
-  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
+void roundls(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   PUSHROUNDINGMODE;
-  SetReg<u64>(regs.cop0, FD(instr), (s32)std::nearbyint(fs));
+  regs.cop1.SetReg<u64>(regs.cop0, FD(instr), (s32)std::nearbyint(fs));
   POPROUNDINGMODE;
 }
 
-void Cop1::roundld(Registers& regs, u32 instr) {
-  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
+void roundld(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   PUSHROUNDINGMODE;
-  SetReg<u64>(regs.cop0, FD(instr), (s64)std::nearbyint(fs));
+  regs.cop1.SetReg<u64>(regs.cop0, FD(instr), (s64)std::nearbyint(fs));
   POPROUNDINGMODE;
 }
 
-void Cop1::roundws(Registers& regs, u32 instr) {
-  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
+void roundws(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   PUSHROUNDINGMODE;
-  SetReg<u32>(regs.cop0, FD(instr), (s32)std::nearbyint(fs));
+  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), (s32)std::nearbyint(fs));
   POPROUNDINGMODE;
 }
 
-void Cop1::roundwd(Registers& regs, u32 instr) {
-  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
+void roundwd(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   PUSHROUNDINGMODE;
-  SetReg<u32>(regs.cop0, FD(instr), (s32)std::nearbyint(fs));
+  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), (s32)std::nearbyint(fs));
   POPROUNDINGMODE;
 }
 
-void Cop1::floorls(Registers& regs, u32 instr) {
-  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
-  SetReg<u64>(regs.cop0, FD(instr), (s64)std::floor(fs));
+void floorls(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
+  regs.cop1.SetReg<u64>(regs.cop0, FD(instr), (s64)std::floor(fs));
 }
 
-void Cop1::floorld(Registers& regs, u32 instr) {
-  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
-  SetReg<u64>(regs.cop0, FD(instr), (s64)std::floor(fs));
+void floorld(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
+  regs.cop1.SetReg<u64>(regs.cop0, FD(instr), (s64)std::floor(fs));
 }
 
-void Cop1::floorws(Registers& regs, u32 instr) {
-  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
-  SetReg<u32>(regs.cop0, FD(instr), (s64)std::floor(fs));
+void floorws(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
+  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), (s64)std::floor(fs));
 }
 
-void Cop1::floorwd(Registers& regs, u32 instr) {
-  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
-  SetReg<u32>(regs.cop0, FD(instr), (s64)std::floor(fs));
+void floorwd(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
+  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), (s64)std::floor(fs));
 }
 
-void Cop1::lwc1(Registers& regs, Mem& mem, u32 instr) {
+void lwc1(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
   if(!regs.cop0.status.cu1) {
     FireException(regs, ExceptionCode::CoprocessorUnusable, 1, true);
     return;
@@ -456,12 +506,13 @@ void Cop1::lwc1(Registers& regs, Mem& mem, u32 instr) {
     HandleTLBException(regs, addr);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
-    u32 data = mem.Read32(regs, physical);
-    SetReg<u32>(regs.cop0, FT(instr), data);
+    u32 data = cpu.mem.Read32(regs, physical);
+    regs.cop1.SetReg<u32>(regs.cop0, FT(instr), data);
   }
 }
 
-void Cop1::swc1(Registers& regs, Mem& mem, u32 instr) {
+void swc1(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
   if(!regs.cop0.status.cu1) {
     FireException(regs, ExceptionCode::CoprocessorUnusable, 1, true);
     return;
@@ -474,11 +525,12 @@ void Cop1::swc1(Registers& regs, Mem& mem, u32 instr) {
     HandleTLBException(regs, addr);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write32(regs, physical, GetReg<u32>(regs.cop0, FT(instr)));
+    cpu.mem.Write32(regs, cpu, physical, regs.cop1.GetReg<u32>(regs.cop0, FT(instr)));
   }
 }
 
-void Cop1::ldc1(Registers& regs, Mem& mem, u32 instr) {
+void ldc1(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
   if(!regs.cop0.status.cu1) {
     FireException(regs, ExceptionCode::CoprocessorUnusable, 1, true);
     return;
@@ -491,12 +543,13 @@ void Cop1::ldc1(Registers& regs, Mem& mem, u32 instr) {
     HandleTLBException(regs, addr);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
-    u64 data = mem.Read64(regs, physical);
-    SetReg<u64>(regs.cop0, FT(instr), data);
+    u64 data = cpu.mem.Read64(regs, physical);
+    regs.cop1.SetReg<u64>(regs.cop0, FT(instr), data);
   }
 }
 
-void Cop1::sdc1(Registers& regs, Mem& mem, u32 instr) {
+void sdc1(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
   if(!regs.cop0.status.cu1) {
     FireException(regs, ExceptionCode::CoprocessorUnusable, 1, true);
     return;
@@ -509,48 +562,56 @@ void Cop1::sdc1(Registers& regs, Mem& mem, u32 instr) {
     HandleTLBException(regs, addr);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
   } else {
-    mem.Write64(regs, physical, GetReg<u64>(regs.cop0, FT(instr)));
+    cpu.mem.Write64(regs, cpu, physical, regs.cop1.GetReg<u64>(regs.cop0, FT(instr)));
   }
 }
 
-void Cop1::truncws(Registers& regs, u32 instr) {
-  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
+void truncws(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   s32 result = (s32)std::trunc(fs);
-  SetReg<u32>(regs.cop0, FD(instr), result);
+  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), result);
 }
 
-void Cop1::truncwd(Registers& regs, u32 instr) {
-  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
+void truncwd(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   s32 result = (s32)std::trunc(fs);
-  SetReg<u32>(regs.cop0, FD(instr), result);
+  regs.cop1.SetReg<u32>(regs.cop0, FD(instr), result);
 }
 
-void Cop1::truncls(Registers& regs, u32 instr) {
-  float fs = GetCop1Reg<float>(regs.cop0, FS(instr));
+void truncls(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  float fs = regs.cop1.GetCop1Reg<float>(regs.cop0, FS(instr));
   s64 result = (s64)std::trunc(fs);
-  SetReg<u64>(regs.cop0, FD(instr), result);
+  regs.cop1.SetReg<u64>(regs.cop0, FD(instr), result);
 }
 
-void Cop1::truncld(Registers& regs, u32 instr) {
-  double fs = GetCop1Reg<double>(regs.cop0, FS(instr));
+void truncld(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  double fs = regs.cop1.GetCop1Reg<double>(regs.cop0, FS(instr));
   s64 result = (s64)std::trunc(fs);
-  SetReg<u64>(regs.cop0, FD(instr), result);
+  regs.cop1.SetReg<u64>(regs.cop0, FD(instr), result);
 }
 
-void Cop1::mfc1(Registers& regs, u32 instr) {
-  regs.gpr[RT(instr)] = (s32)GetReg<u32>(regs.cop0, FS(instr));
+void mfc1(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.gpr[RT(instr)] = (s32)regs.cop1.GetReg<u32>(regs.cop0, FS(instr));
 }
 
-void Cop1::dmfc1(Registers& regs, u32 instr) {
-  regs.gpr[RT(instr)] = (s64)GetReg<u64>(regs.cop0, FS(instr));
+void dmfc1(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.gpr[RT(instr)] = (s64)regs.cop1.GetReg<u64>(regs.cop0, FS(instr));
 }
 
-void Cop1::mtc1(Registers& regs, u32 instr) {
-  SetReg<u32>(regs.cop0, FS(instr), regs.gpr[RT(instr)]);
+void mtc1(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop1.SetReg<u32>(regs.cop0, FS(instr), regs.gpr[RT(instr)]);
 }
 
-void Cop1::dmtc1(Registers& regs, u32 instr) {
-  SetReg<u64>(regs.cop0, FS(instr), regs.gpr[RT(instr)]);
+void dmtc1(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop1.SetReg<u64>(regs.cop0, FS(instr), regs.gpr[RT(instr)]);
 }
 
 }

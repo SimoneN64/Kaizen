@@ -1,4 +1,6 @@
-#include <core/CachedInterpreter.hpp>
+#include <CachedInterpreter.hpp>
+#include <cachedinterpreter/cop/cop0decode.hpp>
+#include <cachedinterpreter/cop/cop1decode.hpp>
 #include <log.hpp>
 
 namespace n64 {
@@ -127,44 +129,44 @@ auto CachedInterpreter::GetInstrFunc(u32 instr) {
     case 0x0D: return ori(instr);
     case 0x0E: return xori(instr);
     case 0x0F: return lui(instr);
-    case 0x10: return regs.cop0.decode(regs, instr);
-    case 0x11: return regs.cop1.decode(regs, *this, instr);
-    case 0x12: cop2Decode(instr); break;
-    case 0x14: bl(instr, regs.gpr[RS(instr)] == regs.gpr[RT(instr)]); break;
-    case 0x15: bl(instr, regs.gpr[RS(instr)] != regs.gpr[RT(instr)]); break;
-    case 0x16: bl(instr, regs.gpr[RS(instr)] <= 0); break;
-    case 0x17: bl(instr, regs.gpr[RS(instr)] > 0); break;
-    case 0x18: daddi(instr); break;
-    case 0x19: daddiu(instr); break;
-    case 0x1A: ldl(instr); break;
-    case 0x1B: ldr(instr); break;
-    case 0x1F: FireException(regs, ExceptionCode::ReservedInstruction, 0, true); break;
-    case 0x20: lb(instr); break;
-    case 0x21: lh(instr); break;
-    case 0x22: lwl(instr); break;
-    case 0x23: lw(instr); break;
-    case 0x24: lbu(instr); break;
-    case 0x25: lhu(instr); break;
-    case 0x26: lwr(instr); break;
-    case 0x27: lwu(instr); break;
-    case 0x28: sb(instr); break;
-    case 0x29: sh(instr); break;
-    case 0x2A: swl(instr); break;
-    case 0x2B: sw(instr); break;
-    case 0x2C: sdl(instr); break;
-    case 0x2D: sdr(instr); break;
-    case 0x2E: swr(instr); break;
-    case 0x2F: break; // CACHE
-    case 0x30: ll(instr); break;
-    case 0x31: regs.cop1.lwc1(regs, mem, instr); break;
-    case 0x34: lld(instr); break;
-    case 0x35: regs.cop1.ldc1(regs, mem, instr); break;
-    case 0x37: ld(instr); break;
-    case 0x38: sc(instr); break;
-    case 0x39: regs.cop1.swc1(regs, mem, instr); break;
-    case 0x3C: scd(instr); break;
-    case 0x3D: regs.cop1.sdc1(regs, mem, instr); break;
-    case 0x3F: sd(instr); break;
+    case 0x10: return cop0GetFunc(*this, instr);
+    case 0x11: return cop1GetFunc(*this, instr);
+    case 0x12: return cop2Decode(instr);
+    case 0x14: return bl(instr, regs.gpr[RS(instr)] == regs.gpr[RT(instr)]);
+    case 0x15: return bl(instr, regs.gpr[RS(instr)] != regs.gpr[RT(instr)]);
+    case 0x16: return bl(instr, regs.gpr[RS(instr)] <= 0);
+    case 0x17: return bl(instr, regs.gpr[RS(instr)] > 0);
+    case 0x18: return daddi(instr);
+    case 0x19: return daddiu(instr);
+    case 0x1A: return ldl(instr);
+    case 0x1B: return ldr(instr);
+    case 0x1F: return FireException(regs, ExceptionCode::ReservedInstruction, 0, true);
+    case 0x20: return lb(instr);
+    case 0x21: return lh(instr);
+    case 0x22: return lwl(instr);
+    case 0x23: return lw(instr);
+    case 0x24: return lbu(instr);
+    case 0x25: return lhu(instr);
+    case 0x26: return lwr(instr);
+    case 0x27: return lwu(instr);
+    case 0x28: return sb(instr);
+    case 0x29: return sh(instr);
+    case 0x2A: return swl(instr);
+    case 0x2B: return sw(instr);
+    case 0x2C: return sdl(instr);
+    case 0x2D: return sdr(instr);
+    case 0x2E: return swr(instr);
+    case 0x2F: return [](){};
+    case 0x30: return ll(instr);
+    case 0x31: return regs.cop1.lwc1(regs, mem, instr);
+    case 0x34: return lld(instr);
+    case 0x35: return regs.cop1.ldc1(regs, mem, instr);
+    case 0x37: return ld(instr);
+    case 0x38: return sc(instr);
+    case 0x39: return regs.cop1.swc1(regs, mem, instr);
+    case 0x3C: return scd(instr);
+    case 0x3D: return regs.cop1.sdc1(regs, mem, instr);
+    case 0x3F: return sd(instr);
     default:
       Util::panic("Unimplemented instruction {:02X} ({:08X}) (pc: {:016X})", mask, instr, (u64)regs.oldPC);
   }

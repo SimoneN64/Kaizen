@@ -1,56 +1,62 @@
-#include <core/registers/Cop0.hpp>
-#include <core/registers/Registers.hpp>
+#include <cachedinterpreter/cop/cop0instructions.hpp>
 #include <log.hpp>
+#include <Registers.hpp>
 
 namespace n64 {
-void Cop0::mtc0(Registers& regs, u32 instr) {
-  SetReg32(RD(instr), regs.gpr[RT(instr)]);
+void mtc0(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop0.SetReg32(RD(instr), regs.gpr[RT(instr)]);
 }
 
-void Cop0::dmtc0(Registers& regs, u32 instr) {
-  SetReg64(RD(instr), regs.gpr[RT(instr)]);
+void dmtc0(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.cop0.SetReg64(RD(instr), regs.gpr[RT(instr)]);
 }
 
-void Cop0::mfc0(Registers& regs, u32 instr) {
-  regs.gpr[RT(instr)] = s32(GetReg32(RD(instr)));
+void mfc0(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.gpr[RT(instr)] = s32(regs.cop0.GetReg32(RD(instr)));
 }
 
-void Cop0::dmfc0(Registers& regs, u32 instr) {
-  regs.gpr[RT(instr)] = s64(GetReg64(RD(instr)));
+void dmfc0(CachedInterpreter& cpu, u32 instr) {
+  Registers& regs = cpu.regs;
+  regs.gpr[RT(instr)] = s64(regs.cop0.GetReg64(RD(instr)));
 }
 
-void Cop0::eret(Registers& regs) {
-  if(status.erl) {
-    regs.SetPC64(ErrorEPC);
-    status.erl = false;
+void eret(CachedInterpreter& cpu) {
+  Registers& regs = cpu.regs;
+  if(regs.cop0.status.erl) {
+    regs.SetPC64(regs.cop0.ErrorEPC);
+    regs.cop0.status.erl = false;
   } else {
-    regs.SetPC64(EPC);
-    status.exl = false;
+    regs.SetPC64(regs.cop0.EPC);
+    regs.cop0.status.exl = false;
   }
-  llbit = false;
+  regs.cop0.llbit = false;
 }
 
 
-void Cop0::tlbr() {
-  u8 Index = index & 0b111111;
+void tlbr(CachedInterpreter& cpu) {
+  Registers& regs = cpu.regs;
+  u8 Index = regs.cop0.index & 0b111111;
   if (Index >= 32) {
-    Util::panic("TLBR with TLB index {}", index);
+    Util::panic("TLBR with TLB index {}", Index);
   }
 
-  TLBEntry entry = tlb[Index];
+  TLBEntry entry = regs.cop0.tlb[Index];
 
-  entryHi.raw = entry.entryHi.raw;
-  entryLo0.raw = entry.entryLo0.raw & 0x3FFFFFFF;
-  entryLo1.raw = entry.entryLo1.raw & 0x3FFFFFFF;
+  regs.cop0.entryHi.raw = entry.entryHi.raw;
+  regs.cop0.entryLo0.raw = entry.entryLo0.raw & 0x3FFFFFFF;
+  regs.cop0.entryLo1.raw = entry.entryLo1.raw & 0x3FFFFFFF;
 
-  entryLo0.g = entry.global;
-  entryLo1.g = entry.global;
-  pageMask.raw = entry.pageMask.raw;
+  regs.cop0.entryLo0.g = entry.global;
+  regs.cop0.entryLo1.g = entry.global;
+  regs.cop0.pageMask.raw = entry.pageMask.raw;
 }
 
-void Cop0::tlbw(int index_) {
-  PageMask page_mask{};
-  page_mask = pageMask;
+void tlbw(CachedInterpreter& cpu, int index_) {
+  Registers& regs = cpu.regs;
+  PageMask page_mask = regs.cop0.pageMask;
   u32 top = page_mask.mask & 0xAAA;
   page_mask.mask = top | (top >> 1);
 
@@ -58,24 +64,25 @@ void Cop0::tlbw(int index_) {
     Util::panic("TLBWI with TLB index {}", index_);
   }
 
-  tlb[index_].entryHi.raw  = entryHi.raw;
-  tlb[index_].entryHi.vpn2 &= ~page_mask.mask;
+  regs.cop0.tlb[index_].entryHi.raw  = regs.cop0.entryHi.raw;
+  regs.cop0.tlb[index_].entryHi.vpn2 &= ~page_mask.mask;
 
-  tlb[index_].entryLo0.raw = entryLo0.raw & 0x03FFFFFE;
-  tlb[index_].entryLo1.raw = entryLo1.raw & 0x03FFFFFE;
-  tlb[index_].pageMask.raw = page_mask.raw;
+  regs.cop0.tlb[index_].entryLo0.raw = regs.cop0.entryLo0.raw & 0x03FFFFFE;
+  regs.cop0.tlb[index_].entryLo1.raw = regs.cop0.entryLo1.raw & 0x03FFFFFE;
+  regs.cop0.tlb[index_].pageMask.raw = page_mask.raw;
 
-  tlb[index_].global = entryLo0.g && entryLo1.g;
-  tlb[index_].initialized = true;
+  regs.cop0.tlb[index_].global = regs.cop0.entryLo0.g && regs.cop0.entryLo1.g;
+  regs.cop0.tlb[index_].initialized = true;
 }
 
-void Cop0::tlbp(Registers& regs) {
+void tlbp(CachedInterpreter& cpu) {
+  Registers& regs = cpu.regs;
   int match = -1;
-  TLBEntry* entry = TLBTryMatch(regs, entryHi.raw, &match);
+  TLBEntry* entry = TLBTryMatch(regs, regs.cop0.entryHi.raw, &match);
   if(entry && match >= 0) {
-    index = match;
+    regs.cop0.index = match;
   } else {
-    index = 0x80000000;
+    regs.cop0.index = 0x80000000;
   }
 }
 

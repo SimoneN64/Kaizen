@@ -32,6 +32,8 @@ Settings::Settings(n64::Core& core) {
       cpuType = entryCpuType.get<std::string>();
       if(cpuType == "jit") {
         core.cpuType = n64::CpuType::JIT;
+      } else if(cpuType == "cached_interpreter") {
+        core.cpuType = n64::CpuType::CachedInterpreter;
       } else if(cpuType == "interpreter") {
         core.cpuType = n64::CpuType::Interpreter;
       } else {
@@ -66,6 +68,9 @@ Settings::Settings(n64::Core& core) {
   switch(core.cpuType) {
     case n64::CpuType::Interpreter:
       core.cpu = std::make_unique<n64::Interpreter>();
+      break;
+    case n64::CpuType::CachedInterpreter:
+      core.cpu = std::make_unique<n64::CachedInterpreter>();
       break;
     case n64::CpuType::JIT:
       core.cpu = std::make_unique<n64::JIT>();

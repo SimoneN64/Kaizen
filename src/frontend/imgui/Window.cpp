@@ -3,7 +3,6 @@
 #include <nfd.hpp>
 #include <Core.hpp>
 #include <Audio.hpp>
-#include <SDL2/SDL.h>
 #include <Discord.hpp>
 
 VkInstance instance{};

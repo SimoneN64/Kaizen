@@ -1,9 +1,10 @@
 #pragma once
 #include <SDL2/SDL_events.h>
 #include <backend/core/Interpreter.hpp>
+#include <backend/core/CachedInterpreter.hpp>
+#include <backend/core/JIT.hpp>
 #include <backend/core/Mem.hpp>
 #include <string>
-#include <backend/core/JIT.hpp>
 #include <backend/core/registers/Registers.hpp>
 #include <Debugger.hpp>
 #include <SDL2/SDL_timer.h>
@@ -12,7 +13,7 @@ struct Window;
 
 namespace n64 {
 enum class CpuType {
-  Interpreter, JIT, COUNT
+  Interpreter, CachedInterpreter, JIT, COUNT
 };
 
 struct Core {

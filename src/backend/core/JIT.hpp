@@ -7,7 +7,7 @@
 namespace n64 {
 using namespace Xbyak;
 using namespace Xbyak::util;
-using Fn = void (*)();
+using Fn = void(*)();
 
 #ifdef _WIN64
 #define ABI_MSVC
@@ -39,7 +39,7 @@ using Fn = void (*)();
 #define GPR_OFFSET(x, jit) ((uintptr_t)&regs.gpr[(x)] - (uintptr_t)jit)
 #define REG_OFFSET(kind, jit) ((uintptr_t)&regs.kind - (uintptr_t)jit)
 #define THIS_OFFSET(kind, jit) ((uintptr_t)&kind - (uintptr_t)jit)
-#define CODECACHE_SIZE (2 << 25)
+#define CODECACHE_SIZE (64_mb)
 #define CODECACHE_OVERHEAD (CODECACHE_SIZE - 1_kb)
 
 struct JIT : BaseCPU {
@@ -53,13 +53,11 @@ struct JIT : BaseCPU {
   void InvalidateCache();
 
   inline void emitCall(const Reg64& addr) const {
-    code->sub(rsp, 8);
     code->push(INSTR);
     code->push(JIT_THIS);
     code->call(addr);
     code->pop(JIT_THIS);
     code->pop(INSTR);
-    code->add(rsp, 8);
   }
 private:
   friend struct n64::Cop1;
@@ -78,7 +76,7 @@ private:
   }
 
   void* bumpAlloc(u64 size, u8 val = 0);
-  void Recompile(Mem&, u32 pc);
+  u64 Recompile(Mem&, u32 pc);
   void AllocateOuter(u32 pc);
   void cop2Decode(u32);
   void special(u32);

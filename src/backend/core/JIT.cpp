@@ -36,14 +36,12 @@ inline void CheckCompareInterrupt(MI& mi, Registers& regs) {
   }
 }
 
-void JIT::Recompile(Mem& mem, u32 pc) {
+u64 JIT::Recompile(Mem& mem, u32 pc) {
   bool branch = false, prevBranch = false;
-  u32 startPC = pc;
-  u32 loopPC = pc;
-  Fn block = code->getCurr<Fn>();
+  static const u64 block = code->getCurr<u64>();
 
   if(code->getSize() >= CODECACHE_OVERHEAD) {
-    Util::panic("Code cache overflow!");
+    Util::warn("[JIT]: Code cache overflow!");
     code->setSize(0);
     InvalidateCache();
   }
@@ -56,9 +54,9 @@ void JIT::Recompile(Mem& mem, u32 pc) {
     code->mov(qword[JIT_THIS + THIS_OFFSET(instrInBlock, this)], regScratch0);
 
     prevBranch = branch;
-    u32 instr = mem.Read32(regs, loopPC);
+    u32 instr = mem.Read32(regs, pc);
     code->mov(INSTR, instr);
-    loopPC += 4;
+    pc += 4;
     branch = isEndBlock(instr);
     Util::trace("{:08X}", instr);
 
@@ -77,7 +75,7 @@ void JIT::Recompile(Mem& mem, u32 pc) {
 
   epilogue();
 
-  blockCache[startPC >> 20][startPC & 0xFFF] = block;
+  return block;
 }
 
 void JIT::AllocateOuter(u32 pc) {
@@ -97,21 +95,24 @@ int JIT::Run() {
     return 0;
   }
 
-  if(!blockCache[pc >> 20]) {
-    AllocateOuter(pc);
-  }
-
-  if(!blockCache[pc >> 20][pc & 0xfff]) {
-    Recompile(mem, pc);
-  }
-
   CheckCompareInterrupt(mem.mmio.mi, regs);
   if(ShouldServiceInterrupt(regs)) {
     FireException(regs, ExceptionCode::Interrupt, 0, false);
     return 0;
   }
 
+  if(!blockCache[pc >> 20]) {
+    AllocateOuter(pc);
+    Util::debug("[JIT]: Allocated page {}", pc >> 20);
+  }
+
+  if(!blockCache[pc >> 20][pc & 0xfff]) {
+    blockCache[pc >> 20][pc & 0xfff] = (Fn)Recompile(mem, pc);
+    Util::debug("[JIT]: Recompiled block {} at page {}", pc & 0xfff, pc >> 20);
+  }
+
   blockCache[pc >> 20][pc & 0xfff]();
+
   return instrInBlock;
 }
 

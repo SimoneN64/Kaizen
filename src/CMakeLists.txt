@@ -7,7 +7,6 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(SDL2 REQUIRED)
 find_package(fmt REQUIRED)
 find_package(nlohmann_json REQUIRED)
-find_package(capstone CONFIG REQUIRED)
 
 option(RAPIDJSON_BUILD_DOC "Build rapidjson documentation." OFF)
 option(RAPIDJSON_BUILD_EXAMPLES "Build rapidjson examples." OFF)
@@ -45,6 +44,7 @@ add_subdirectory(backend)
 add_subdirectory(backend/core)
 add_subdirectory(backend/core/jit)
 add_subdirectory(backend/core/interpreter)
+add_subdirectory(backend/core/cachedinterpreter)
 add_subdirectory(backend/core/mmio)
 add_subdirectory(backend/core/registers)
 add_subdirectory(backend/core/rsp)
@@ -65,56 +65,26 @@ file(REMOVE
   ${PROJECT_BINARY_DIR}/resources/shader.vert)
 
 target_link_libraries(gadolinium PUBLIC
-        frontend
-        frontend-imgui
-        imgui
-        discord-rpc
-        nfd
-        parallel-rdp
-        backend
-        fmt::fmt
-        nlohmann_json::nlohmann_json
-        capstone::capstone
-        core
-        jit
-        registers
-        interpreter
-        mmio
-        rsp
-        SDL2::SDL2main
-        SDL2::SDL2)
+  frontend
+  frontend-imgui
+  imgui
+  discord-rpc
+  nfd
+  parallel-rdp
+  backend
+  fmt::fmt
+  nlohmann_json::nlohmann_json
+  core
+  jit
+  registers
+  interpreter
+  cached_interpreter
+  mmio
+  rsp
+  SDL2::SDL2main
+  SDL2::SDL2)
 
 if(MSVC)
-    target_compile_definitions(gadolinium PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
-    target_compile_options(parallel-rdp PUBLIC /EHa)
-endif()
-
-if(${CMAKE_BUILD_TYPE} MATCHES Debug)
-  if(WIN32)
-    target_compile_options(gadolinium PUBLIC
-      #/fsanitize=address
-      #/fsanitize=undefined
-      /fsanitize=memory
-      /fsanitize=leak
-      )
-    target_link_options(gadolinium PUBLIC
-      #/fsanitize=address
-      #/fsanitize=undefined
-      /fsanitize=memory
-      /fsanitize=leak
-      )
-  else()
-    target_compile_options(gadolinium PUBLIC
-      #-fsanitize=address
-      #-fsanitize=undefined
-      -fsanitize=memory
-      -fsanitize=leak
-      )
-    target_link_options(gadolinium PUBLIC
-      #-fsanitize=address
-      #-fsanitize=undefined
-      -fsanitize=memory
-      -fsanitize=leak
-      )
-  endif()
+  target_compile_definitions(gadolinium PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
+  target_compile_options(parallel-rdp PUBLIC /EHa)
 endif()

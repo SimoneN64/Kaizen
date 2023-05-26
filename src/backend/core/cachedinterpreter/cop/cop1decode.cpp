@@ -1,11 +1,11 @@
 #include <cachedinterpreter/cop/cop1decode.hpp>
+#include <cachedinterpreter/instructions.hpp>
 #include <Registers.hpp>
 
 namespace n64 {
-auto cop1GetFunc(CachedInterpreter& cpu, u32 instr) {
-  if(!regs.cop0.status.cu1) {
-    FireException(regs, ExceptionCode::CoprocessorUnusable, 1, true);
-    return;
+CachedFn cop1GetFunc(CachedInterpreter& cpu, u32 instr) {
+  if(!cpu.regs.cop0.status.cu1) {
+    return [](CachedInterpreter& cpu, u32) { FireException(cpu.regs, ExceptionCode::CoprocessorUnusable, 1, true); };
   }
 
   u8 mask_sub = (instr >> 21) & 0x1F;
@@ -13,129 +13,128 @@ auto cop1GetFunc(CachedInterpreter& cpu, u32 instr) {
   u8 mask_branch = (instr >> 16) & 0x1F;
   switch(mask_sub) {
     // 000r_rccc
-    case 0x00: return mfc1(regs, instr);
-    case 0x01: return dmfc1(regs, instr);
-    case 0x02: return cfc1(regs, instr);
-    case 0x03: return FireException(regs, ExceptionCode::ReservedInstruction, 1, true);
-    case 0x04: return mtc1(regs, instr);
-    case 0x05: return dmtc1(regs, instr);
-    case 0x06: return ctc1(regs, instr);
-    case 0x07: return FireException(regs, ExceptionCode::ReservedInstruction, 1, true);
+    case 0x00: return [](CachedInterpreter&cpu, u32 instr) { cpu.regs.cop1.mfc1(cpu.regs, instr); };
+    case 0x01: return [](CachedInterpreter&cpu, u32 instr) { cpu.regs.cop1.dmfc1(cpu.regs, instr); };
+    case 0x02: return [](CachedInterpreter&cpu, u32 instr) { cpu.regs.cop1.cfc1(cpu.regs, instr); };
+    case 0x03: return [](CachedInterpreter&cpu, u32) { FireException(cpu.regs, ExceptionCode::ReservedInstruction, 1, true); };
+    case 0x04: return [](CachedInterpreter&cpu, u32 instr) { cpu.regs.cop1.mtc1(cpu.regs, instr); };
+    case 0x05: return [](CachedInterpreter&cpu, u32 instr) { cpu.regs.cop1.dmtc1(cpu.regs, instr); };
+    case 0x06: return [](CachedInterpreter&cpu, u32 instr) { cpu.regs.cop1.ctc1(cpu.regs, instr); };
+    case 0x07: return [](CachedInterpreter&cpu, u32) { FireException(cpu.regs, ExceptionCode::ReservedInstruction, 1, true); };
     case 0x08:
       switch(mask_branch) {
-        case 0: return cpu.b(instr, !regs.cop1.fcr31.compare);
-        case 1: return cpu.b(instr, regs.cop1.fcr31.compare);
-        case 2: return cpu.bl(instr, !regs.cop1.fcr31.compare);
-        case 3: return cpu.bl(instr, regs.cop1.fcr31.compare);
+        case 0: return [](CachedInterpreter& cpu, u32 instr) { b(cpu, instr, !cpu.regs.cop1.fcr31.compare); };
+        case 1: return [](CachedInterpreter& cpu, u32 instr) { b(cpu, instr, cpu.regs.cop1.fcr31.compare); };
+        case 2: return [](CachedInterpreter& cpu, u32 instr) { bl(cpu, instr, !cpu.regs.cop1.fcr31.compare); };
+        case 3: return [](CachedInterpreter& cpu, u32 instr) { bl(cpu, instr, cpu.regs.cop1.fcr31.compare); };
         default: Util::panic("Undefined BC COP1 {:02X}", mask_branch);
       }
       break;
     case 0x10: // s
       switch(mask_fun) {
-        case 0x00: return adds(regs, instr);
-        case 0x01: return subs(regs, instr);
-        case 0x02: return muls(regs, instr);
-        case 0x03: return divs(regs, instr);
-        case 0x04: return sqrts(regs, instr);
-        case 0x05: return abss(regs, instr);
-        case 0x06: return movs(regs, instr);
-        case 0x07: return negs(regs, instr);
-        case 0x08: return roundls(regs, instr);
-        case 0x09: return truncls(regs, instr);
-        case 0x0A: return ceills(regs, instr);
-        case 0x0B: return floorls(regs, instr);
-        case 0x0C: return roundws(regs, instr);
-        case 0x0D: return truncws(regs, instr);
-        case 0x0E: return ceilws(regs, instr);
-        case 0x0F: return floorws(regs, instr);
-        case 0x20: return FireException(regs, ExceptionCode::ReservedInstruction, 1, true);
-        case 0x21: return cvtds(regs, instr);
-        case 0x24: return cvtws(regs, instr);
-        case 0x25: return cvtls(regs, instr);
-        case 0x30: return ccond<float>(regs, instr, F);
-        case 0x31: return ccond<float>(regs, instr, UN);
-        case 0x32: return ccond<float>(regs, instr, EQ);
-        case 0x33: return ccond<float>(regs, instr, UEQ);
-        case 0x34: return ccond<float>(regs, instr, OLT);
-        case 0x35: return ccond<float>(regs, instr, ULT);
-        case 0x36: return ccond<float>(regs, instr, OLE);
-        case 0x37: return ccond<float>(regs, instr, ULE);
-        case 0x38: return ccond<float>(regs, instr, SF);
-        case 0x39: return ccond<float>(regs, instr, NGLE);
-        case 0x3A: return ccond<float>(regs, instr, SEQ);
-        case 0x3B: return ccond<float>(regs, instr, NGL);
-        case 0x3C: return ccond<float>(regs, instr, LT);
-        case 0x3D: return ccond<float>(regs, instr, NGE);
-        case 0x3E: return ccond<float>(regs, instr, LE);
-        case 0x3F: return ccond<float>(regs, instr, NGT);
-        default: Util::panic("Unimplemented COP1 function S[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
+        case 0x00: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.adds(cpu.regs, instr); };
+        case 0x01: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.subs(cpu.regs, instr); };
+        case 0x02: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.muls(cpu.regs, instr); };
+        case 0x03: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.divs(cpu.regs, instr); };
+        case 0x04: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.sqrts(cpu.regs, instr); };
+        case 0x05: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.abss(cpu.regs, instr); };
+        case 0x06: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.movs(cpu.regs, instr); };
+        case 0x07: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.negs(cpu.regs, instr); };
+        case 0x08: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.roundls(cpu.regs, instr); };
+        case 0x09: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.truncls(cpu.regs, instr); };
+        case 0x0A: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ceills(cpu.regs, instr); };
+        case 0x0B: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.floorls(cpu.regs, instr); };
+        case 0x0C: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.roundws(cpu.regs, instr); };
+        case 0x0D: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.truncws(cpu.regs, instr); };
+        case 0x0E: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ceilws(cpu.regs, instr); };
+        case 0x0F: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.floorws(cpu.regs, instr); };
+        case 0x20: return [](CachedInterpreter& cpu, u32) { FireException(cpu.regs, ExceptionCode::ReservedInstruction, 1, true); };
+        case 0x21: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.cvtds(cpu.regs, instr); };
+        case 0x24: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.cvtws(cpu.regs, instr); };
+        case 0x25: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.cvtls(cpu.regs, instr); };
+        case 0x30: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<float>(cpu.regs, instr, F); };
+        case 0x31: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<float>(cpu.regs, instr, UN); };
+        case 0x32: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<float>(cpu.regs, instr, EQ); };
+        case 0x33: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<float>(cpu.regs, instr, UEQ); };
+        case 0x34: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<float>(cpu.regs, instr, OLT); };
+        case 0x35: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<float>(cpu.regs, instr, ULT); };
+        case 0x36: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<float>(cpu.regs, instr, OLE); };
+        case 0x37: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<float>(cpu.regs, instr, ULE); };
+        case 0x38: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<float>(cpu.regs, instr, SF); };
+        case 0x39: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<float>(cpu.regs, instr, NGLE); };
+        case 0x3A: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<float>(cpu.regs, instr, SEQ); };
+        case 0x3B: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<float>(cpu.regs, instr, NGL); };
+        case 0x3C: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<float>(cpu.regs, instr, LT); };
+        case 0x3D: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<float>(cpu.regs, instr, NGE); };
+        case 0x3E: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<float>(cpu.regs, instr, LE); };
+        case 0x3F: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<float>(cpu.regs, instr, NGT); };
+        default: Util::panic("Unimplemented COP1 function S[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)cpu.regs.oldPC);
       }
       break;
     case 0x11: // d
       switch(mask_fun) {
-        case 0x00: return addd(regs, instr);
-        case 0x01: return subd(regs, instr);
-        case 0x02: return muld(regs, instr);
-        case 0x03: return divd(regs, instr);
-        case 0x04: return sqrtd(regs, instr);
-        case 0x05: return absd(regs, instr);
-        case 0x06: return movd(regs, instr);
-        case 0x07: return negd(regs, instr);
-        case 0x08: return roundld(regs, instr);
-        case 0x09: return truncld(regs, instr);
-        case 0x0A: return ceilld(regs, instr);
-        case 0x0B: return floorld(regs, instr);
-        case 0x0C: return roundwd(regs, instr);
-        case 0x0D: return truncwd(regs, instr);
-        case 0x0E: return ceilwd(regs, instr);
-        case 0x0F: return floorwd(regs, instr);
-        case 0x20: return cvtsd(regs, instr);
-        case 0x21:
-          return FireException(regs, ExceptionCode::ReservedInstruction, 1, true);
-        case 0x24: return cvtwd(regs, instr);
-        case 0x25: return cvtld(regs, instr);
-        case 0x30: return ccond<double>(regs, instr, F);
-        case 0x31: return ccond<double>(regs, instr, UN);
-        case 0x32: return ccond<double>(regs, instr, EQ);
-        case 0x33: return ccond<double>(regs, instr, UEQ);
-        case 0x34: return ccond<double>(regs, instr, OLT);
-        case 0x35: return ccond<double>(regs, instr, ULT);
-        case 0x36: return ccond<double>(regs, instr, OLE);
-        case 0x37: return ccond<double>(regs, instr, ULE);
-        case 0x38: return ccond<double>(regs, instr, SF);
-        case 0x39: return ccond<double>(regs, instr, NGLE);
-        case 0x3A: return ccond<double>(regs, instr, SEQ);
-        case 0x3B: return ccond<double>(regs, instr, NGL);
-        case 0x3C: return ccond<double>(regs, instr, LT);
-        case 0x3D: return ccond<double>(regs, instr, NGE);
-        case 0x3E: return ccond<double>(regs, instr, LE);
-        case 0x3F: return ccond<double>(regs, instr, NGT);
-        default: Util::panic("Unimplemented COP1 function D[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
+        case 0x00: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.addd(cpu.regs, instr); };
+        case 0x01: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.subd(cpu.regs, instr); };
+        case 0x02: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.muld(cpu.regs, instr); };
+        case 0x03: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.divd(cpu.regs, instr); };
+        case 0x04: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.sqrtd(cpu.regs, instr); };
+        case 0x05: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.absd(cpu.regs, instr); };
+        case 0x06: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.movd(cpu.regs, instr); };
+        case 0x07: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.negd(cpu.regs, instr); };
+        case 0x08: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.roundld(cpu.regs, instr); };
+        case 0x09: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.truncld(cpu.regs, instr); };
+        case 0x0A: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ceilld(cpu.regs, instr); };
+        case 0x0B: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.floorld(cpu.regs, instr); };
+        case 0x0C: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.roundwd(cpu.regs, instr); };
+        case 0x0D: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.truncwd(cpu.regs, instr); };
+        case 0x0E: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ceilwd(cpu.regs, instr); };
+        case 0x0F: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.floorwd(cpu.regs, instr); };
+        case 0x20: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.cvtsd(cpu.regs, instr); };
+        case 0x21: return [](CachedInterpreter&cpu, u32) { FireException(cpu.regs, ExceptionCode::ReservedInstruction, 1, true); };
+        case 0x24: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.cvtwd(cpu.regs, instr); };
+        case 0x25: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.cvtld(cpu.regs, instr); };
+        case 0x30: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<double>(cpu.regs, instr, F); };
+        case 0x31: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<double>(cpu.regs, instr, UN); };
+        case 0x32: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<double>(cpu.regs, instr, EQ); };
+        case 0x33: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<double>(cpu.regs, instr, UEQ); };
+        case 0x34: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<double>(cpu.regs, instr, OLT); };
+        case 0x35: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<double>(cpu.regs, instr, ULT); };
+        case 0x36: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<double>(cpu.regs, instr, OLE); };
+        case 0x37: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<double>(cpu.regs, instr, ULE); };
+        case 0x38: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<double>(cpu.regs, instr, SF); };
+        case 0x39: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<double>(cpu.regs, instr, NGLE); };
+        case 0x3A: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<double>(cpu.regs, instr, SEQ); };
+        case 0x3B: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<double>(cpu.regs, instr, NGL); };
+        case 0x3C: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<double>(cpu.regs, instr, LT); };
+        case 0x3D: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<double>(cpu.regs, instr, NGE); };
+        case 0x3E: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<double>(cpu.regs, instr, LE); };
+        case 0x3F: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.ccond<double>(cpu.regs, instr, NGT); };
+        default: Util::panic("Unimplemented COP1 function D[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)cpu.regs.oldPC);
       }
       break;
     case 0x14: // w
       switch(mask_fun) {
-        case 0x01: return subw(regs, instr);
-        case 0x05: return absw(regs, instr);
-        case 0x02: return mulw(regs, instr);
-        case 0x06: return movw(regs, instr);
-        case 0x20: return cvtsw(regs, instr);
-        case 0x21: return cvtdw(regs, instr);
-        case 0x24: return FireException(regs, ExceptionCode::ReservedInstruction, 1, true);
-        default: Util::panic("Unimplemented COP1 function W[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
+        case 0x01: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.subw(cpu.regs, instr); };
+        case 0x05: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.absw(cpu.regs, instr); };
+        case 0x02: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.mulw(cpu.regs, instr); };
+        case 0x06: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.movw(cpu.regs, instr); };
+        case 0x20: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.cvtsw(cpu.regs, instr); };
+        case 0x21: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.cvtdw(cpu.regs, instr); };
+        case 0x24: return [](CachedInterpreter&cpu, u32) { FireException(cpu.regs, ExceptionCode::ReservedInstruction, 1, true); };
+        default: Util::panic("Unimplemented COP1 function W[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)cpu.regs.oldPC);
       }
       break;
     case 0x15: // l
       switch(mask_fun) {
-        case 0x01: return subl(regs, instr);
-        case 0x05: return absl(regs, instr);
-        case 0x02: return mull(regs, instr);
-        case 0x06: return movl(regs, instr);
-        case 0x20: return cvtsl(regs, instr);
-        case 0x21: return cvtdl(regs, instr);
-        case 0x24: return FireException(regs, ExceptionCode::ReservedInstruction, 1, true);
-        case 0x25: return FireException(regs, ExceptionCode::ReservedInstruction, 1, true);
-        default: Util::panic("Unimplemented COP1 function L[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);
+        case 0x01: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.subl(cpu.regs, instr); };
+        case 0x05: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.absl(cpu.regs, instr); };
+        case 0x02: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.mull(cpu.regs, instr); };
+        case 0x06: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.movl(cpu.regs, instr); };
+        case 0x20: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.cvtsl(cpu.regs, instr); };
+        case 0x21: return [](CachedInterpreter& cpu, u32 instr) { cpu.regs.cop1.cvtdl(cpu.regs, instr); };
+        case 0x24: return [](CachedInterpreter&cpu, u32) { FireException(cpu.regs, ExceptionCode::ReservedInstruction, 1, true); };
+        case 0x25: return [](CachedInterpreter&cpu, u32) { FireException(cpu.regs, ExceptionCode::ReservedInstruction, 1, true); };
+        default: Util::panic("Unimplemented COP1 function L[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)cpu.regs.oldPC);
       }
       break;
     default: Util::panic("Unimplemented COP1 instruction {} {}", mask_sub >> 3, mask_sub & 7);

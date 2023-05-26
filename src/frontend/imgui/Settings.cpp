@@ -115,14 +115,18 @@ void Settings::RenderWidget(bool& show) {
       ImGui::Separator();
       switch (selectedSetting) {
         case SelectedSetting::CPU: {
-            const char* cpuTypes[(int)n64::CpuType::COUNT] = { "Interpreter", "JIT" };
+            const char* cpuTypes[(int)n64::CpuType::COUNT] = { "Interpreter", "Cached Interpreter", "JIT" };
             static n64::CpuType currentType = n64::CpuType::Interpreter;
             if (cpuType == "jit") currentType = n64::CpuType::JIT;
+            else if(cpuType == "cached_interpreter") currentType = n64::CpuType::CachedInterpreter;
 
             if (CreateComboList("Core type", (int*)&currentType, cpuTypes, (int)n64::CpuType::COUNT)) {
               switch (currentType) {
                 case n64::CpuType::Interpreter:
                   cpuType = "interpreter";
+                  break;
+                case n64::CpuType::CachedInterpreter:
+                  cpuType = "cached_interpreter";
                   break;
                 case n64::CpuType::JIT:
                   cpuType = "jit";

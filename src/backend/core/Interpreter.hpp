@@ -8,7 +8,7 @@ namespace n64 {
 struct Core;
 struct Interpreter : BaseCPU {
   Interpreter() = default;
-  ~Interpreter() = default;
+  ~Interpreter() override = default;
   int Run() override;
   void Reset() override;
 private:

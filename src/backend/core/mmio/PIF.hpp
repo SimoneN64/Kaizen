@@ -95,18 +95,19 @@ struct PIF {
   void Reset();
   void LoadMempak(fs::path);
   void LoadEeprom(SaveType, fs::path);
-  void ProcessCommands(Mem&);
+  void ProcessCommands(const Mem&);
   void InitDevices(SaveType);
   void CICChallenge();
   void ExecutePIF(Mem& mem, Registers& regs);
-  void DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType);
+  static void DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType);
   void UpdateController();
   bool ReadButtons(u8*) const;
   void ControllerID(u8*) const;
-  void MempakRead(u8*, u8*) const;
+  void MempakRead(const u8*, u8*) const;
   void MempakWrite(u8*, u8*) const;
-  void EepromRead(u8*, u8*, const Mem&) const;
-  void EepromWrite(u8*, u8*, const Mem&) const;
+  void EepromRead(const u8*, u8*, const Mem&) const;
+  void EepromWrite(const u8*, u8*, const Mem&) const;
+  bool ExecuteCommands(int& index, const Mem& mem, u8*, const u8&);
 
   bool gamepadConnected = false;
   SDL_GameController* gamepad{};
@@ -129,7 +130,7 @@ struct PIF {
     ram[addr & PIF_RAM_DSIZE] = val;
   }
 
-  inline AccessoryType getAccessoryType() const {
+  [[nodiscard]] inline AccessoryType getAccessoryType() const {
     if (channel >= 4 || joybusDevices[channel].type != JOYBUS_CONTROLLER) {
       return ACCESSORY_NONE;
     } else {

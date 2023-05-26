@@ -6,7 +6,7 @@
 
 namespace n64 {
 void AI::Reset() {
-  dmaEnable = 0;
+  dmaEnable = false;
   dacRate = 0;
   bitrate = 0;
   dmaCount = 0;

@@ -36,7 +36,7 @@ inline void CheckCompareInterrupt(MI& mi, Registers& regs) {
   }
 }
 
-u64 JIT::Recompile(Mem& mem, u32 pc) {
+u64 JIT::Recompile(u32 pc) {
   bool branch = false, prevBranch = false;
   static const u64 block = code->getCurr<u64>();
 
@@ -107,7 +107,7 @@ int JIT::Run() {
   }
 
   if(!blockCache[pc >> 20][pc & 0xfff]) {
-    blockCache[pc >> 20][pc & 0xfff] = (Fn)Recompile(mem, pc);
+    blockCache[pc >> 20][pc & 0xfff] = (Fn)Recompile(pc);
     Util::debug("[JIT]: Recompiled block {} at page {}", pc & 0xfff, pc >> 20);
   }
 

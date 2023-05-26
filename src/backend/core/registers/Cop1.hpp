@@ -65,7 +65,6 @@ struct Cop1 {
   FGR fgr[32]{};
   void Reset();
   void decode(Registers&, Interpreter&, u32);
-  friend struct Interpreter;
 
   template <typename T>
   inline void SetReg(Cop0& cop0, u8 index, T value) {
@@ -134,7 +133,11 @@ struct Cop1 {
     }
     return value;
   }
-private:
+
+  void lwc1(Registers&, Mem&, u32 instr);
+  void swc1(Registers&, Mem&, u32 instr);
+  void ldc1(Registers&, Mem&, u32 instr);
+  void sdc1(Registers&, Mem&, u32 instr);
   void absd(Registers&, u32 instr);
   void abss(Registers&, u32 instr);
   void absw(Registers&, u32 instr);
@@ -185,14 +188,10 @@ private:
   void negd(Registers&, u32 instr);
   void sqrts(Registers&, u32 instr);
   void sqrtd(Registers&, u32 instr);
-  void lwc1(Registers&, Mem&, u32 instr);
-  void swc1(Registers&, Mem&, u32 instr);
-  void ldc1(Registers&, Mem&, u32 instr);
   void mfc1(Registers&, u32 instr);
   void dmfc1(Registers&, u32 instr);
   void mtc1(Registers&, u32 instr);
   void dmtc1(Registers&, u32 instr);
-  void sdc1(Registers&, Mem&, u32 instr);
   void truncws(Registers&, u32 instr);
   void truncwd(Registers&, u32 instr);
   void truncls(Registers&, u32 instr);

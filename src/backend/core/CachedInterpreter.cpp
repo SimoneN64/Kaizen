@@ -23,38 +23,46 @@ inline void CheckCompareInterrupt(MI& mi, Registers& regs) {
 
 void CachedInterpreter::Reset() {
   regs.Reset();
+  InvalidateCache();
 }
 
 int CachedInterpreter::Run() {
-  int cycles = 1;
+  int cycles = 0;
   for(; cycles < mem.mmio.vi.cyclesPerHalfline; cycles++) {
-    CheckCompareInterrupt(mem.mmio.mi, regs);
-
     regs.prevDelaySlot = regs.delaySlot;
     regs.delaySlot = false;
 
-    u32 paddr = 0;
-    if(!MapVAddr(regs, LOAD, regs.pc, paddr)) {
+    u32 pc{};
+
+    if (!MapVAddr(regs, LOAD, regs.pc, pc)) {
       HandleTLBException(regs, regs.pc);
       FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, false);
-      return cycles;
+      return 0;
     }
 
-    if(instrCache[paddr]) {
-      instrCache[paddr]();
-    } else {
-      Util::trace("{:08X}:", paddr);
-      u32 instruction = mem.Read32(regs, paddr);
-    }
-
-    if(ShouldServiceInterrupt(regs)) {
+    CheckCompareInterrupt(mem.mmio.mi, regs);
+    if (ShouldServiceInterrupt(regs)) {
       FireException(regs, ExceptionCode::Interrupt, 0, false);
-      return cycles;
+      return 0;
+    }
+
+    if (!instrCache[pc >> 20]) {
+      AllocateOuter(pc);
+      Util::debug("[CACHEDINTERP]: Allocated page {}", pc >> 20);
+    }
+
+    if (!instrCache[pc >> 20][pc & 0xfff]) {
+      u32 instruction = mem.Read32(regs, pc);
+      InstructionHandler handler{GetInstrFunc(instruction), instruction};
+      instrCache[pc >> 20][pc & 0xfff] = handler;
+      Util::debug("[CACHEDINTERP]: Recompiled block {} at page {}", pc & 0xfff, pc >> 20);
     }
 
     regs.oldPC = regs.pc;
     regs.pc = regs.nextPC;
     regs.nextPC += 4;
+
+    instrCache[pc >> 20][pc & 0xfff](*this);
   }
 
   return cycles;

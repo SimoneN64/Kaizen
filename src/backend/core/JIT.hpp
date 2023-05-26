@@ -76,7 +76,7 @@ private:
   }
 
   void* bumpAlloc(u64 size, u8 val = 0);
-  u64 Recompile(Mem&, u32 pc);
+  u64 Recompile(u32 pc);
   void AllocateOuter(u32 pc);
   void cop2Decode(u32);
   void special(u32);

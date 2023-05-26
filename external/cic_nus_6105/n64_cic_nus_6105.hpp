@@ -92,4 +92,4 @@
 
 #define CHL_LEN 0x20
 
-void n64_cic_nus_6105(char chl[], char rsp[], int len);
+void n64_cic_nus_6105(const char chl[], char rsp[], int len);

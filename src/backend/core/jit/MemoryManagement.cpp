@@ -2,13 +2,13 @@
 
 namespace n64 {
 void JIT::InvalidatePage(u32 paddr) {
-  blockCache[paddr >> 20] = nullptr;
+  Util::aligned_free(blockCache[paddr >> 20]);
 }
 
 void JIT::InvalidateCache() {
   sizeUsed = 0;
   for(auto &i : blockCache) {
-    i = nullptr;
+    Util::aligned_free(i);
   }
 }
 

@@ -1,6 +1,4 @@
 #include <Core.hpp>
-#include <ParallelRDPWrapper.hpp>
-#include <Window.hpp>
 #include <Scheduler.hpp>
 
 namespace n64 {

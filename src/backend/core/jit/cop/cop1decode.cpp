@@ -5,8 +5,6 @@
 namespace n64 {
 bool cop1IsEndBlock(u32 instr) {
   u8 mask_sub = (instr >> 21) & 0x1F;
-  u8 mask_fun = instr & 0x3F;
-  u8 mask_branch = (instr >> 16) & 0x1F;
 
   switch (mask_sub) {
     case 0x03:
@@ -464,7 +462,6 @@ void cop1Emit(JIT& cpu, u32 instr) {
           cpu.emitCall(rax);
           break;
         case 0x24:
-          Util::panic("[RECOMPILER] FPU Reserved instruction exception! {:08X}", instr);
         case 0x25:
           Util::panic("[RECOMPILER] FPU Reserved instruction exception! {:08X}", instr);
         default: Util::panic("Unimplemented COP1 function L[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);

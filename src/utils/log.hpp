@@ -9,7 +9,7 @@ enum MessageType : u8 {
 };
 
 #ifdef NDEBUG
-#define GLOBAL_LOG_LEVEL Panic
+#define GLOBAL_LOG_LEVEL Warn
 #else
 #define GLOBAL_LOG_LEVEL Debug
 #endif

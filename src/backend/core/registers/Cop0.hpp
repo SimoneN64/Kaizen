@@ -1,6 +1,7 @@
 #pragma once
 #include <common.hpp>
-#include "log.hpp"
+#include <Random.hpp>
+#include <log.hpp>
 
 namespace n64 {
 #define STATUS_MASK 0xFF57FFFF
@@ -210,34 +211,34 @@ struct Cop0 {
 
   void Reset();
 
-  bool kernel_mode;
-  bool supervisor_mode;
-  bool user_mode;
-  bool is_64bit_addressing;
-  bool llbit;
+  bool kernel_mode{};
+  bool supervisor_mode{};
+  bool user_mode{};
+  bool is_64bit_addressing{};
+  bool llbit{};
 
   PageMask pageMask{};
   EntryHi entryHi{};
   EntryLo entryLo0{}, entryLo1{};
-  u32 index;
+  u32 index{};
   Cop0Context context{};
   u32 wired, r7{};
   u64 badVaddr{}, count{};
   u32 compare{};
   Cop0Status status{};
   Cop0Cause cause{};
-  s64 EPC;
-  u32 PRId, Config, LLAddr{}, WatchLo{}, WatchHi{};
+  s64 EPC{};
+  u32 PRId{}, Config{}, LLAddr{}, WatchLo{}, WatchHi{};
   Cop0XContext xcontext{};
   u32 r21{}, r22{}, r23{}, r24{}, r25{}, ParityError{}, CacheError{}, TagLo{}, TagHi{};
-  s64 ErrorEPC;
+  s64 ErrorEPC{};
   u32 r31{};
   TLBEntry tlb[32]{};
   TLBError tlbError = NONE;
   s64 openbus{};
   void decode(Registers&, u32);
   inline u32 GetRandom() {
-    int val = rand();
+    int val = Util::GetRandomNumber<int>();
     int wired = GetWired();
     int lower, upper;
     if(wired > 31) {
@@ -251,9 +252,6 @@ struct Cop0 {
     val = (val % upper) + lower;
     return val;
   }
-private:
-  inline u32 GetWired() { return wired & 0x3F; }
-  inline u32 GetCount() { return u32(u64(count >> 1)); }
 
   void mtc0(n64::Registers&, u32);
   void dmtc0(n64::Registers&, u32);
@@ -264,6 +262,9 @@ private:
   void tlbr();
   void tlbw(int);
   void tlbp(n64::Registers&);
+private:
+  [[nodiscard]] inline u32 GetWired() const { return wired & 0x3F; }
+  [[nodiscard]] inline u32 GetCount() const { return u32(u64(count >> 1)); }
 };
 
 struct Registers;

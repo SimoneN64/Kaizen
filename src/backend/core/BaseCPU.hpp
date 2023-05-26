@@ -3,7 +3,7 @@
 
 namespace n64 {
 struct BaseCPU {
-  virtual ~BaseCPU() {}
+  virtual ~BaseCPU() = default;
   virtual void Reset() {}
   virtual int Run() {}
   void RunRSP(int cpuCount) {

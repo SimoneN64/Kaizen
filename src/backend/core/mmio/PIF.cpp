@@ -150,64 +150,63 @@ inline u8 data_crc(const u8* data) {
   return crc;
 }
 
-void PIF::ProcessCommands(Mem &mem) {
+bool PIF::ExecuteCommands(int& index, const Mem& mem, u8* cmd, const u8& cmdlen) {
+  u8 r = ram[index++];
+  if (r == 0xFE) {
+    return false;
+  }
+  u8 reslen = r & 0x3F;
+  u8* res = &ram[index + cmdlen];
+
+  switch (cmd[CMD_IDX]) {
+    case 0: case 0xff:
+      ControllerID(res);
+      channel++;
+      break;
+    case 1:
+      UpdateController();
+      if(!ReadButtons(res)) {
+        cmd[1] |= 0x80;
+      }
+      channel++;
+      break;
+    case 2:
+      MempakRead(cmd, res);
+      break;
+    case 3:
+      MempakWrite(cmd, res);
+      break;
+    case 4:
+      EepromRead(cmd, res, mem);
+      break;
+    case 5:
+      EepromWrite(cmd, res, mem);
+      break;
+    default:
+      Util::panic("Invalid PIF command: {:X}", cmd[2]);
+  }
+
+  index += cmdlen + reslen;
+}
+
+void PIF::ProcessCommands(const Mem &mem) {
   u8 control = ram[63];
   if (control & 1) {
     channel = 0;
     int i = 0;
     while (i < 63) {
       u8* cmd = &ram[i++];
-      u8 cmdlen = cmd[CMD_LEN] & 0x3F;
+      static const u8 cmdlen = cmd[CMD_LEN] & 0x3F;
 
-      if (cmdlen == 0) {
-        channel++;
-      } else if (cmdlen == 0x3D) {
-        channel++;
-      } else if (cmdlen == 0x3E) {
-        break;
-      } else if (cmdlen == 0x3F) {
-        continue;
-      } else {
-        u8 r = ram[i++];
-        if (r == 0xFE) {
+      switch(cmdlen) {
+        case 0: case 0x3D: channel++; break;
+        case 0x3E: i = 63; break;
+        case 0x3F: continue;
+        default:
+          if(!ExecuteCommands(i, mem, cmd, cmdlen)) {
+            i = 63;
+          }
           break;
-        }
-        u8 reslen = r & 0x3F;
-        u8* res = &ram[i + cmdlen];
-
-        switch (cmd[CMD_IDX]) {
-          case 0xff:
-            ControllerID(res);
-            channel++;
-            break;
-          case 0:
-            ControllerID(res);
-            channel++;
-            break;
-          case 1:
-            UpdateController();
-            if(!ReadButtons(res)) {
-              cmd[1] |= 0x80;
-            }
-            channel++;
-            break;
-          case 2:
-            MempakRead(cmd, res);
-            break;
-          case 3:
-            MempakWrite(cmd, res);
-            break;
-          case 4:
-            EepromRead(cmd, res, mem);
-            break;
-          case 5:
-            EepromWrite(cmd, res, mem);
-            break;
-          default:
-            Util::panic("Invalid PIF command: {:X}", cmd[2]);
-        }
-
-        i += cmdlen + reslen;
       }
     }
   }
@@ -226,7 +225,7 @@ void PIF::ProcessCommands(Mem &mem) {
   }
 }
 
-void PIF::MempakRead(u8* cmd, u8* res) const {
+void PIF::MempakRead(const u8* cmd, u8* res) const {
   u16 offset = cmd[3] << 8;
   offset |= cmd[4];
 
@@ -282,7 +281,7 @@ void PIF::MempakWrite(u8* cmd, u8* res) const {
   res[0] = data_crc(&cmd[5]);
 }
 
-void PIF::EepromRead(u8* cmd, u8* res, const Mem& mem) const {
+void PIF::EepromRead(const u8* cmd, u8* res, const Mem& mem) const {
   assert(mem.saveType == SAVE_EEPROM_4k || mem.saveType == SAVE_EEPROM_16k);
   if (channel == 4) {
     u8 offset = cmd[3];
@@ -299,7 +298,7 @@ void PIF::EepromRead(u8* cmd, u8* res, const Mem& mem) const {
   }
 }
 
-void PIF::EepromWrite(u8* cmd, u8* res, const Mem& mem) const {
+void PIF::EepromWrite(const u8* cmd, u8* res, const Mem& mem) const {
   assert(mem.saveType == SAVE_EEPROM_4k || mem.saveType == SAVE_EEPROM_16k);
   if (channel == 4) {
     u8 offset = cmd[3];

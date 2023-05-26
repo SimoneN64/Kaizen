@@ -1,6 +1,6 @@
 #pragma once
-#include <cop1instructions.hpp>
+#include <CachedInterpreter.hpp>
 
 namespace n64 {
-auto cop1GetFunc(CachedInterpreter &cpu, u32 instr);
+CachedFn cop1GetFunc(CachedInterpreter &cpu, u32 instr);
 }

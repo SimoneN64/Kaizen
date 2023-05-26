@@ -51,7 +51,7 @@ struct DPC {
 };
 
 struct RDP {
-  DPC dpc;
+  DPC dpc{};
   u32 cmd_buf[0xFFFFF]{};
 
   RDP();

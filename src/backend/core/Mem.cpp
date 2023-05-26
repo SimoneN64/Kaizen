@@ -3,6 +3,7 @@
 #include <core/registers/Registers.hpp>
 #include <core/registers/Cop0.hpp>
 #include <core/Interpreter.hpp>
+#include <core/CachedInterpreter.hpp>
 #include <core/JIT.hpp>
 #include <File.hpp>
 
@@ -254,23 +255,43 @@ u64 Mem::Read64(n64::Registers &regs, u32 paddr) {
   }
 }
 
-void Mem::Write8(Registers& regs, JIT& dyn, u32 paddr, u32 val) {
-  dyn.InvalidatePage(BYTE_ADDRESS(paddr));
+void Mem::Write8(Registers& regs, JIT& cpu, u32 paddr, u32 val) {
+  cpu.InvalidatePage(BYTE_ADDRESS(paddr));
   Write8(regs, paddr, val);
 }
 
-void Mem::Write16(Registers& regs, JIT& dyn, u32 paddr, u32 val) {
-  dyn.InvalidatePage(HALF_ADDRESS(paddr));
+void Mem::Write16(Registers& regs, JIT& cpu, u32 paddr, u32 val) {
+  cpu.InvalidatePage(HALF_ADDRESS(paddr));
   Write16(regs, paddr, val);
 }
 
-void Mem::Write32(Registers& regs, JIT& dyn, u32 paddr, u32 val) {
-  dyn.InvalidatePage(paddr);
+void Mem::Write32(Registers& regs, JIT& cpu, u32 paddr, u32 val) {
+  cpu.InvalidatePage(paddr);
   Write32(regs, paddr, val);
 }
 
-void Mem::Write64(Registers& regs, JIT& dyn, u32 paddr, u64 val) {
-  dyn.InvalidatePage(paddr);
+void Mem::Write64(Registers& regs, JIT& cpu, u32 paddr, u64 val) {
+  cpu.InvalidatePage(paddr);
+  Write64(regs, paddr, val);
+}
+
+void Mem::Write8(Registers& regs, CachedInterpreter& cpu, u32 paddr, u32 val) {
+  cpu.InvalidatePage(BYTE_ADDRESS(paddr));
+  Write8(regs, paddr, val);
+}
+
+void Mem::Write16(Registers& regs, CachedInterpreter& cpu, u32 paddr, u32 val) {
+  cpu.InvalidatePage(HALF_ADDRESS(paddr));
+  Write16(regs, paddr, val);
+}
+
+void Mem::Write32(Registers& regs, CachedInterpreter& cpu, u32 paddr, u32 val) {
+  cpu.InvalidatePage(paddr);
+  Write32(regs, paddr, val);
+}
+
+void Mem::Write64(Registers& regs, CachedInterpreter& cpu, u32 paddr, u64 val) {
+  cpu.InvalidatePage(paddr);
   Write64(regs, paddr, val);
 }
 

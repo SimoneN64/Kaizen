@@ -17,6 +17,7 @@ struct CartInfo {
 };
 
 struct JIT;
+struct CachedInterpreter;
 
 struct ROMHeader {
   u8 initialValues[4];
@@ -65,6 +66,10 @@ struct Mem {
   void Write16(Registers&, JIT&, u32, u32);
   void Write32(Registers&, JIT&, u32, u32);
   void Write64(Registers&, JIT&, u32, u64);
+  void Write8(Registers&, CachedInterpreter&, u32, u32);
+  void Write16(Registers&, CachedInterpreter&, u32, u32);
+  void Write32(Registers&, CachedInterpreter&, u32, u32);
+  void Write64(Registers&, CachedInterpreter&, u32, u64);
   void Write8(Registers&, u32, u32);
   void Write16(Registers&, u32, u32);
   void Write32(Registers&, u32, u32);

@@ -27,7 +27,8 @@ struct CachedInterpreter : BaseCPU {
   void Reset() override;
   void InvalidateCache() {
     for(auto &i : instrCache) {
-      free(i);
+      if(i)
+        free(i);
     }
   }
 
@@ -38,7 +39,8 @@ struct CachedInterpreter : BaseCPU {
   }
 
   void InvalidatePage(u32 paddr) {
-    free(instrCache[paddr >> 20]);
+    if(instrCache[paddr >> 20])
+      free(instrCache[paddr >> 20]);
   }
 
   CachedFn cop2GetFunc(u32);

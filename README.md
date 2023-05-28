@@ -1,7 +1,7 @@
-# Gadolinium
+# Kaizen
 
-[![CodeFactor](https://www.codefactor.io/repository/github/SimoneN64/Gadolinium/badge/master)](https://www.codefactor.io/repository/github/SimoneN64/Gadolinium/overview/master)
-[![build](https://github.com/SimoneN64/Gadolinium/actions/workflows/build.yml/badge.svg)](https://github.com/SimoneN64/Gadolinium/actions/workflows/build.yml)
+[![CodeFactor](https://www.codefactor.io/repository/github/SimoneN64/Kaizen/badge/master)](https://www.codefactor.io/repository/github/SimoneN64/Kaizen/overview/master)
+[![build](https://github.com/SimoneN64/Kaizen/actions/workflows/build.yml/badge.svg)](https://github.com/SimoneN64/Kaizen/actions/workflows/build.yml)
 
 Rewrite of my Nintendo 64 emulator "[shibumi](https://github.com/SimoneN64/shibumi)".
 
@@ -15,7 +15,7 @@ Rewrite of my Nintendo 64 emulator "[shibumi](https://github.com/SimoneN64/shibu
 
 
 ## Build instructions:
-First clone the repository: `git clone --recursive https://github.com/SimoneN64/Gadolinium`
+First clone the repository: `git clone --recursive https://github.com/SimoneN64/Kaizen`
 
 ### Windows
 
@@ -28,7 +28,7 @@ Dependencies:
 - nlohmann-json (install it by making sure that you're choosing the x64-windows triplet: `vcpkg install nlohmann-json:x64-windows`)
 
 ```
-cd path/to/gadolinium
+cd path/to/kaizen
 mkdir build
 cd build
 cmake -T clangcl -DCMAKE_TOOLCHAIN_FILE=path/to/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release -S ../src
@@ -46,7 +46,7 @@ Dependencies:
 - nlohmann-json
 
 ```
-cd path/to/gadolinium
+cd path/to/kaizen
 mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=Release -S ../src
@@ -55,7 +55,7 @@ cmake --build . --config Release
 
 ## Running:
 ```
-./path/to/gadolinium [ROM] [Mupen Movie]
+./path/to/kaizen [ROM] [Mupen Movie]
 ```
 
 Your GPU needs to support Vulkan 1.1+, because the RDP is implemented via [ParaLLEl-RDP](https://github.com/Themaister/parallel-rdp).

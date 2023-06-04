@@ -2,18 +2,65 @@
 #include <core/registers/Registers.hpp>
 #include <Mem.hpp>
 #include <vector>
-#include <BaseCPU.hpp>
 
 namespace n64 {
 struct Core;
-struct Interpreter : BaseCPU {
+struct Interpreter {
   Interpreter() = default;
   ~Interpreter() = default;
-  int Run() override;
-  void Reset() override;
+  FORCE_INLINE int Step() {
+    CheckCompareInterrupt();
+
+    regs.prevDelaySlot = regs.delaySlot;
+    regs.delaySlot = false;
+
+    u32 paddr = 0;
+    if(!MapVAddr(regs, LOAD, regs.pc, paddr)) {
+      HandleTLBException(regs, regs.pc);
+      FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, false);
+      return 0;
+    }
+
+    u32 instruction = mem.Read32(regs, paddr);
+
+    if(ShouldServiceInterrupt()) {
+      FireException(regs, ExceptionCode::Interrupt, 0, false);
+      return 0;
+    }
+
+    regs.oldPC = regs.pc;
+    regs.pc = regs.nextPC;
+    regs.nextPC += 4;
+
+    Exec(instruction);
+
+    return 1;
+  }
+  void Reset();
+  Registers regs;
+  Mem mem;
 private:
   u64 cop2Latch{};
   friend struct Cop1;
+
+  [[nodiscard]] FORCE_INLINE bool ShouldServiceInterrupt() const {
+    bool interrupts_pending = (regs.cop0.status.im & regs.cop0.cause.interruptPending) != 0;
+    bool interrupts_enabled = regs.cop0.status.ie == 1;
+    bool currently_handling_exception = regs.cop0.status.exl == 1;
+    bool currently_handling_error = regs.cop0.status.erl == 1;
+
+    return interrupts_pending && interrupts_enabled &&
+           !currently_handling_exception && !currently_handling_error;
+  }
+
+  FORCE_INLINE void CheckCompareInterrupt() {
+    regs.cop0.count++;
+    regs.cop0.count &= 0x1FFFFFFFF;
+    if(regs.cop0.count == (u64)regs.cop0.compare << 1) {
+      regs.cop0.cause.ip7 = 1;
+      UpdateInterrupt(mem.mmio.mi, regs);
+    }
+  }
 
   void cop2Decode(u32);
   void special(u32);

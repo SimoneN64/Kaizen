@@ -2,6 +2,7 @@
 #include <core/mmio/MI.hpp>
 #include <core/RDP.hpp>
 #include <MemoryRegions.hpp>
+#include <MemoryHelpers.hpp>
 #include <Interrupt.hpp>
 
 #define RSP_BYTE(addr) (dmem[BYTE_ADDRESS(addr) & 0xFFF])
@@ -113,7 +114,16 @@ struct Registers;
 struct RSP {
   RSP();
   void Reset();
-  void Run(int, Registers& regs, Mem& mem);
+
+  FORCE_INLINE void Step(Registers& regs, Mem& mem) {
+    gpr[0] = 0;
+    u32 instr = Util::ReadAccess<u32>(imem, pc & IMEM_DSIZE);
+    oldPC = pc & 0xFFC;
+    pc = nextPC & 0xFFC;
+    nextPC += 4;
+
+    Exec(regs, mem, instr);
+  }
   auto Read(u32 addr) -> u32;
   void Write(Mem& mem, Registers& regs, u32 addr, u32 value);
   void Exec(Registers& regs, Mem& mem, u32 instr);

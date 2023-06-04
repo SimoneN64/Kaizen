@@ -69,7 +69,7 @@ void VI::Write(MI& mi, Registers& regs, u32 paddr, u32 val) {
     case 0x04400018: {
       vsync = val & 0x3FF;
       numHalflines = vsync >> 1;
-      cyclesPerHalfline = N64_CYCLES_PER_FRAME(false) / numHalflines;
+      cyclesPerHalfline = N64_CYCLES_PER_FRAME(isPal) / numHalflines;
     } break;
     case 0x0440001C: {
       hsync = val & 0x3FF;

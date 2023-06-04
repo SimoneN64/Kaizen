@@ -11,7 +11,7 @@ namespace fs = std::filesystem;
 
 Window::Window(n64::Core& core) : settings(core) {
   InitSDL();
-  InitParallelRDP(core.cpu->mem.GetRDRAM(), window);
+  InitParallelRDP(core.cpu.mem.GetRDRAM(), window);
   InitImgui();
   NFD::Init();
 }
@@ -152,7 +152,7 @@ ImDrawData* Window::Present(n64::Core& core) {
 void Window::LoadROM(n64::Core& core, const std::string &path) {
   if(!path.empty()) {
     core.LoadROM(path);
-    gameName = core.cpu->mem.rom.gameNameDB;
+    gameName = core.cpu.mem.rom.gameNameDB;
 
     if(gameName.empty()) {
       gameName = fs::path(path).stem().string();
@@ -181,13 +181,13 @@ void Window::RenderMainMenuBar(n64::Core &core) {
       }
     }
     if (ImGui::MenuItem("Dump RDRAM")) {
-      core.cpu->mem.DumpRDRAM();
+      core.cpu.mem.DumpRDRAM();
     }
     if (ImGui::MenuItem("Dump IMEM")) {
-      core.cpu->mem.DumpIMEM();
+      core.cpu.mem.DumpIMEM();
     }
     if (ImGui::MenuItem("Dump DMEM")) {
-      core.cpu->mem.DumpDMEM();
+      core.cpu.mem.DumpDMEM();
     }
     if (ImGui::MenuItem("Exit")) {
       core.done = true;
@@ -232,8 +232,8 @@ void Window::Render(n64::Core& core) {
   static u32 lastFrame = 0;
   if(!core.pause && lastFrame < ticks - 1000) {
     lastFrame = ticks;
-    windowTitle += fmt::format("  | {:02d} VI/s", core.cpu->mem.mmio.vi.swaps);
-    core.cpu->mem.mmio.vi.swaps = 0;
+    windowTitle += fmt::format("  | {:02d} VI/s", core.cpu.mem.mmio.vi.swaps);
+    core.cpu.mem.mmio.vi.swaps = 0;
     SDL_SetWindowTitle(window, windowTitle.c_str());
     windowTitle = shadowWindowTitle;
   }

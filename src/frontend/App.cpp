@@ -9,10 +9,17 @@ App::App() : window(core) {
 
 void App::Run() {
   SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
-  n64::SI& si = core.cpu->mem.mmio.si;
+  n64::SI& si = core.cpu.mem.mmio.si;
 
   while (!core.done) {
-    core.Run(window, window.settings.GetVolumeL(), window.settings.GetVolumeL());
+    if(core.romLoaded) {
+      if(!core.pause) {
+        core.Run(window.settings.GetVolumeL(), window.settings.GetVolumeR());
+      }
+      UpdateScreenParallelRdp(core, window, core.GetVI());
+    } else {
+      UpdateScreenParallelRdpNoGame(core, window);
+    }
 
     SDL_Event event;
     while (SDL_PollEvent(&event)) {

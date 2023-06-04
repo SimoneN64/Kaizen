@@ -88,6 +88,7 @@ struct VI {
   u32 origin, width, current;
   u32 vsync, hsync, intr;
   AxisStart hstart{}, vstart{};
+  bool isPal = false;
   int swaps{};
   int numHalflines;
   int numFields;

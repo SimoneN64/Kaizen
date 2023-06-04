@@ -16,8 +16,6 @@ struct CartInfo {
   u32 crc;
 };
 
-struct JIT;
-
 struct ROMHeader {
   u8 initialValues[4];
   u32 clockRate;
@@ -61,10 +59,6 @@ struct Mem {
   u16 Read16(Registers&, u32);
   u32 Read32(Registers&, u32);
   u64 Read64(Registers&, u32);
-  void Write8(Registers&, JIT&, u32, u32);
-  void Write16(Registers&, JIT&, u32, u32);
-  void Write32(Registers&, JIT&, u32, u32);
-  void Write64(Registers&, JIT&, u32, u64);
   void Write8(Registers&, u32, u32);
   void Write16(Registers&, u32, u32);
   void Write32(Registers&, u32, u32);
@@ -116,7 +110,7 @@ private:
   bool IsROMPAL() {
     static const char pal_codes[] = {'D', 'F', 'I', 'P', 'S', 'U', 'X', 'Y'};
     return std::any_of(std::begin(pal_codes), std::end(pal_codes), [this](char a) {
-      return rom.cart[0x3e] == a;
+      return rom.cart[0x3d] == a;
     });
   }
 };

@@ -349,6 +349,7 @@ void PIF::UpdateController() {
     } else {
       yclamped /= SDL_JOYSTICK_AXIS_MAX;
     }
+
     yclamped *= 86;
 
     joybusDevices[channel].controller.joy_x = xclamped;

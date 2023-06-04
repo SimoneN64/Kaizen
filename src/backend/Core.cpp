@@ -11,59 +11,75 @@ Core::Core() {
 }
 
 void Core::Stop() {
-  cpu->Reset();
-  cpu->mem.Reset();
+  cpu.Reset();
+  cpu.mem.Reset();
   pause = true;
   romLoaded = false;
 }
 
 void Core::LoadROM(const std::string& rom_) {
   rom = rom_;
-  cpu->Reset();
-  cpu->mem.Reset();
+  cpu.Reset();
+  cpu.mem.Reset();
   pause = false;
   romLoaded = true;
   
-  cpu->mem.LoadROM(rom);
-  GameDB::match(cpu->mem);
-  cpu->mem.mmio.si.pif.InitDevices(cpu->mem.saveType);
-  cpu->mem.mmio.si.pif.LoadMempak(rom_);
-  cpu->mem.mmio.si.pif.LoadEeprom(cpu->mem.saveType, rom_);
-  isPAL = cpu->mem.IsROMPAL();
-  cpu->mem.mmio.si.pif.ExecutePIF(cpu->mem, cpu->regs);
+  cpu.mem.LoadROM(rom);
+  GameDB::match(cpu.mem);
+  cpu.mem.mmio.si.pif.InitDevices(cpu.mem.saveType);
+  cpu.mem.mmio.si.pif.LoadMempak(rom_);
+  cpu.mem.mmio.si.pif.LoadEeprom(cpu.mem.saveType, rom_);
+  isPAL = cpu.mem.IsROMPAL();
+  cpu.mem.mmio.vi.isPal = isPAL;
+  cpu.mem.mmio.si.pif.ExecutePIF(cpu.mem, cpu.regs);
 }
 
-void Core::Run(Window& window, float volumeL, float volumeR) {
-  MMIO& mmio = cpu->mem.mmio;
+void Core::Run(float volumeL, float volumeR) {
+  Mem& mem = cpu.mem;
+  MMIO& mmio = mem.mmio;
+  Registers& regs = cpu.regs;
 
   for (int field = 0; field < mmio.vi.numFields; field++) {
-    if (!pause && romLoaded) {
-      int frameCycles = 0;
-      for (int i = 0; i < mmio.vi.numHalflines; i++) {
-        mmio.vi.current = (i << 1) + field;
-
-        if ((mmio.vi.current & 0x3FE) == mmio.vi.intr) {
-          InterruptRaise(mmio.mi, cpu->regs, Interrupt::VI);
-        }
-
-        int cpuCount = cpu->Run();
-        cpu->RunRSP(cpuCount);
-        frameCycles += cpuCount;
-      }
+    int frameCycles = 0;
+    for (int i = 0; i < mmio.vi.numHalflines; i++) {
+      mmio.vi.current = (i << 1) + field;
 
       if ((mmio.vi.current & 0x3FE) == mmio.vi.intr) {
-        InterruptRaise(mmio.mi, cpu->regs, Interrupt::VI);
+        InterruptRaise(mmio.mi, regs, Interrupt::VI);
       }
 
-      UpdateScreenParallelRdp(*this, window, GetVI());
+      for(; cycles < mem.mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
+        int taken = cpu.Step();
+        static int cpuSteps = 0;
+        cpuSteps += taken;
+        if(mmio.rsp.spStatus.halt) {
+          cpuSteps = 0;
+          mmio.rsp.steps = 0;
+        } else {
+          while(cpuSteps > 2) {
+            mmio.rsp.steps += 2;
+            cpuSteps -= 3;
+          }
 
-      mmio.ai.Step(cpu->mem, cpu->regs, frameCycles, volumeL, volumeR);
-      scheduler.tick(frameCycles, cpu->mem, cpu->regs);
-    } else if (pause && romLoaded) {
-      UpdateScreenParallelRdp(*this, window, GetVI());
-    } else if (pause && !romLoaded) {
-      UpdateScreenParallelRdpNoGame(*this, window);
+          while(mmio.rsp.steps > 0) {
+            mmio.rsp.steps--;
+            mmio.rsp.Step(regs, mem);
+          }
+        }
+
+        cycles += taken;
+        frameCycles += taken;
+      }
+
+      cycles -= mmio.vi.cyclesPerHalfline;
     }
+
+    if ((mmio.vi.current & 0x3FE) == mmio.vi.intr) {
+      InterruptRaise(mmio.mi, regs, Interrupt::VI);
+    }
+
+    mmio.ai.Step(cpu.mem, regs, frameCycles, volumeL, volumeR);
+    scheduler.tick(frameCycles, mem, regs);
   }
 }
 }

@@ -27,34 +27,16 @@ Settings::Settings(n64::Core& core) {
   if(fileExists) {
     settingsFile = std::fstream("resources/settings.json", std::fstream::in | std::fstream::out);
     settings = json::parse(settingsFile);
-    auto entryCpuType = settings["cpu"]["type"];
-    if(!entryCpuType.empty()) {
-      cpuType = entryCpuType.get<std::string>();
-      if(cpuType == "jit") {
-        core.cpuType = n64::CpuType::JIT;
-      } else if(cpuType == "interpreter") {
-        core.cpuType = n64::CpuType::Interpreter;
-      } else {
-        Util::panic("Unrecognized cpu type: {}\n", cpuType);
-      }
-    } else {
-      settingsFile.clear();
-      settings["cpu"]["type"] = "interpreter";
-      settingsFile << settings;
-      core.cpuType = n64::CpuType::Interpreter;
-    }
 
     checkjsonentry(volumeR, float, "audio", "volumeR", 0.5);
     checkjsonentry(volumeL, float, "audio", "volumeL", 0.5);
     checkjsonentry(lockChannels, bool, "audio", "lockChannels", true);
   } else {
     settingsFile = std::fstream("resources/settings.json", std::fstream::trunc | std::fstream::in | std::fstream::out);
-    settings["cpu"]["type"] = "interpreter";
     settings["audio"]["volumeR"] = 0.5;
     settings["audio"]["volumeL"] = 0.5;
     settings["audio"]["lockChannels"] = true;
 
-    core.cpuType = n64::CpuType::Interpreter;
     volumeR = 0.5;
     volumeL = 0.5;
     lockChannels = true;
@@ -62,17 +44,6 @@ Settings::Settings(n64::Core& core) {
     settingsFile << settings;
   }
   settingsFile.close();
-
-  switch(core.cpuType) {
-    case n64::CpuType::Interpreter:
-      core.cpu = std::make_unique<n64::Interpreter>();
-      break;
-    case n64::CpuType::JIT:
-      core.cpu = std::make_unique<n64::JIT>();
-      break;
-    case n64::CpuType::COUNT:
-      Util::panic("BRUH\n");
-  }
 }
 
 Settings::~Settings() {
@@ -81,7 +52,6 @@ Settings::~Settings() {
   if(fileExists) {
     settingsFile = std::fstream("resources/settings.json", std::fstream::trunc | std::fstream::out);
 
-    settings["cpu"]["type"] = cpuType;
     settings["audio"]["volumeR"] = volumeR;
     settings["audio"]["volumeL"] = volumeL;
     settings["audio"]["lockChannels"] = lockChannels;
@@ -89,7 +59,6 @@ Settings::~Settings() {
   } else {
     settingsFile = std::fstream("resources/settings.json", std::fstream::out);
 
-    settings["cpu"]["type"] = cpuType;
     settings["audio"]["volumeR"] = volumeR;
     settings["audio"]["volumeL"] = volumeL;
     settings["audio"]["lockChannels"] = lockChannels;
@@ -103,30 +72,12 @@ void Settings::RenderWidget(bool& show) {
   if(show) {
     ImGui::OpenPopup("Settings");
     if(ImGui::BeginPopupModal("Settings", &show)) {
-      enum class SelectedSetting { CPU, Audio, COUNT };
+      enum class SelectedSetting { Audio, COUNT };
       static SelectedSetting selectedSetting = SelectedSetting::Audio;
-      const char *categories[(int)SelectedSetting::COUNT] = { "CPU", "Audio" };
+      const char *categories[(int)SelectedSetting::COUNT] = { "Audio" };
       CreateComboList("##", (int*)&selectedSetting, categories, (int)SelectedSetting::COUNT);
       ImGui::Separator();
       switch (selectedSetting) {
-        case SelectedSetting::CPU: {
-            const char* cpuTypes[(int)n64::CpuType::COUNT] = { "Interpreter", "JIT" };
-            static n64::CpuType currentType = n64::CpuType::Interpreter;
-            if (cpuType == "jit") currentType = n64::CpuType::JIT;
-
-            if (CreateComboList("Core type", (int*)&currentType, cpuTypes, (int)n64::CpuType::COUNT)) {
-              switch (currentType) {
-                case n64::CpuType::Interpreter:
-                  cpuType = "interpreter";
-                  break;
-                case n64::CpuType::JIT:
-                  cpuType = "jit";
-                  break;
-                case n64::CpuType::COUNT:
-                  Util::panic("BRUH\n");
-              }
-            }
-          } break;
         case SelectedSetting::Audio:
             ImGui::Checkbox("Lock channels", &lockChannels);
             ImGui::SliderFloat("Volume L", &volumeL, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);

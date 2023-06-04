@@ -4,12 +4,12 @@
 
 namespace n64 {
 void PIF::InitDevices(SaveType saveType) {
-  for (int i = 0; i < 4; i++) { //TODO: make this configurable
+  joybusDevices[0].type = JOYBUS_CONTROLLER;
+  joybusDevices[0].accessoryType = ACCESSORY_MEMPACK;
+  for (int i = 1; i < 4; i++) { //TODO: make this configurable
     joybusDevices[i].type = JOYBUS_NONE; 
     joybusDevices[i].accessoryType = ACCESSORY_NONE;
   }
-  joybusDevices[0].type = JOYBUS_CONTROLLER;
-  joybusDevices[0].accessoryType = ACCESSORY_MEMPACK;
 
   if (saveType == SAVE_EEPROM_4k) {
     joybusDevices[4].type = JOYBUS_4KB_EEPROM;

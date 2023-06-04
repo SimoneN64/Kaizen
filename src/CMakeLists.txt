@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(gadolinium)
+project(kaizen)
 
 set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_CXX_STANDARD 17)
@@ -59,7 +59,7 @@ add_subdirectory(../external/imgui imgui)
 add_subdirectory(../external/nativefiledialog-extended nfd)
 add_subdirectory(../external/parallel-rdp parallel-rdp)
 
-add_executable(gadolinium main.cpp)
+add_executable(kaizen main.cpp)
 
 file(COPY ${PROJECT_SOURCE_DIR}/../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)
 file(REMOVE
@@ -67,11 +67,11 @@ file(REMOVE
   ${PROJECT_BINARY_DIR}/resources/shader.frag
   ${PROJECT_BINARY_DIR}/resources/shader.vert)
 
-target_link_libraries(gadolinium PUBLIC frontend frontend-imgui
+target_link_libraries(kaizen PUBLIC frontend frontend-imgui
   discord-rpc imgui nfd parallel-rdp backend fmt::fmt nlohmann_json::nlohmann_json core jit registers interpreter mmio rsp SDL2::SDL2main SDL2::SDL2)
 
 if(WIN32)
-  target_compile_definitions(gadolinium PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
+  target_compile_definitions(kaizen PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
   if(MSVC)
     target_compile_options(parallel-rdp PUBLIC /EHa)
   endif()

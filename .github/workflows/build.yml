@@ -17,7 +17,7 @@ jobs:
           cmake -B build
           cd build
           sudo make install
-      - name: Build Gadolinium
+      - name: Build Kaizen
         run: |
           cmake \
             -G Ninja \
@@ -28,11 +28,11 @@ jobs:
       - name: Collect artifacts
         run: |
           mkdir upload
-          cp -r build/{gadolinium,resources} upload
+          cp -r build/{kaizen,resources} upload
       - name: Upload artifacts
         uses: actions/upload-artifact@master
         with:
-          name: gadolinium-linux
+          name: kaizen-linux
           path: upload
           if-no-files-found: error
   build-windows:
@@ -46,14 +46,14 @@ jobs:
           vcpkg install sdl2[vulkan]:x64-windows
           vcpkg install fmt:x64-windows
           vcpkg install nlohmann-json:x64-windows
-      - name: Build Gadolinium
+      - name: Build Kaizen
         run: |
           cmake -B build -T clangcl -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release -S src
           cmake --build build --config Release
       - name: Collect artifacts
         run: |
           mkdir upload
-          cp build/Release/gadolinium.exe upload
+          cp build/Release/kaizen.exe upload
           mkdir upload/resources
           cp build/resources/* upload/resources
           cp build/Release/SDL2.dll upload
@@ -61,6 +61,6 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@master
         with:
-          name: gadolinium-windows
+          name: kaizen-windows
           path: upload
           if-no-files-found: error

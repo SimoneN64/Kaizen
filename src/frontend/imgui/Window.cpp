@@ -31,9 +31,9 @@ void Window::InitSDL() {
   SDL_Init(SDL_INIT_EVERYTHING);
   n64::InitAudio();
 
-  windowTitle = "Gadolinium";
+  windowTitle = "Kaizen";
   window = SDL_CreateWindow(
-    "Gadolinium",
+    "Kaizen",
     SDL_WINDOWPOS_CENTERED,
     SDL_WINDOWPOS_CENTERED,
     1024, 768,
@@ -159,7 +159,7 @@ void Window::LoadROM(n64::Core& core, const std::string &path) {
     }
 
     Util::UpdateRPC(Util::Playing, gameName);
-    windowTitle = "Gadolinium - " + gameName;
+    windowTitle = "Kaizen - " + gameName;
     shadowWindowTitle = windowTitle;
 
     SDL_SetWindowTitle(window, windowTitle.c_str());
@@ -199,7 +199,7 @@ void Window::RenderMainMenuBar(n64::Core &core) {
       LoadROM(core, core.rom);
     }
     if (ImGui::MenuItem("Stop")) {
-      windowTitle = "Gadolinium";
+      windowTitle = "Kaizen";
       core.rom.clear();
       Util::UpdateRPC(Util::Idling);
       SDL_SetWindowTitle(window, windowTitle.c_str());

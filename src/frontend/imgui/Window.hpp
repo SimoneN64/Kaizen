@@ -20,7 +20,7 @@ struct Window {
 private:
   bool showSettings = false;
   SDL_Window* window{};
-  std::string windowTitle{"Gadolinium"};
+  std::string windowTitle{"Kaizen"};
   std::string shadowWindowTitle{windowTitle};
   std::string gameName{};
   void InitSDL();

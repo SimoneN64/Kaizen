@@ -91,7 +91,9 @@ enum CICType {
 struct CartInfo;
 
 struct PIF {
+  PIF();
   ~PIF();
+  void Reset();
   void LoadMempak(fs::path);
   void LoadEeprom(SaveType, fs::path);
   void ProcessCommands(Mem&);
@@ -115,13 +117,13 @@ struct PIF {
   std::string mempakPath{}, eepromPath{};
   size_t eepromSize{};
 
-  u8 Read(u32 addr) {
+  FORCE_INLINE u8 Read(u32 addr) {
     addr &= 0x7FF;
     if(addr < 0x7c0) return bootrom[addr];
     return ram[addr & PIF_RAM_DSIZE];
   }
 
-  void Write(u32 addr, u8 val) {
+  FORCE_INLINE void Write(u32 addr, u8 val) {
     addr &= 0x7FF;
     if(addr < 0x7c0) return;
     ram[addr & PIF_RAM_DSIZE] = val;

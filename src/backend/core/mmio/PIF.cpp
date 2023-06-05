@@ -10,10 +10,17 @@
 #define MEMPAK_SIZE 32768
 
 namespace n64 {
-void PIF::LoadMempak(fs::path path) {
-  if (mempak)
-    free(mempak);
+PIF::PIF() {
   mempak = (u8*)calloc(MEMPAK_SIZE, 1);
+}
+
+void PIF::Reset() {
+  memset(joybusDevices, 0, sizeof(JoybusDevice) * 6);
+  memset(bootrom, 0, PIF_BOOTROM_SIZE);
+  memset(ram, 0, PIF_RAM_SIZE);
+}
+
+void PIF::LoadMempak(fs::path path) {
   mempakPath = path.replace_extension(".mempak").string();
   FILE* f = fopen(mempakPath.c_str(), "rb");
   if (!f) {
@@ -79,11 +86,15 @@ void PIF::LoadEeprom(SaveType saveType, fs::path path) {
 
 PIF::~PIF() {
   FILE* f = fopen(mempakPath.c_str(), "wb");
-  fwrite(mempak, 1, MEMPAK_SIZE, f);
-  fclose(f);
+  if(f) {
+    fwrite(mempak, 1, MEMPAK_SIZE, f);
+    fclose(f);
+  }
   f = fopen(eepromPath.c_str(), "wb");
-  fwrite(eeprom, 1, eepromSize, f);
-  fclose(f);
+  if(f) {
+    fwrite(eeprom, 1, eepromSize, f);
+    fclose(f);
+  }
 }
 
 enum CMDIndexes {

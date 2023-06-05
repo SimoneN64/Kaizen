@@ -82,3 +82,7 @@ This list will probably grow with time!
 - [Kelpsy](https://github.com/Kelpsy), [fleroviux](https://github.com/fleroviux), [Kim-Dewelski](https://github.com/Kim-Dewelski), [Peach](https://github.com/wheremyfoodat/),
   [kivan](https://github.com/kivan117), [liuk](https://github.com/liuk7071) and [Skyler](https://github.com/skylersaleh) for the general support and motivation :heart:
 - [Spec](https://github.com/spec-chum/) for help with testing on Windows, that helped form the final build instructions :heart:
+
+## Copyright
+
+Nintendo 64 is a registered trademark of Nintendo Co., Ltd.

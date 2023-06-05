@@ -141,6 +141,9 @@ FORCE_INLINE u8 data_crc(const u8* data) {
   return crc;
 }
 
+#define BCD_ENCODE(x) (((x) / 10) << 4 | ((x) % 10))
+#define BCD_DECODE(x) (((x) >> 4) * 10 + ((x) & 15))
+
 void PIF::ProcessCommands(Mem &mem) {
   u8 control = ram[63];
   if (control & 1) {
@@ -193,6 +196,11 @@ void PIF::ProcessCommands(Mem &mem) {
             break;
           case 5:
             EepromWrite(cmd, res, mem);
+            break;
+          case 6:
+            res[0] = 0x00;
+            res[1] = 0x10;
+            res[2] = 0x00;
             break;
           default:
             Util::panic("Invalid PIF command: {:X}", cmd[2]);

@@ -20,7 +20,7 @@ void GameDB::match(Mem& mem) {
         mem.rom.gameNameDB = i.name;
         return;
       } else {
-        Util::warn("Matched code for %s, but not region! Game supposedly exists in regions [{}] but this image has region {}",
+        Util::warn("Matched code for {}, but not region! Game supposedly exists in regions [{}] but this image has region {}",
                 i.name, i.regions, rom.header.countryCode[0]);
       }
     }

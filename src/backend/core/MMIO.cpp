@@ -4,10 +4,6 @@
 #include <core/registers/Registers.hpp>
 
 namespace n64 {
-MMIO::MMIO () {
-  Reset();
-}
-
 void MMIO::Reset() {
   rsp.Reset();
   rdp.Reset();

@@ -22,7 +22,6 @@ struct Core {
 
   bool pause = true;
   int cycles = 0;
-  bool isPAL = false;
   bool romLoaded = false;
   bool done = false;
   std::string rom;

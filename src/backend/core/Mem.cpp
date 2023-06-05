@@ -7,12 +7,6 @@
 
 namespace n64 {
 Mem::Mem() {
-  rom.cart = (u8*)calloc(CART_SIZE, 1);
-  sram = (u8*)calloc(SRAM_SIZE, 1);
-  Reset();
-}
-
-void Mem::Reset() {
   memset(readPages, 0, PAGE_COUNT);
   memset(writePages, 0, PAGE_COUNT);
 
@@ -23,6 +17,11 @@ void Mem::Reset() {
     writePages[i] = pointer;
   }
 
+  rom.cart = (u8*)calloc(CART_SIZE, 1);
+  sram = (u8*)calloc(SRAM_SIZE, 1);
+}
+
+void Mem::Reset() {
   memset(rom.cart, 0, CART_SIZE);
   memset(sram, 0, SRAM_SIZE);
   mmio.Reset();

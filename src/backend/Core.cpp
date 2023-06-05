@@ -20,7 +20,6 @@ void Core::Stop() {
 void Core::LoadROM(const std::string& rom_) {
   rom = rom_;
   cpu.Reset();
-  cpu.mem.Reset();
   pause = false;
   romLoaded = true;
   
@@ -29,9 +28,8 @@ void Core::LoadROM(const std::string& rom_) {
   cpu.mem.mmio.si.pif.InitDevices(cpu.mem.saveType);
   cpu.mem.mmio.si.pif.LoadMempak(rom_);
   cpu.mem.mmio.si.pif.LoadEeprom(cpu.mem.saveType, rom_);
-  isPAL = cpu.mem.IsROMPAL();
-  cpu.mem.mmio.vi.isPal = isPAL;
   cpu.mem.mmio.si.pif.ExecutePIF(cpu.mem, cpu.regs);
+  cpu.mem.mmio.vi.isPal = cpu.mem.IsROMPAL();
 }
 
 void Core::Run(float volumeL, float volumeR) {

@@ -13,8 +13,9 @@ struct Mem;
 struct Registers;
 
 struct MMIO {
-  MMIO();
+  MMIO() = default;
   void Reset();
+
   VI vi;
   MI mi;
   AI ai;

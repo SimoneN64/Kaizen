@@ -27,8 +27,6 @@ struct SI {
   u32 dramAddr{};
   u32 pifAddr{};
 
-  bool toDram = false;
-
   auto Read(MI&, u32) const -> u32;
   void Write(Mem&, Registers&, u32, u32);
   PIF pif;

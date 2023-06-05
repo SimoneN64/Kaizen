@@ -48,25 +48,25 @@ void Cop0::tlbr() {
   pageMask.raw = entry.pageMask.raw;
 }
 
-void Cop0::tlbw(int index_) {
+void Cop0::tlbw(int index) {
   PageMask page_mask{};
   page_mask = pageMask;
   u32 top = page_mask.mask & 0xAAA;
   page_mask.mask = top | (top >> 1);
 
-  if(index_ >= 32) {
-    Util::panic("TLBWI with TLB index {}", index_);
+  if(index >= 32) {
+    Util::panic("TLBWI with TLB index {}", index);
   }
 
-  tlb[index_].entryHi.raw  = entryHi.raw;
-  tlb[index_].entryHi.vpn2 &= ~page_mask.mask;
+  tlb[index].entryHi.raw  = entryHi.raw;
+  tlb[index].entryHi.vpn2 &= ~page_mask.mask;
 
-  tlb[index_].entryLo0.raw = entryLo0.raw & 0x03FFFFFE;
-  tlb[index_].entryLo1.raw = entryLo1.raw & 0x03FFFFFE;
-  tlb[index_].pageMask.raw = page_mask.raw;
+  tlb[index].entryLo0.raw = entryLo0.raw & 0x03FFFFFE;
+  tlb[index].entryLo1.raw = entryLo1.raw & 0x03FFFFFE;
+  tlb[index].pageMask.raw = page_mask.raw;
 
-  tlb[index_].global = entryLo0.g && entryLo1.g;
-  tlb[index_].initialized = true;
+  tlb[index].global = entryLo0.g && entryLo1.g;
+  tlb[index].initialized = true;
 }
 
 void Cop0::tlbp(Registers& regs) {

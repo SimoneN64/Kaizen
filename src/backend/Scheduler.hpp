@@ -2,6 +2,7 @@
 #include <common.hpp>
 #include <queue>
 #include <array>
+#include "log.hpp"
 
 namespace n64 {
 struct Mem;
@@ -26,7 +27,11 @@ struct Event {
 };
 
 struct Scheduler {
-  Scheduler();
+  Scheduler() {
+    enqueueAbsolute(Event{std::numeric_limits<u64>::max(), [](n64::Mem&, n64::Registers&) {
+      Util::panic("How the fuck did we get here?!");
+    }});
+  }
   void enqueueRelative(const Event&);
   void enqueueAbsolute(const Event&);
   void tick(u64, n64::Mem&, n64::Registers&);

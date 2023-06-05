@@ -4,12 +4,6 @@
 
 Scheduler scheduler;
 
-Scheduler::Scheduler() {
-  enqueueAbsolute({UINT64_MAX, [](n64::Mem&, n64::Registers&){
-    Util::panic("How the fuck did we get here?!\n");
-  }});
-}
-
 void Scheduler::enqueueRelative(const Event& event) {
   enqueueAbsolute({event.time + ticks, event.handler});
 }

@@ -319,7 +319,7 @@ ExceptionCode GetTLBExceptionCode(TLBError error, TLBAccessType accessType) {
       return accessType == LOAD ?
         ExceptionCode::AddressErrorLoad : ExceptionCode::AddressErrorStore;
     default:
-      Util::panic("Getting TLB exception for unknown error code! ({})\n", error);
+      Util::panic("Getting TLB exception for unknown error code! ({})\n", static_cast<u8>(error));
   }
 }
 

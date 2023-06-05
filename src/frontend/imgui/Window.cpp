@@ -22,8 +22,8 @@ Window::Window(n64::Core& core) : settings(core) {
 }
 
 static void check_vk_result(VkResult err) {
-  if (err) {
-    Util::panic("[vulkan] Error: VkResult = {}", err);
+  if (err != VK_SUCCESS) {
+    Util::panic("[vulkan] Error: VkResult = {}", static_cast<int>(err));
   }
 }
 

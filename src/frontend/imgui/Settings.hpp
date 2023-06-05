@@ -8,9 +8,9 @@ struct Settings {
   Settings(n64::Core&);
   ~Settings();
 
-  inline float GetVolumeL() const { return volumeL; };
-  inline float GetVolumeR() const { return volumeR; };
-  inline bool GetLockChannels() const { return lockChannels; }
+  FORCE_INLINE float GetVolumeL() const { return volumeL; };
+  FORCE_INLINE float GetVolumeR() const { return volumeR; };
+  FORCE_INLINE bool GetLockChannels() const { return lockChannels; }
 
   void RenderWidget(bool& show);
 private:

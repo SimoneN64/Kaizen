@@ -27,7 +27,7 @@ void Mem::Reset() {
   mmio.Reset();
 }
 
-inline void SetROMCIC(u32 checksum, ROM& rom) {
+FORCE_INLINE void SetROMCIC(u32 checksum, ROM& rom) {
   switch (checksum) {
     case 0xEC8B1325: rom.cicType = CIC_NUS_7102; break; // 7102
     case 0x1DEB51A9: rom.cicType = CIC_NUS_6101; break; // 6101
@@ -121,7 +121,7 @@ u8 Mem::Read8(n64::Registers &regs, u32 paddr) {
         int offs = 3 - (paddr & 3);
         return (w >> (offs * 8)) & 0xff;
       }
-      case CART_REGION:
+      case CART_REGION_1_2:
         paddr = (paddr + 2) & ~2;
         return rom.cart[BYTE_ADDRESS(paddr) & rom.mask];
       case 0x1FC00000 ... 0x1FC007BF:
@@ -161,7 +161,7 @@ u16 Mem::Read16(n64::Registers &regs, u32 paddr) {
       case 0x04300000 ...  0x044FFFFF:
       case 0x04500000 ... 0x048FFFFF:
         return mmio.Read(paddr);
-      case 0x10000000 ... 0x1FBFFFFF:
+      case CART_REGION_1_2:
         paddr = (paddr + 2) & ~3;
         return Util::ReadAccess<u16>(rom.cart, HALF_ADDRESS(paddr) & rom.mask);
       case 0x1FC00000 ... 0x1FC007BF:
@@ -199,7 +199,7 @@ u32 Mem::Read32(n64::Registers &regs, u32 paddr) {
       case 0x04040000 ... 0x040FFFFF: case 0x04100000 ... 0x041FFFFF:
       case 0x04300000 ...	0x044FFFFF: case 0x04500000 ... 0x048FFFFF:
         return mmio.Read(paddr);
-      case 0x10000000 ... 0x1FBFFFFF:
+      case CART_REGION_1_2:
         return Util::ReadAccess<u32>(rom.cart, paddr & rom.mask);
       case 0x1FC00000 ... 0x1FC007BF:
         return Util::ReadAccess<u32>(si.pif.bootrom, paddr - 0x1FC00000);
@@ -235,7 +235,7 @@ u64 Mem::Read64(n64::Registers &regs, u32 paddr) {
       case 0x04300000 ...  0x044FFFFF:
       case 0x04500000 ... 0x048FFFFF:
         return mmio.Read(paddr);
-      case 0x10000000 ... 0x1FBFFFFF:
+      case CART_REGION_1_2:
         return Util::ReadAccess<u64>(rom.cart, paddr & rom.mask);
       case 0x1FC00000 ... 0x1FC007BF:
         return Util::ReadAccess<u64>(si.pif.bootrom, paddr - 0x1FC00000);
@@ -278,7 +278,7 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
       case 0x04300000 ...  0x044FFFFF:
       case 0x04500000 ... 0x048FFFFF:
         Util::panic("MMIO Write8!");
-      case 0x10000000 ... 0x1FBFFFFF:
+      case CART_REGION_1_2:
         break;
       case PIF_RAM_REGION:
         val = val << (8 * (3 - (paddr & 3)));
@@ -329,7 +329,7 @@ void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
       case 0x04300000 ...  0x044FFFFF:
       case 0x04500000 ... 0x048FFFFF:
         Util::panic("MMIO Write16!");
-      case 0x10000000 ... 0x1FBFFFFF:
+      case CART_REGION_1_2:
         break;
       case PIF_RAM_REGION:
         val = val << (16 * !(paddr & 2));
@@ -424,7 +424,7 @@ void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
       case 0x04300000 ...  0x044FFFFF:
       case 0x04500000 ... 0x048FFFFF:
         Util::panic("MMIO Write64!");
-      case 0x10000000 ... 0x1FBFFFFF:
+      case CART_REGION_1_2:
         break;
       case PIF_RAM_REGION:
         Util::WriteAccess<u64>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe64(val));

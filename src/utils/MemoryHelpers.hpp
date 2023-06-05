@@ -6,7 +6,7 @@
 
 namespace Util {
 template<typename T>
-inline T ReadAccess(u8 *data, u32 index) {
+FORCE_INLINE T ReadAccess(u8 *data, u32 index) {
   if constexpr (sizeof(T) == 1) { // 
     return data[index];
   } else if constexpr (sizeof(T) == 2 || sizeof(T) == 4) {
@@ -25,7 +25,7 @@ inline T ReadAccess(u8 *data, u32 index) {
 }
 
 template<typename T>
-inline void WriteAccess(u8 *data, u32 index, T val) {
+FORCE_INLINE void WriteAccess(u8 *data, u32 index, T val) {
   if constexpr (sizeof(T) == 1) {
     data[index] = val;
     return;
@@ -40,21 +40,21 @@ inline void WriteAccess(u8 *data, u32 index, T val) {
   }
 }
 
-inline void SwapBuffer32(size_t size, u8 *data) {
+FORCE_INLINE void SwapBuffer32(size_t size, u8 *data) {
   for (int i = 0; i < size; i += 4) {
     u32 original = *(u32 *) &data[i];
     *(u32 *) &data[i] = bswap_32(original);
   }
 }
 
-inline void SwapBuffer16(size_t size, u8 *data) {
+FORCE_INLINE void SwapBuffer16(size_t size, u8 *data) {
   for (int i = 0; i < size; i += 2) {
     u16 original = *(u16 *) &data[i];
     *(u16 *) &data[i] = bswap_16(original);
   }
 }
 
-inline u32 crc32(u32 crc, const u8 *buf, size_t len) {
+FORCE_INLINE u32 crc32(u32 crc, const u8 *buf, size_t len) {
   static u32 table[256];
   static int have_table = 0;
   u32 rem;
@@ -87,19 +87,19 @@ inline u32 crc32(u32 crc, const u8 *buf, size_t len) {
 }
 
 #ifdef _WIN32
-inline void* aligned_alloc(size_t alignment, size_t size) {
+FORCE_INLINE void* aligned_alloc(size_t alignment, size_t size) {
   return _aligned_malloc(size, alignment);
 }
 
-inline void aligned_free(void* ptr) {
+FORCE_INLINE void aligned_free(void* ptr) {
   _aligned_free(ptr);
 }
 #else
-inline void* aligned_alloc(size_t alignment, size_t size) {
+FORCE_INLINE void* aligned_alloc(size_t alignment, size_t size) {
   return std::aligned_alloc(alignment, size);
 }
 
-inline void aligned_free(void* ptr) {
+FORCE_INLINE void aligned_free(void* ptr) {
   std::free(ptr);
 }
 #endif

@@ -3,7 +3,7 @@
 #include <log.hpp>
 
 namespace Util {
-inline auto ReadFileBinary(const std::string& path, u32** buf) {
+FORCE_INLINE auto ReadFileBinary(const std::string& path, u32** buf) {
   std::ifstream file(path, std::ios::binary);
   file.unsetf(std::ios::skipws);
   if(!file.is_open()) {
@@ -20,7 +20,7 @@ inline auto ReadFileBinary(const std::string& path, u32** buf) {
   return size;
 }
 
-inline size_t NextPow2(size_t num) {
+FORCE_INLINE size_t NextPow2(size_t num) {
   // Taken from "Bit Twiddling Hacks" by Sean Anderson:
   // https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
   --num;

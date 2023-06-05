@@ -169,7 +169,7 @@ void Cop0::SetReg64(u8 addr, u64 value) {
   }
 }
 
-static inline u64 getVPN(u64 addr, u64 pageMask) {
+static FORCE_INLINE u64 getVPN(u64 addr, u64 pageMask) {
   u64 mask = pageMask | 0x1fff;
   u64 vpn = (addr & 0xFFFFFFFFFF) | ((addr >> 22) & 0x30000000000);
 
@@ -240,7 +240,7 @@ bool ProbeTLB(Registers& regs, TLBAccessType access_type, u64 vaddr, u32& paddr,
   return true;
 }
 
-inline bool Is64BitAddressing(Cop0& cp0, u64 addr) {
+FORCE_INLINE bool Is64BitAddressing(Cop0& cp0, u64 addr) {
   u8 region = (addr >> 62) & 3;
   switch(region) {
     case 0b00: return cp0.status.ux;

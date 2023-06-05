@@ -236,7 +236,7 @@ struct Cop0 {
   TLBError tlbError = NONE;
   s64 openbus{};
   void decode(Registers&, u32);
-  inline u32 GetRandom() {
+  FORCE_INLINE u32 GetRandom() {
     int val = rand();
     int wired = GetWired();
     int lower, upper;
@@ -252,8 +252,8 @@ struct Cop0 {
     return val;
   }
 private:
-  inline u32 GetWired() { return wired & 0x3F; }
-  inline u32 GetCount() { return u32(u64(count >> 1)); }
+  FORCE_INLINE u32 GetWired() { return wired & 0x3F; }
+  FORCE_INLINE u32 GetCount() { return u32(u64(count >> 1)); }
 
   void mtc0(n64::Registers&, u32);
   void dmtc0(n64::Registers&, u32);
@@ -275,7 +275,7 @@ enum TLBAccessType {
 
 bool ProbeTLB(Registers& regs, TLBAccessType access_type, u64 vaddr, u32& paddr, int* match);
 
-static inline bool MapVAddr(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr) {
+static FORCE_INLINE bool MapVAddr(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr) {
   switch(u32(vaddr) >> 29) {
     case 0 ... 3: case 7:
       return ProbeTLB(regs, accessType, vaddr, paddr, nullptr);

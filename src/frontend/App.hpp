@@ -6,7 +6,7 @@ struct App {
   App();
   ~App() { Util::ClearRPC(); }
   void Run();
-  inline void LoadROM(const std::string& path) {
+  FORCE_INLINE void LoadROM(const std::string& path) {
     window.LoadROM(core, path);
   }
 private:

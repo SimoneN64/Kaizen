@@ -34,7 +34,7 @@ void RSP::Reset() {
 }
 
 /*
-inline void logRSP(const RSP& rsp, const u32 instr) {
+FORCE_INLINE void logRSP(const RSP& rsp, const u32 instr) {
   Util::debug("{:04X} {:08X} ", rsp.oldPC, instr);
   for (auto gpr : rsp.gpr) {
     Util::debug("{:08X} ", gpr);

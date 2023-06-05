@@ -64,14 +64,14 @@ struct RDP {
   void RunCommand(MI& mi, Registers& regs, RSP& rsp);
   void OnFullSync(MI& mi, Registers& regs);
 
-  inline void WriteStart(u32 val) {
+  FORCE_INLINE void WriteStart(u32 val) {
     if(!dpc.status.startValid) {
       dpc.start = val & 0xFFFFF8;
     }
     dpc.status.startValid = true;
   }
 
-  inline void WriteEnd(MI& mi, Registers& regs, RSP& rsp, u32 val) {
+  FORCE_INLINE void WriteEnd(MI& mi, Registers& regs, RSP& rsp, u32 val) {
     dpc.end = val & 0xFFFFF8;
     if(dpc.status.startValid) {
       dpc.current = dpc.start;

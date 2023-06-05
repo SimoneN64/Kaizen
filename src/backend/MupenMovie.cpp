@@ -119,7 +119,7 @@ bool TasMovieLoaded() {
   return loaded_tas_movie != nullptr;
 }
 
-inline void LogController(const n64::Controller& controller) {
+FORCE_INLINE void LogController(const n64::Controller& controller) {
   Util::print("c_right: {}", controller.c_right);
   Util::print("c_left: {}", controller.c_left);
   Util::print("c_down: {}", controller.c_down);

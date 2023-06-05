@@ -34,7 +34,7 @@ void PIF::LoadMempak(fs::path path) {
   fclose(f);
 }
 
-inline size_t getSaveSize(SaveType saveType) {
+FORCE_INLINE size_t getSaveSize(SaveType saveType) {
   switch (saveType) {
     case SAVE_NONE:
       return 0;
@@ -110,7 +110,7 @@ void PIF::CICChallenge() {
   }
 }
 
-inline u8 data_crc(const u8* data) {
+FORCE_INLINE u8 data_crc(const u8* data) {
   u8 crc = 0;
   for (int i = 0; i <= 32; i++) {
     for (int j = 7; j >= 0; j--) {

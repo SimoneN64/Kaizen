@@ -66,7 +66,7 @@ struct Mem {
 
   MMIO mmio;
 
-  inline void DumpRDRAM() const {
+  FORCE_INLINE void DumpRDRAM() const {
     FILE *fp = fopen("rdram.dump", "wb");
     u8 *temp = (u8*)calloc(RDRAM_SIZE, 1);
     memcpy(temp, mmio.rdp.rdram, RDRAM_SIZE);
@@ -76,7 +76,7 @@ struct Mem {
     fclose(fp);
   }
 
-  inline void DumpIMEM() const {
+  FORCE_INLINE void DumpIMEM() const {
     FILE *fp = fopen("imem.bin", "wb");
     u8 *temp = (u8*)calloc(IMEM_SIZE, 1);
     memcpy(temp, mmio.rsp.imem, IMEM_SIZE);
@@ -86,7 +86,7 @@ struct Mem {
     fclose(fp);
   }
 
-  inline void DumpDMEM() const {
+  FORCE_INLINE void DumpDMEM() const {
     FILE *fp = fopen("dmem.dump", "wb");
     u8 *temp = (u8*)calloc(DMEM_SIZE, 1);
     memcpy(temp, mmio.rsp.dmem, DMEM_SIZE);

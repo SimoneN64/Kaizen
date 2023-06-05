@@ -68,7 +68,7 @@ struct Cop1 {
   friend struct Interpreter;
 
   template <typename T>
-  inline void SetReg(Cop0& cop0, u8 index, T value) {
+  FORCE_INLINE void SetReg(Cop0& cop0, u8 index, T value) {
     if constexpr(sizeof(T) == 4) {
       if (cop0.status.fr) {
         fgr[index].lo = value;
@@ -89,7 +89,7 @@ struct Cop1 {
   }
 
   template <typename T>
-  inline T GetReg(Cop0& cop0, u8 index) {
+  FORCE_INLINE T GetReg(Cop0& cop0, u8 index) {
     if constexpr(sizeof(T) == 4) {
       if(cop0.status.fr) {
         return fgr[index].lo;
@@ -110,7 +110,7 @@ struct Cop1 {
   }
 
   template <typename T>
-  inline void SetCop1Reg(Cop0& cop0, u8 index, T value) {
+  FORCE_INLINE void SetCop1Reg(Cop0& cop0, u8 index, T value) {
     if constexpr (sizeof(T) == 4) {
       u32 raw;
       memcpy(&raw, &value, sizeof(T));
@@ -123,7 +123,7 @@ struct Cop1 {
   }
 
   template <typename T>
-  inline T GetCop1Reg(Cop0& cop0, u8 index) {
+  FORCE_INLINE T GetCop1Reg(Cop0& cop0, u8 index) {
     T value;
     if constexpr (sizeof(T) == 4) {
       u32 raw = GetReg<u32>(cop0, index);

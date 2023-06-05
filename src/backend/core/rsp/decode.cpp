@@ -5,7 +5,7 @@
 #include <Mem.hpp>
 
 namespace n64 {
-inline void special(MI& mi, Registers& regs, RSP& rsp, u32 instr) {
+FORCE_INLINE void special(MI& mi, Registers& regs, RSP& rsp, u32 instr) {
   u8 mask = instr & 0x3f;
   //Util::print("rsp special {:02X}", mask);
   switch(mask) {
@@ -45,7 +45,7 @@ inline void special(MI& mi, Registers& regs, RSP& rsp, u32 instr) {
   }
 }
 
-inline void regimm(RSP& rsp, u32 instr) {
+FORCE_INLINE void regimm(RSP& rsp, u32 instr) {
   u8 mask = ((instr >> 16) & 0x1F);
   //Util::print("rsp regimm {:02X}", mask);
   switch(mask) {
@@ -57,7 +57,7 @@ inline void regimm(RSP& rsp, u32 instr) {
   }
 }
 
-inline void lwc2(RSP& rsp, u32 instr) {
+FORCE_INLINE void lwc2(RSP& rsp, u32 instr) {
   u8 mask = (instr >> 11) & 0x1F;
   //Util::print("lwc2 {:02X}", mask);
   switch(mask) {
@@ -77,7 +77,7 @@ inline void lwc2(RSP& rsp, u32 instr) {
   }
 }
 
-inline void swc2(RSP& rsp, u32 instr) {
+FORCE_INLINE void swc2(RSP& rsp, u32 instr) {
   u8 mask = (instr >> 11) & 0x1F;
   //Util::print("swc2 {:02X}", mask);
   switch(mask) {
@@ -97,7 +97,7 @@ inline void swc2(RSP& rsp, u32 instr) {
   }
 }
 
-inline void cop2(RSP& rsp, u32 instr) {
+FORCE_INLINE void cop2(RSP& rsp, u32 instr) {
   u8 mask = instr & 0x3F;
   u8 mask_sub = (instr >> 21) & 0x1F;
   //Util::print("Cop2 {:02X}", mask);
@@ -176,7 +176,7 @@ inline void cop2(RSP& rsp, u32 instr) {
   }
 }
 
-inline void cop0(Registers& regs, Mem& mem, u32 instr) {
+FORCE_INLINE void cop0(Registers& regs, Mem& mem, u32 instr) {
   u8 mask = (instr >> 21) & 0x1F;
   MMIO& mmio = mem.mmio;
   RSP& rsp = mmio.rsp;

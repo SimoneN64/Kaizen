@@ -7,7 +7,7 @@
 #include <immintrin.h>
 
 namespace n64 {
-inline bool AcquireSemaphore(RSP& rsp) {
+FORCE_INLINE bool AcquireSemaphore(RSP& rsp) {
   if(rsp.semaphore) {
     return true;
   } else {
@@ -16,11 +16,11 @@ inline bool AcquireSemaphore(RSP& rsp) {
   }
 }
 
-inline void ReleaseSemaphore(RSP& rsp) {
+FORCE_INLINE void ReleaseSemaphore(RSP& rsp) {
   rsp.semaphore = false;
 }
 
-inline int SignExt7bit(u8 val, int sa) {
+FORCE_INLINE int SignExt7bit(u8 val, int sa) {
   s8 sval = ((val << 1) & 0x80) | val;
 
   s32 sval32 = sval;
@@ -28,7 +28,7 @@ inline int SignExt7bit(u8 val, int sa) {
   return val32 << sa;
 }
 
-inline auto GetCop0Reg(RSP& rsp, RDP& rdp, u8 index) -> u32{
+FORCE_INLINE auto GetCop0Reg(RSP& rsp, RDP& rdp, u8 index) -> u32{
   switch(index) {
     case 0: return rsp.lastSuccessfulSPAddr.raw;
     case 1: return rsp.lastSuccessfulDRAMAddr.raw;
@@ -50,7 +50,7 @@ inline auto GetCop0Reg(RSP& rsp, RDP& rdp, u8 index) -> u32{
   }
 }
 
-inline void SetCop0Reg(Registers& regs, Mem& mem, u8 index, u32 val) {
+FORCE_INLINE void SetCop0Reg(Registers& regs, Mem& mem, u8 index, u32 val) {
   MMIO& mmio = mem.mmio;
   RSP& rsp = mmio.rsp;
   RDP& rdp = mmio.rdp;
@@ -81,7 +81,7 @@ inline void SetCop0Reg(Registers& regs, Mem& mem, u8 index, u32 val) {
   }
 }
 
-inline VPR Broadcast(const VPR& vt, int l0, int l1, int l2, int l3, int l4, int l5, int l6, int l7) {
+FORCE_INLINE VPR Broadcast(const VPR& vt, int l0, int l1, int l2, int l3, int l4, int l5, int l6, int l7) {
   VPR vte{};
   vte.element[ELEMENT_INDEX(0)] = vt.element[ELEMENT_INDEX(l0)];
   vte.element[ELEMENT_INDEX(1)] = vt.element[ELEMENT_INDEX(l1)];
@@ -95,7 +95,7 @@ inline VPR Broadcast(const VPR& vt, int l0, int l1, int l2, int l3, int l4, int 
 }
 
 #ifdef SIMD_SUPPORT
-inline VPR GetVTE(const VPR& vt, u8 e) {
+FORCE_INLINE VPR GetVTE(const VPR& vt, u8 e) {
   VPR vte{};
   e &= 0xf;
   switch(e) {
@@ -114,7 +114,7 @@ inline VPR GetVTE(const VPR& vt, u8 e) {
   return vte;
 }
 #else
-inline VPR GetVTE(const VPR& vt, u8 e) {
+FORCE_INLINE VPR GetVTE(const VPR& vt, u8 e) {
   VPR vte{};
   e &= 0xf;
   switch(e) {
@@ -702,13 +702,13 @@ void RSP::sltiu(u32 instr) {
   gpr[RT(instr)] = (u32)gpr[RS(instr)] < imm;
 }
 
-inline s16 signedClamp(s64 val) {
+FORCE_INLINE s16 signedClamp(s64 val) {
   if(val < -32768) return -32768;
   if(val > 32767) return 32767;
   return val;
 }
 
-inline u16 unsignedClamp(s64 val) {
+FORCE_INLINE u16 unsignedClamp(s64 val) {
   if(val < 0) return 0;
   if(val > 32767) return 65535;
   return val;
@@ -914,7 +914,7 @@ void RSP::vmov(u32 instr) {
 #endif
 }
 
-inline bool IsSignExtension(s16 hi, s16 lo) {
+FORCE_INLINE bool IsSignExtension(s16 hi, s16 lo) {
   if (hi == 0) {
     return (lo & 0x8000) == 0;
   } else if (hi == -1) {
@@ -1364,7 +1364,7 @@ void RSP::vlt(u32 instr) {
   }
 }
 
-inline u32 rcp(s32 sinput) {
+FORCE_INLINE u32 rcp(s32 sinput) {
   s32 mask = sinput >> 31;
   s32 input = sinput ^ mask;
   if (sinput > INT16_MIN) {
@@ -1386,7 +1386,7 @@ inline u32 rcp(s32 sinput) {
   return result;
 }
 
-inline u32 rsq(u32 input) {
+FORCE_INLINE u32 rsq(u32 input) {
   if (input == 0) {
     return 0x7FFFFFFF;
   } else if (input == 0xFFFF8000) {
@@ -1482,7 +1482,7 @@ void RSP::vrsq(u32 instr) {
 }
 
 // from nall, in ares
-static inline s64 sclip(s64 x, u32 bits) {
+static FORCE_INLINE s64 sclip(s64 x, u32 bits) {
   u64 b = 1ull << (bits - 1);
   u64 m = b * 2 - 1;
   return ((x & m) ^ b) - b;

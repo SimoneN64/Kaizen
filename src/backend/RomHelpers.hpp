@@ -8,7 +8,7 @@ namespace Util {
 #define V64 0x37804012
 
 template <bool toBE = false>
-inline void SwapN64Rom(size_t size, u8 *rom, u32 endianness) {
+FORCE_INLINE void SwapN64Rom(size_t size, u8 *rom, u32 endianness) {
   switch (endianness) {
     case V64:
       SwapBuffer16(size, rom);

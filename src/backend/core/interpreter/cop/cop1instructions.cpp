@@ -5,7 +5,7 @@
 #include <cfenv>
 
 namespace n64 {
-inline int PushRoundingMode(const FCR31& fcr31) {
+FORCE_INLINE int PushRoundingMode(const FCR31& fcr31) {
   int og = fegetround();
   switch(fcr31.rounding_mode) {
     case 0: fesetround(FE_TONEAREST); break;
@@ -226,7 +226,7 @@ void Cop1::cvtld(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-inline bool CalculateCondition(Registers& regs, T fs, T ft, CompConds cond) {
+FORCE_INLINE bool CalculateCondition(Registers& regs, T fs, T ft, CompConds cond) {
   switch(cond) {
     case F: return false;
     case UN: return std::isnan(fs) || std::isnan(ft);

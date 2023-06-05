@@ -169,7 +169,7 @@ void Interpreter::branch_likely(bool cond, s64 address) {
 
 void Interpreter::b(u32 instr, bool cond) {
   s16 imm = instr;
-  s64 offset = (s64)imm << 2;
+  s64 offset = u64((s64)imm) << 2;
   s64 address = regs.pc + offset;
   branch(cond, address);
 }
@@ -177,14 +177,14 @@ void Interpreter::b(u32 instr, bool cond) {
 void Interpreter::blink(u32 instr, bool cond) {
   regs.gpr[31] = regs.nextPC;
   s16 imm = instr;
-  s64 offset = (s64)imm << 2;
+  s64 offset = u64((s64)imm) << 2;
   s64 address = regs.pc + offset;
   branch(cond, address);
 }
 
 void Interpreter::bl(u32 instr, bool cond) {
   s16 imm = instr;
-  s64 offset = (s64)imm << 2;
+  s64 offset = u64((s64)imm) << 2;
   s64 address = regs.pc + offset;
   branch_likely(cond, address);
 }
@@ -192,13 +192,13 @@ void Interpreter::bl(u32 instr, bool cond) {
 void Interpreter::bllink(u32 instr, bool cond) {
   regs.gpr[31] = regs.nextPC;
   s16 imm = instr;
-  s64 offset = (s64)imm << 2;
+  s64 offset = u64((s64)imm) << 2;
   s64 address = regs.pc + offset;
   branch_likely(cond, address);
 }
 
 void Interpreter::lui(u32 instr) {
-  s64 val = (s16)instr;
+  u64 val = s64((s16)instr);
   val <<= 16;
   regs.gpr[RT(instr)] = val;
 }

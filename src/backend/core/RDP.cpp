@@ -73,7 +73,7 @@ void RDP::WriteStatus(MI& mi, Registers& regs, RSP& rsp, u32 val) {
   }
 }
 
-inline void logCommand(u8 cmd) {
+FORCE_INLINE void logCommand(u8 cmd) {
   switch(cmd) {
     case 0x08: Util::debug("Fill triangle"); break;
     case 0x09: Util::debug("Fill, zbuf triangle"); break;

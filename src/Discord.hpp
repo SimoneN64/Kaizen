@@ -10,7 +10,7 @@ enum State {
   Paused
 };
 
-inline void UpdateRPC(State state, const std::string& game = "") {
+FORCE_INLINE void UpdateRPC(State state, const std::string& game = "") {
   DiscordRichPresence presence{};
   std::string textState, textDetails;
 
@@ -36,7 +36,7 @@ inline void UpdateRPC(State state, const std::string& game = "") {
   Discord_UpdatePresence(&presence);
 }
 
-inline void ClearRPC() {
+FORCE_INLINE void ClearRPC() {
   Discord_ClearPresence();
 }
 }

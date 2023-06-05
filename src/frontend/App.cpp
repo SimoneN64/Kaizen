@@ -36,7 +36,7 @@ void App::Run() {
           si.pif.gamepad = SDL_GameControllerOpen(index);
           si.pif.gamepadConnected = false;
           if (!si.pif.gamepad) {
-            Util::warn("[WARN]: Could not initialize gamepad: {}\n", SDL_GetError());
+            Util::warn("[WARN]: Could not initialize gamepad: {}", SDL_GetError());
           } else {
             si.pif.gamepadConnected = true;
           }

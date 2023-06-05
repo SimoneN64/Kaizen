@@ -282,9 +282,9 @@ static inline bool MapVAddr(Registers& regs, TLBAccessType accessType, u64 vaddr
     case 4 ... 5:
       paddr = vaddr & 0x1FFFFFFF;
       return true;
-    case 6: Util::panic("Unimplemented virtual mapping in KSSEG! ({:08X})\n", vaddr);
+    case 6: Util::panic("Unimplemented virtual mapping in KSSEG! ({:08X})", vaddr);
     default:
-      Util::panic("Should never end up in default case in map_vaddr! ({:08X})\n", vaddr);
+      Util::panic("Should never end up in default case in map_vaddr! ({:08X})", vaddr);
   }
 
   return false;

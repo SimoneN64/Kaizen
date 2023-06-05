@@ -91,7 +91,7 @@ void Settings::RenderWidget(bool& show) {
             }
             break;
         case SelectedSetting::COUNT:
-          Util::panic("BRUH\n");
+          Util::panic("BRUH");
       }
 
       ImGui::EndPopup();

@@ -61,8 +61,8 @@ inline void logRSP(const RSP& rsp, const u32 instr) {
     Util::debug("{:04X}", rsp.acc.l.element[i]);
   }
 
-  Util::debug(" {:04X} {:04X} {:02X}\n", rsp.GetVCC(), rsp.GetVCO(), rsp.GetVCE());
-  Util::debug("DMEM: {:02X}{:02X}\n", rsp.dmem[0x3c4], rsp.dmem[0x3c5]);
+  Util::debug(" {:04X} {:04X} {:02X}", rsp.GetVCC(), rsp.GetVCO(), rsp.GetVCE());
+  Util::debug("DMEM: {:02X}{:02X}", rsp.dmem[0x3c4], rsp.dmem[0x3c5]);
 }
 */
 
@@ -79,7 +79,7 @@ auto RSP::Read(u32 addr) -> u32{
       return AcquireSemaphore();
     case 0x04080000: return pc & 0xFFC;
     default:
-      Util::panic("Unimplemented SP register read {:08X}\n", addr);
+      Util::panic("Unimplemented SP register read {:08X}", addr);
   }
 }
 
@@ -129,7 +129,7 @@ void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
         SetPC(value);
       } break;
     default:
-      Util::panic("Unimplemented SP register write {:08X}, val: {:08X}\n", addr, value);
+      Util::panic("Unimplemented SP register write {:08X}, val: {:08X}", addr, value);
   }
 }
 }

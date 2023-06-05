@@ -30,7 +30,7 @@ auto SI::Read(MI& mi, u32 addr) const -> u32 {
       return val;
     }
     default:
-      Util::panic("Unhandled SI[{:08X}] read\n", addr);
+      Util::panic("Unhandled SI[{:08X}] read", addr);
   }
 }
 
@@ -42,12 +42,12 @@ void DMA(Mem& mem, Registers& regs) {
     for(int i = 0; i < 64; i++) {
       mem.mmio.rdp.rdram[BYTE_ADDRESS(si.dramAddr + i)] = si.pif.Read(si.pifAddr + i);
     }
-    //Util::debug("SI DMA from PIF RAM to RDRAM ({:08X} to {:08X})\n", si.pifAddr, si.dramAddr);
+    //Util::debug("SI DMA from PIF RAM to RDRAM ({:08X} to {:08X})", si.pifAddr, si.dramAddr);
   } else {
     for(int i = 0; i < 64; i++) {
       si.pif.Write(si.pifAddr + i, mem.mmio.rdp.rdram[BYTE_ADDRESS(si.dramAddr + i)]);
     }
-    //Util::debug("SI DMA from RDRAM to PIF RAM ({:08X} to {:08X})\n", si.dramAddr, si.pifAddr);
+    //Util::debug("SI DMA from RDRAM to PIF RAM ({:08X} to {:08X})", si.dramAddr, si.pifAddr);
     si.pif.ProcessCommands(mem);
   }
   InterruptRaise(mem.mmio.mi, regs, Interrupt::SI);
@@ -74,7 +74,7 @@ void SI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       InterruptLower(mem.mmio.mi, regs, Interrupt::SI);
       break;
     default:
-      Util::panic("Unhandled SI[{:08X}] write ({:08X})\n", addr, val);
+      Util::panic("Unhandled SI[{:08X}] write ({:08X})", addr, val);
   }
 }
 }

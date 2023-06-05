@@ -35,22 +35,22 @@ constexpr void print(const std::string& fmt, Args... args) {
 
 template <typename ...Args>
 constexpr void panic(const std::string& fmt, Args... args) {
-  print<Error>(fmt, args...);
+  print<Error>(fmt + "\n", args...);
   exit(-1);
 }
 
 template <typename ...Args>
 constexpr void warn(const std::string& fmt, Args... args) {
-  print<Warn>(fmt, args...);
+  print<Warn>(fmt + "\n", args...);
 }
 
 template <typename ...Args>
 constexpr void info(const std::string& fmt, Args... args) {
-  print(fmt, args...);
+  print(fmt + "\n", args...);
 }
 
 template <typename ...Args>
 constexpr void debug(const std::string& fmt, Args... args) {
-  print<Debug>(fmt, args...);
+  print<Debug>(fmt + "\n", args...);
 }
 }

@@ -10,12 +10,6 @@
 #include <GameDB.hpp>
 
 namespace n64 {
-struct CartInfo {
-  bool isPAL;
-  u32 cicType;
-  u32 crc;
-};
-
 struct ROMHeader {
   u8 initialValues[4];
   u32 clockRate;

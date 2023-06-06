@@ -88,8 +88,6 @@ enum CICType {
   CIC_NUS_6106_7106
 };
 
-struct CartInfo;
-
 struct PIF {
   PIF();
   ~PIF();

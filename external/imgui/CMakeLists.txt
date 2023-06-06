@@ -14,11 +14,8 @@ add_library(imgui
 
 add_compile_definitions(IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
 
-if(WIN32)
-  target_compile_definitions(imgui PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
-  if(MSVC)
-    target_compile_options(imgui PUBLIC /EHa)
-  endif()
+if(MSVC)
+  target_compile_options(imgui PUBLIC /EHa)
 endif()
 
 target_include_directories(imgui PUBLIC ../parallel-rdp/parallel-rdp-standalone/volk

@@ -45,7 +45,7 @@ add_library(parallel-rdp
 )
 
 if(WIN32)
-  target_compile_definitions(parallel-rdp PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS VK_USE_PLATFORM_WIN32_KHR)
+  target_compile_definitions(parallel-rdp PUBLIC VK_USE_PLATFORM_WIN32_KHR)
   if(MSVC)
     target_compile_options(parallel-rdp PUBLIC /EHa)
   endif()

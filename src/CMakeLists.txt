@@ -39,6 +39,10 @@ include_directories(
 )
 
 add_compile_definitions(SIMD_SUPPORT)
+if(WIN32)
+  add_definitions(-DNOMINMAX)
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif ()
 add_compile_options(-mssse3 -msse4.1)
 if(${CMAKE_BUILD_TYPE} MATCHES Debug)
   #add_compile_options(-fsanitize=address -fsanitize=undefined)
@@ -60,6 +64,10 @@ add_subdirectory(../external/parallel-rdp parallel-rdp)
 
 add_executable(kaizen main.cpp)
 
+if(MSVC)
+  target_compile_options(parallel-rdp PUBLIC /EHa)
+endif()
+
 file(COPY ${PROJECT_SOURCE_DIR}/../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)
 file(REMOVE
   ${PROJECT_BINARY_DIR}/resources/mario.png
@@ -68,10 +76,3 @@ file(REMOVE
 
 target_link_libraries(kaizen PUBLIC frontend frontend-imgui
   discord-rpc imgui nfd parallel-rdp backend fmt::fmt nlohmann_json::nlohmann_json core registers interpreter mmio rsp SDL2::SDL2main SDL2::SDL2)
-
-if(WIN32)
-  target_compile_definitions(kaizen PUBLIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
-  if(MSVC)
-    target_compile_options(parallel-rdp PUBLIC /EHa)
-  endif()
-endif()

@@ -65,7 +65,7 @@ void Core::Run(float volumeL, float volumeR) {
 
         cycles += taken;
         frameCycles += taken;
-        scheduler.tick(1, mem, regs);
+        scheduler.tick(taken, mem, regs);
       }
 
       cycles -= mmio.vi.cyclesPerHalfline;

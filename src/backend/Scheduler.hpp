@@ -32,9 +32,22 @@ struct Scheduler {
       Util::panic("How the fuck did we get here?!");
     }});
   }
-  void enqueueRelative(const Event&);
-  void enqueueAbsolute(const Event&);
-  void tick(u64, n64::Mem&, n64::Registers&);
+
+  FORCE_INLINE void enqueueRelative(const Event& event) {
+    enqueueAbsolute({event.time + ticks, event.handler});
+  }
+
+  FORCE_INLINE void enqueueAbsolute(const Event& e) {
+    events.push(e);
+  }
+
+  FORCE_INLINE void tick(u64 t, n64::Mem& mem, n64::Registers& regs) {
+    ticks += t;
+    while(ticks >= events.top().time) {
+      events.top().handler(mem, regs);
+      events.pop();
+    }
+  }
   std::priority_queue<Event, std::vector<Event>, std::greater<>> events;
   u64 ticks = 0;
   u8 index = 0;

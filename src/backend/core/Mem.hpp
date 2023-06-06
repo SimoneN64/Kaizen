@@ -101,7 +101,7 @@ private:
   u8* sram;
   u8 isviewer[ISVIEWER_SIZE]{};
 
-  bool IsROMPAL() {
+  FORCE_INLINE bool IsROMPAL() {
     static const char pal_codes[] = {'D', 'F', 'I', 'P', 'S', 'U', 'X', 'Y'};
     return std::any_of(std::begin(pal_codes), std::end(pal_codes), [this](char a) {
       return rom.cart[0x3d] == a;

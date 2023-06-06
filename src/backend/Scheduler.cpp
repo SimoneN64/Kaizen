@@ -3,19 +3,3 @@
 #include <core/registers/Registers.hpp>
 
 Scheduler scheduler;
-
-void Scheduler::enqueueRelative(const Event& event) {
-  enqueueAbsolute({event.time + ticks, event.handler});
-}
-
-void Scheduler::enqueueAbsolute(const Event& e) {
-  events.push(e);
-}
-
-void Scheduler::tick(u64 t, n64::Mem& mem, n64::Registers& regs) {
-  ticks += t;
-  while(ticks >= events.top().time) {
-    events.top().handler(mem, regs);
-    events.pop();
-  }
-}

@@ -23,11 +23,11 @@ void Core::LoadROM(const std::string& rom_) {
   
   cpu.mem.LoadROM(rom);
   GameDB::match(cpu.mem);
+  cpu.mem.mmio.vi.isPal = cpu.mem.IsROMPAL();
   cpu.mem.mmio.si.pif.InitDevices(cpu.mem.saveType);
   cpu.mem.mmio.si.pif.LoadMempak(rom_);
   cpu.mem.mmio.si.pif.LoadEeprom(cpu.mem.saveType, rom_);
   cpu.mem.mmio.si.pif.ExecutePIF(cpu.mem, cpu.regs);
-  cpu.mem.mmio.vi.isPal = cpu.mem.IsROMPAL();
 }
 
 void Core::Run(float volumeL, float volumeR) {

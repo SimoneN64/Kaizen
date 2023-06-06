@@ -5,7 +5,6 @@
 #include <SDL_keyboard.h>
 #include <cic_nus_6105/n64_cic_nus_6105.hpp>
 #include <cassert>
-#include <MupenMovie.hpp>
 
 #define MEMPAK_SIZE 32768
 
@@ -294,8 +293,7 @@ void PIF::EepromRead(u8* cmd, u8* res, const Mem& mem) const {
     for (int i = 0; i < 8; i++) {
       res[i] = eeprom[(offset * 8) + i];
     }
-  }
-  else {
+  } else {
     Util::panic("EEPROM read on bad channel {}", channel);
   }
 }
@@ -313,8 +311,7 @@ void PIF::EepromWrite(u8* cmd, u8* res, const Mem& mem) const {
     }
 
     res[0] = 0; // Error byte, I guess it always succeeds?
-  }
-  else {
+  } else {
     Util::panic("EEPROM write on bad channel {}", channel);
   }
 }

@@ -24,7 +24,6 @@ void GameDB::match(Mem& mem) {
                 i.name, i.regions, rom.header.countryCode[0]);
       }
     }
-
   }
 
   Util::debug("Did not match any Game DB entries. Code: {} Region: {}", mem.rom.code, mem.rom.header.countryCode[0]);

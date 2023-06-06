@@ -24,8 +24,8 @@ auto PI::Read(MI& mi, u32 addr) const -> u32 {
     case 0x0460000C: return wrLen;
     case 0x04600010: {
       u32 value = 0;
-      value |= (0 << 0); // Is PI DMA active? No, because it's instant
-      value |= (0 << 1); // Is PI IO busy? No, because it's instant
+      value |= (0 << dmaBusy); // Is PI DMA active? No, because it's instant
+      value |= (0 << ioBusy); // Is PI IO busy? No, because it's instant
       value |= (0 << 2); // PI IO error?
       value |= (mi.miIntr.pi << 3); // PI interrupt?
       return value;
@@ -89,6 +89,23 @@ FORCE_INLINE u32 PIAccessTiming(PI& pi, u8 domain, u32 length) {
   return cycles * 1.5; // Converting RCP clock speed to CPU clock speed
 }
 
+template <bool toCart>
+FORCE_INLINE void OnDMAComplete(Mem& mem, Registers& regs) {
+  PI& pi = mem.mmio.pi;
+  u32 len;
+  if constexpr (toCart) {
+    len = pi.rdLen;
+  } else {
+    len = pi.wrLen;
+  }
+
+  pi.dramAddr = pi.dramAddrInternal + len;
+  pi.cartAddr = pi.cartAddrInternal + len;
+  pi.dmaBusy = false;
+  pi.ioBusy = false;
+  InterruptRaise(mem.mmio.mi, regs, Interrupt::PI);
+}
+
 void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
   MI& mi = mem.mmio.mi;
   switch(addr) {
@@ -96,37 +113,35 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
     case 0x04600004: cartAddr = val; break;
     case 0x04600008: {
       u32 len = (val & 0x00FFFFFF) + 1;
-      u32 cart_addr = cartAddr & 0xFFFFFFFE;
-      u32 dram_addr = dramAddr & 0x007FFFFE;
-      if (dram_addr & 0x7) {
-        len -= dram_addr & 0x7;
+      cartAddrInternal = cartAddr & 0xFFFFFFFE;
+      dramAddrInternal = dramAddr & 0x007FFFFE;
+      if (dramAddrInternal & 0x7) {
+        len -= dramAddrInternal & 0x7;
       }
       rdLen = len;
-      for(int i = 0; i < len; i++) {
-        mem.rom.cart[BYTE_ADDRESS(cart_addr + i) & mem.rom.mask] = mem.mmio.rdp.rdram[BYTE_ADDRESS(dram_addr + i) & RDRAM_DSIZE];
+      for (int i = 0; i < rdLen; i++) {
+        mem.rom.cart[BYTE_ADDRESS(cartAddrInternal + i) & mem.rom.mask] = mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE];
       }
-
-      dramAddr = dram_addr + len;
-      cartAddr = cart_addr + len;
-      InterruptRaise(mi, regs, Interrupt::PI);
       Util::debug("PI DMA from RDRAM to CARTRIDGE (size: {} B, {:08X} to {:08X})", len, dramAddr, cartAddr);
+      dmaBusy = true;
+      ioBusy = true;
+      scheduler.enqueueRelative(Event{PIAccessTiming(*this, PIGetDomain(cartAddr), len), OnDMAComplete<true>});
     } break;
     case 0x0460000C: {
       u32 len = (val & 0x00FFFFFF) + 1;
-      u32 cart_addr = cartAddr & 0xFFFFFFFE;
-      u32 dram_addr = dramAddr & 0x007FFFFE;
-      if (dram_addr & 0x7) {
-        len -= (dram_addr & 0x7);
+      cartAddrInternal = cartAddr & 0xFFFFFFFE;
+      dramAddrInternal = dramAddr & 0x007FFFFE;
+      if (dramAddrInternal & 0x7) {
+        len -= (dramAddrInternal & 0x7);
       }
       wrLen = len;
-      for(int i = 0; i < len; i++) {
-        mem.mmio.rdp.rdram[BYTE_ADDRESS(dram_addr + i) & RDRAM_DSIZE] = mem.rom.cart[BYTE_ADDRESS(cart_addr + i) & mem.rom.mask];
+      for(int i = 0; i < wrLen; i++) {
+        mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE] = mem.rom.cart[BYTE_ADDRESS(cartAddrInternal + i) & mem.rom.mask];
       }
-
-      dramAddr = dram_addr + len;
-      cartAddr = cart_addr + len;
-      InterruptRaise(mi, regs, Interrupt::PI);
+      dmaBusy = true;
+      ioBusy = true;
       Util::debug("PI DMA from CARTRIDGE to RDRAM (size: {} B, {:08X} to {:08X})", len, cartAddr, dramAddr);
+      scheduler.enqueueRelative(Event{PIAccessTiming(*this, PIGetDomain(cartAddr), len), OnDMAComplete<false>});
     } break;
     case 0x04600010:
       if(val & 2) {

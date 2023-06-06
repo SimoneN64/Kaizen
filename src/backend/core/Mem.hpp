@@ -95,7 +95,7 @@ struct Mem {
     free(temp);
     fclose(fp);
   }
-  uintptr_t writePages[PAGE_COUNT], readPages[PAGE_COUNT];
+  uintptr_t writePages[PAGE_COUNT]{}, readPages[PAGE_COUNT]{};
   ROM rom;
   SaveType saveType;
 private:

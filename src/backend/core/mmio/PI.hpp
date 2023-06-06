@@ -12,7 +12,8 @@ struct PI {
   void Reset();
   auto Read(MI&, u32) const -> u32;
   void Write(Mem&, Registers&, u32, u32);
-  u32 dramAddr{}, cartAddr{};
+  bool dmaBusy{}, ioBusy{};
+  u32 dramAddr{}, cartAddr{}, dramAddrInternal{}, cartAddrInternal{};
   u32 rdLen{}, wrLen{};
   u32 pi_bsd_dom1_lat{}, pi_bsd_dom2_lat{};
   u32 pi_bsd_dom1_pwd{}, pi_bsd_dom2_pwd{};

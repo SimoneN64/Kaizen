@@ -201,8 +201,34 @@ void PIF::ProcessCommands(Mem &mem) {
           case 6:
             res[0] = 0x00;
             res[1] = 0x10;
-            res[2] = 0x00;
+            res[2] = 0x80;
             break;
+          case 7:
+            switch(cmd[CMD_START]) {
+              case 0: case 3:
+                for(int i = 0; i < 8; i++) {
+                  res[i] = 0;
+                }
+                break;
+              case 2: {
+                auto now = std::time(nullptr);
+                tm gmtm{};
+                if(gmtime_s(&gmtm, &now)) {
+                  Util::panic("Could not retrieve time!");
+                }
+                res[0] = BCD_ENCODE(gmtm.tm_sec);
+                res[1] = BCD_ENCODE(gmtm.tm_min);
+                res[2] = BCD_ENCODE(gmtm.tm_hour) + 0x80;
+                res[3] = BCD_ENCODE(gmtm.tm_mday);
+                res[4] = BCD_ENCODE(gmtm.tm_wday);
+                res[5] = BCD_ENCODE(gmtm.tm_mon);
+                res[6] = BCD_ENCODE(gmtm.tm_year);
+                res[7] = (gmtm.tm_year - 1900) >= 100 ? 1 : 0;
+              } break;
+              default: Util::panic("Invalid read RTC block {}", cmd[CMD_START]);
+            }
+            break;
+          case 8: break;
           default:
             Util::panic("Invalid PIF command: {:X}", cmd[2]);
         }

@@ -7,36 +7,26 @@
 namespace Util {
 template<typename T>
 FORCE_INLINE T ReadAccess(u8 *data, u32 index) {
-  if constexpr (sizeof(T) == 1) { // 
-    return data[index];
-  } else if constexpr (sizeof(T) == 2 || sizeof(T) == 4) {
-    T result = 0;
-    memcpy(&result, &data[index], sizeof(T));
+  if constexpr (sizeof(T) == 8) {
+    u32 hi = *reinterpret_cast<u32*>(&data[index + 0]);
+    u32 lo = *reinterpret_cast<u32*>(&data[index + 4]);
+    T result = ((T)hi << 32) | (T)lo;
     return result;
   } else {
-    static_assert(sizeof(T) == 8);
-    u32 hi = 0;
-    u32 lo = 0;
-    memcpy(&hi, &data[index + 0], sizeof(u32));
-    memcpy(&lo, &data[index + 4], sizeof(u32));
-    T result = ((T) hi << 32) | (T) lo;
-    return result;
+    return *reinterpret_cast<T*>(&data[index]);
   }
 }
 
 template<typename T>
 FORCE_INLINE void WriteAccess(u8 *data, u32 index, T val) {
-  if constexpr (sizeof(T) == 1) {
-    data[index] = val;
-    return;
-  } else if constexpr (sizeof(T) == 2 || sizeof(T) == 4) {
-    memcpy(&data[index], &val, sizeof(T));
-  } else {
-    static_assert(sizeof(T) == 8);
+  if constexpr (sizeof(T) == 8) {
     u32 hi = val >> 32;
     u32 lo = val;
-    memcpy(&data[index + 0], &hi, sizeof(u32));
-    memcpy(&data[index + 4], &lo, sizeof(u32));
+
+    *reinterpret_cast<u32*>(&data[index + 0]) = hi;
+    *reinterpret_cast<u32*>(&data[index + 4]) = lo;
+  } else {
+    *reinterpret_cast<T*>(&data[index]) = val;
   }
 }
 

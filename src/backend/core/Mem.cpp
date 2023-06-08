@@ -254,7 +254,7 @@ u64 Mem::Read64(n64::Registers &regs, u32 paddr) {
 
 void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
   const auto page = paddr >> 12;
-  auto offset = paddr & 0xFFF;
+  const auto offset = paddr & 0xFFF;
   const auto pointer = writePages[page];
   SI& si = mmio.si;
 
@@ -305,7 +305,7 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
 
 void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
   const auto page = paddr >> 12;
-  auto offset = paddr & 0xFFF;
+  const auto offset = paddr & 0xFFF;
   const auto pointer = writePages[page];
   SI& si = mmio.si;
 
@@ -354,7 +354,7 @@ void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
 
 void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
   const auto page = paddr >> 12;
-  auto offset = paddr & 0xFFF;
+  const auto offset = paddr & 0xFFF;
   const auto pointer = writePages[page];
   SI& si = mmio.si;
 
@@ -401,7 +401,7 @@ void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
 
 void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
   const auto page = paddr >> 12;
-  auto offset = paddr & 0xFFF;
+  const auto offset = paddr & 0xFFF;
   const auto pointer = writePages[page];
   SI& si = mmio.si;
 

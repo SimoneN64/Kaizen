@@ -407,10 +407,10 @@ void PIF::UpdateController() {
     joybusDevices[channel].controller.b = state[SDL_SCANCODE_C];
     joybusDevices[channel].controller.z = state[SDL_SCANCODE_Z];
     joybusDevices[channel].controller.start = state[SDL_SCANCODE_RETURN];
-    joybusDevices[channel].controller.dp_up = state[SDL_SCANCODE_KP_8];
-    joybusDevices[channel].controller.dp_down = state[SDL_SCANCODE_KP_5];
-    joybusDevices[channel].controller.dp_left = state[SDL_SCANCODE_KP_4];
-    joybusDevices[channel].controller.dp_right = state[SDL_SCANCODE_KP_6];
+    joybusDevices[channel].controller.dp_up = state[SDL_SCANCODE_PAGEUP];
+    joybusDevices[channel].controller.dp_down = state[SDL_SCANCODE_PAGEDOWN];
+    joybusDevices[channel].controller.dp_left = state[SDL_SCANCODE_HOME];
+    joybusDevices[channel].controller.dp_right = state[SDL_SCANCODE_END];
     joybusDevices[channel].controller.joy_reset = state[SDL_SCANCODE_RETURN] && state[SDL_SCANCODE_A] && state[SDL_SCANCODE_S];
     joybusDevices[channel].controller.l = state[SDL_SCANCODE_A];
     joybusDevices[channel].controller.r = state[SDL_SCANCODE_S];

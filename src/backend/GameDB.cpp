@@ -24,6 +24,9 @@ void GameDB::match(Mem& mem) {
       } else {
         Util::warn("Matched code for {}, but not region! Game supposedly exists in regions [{}] but this image has region {}",
                    i.name, i.regions, rom.header.countryCode[0]);
+        mem.saveType = i.saveType;
+        mem.rom.gameNameDB = i.name;
+        return;
       }
     }
   });

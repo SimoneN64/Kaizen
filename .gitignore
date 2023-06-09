@@ -18,3 +18,4 @@ CMakeSettings.json
 out/
 settings.json
 .vscode/
+*.diagsession

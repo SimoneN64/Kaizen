@@ -3,7 +3,7 @@
 
 #define RDRAM_SIZE 0x800000
 #define RDRAM_DSIZE (RDRAM_SIZE - 1)
-#define SRAM_SIZE 0x8000000
+#define SRAM_SIZE 256_kb
 #define SRAM_DSIZE (SRAM_SIZE - 1)
 #define DMEM_SIZE 0x1000
 #define DMEM_DSIZE (DMEM_SIZE - 1)

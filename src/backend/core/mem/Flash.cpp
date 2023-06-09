@@ -6,7 +6,8 @@ void Flash::Load(SaveType saveType, fs::path path) {
     if(saveData) {
       memset(saveData, 0xff, 1_mb);
     } else {
-      saveData = (u8 *) calloc(1_mb, 1);
+      saveData = (u8 *) malloc(1_mb);
+      memset(saveData, 0xff, 1_mb);
     }
     saveDataPath = path.replace_extension(".flash").string();
     FILE *f = fopen(saveDataPath.c_str(), "rb");

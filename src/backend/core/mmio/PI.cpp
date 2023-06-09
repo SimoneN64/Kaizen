@@ -52,7 +52,8 @@ FORCE_INLINE u8 PIGetDomain(u32 address) {
     case CART_REGION_2_2:
       return 2;
     default:
-      Util::panic("Unknown PI domain for address {:08X}!", address);
+      //Util::panic("Unknown PI domain for address {:08X}!", address);
+      return 1;
   }
 }
 

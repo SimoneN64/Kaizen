@@ -93,7 +93,8 @@ struct Flash {
         default: Util::warn("Invalid flash command: {:02X}", cmd);
       }
     } else {
-      Util::warn("Ignoring write of {:08X} to flash status register", val);
+      status = val;
+      Util::warn("Write of {:08X} to flash status register", val);
     }
   }
 
@@ -110,7 +111,26 @@ struct Flash {
       }
   }
 
-  FORCE_INLINE u32 Read(u32 index) const {
+  FORCE_INLINE u32 Read8(u32 index) const {
+    switch (state) {
+      case Idle: Util::panic("Flash read byte while in state FLASH_STATE_IDLE");
+      case Write: Util::panic("Flash read byte while in state FLASH_STATE_WRITE");
+      case Read: {
+        u8 value = saveData[index];
+        Util::debug("Flash read byte in state read: index {:08X} = {:02X}", index, value);
+        return value;
+      }
+      case Status: {
+        u32 offset = (7 - (index % 8)) * 8;
+        u8 value = (status >> offset) & 0xFF;
+        Util::debug("Flash read byte in state status: index {:08X} = {:02X}", index, value);
+        return value;
+      }
+      default: Util::panic("Flash read byte while in unknown state");
+    }
+  }
+
+  FORCE_INLINE u32 Read32(u32 index) const {
     return status >> 32;
   }
 };
@@ -121,6 +141,7 @@ struct Mem {
   }
   Mem();
   void Reset();
+  void LoadSRAM(SaveType, fs::path);
   void LoadROM(const std::string&);
   [[nodiscard]] auto GetRDRAM() const -> u8* {
     return mmio.rdp.rdram;
@@ -178,6 +199,7 @@ private:
   friend struct Core;
   u8* sram;
   u8 isviewer[ISVIEWER_SIZE]{};
+  std::string sramPath{};
 
   FORCE_INLINE bool IsROMPAL() {
     static const char pal_codes[] = {'D', 'F', 'I', 'P', 'S', 'U', 'X', 'Y'};

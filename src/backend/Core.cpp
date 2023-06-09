@@ -28,6 +28,7 @@ void Core::LoadROM(const std::string& rom_) {
   cpu.mem.mmio.si.pif.LoadMempak(rom_);
   cpu.mem.mmio.si.pif.LoadEeprom(cpu.mem.saveType, rom_);
   cpu.mem.flash.Load(cpu.mem.saveType, rom_);
+  cpu.mem.LoadSRAM(cpu.mem.saveType, rom_);
   cpu.mem.mmio.si.pif.ExecutePIF(cpu.mem, cpu.regs);
 }
 

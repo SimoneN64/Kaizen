@@ -1,8 +1,7 @@
 #pragma once
-#include <common.hpp>
 #include <queue>
 #include <array>
-#include "log.hpp"
+#include <log.hpp>
 
 namespace n64 {
 struct Mem;

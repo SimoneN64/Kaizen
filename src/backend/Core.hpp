@@ -1,9 +1,7 @@
 #pragma once
 #include <SDL2/SDL_events.h>
 #include <backend/core/Interpreter.hpp>
-#include <backend/core/Mem.hpp>
 #include <string>
-#include <backend/core/registers/Registers.hpp>
 #include <SDL2/SDL_timer.h>
 
 struct Window;

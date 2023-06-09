@@ -154,9 +154,7 @@ void PIF::ProcessCommands(Mem &mem) {
       u8* cmd = &ram[i++];
       u8 cmdlen = cmd[CMD_LEN] & 0x3F;
 
-      if (cmdlen == 0) {
-        channel++;
-      } else if (cmdlen == 0x3D) {
+      if (cmdlen == 0 || cmdlen == 0x3D) {
         channel++;
       } else if (cmdlen == 0x3E) {
         break;
@@ -171,11 +169,7 @@ void PIF::ProcessCommands(Mem &mem) {
         u8* res = &ram[i + cmdlen];
 
         switch (cmd[CMD_IDX]) {
-          case 0xff:
-            ControllerID(res);
-            channel++;
-            break;
-          case 0:
+          case 0: case 0xff:
             ControllerID(res);
             channel++;
             break;
@@ -249,7 +243,7 @@ void PIF::ProcessCommands(Mem &mem) {
   }
 }
 
-void PIF::MempakRead(u8* cmd, u8* res) const {
+void PIF::MempakRead(const u8* cmd, u8* res) const {
   u16 offset = cmd[3] << 8;
   offset |= cmd[4];
 
@@ -305,7 +299,7 @@ void PIF::MempakWrite(u8* cmd, u8* res) const {
   res[0] = data_crc(&cmd[5]);
 }
 
-void PIF::EepromRead(u8* cmd, u8* res, const Mem& mem) const {
+void PIF::EepromRead(const u8* cmd, u8* res, const Mem& mem) const {
   assert(mem.saveType == SAVE_EEPROM_4k || mem.saveType == SAVE_EEPROM_16k);
   if (channel == 4) {
     u8 offset = cmd[3];
@@ -321,7 +315,7 @@ void PIF::EepromRead(u8* cmd, u8* res, const Mem& mem) const {
   }
 }
 
-void PIF::EepromWrite(u8* cmd, u8* res, const Mem& mem) const {
+void PIF::EepromWrite(const u8* cmd, u8* res, const Mem& mem) const {
   assert(mem.saveType == SAVE_EEPROM_4k || mem.saveType == SAVE_EEPROM_16k);
   if (channel == 4) {
     u8 offset = cmd[3];

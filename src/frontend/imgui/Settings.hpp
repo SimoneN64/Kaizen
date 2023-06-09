@@ -1,7 +1,8 @@
 #pragma once
 #include <nlohmann/json.hpp>
-#include <Core.hpp>
+#include <common.hpp>
 
+namespace n64 { struct Core; }
 using namespace nlohmann;
 
 struct Settings {

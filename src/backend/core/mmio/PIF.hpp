@@ -102,10 +102,10 @@ struct PIF {
   void UpdateController();
   bool ReadButtons(u8*) const;
   void ControllerID(u8*) const;
-  void MempakRead(u8*, u8*) const;
+  void MempakRead(const u8*, u8*) const;
   void MempakWrite(u8*, u8*) const;
-  void EepromRead(u8*, u8*, const Mem&) const;
-  void EepromWrite(u8*, u8*, const Mem&) const;
+  void EepromRead(const u8*, u8*, const Mem&) const;
+  void EepromWrite(const u8*, u8*, const Mem&) const;
 
   bool gamepadConnected = false;
   SDL_GameController* gamepad{};

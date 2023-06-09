@@ -1,5 +1,4 @@
 #pragma once
-#include <backend/core/registers/Cop0.hpp>
 #include <backend/core/registers/Cop1.hpp>
 
 namespace n64 {

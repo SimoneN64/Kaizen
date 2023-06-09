@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <nfd.h>
 #include <Widgets.hpp>
+#include <Core.hpp>
 
 namespace fs = std::filesystem;
 

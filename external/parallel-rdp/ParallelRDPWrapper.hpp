@@ -1,7 +1,6 @@
 #pragma once
-#include <Core.hpp>
+#include <backend/Core.hpp>
 #include <wsi.hpp>
-#include <core/mmio/VI.hpp>
 
 struct Window;
 static SDL_Window* g_Window;

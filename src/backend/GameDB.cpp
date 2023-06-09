@@ -1,10 +1,12 @@
 #include <GameDB.hpp>
 #include <Mem.hpp>
+#include <algorithm>
+#include <execution>
 
 namespace n64 {
 void GameDB::match(Mem& mem) {
   ROM& rom = mem.rom;
-  for (const auto & i : gamedb) {
+  std::for_each(std::execution::par, std::begin(gamedb), std::end(gamedb), [&](const auto& i) {
     bool matches_code = i.code == rom.code;
     bool matches_region = false;
 
@@ -21,10 +23,10 @@ void GameDB::match(Mem& mem) {
         return;
       } else {
         Util::warn("Matched code for {}, but not region! Game supposedly exists in regions [{}] but this image has region {}",
-                i.name, i.regions, rom.header.countryCode[0]);
+                   i.name, i.regions, rom.header.countryCode[0]);
       }
     }
-  }
+  });
 
   Util::debug("Did not match any Game DB entries. Code: {} Region: {}", mem.rom.code, mem.rom.header.countryCode[0]);
 

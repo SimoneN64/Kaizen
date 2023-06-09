@@ -6,6 +6,7 @@
 namespace n64 {
 void GameDB::match(Mem& mem) {
   ROM& rom = mem.rom;
+  bool found = false;
   std::for_each(std::execution::par, std::begin(gamedb), std::end(gamedb), [&](const auto& i) {
     bool matches_code = i.code == rom.code;
     bool matches_region = false;
@@ -17,6 +18,7 @@ void GameDB::match(Mem& mem) {
     }
 
     if (matches_code) {
+      found = true;
       if (matches_region) {
         mem.saveType = i.saveType;
         mem.rom.gameNameDB = i.name;
@@ -31,9 +33,11 @@ void GameDB::match(Mem& mem) {
     }
   });
 
-  Util::debug("Did not match any Game DB entries. Code: {} Region: {}", mem.rom.code, mem.rom.header.countryCode[0]);
+  if(!found) {
+    Util::debug("Did not match any Game DB entries. Code: {} Region: {}", mem.rom.code, mem.rom.header.countryCode[0]);
 
-  mem.rom.gameNameDB = "";
-  mem.saveType = SAVE_NONE;
+    mem.rom.gameNameDB = "";
+    mem.saveType = SAVE_NONE;
+  }
 }
 }

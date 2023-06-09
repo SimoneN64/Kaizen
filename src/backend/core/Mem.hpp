@@ -38,6 +38,83 @@ struct ROM {
   bool pal;
 };
 
+enum FlashState : u8 {
+  Idle, Erase, Write, Read, Status
+};
+
+struct Flash {
+  Flash() = default;
+  ~Flash() {
+    FILE* f = fopen(saveDataPath.c_str(), "wb");
+    if(f) {
+      fwrite(saveData, 1, 1_mb, f);
+      fclose(f);
+    }
+  }
+  void Load(SaveType, fs::path);
+  FlashState state{};
+  u64 status{};
+  size_t eraseOffs{};
+  size_t writeOffs{};
+  u8 writeBuf[128]{};
+  u8* saveData = nullptr;
+  bool saveDataDirty = false;
+  std::string saveDataPath{};
+
+  enum FlashCommands : u8 {
+    FLASH_COMMAND_EXECUTE = 0xD2,
+    FLASH_COMMAND_STATUS = 0xE1,
+    FLASH_COMMAND_SET_ERASE_OFFSET = 0x4B,
+    FLASH_COMMAND_ERASE = 0x78,
+    FLASH_COMMAND_SET_WRITE_OFFSET = 0xA5,
+    FLASH_COMMAND_WRITE = 0xB4,
+    FLASH_COMMAND_READ = 0xF0,
+  };
+
+  void CommandExecute();
+  void CommandStatus();
+  void CommandSetEraseOffs(u32);
+  void CommandErase();
+  void CommandSetWriteOffs(u32);
+  void CommandWrite();
+  void CommandRead();
+
+  FORCE_INLINE void Write32(u32 index, u32 val) {
+    if(index > 0) {
+      u8 cmd = val >> 24;
+      switch(cmd) {
+        case FLASH_COMMAND_EXECUTE: CommandExecute(); break;
+        case FLASH_COMMAND_STATUS: CommandStatus(); break;
+        case FLASH_COMMAND_SET_ERASE_OFFSET: CommandSetEraseOffs(val); break;
+        case FLASH_COMMAND_ERASE: CommandErase(); break;
+        case FLASH_COMMAND_SET_WRITE_OFFSET: CommandSetWriteOffs(val); break;
+        case FLASH_COMMAND_WRITE: CommandWrite(); break;
+        case FLASH_COMMAND_READ: CommandRead(); break;
+        default: Util::warn("Invalid flash command: {:02X}", cmd);
+      }
+    } else {
+      Util::warn("Ignoring write of {:08X} to flash status register", val);
+    }
+  }
+
+  FORCE_INLINE void Write8(u32 index, u8 val) {
+      switch(state) {
+        case FlashState::Idle: Util::panic("Invalid FlashState::Idle with Write8");
+        case FlashState::Status: Util::panic("Invalid FlashState::Status with Write8");
+        case FlashState::Erase: Util::panic("Invalid FlashState::Erase with Write8");
+        case FlashState::Write:
+          writeBuf[index] = val;
+          break;
+        case FlashState::Read: Util::panic("Invalid FlashState::Read with Write8");
+        default: Util::warn("Invalid flash state on Write8: {:02X}", static_cast<u8>(state));
+      }
+  }
+
+  FORCE_INLINE u32 Read(u32 index) const {
+    return status >> 32;
+  }
+};
+
 struct Mem {
   ~Mem() {
     free(sram);
@@ -91,7 +168,8 @@ struct Mem {
   }
   uintptr_t writePages[PAGE_COUNT]{}, readPages[PAGE_COUNT]{};
   ROM rom;
-  SaveType saveType;
+  SaveType saveType = SAVE_NONE;
+  Flash flash;
 private:
   friend struct SI;
   friend struct PI;

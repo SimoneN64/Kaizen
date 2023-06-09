@@ -4,33 +4,37 @@
 #include <fmt/color.h>
 
 namespace Util {
-enum MessageType : u8 {
-  Info, Debug, Warn, Error
+enum LogLevel : u8 {
+  Trace, Info, Debug, Warn, Error
 };
 
-template <MessageType messageType = Info, typename ...Args>
+static constexpr auto globalLogLevel = Warn;
+
+template <LogLevel messageType = Info, typename ...Args>
 constexpr void print(const std::string& fmt, Args... args) {
+  if constexpr(messageType >= globalLogLevel) {
 #ifndef _WIN32
-  if constexpr(messageType == Error) {
-    fmt::print(fmt::emphasis::bold | fg(fmt::color::red), fmt, args...);
-  } else if constexpr(messageType == Warn) {
-    fmt::print(fg(fmt::color::yellow), fmt, args...);
-  } else if constexpr(messageType == Info) {
-    fmt::print(fmt, args...);
-  } else if constexpr(messageType == Debug) {
+    if constexpr(messageType == Error) {
+      fmt::print(fmt::emphasis::bold | fg(fmt::color::red), fmt, args...);
+    } else if constexpr(messageType == Warn) {
+      fmt::print(fg(fmt::color::yellow), fmt, args...);
+    } else if constexpr(messageType == Info) {
+      fmt::print(fmt, args...);
+    } else if constexpr(messageType == Debug) {
 #ifndef NDEBUG
-    fmt::print(fmt, args...);
+      fmt::print(fmt, args...);
 #endif
-  }
+    }
 #else
-  if constexpr(messageType == Debug) {
+    if constexpr(messageType == Debug) {
 #ifndef NDEBUG
-    fmt::print(fmt, args...);
+      fmt::print(fmt, args...);
 #endif
-  } else {
-    fmt::print(fmt, args...);
+    } else {
+      fmt::print(fmt, args...);
+    }
+#endif
   }
-#endif
 }
 
 template <typename ...Args>

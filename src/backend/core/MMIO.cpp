@@ -17,14 +17,14 @@ void MMIO::Reset() {
 
 u32 MMIO::Read(u32 addr) {
   switch (addr) {
-    case 0x04040000 ... 0x040FFFFF: return rsp.Read(addr);
-    case 0x04100000 ... 0x041FFFFF: return rdp.Read(addr);
-    case 0x04300000 ... 0x043FFFFF: return mi.Read(addr);
-    case 0x04400000 ...	0x044FFFFF: return vi.Read(addr);
-    case 0x04500000 ... 0x045FFFFF: return ai.Read(addr);
-    case 0x04600000 ... 0x046FFFFF: return pi.Read(mi, addr);
-    case 0x04700000 ... 0x047FFFFF: return ri.Read(addr);
-    case 0x04800000 ... 0x048FFFFF: return si.Read(mi, addr);
+    case RSP_REGION: return rsp.Read(addr);
+    case RDP_REGION: return rdp.Read(addr);
+    case MI_REGION: return mi.Read(addr);
+    case VI_REGION: return vi.Read(addr);
+    case AI_REGION: return ai.Read(addr);
+    case PI_REGION: return pi.Read(mi, addr);
+    case RI_REGION: return ri.Read(addr);
+    case SI_REGION: return si.Read(mi, addr);
     default:
       Util::panic("Unhandled mmio read at addr {:08X}", addr);
   }
@@ -32,14 +32,14 @@ u32 MMIO::Read(u32 addr) {
 
 void MMIO::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
   switch (addr) {
-    case 0x04040000 ... 0x040FFFFF: rsp.Write(mem, regs, addr, val); break;
-    case 0x04100000 ... 0x041FFFFF: rdp.Write(mi, regs, rsp, addr, val); break;
-    case 0x04300000 ... 0x043FFFFF: mi.Write(regs, addr, val); break;
-    case 0x04400000 ...	0x044FFFFF: vi.Write(mi, regs, addr, val); break;
-    case 0x04500000 ... 0x045FFFFF: ai.Write(mem, regs, addr, val); break;
-    case 0x04600000 ... 0x046FFFFF: pi.Write(mem, regs, addr, val); break;
-    case 0x04700000 ... 0x047FFFFF: ri.Write(addr, val); break;
-    case 0x04800000 ... 0x048FFFFF: si.Write(mem, regs, addr, val); break;
+    case RSP_REGION: rsp.Write(mem, regs, addr, val); break;
+    case RDP_REGION: rdp.Write(mi, regs, rsp, addr, val); break;
+    case MI_REGION: mi.Write(regs, addr, val); break;
+    case VI_REGION: vi.Write(mi, regs, addr, val); break;
+    case AI_REGION: ai.Write(mem, regs, addr, val); break;
+    case PI_REGION: pi.Write(mem, regs, addr, val); break;
+    case RI_REGION: ri.Write(addr, val); break;
+    case SI_REGION: si.Write(mem, regs, addr, val); break;
     default:
       Util::panic("Unhandled mmio write at addr {:08X} with val {:08X}", addr, val);
   }

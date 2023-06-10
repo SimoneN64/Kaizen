@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 find_package(SDL2 REQUIRED)
 find_package(fmt REQUIRED)
+find_package(mio REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
 option(RAPIDJSON_BUILD_DOC "Build rapidjson documentation." OFF)
@@ -76,4 +77,4 @@ file(REMOVE
   ${PROJECT_BINARY_DIR}/resources/shader.vert)
 
 target_link_libraries(kaizen PUBLIC frontend frontend-imgui
-  discord-rpc imgui nfd parallel-rdp backend fmt::fmt nlohmann_json::nlohmann_json core registers interpreter mem mmio rsp SDL2::SDL2main SDL2::SDL2)
+  discord-rpc imgui nfd parallel-rdp backend fmt::fmt mio::mio nlohmann_json::nlohmann_json core registers interpreter mem mmio rsp SDL2::SDL2main SDL2::SDL2)

@@ -44,22 +44,16 @@ enum FlashState : u8 {
 
 struct Flash {
   Flash() = default;
-  ~Flash() {
-    FILE* f = fopen(saveDataPath.c_str(), "wb");
-    if(f) {
-      fwrite(saveData, 1, 1_mb, f);
-      fclose(f);
-    }
-  }
-  void Load(SaveType, fs::path);
+  ~Flash() = default;
+  void Reset();
+  void Load(SaveType, std::string);
   FlashState state{};
   u64 status{};
   size_t eraseOffs{};
   size_t writeOffs{};
   u8 writeBuf[128]{};
-  u8* saveData = nullptr;
-  bool saveDataDirty = false;
-  std::string saveDataPath{};
+  mio::mmap_sink flash;
+  std::string flashPath{};
 
   enum FlashCommands : u8 {
     FLASH_COMMAND_EXECUTE = 0xD2,
@@ -116,7 +110,7 @@ struct Flash {
       case Idle: Util::panic("Flash read byte while in state FLASH_STATE_IDLE");
       case Write: Util::panic("Flash read byte while in state FLASH_STATE_WRITE");
       case Read: {
-        u8 value = saveData[index];
+        u8 value = flash[index];
         Util::debug("Flash read byte in state read: index {:08X} = {:02X}", index, value);
         return value;
       }
@@ -136,9 +130,7 @@ struct Flash {
 };
 
 struct Mem {
-  ~Mem() {
-    free(sram);
-  }
+  ~Mem() = default;
   Mem();
   void Reset();
   void LoadSRAM(SaveType, fs::path);
@@ -197,7 +189,7 @@ private:
   friend struct AI;
   friend struct RSP;
   friend struct Core;
-  u8* sram;
+  mio::mmap_sink sram;
   u8 isviewer[ISVIEWER_SIZE]{};
   std::string sramPath{};
 

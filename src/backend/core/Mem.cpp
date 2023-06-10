@@ -22,25 +22,30 @@ Mem::Mem() {
 
 void Mem::Reset() {
   memset(rom.cart, 0, CART_SIZE);
-  if(sram)
-    memset(sram, 0, SRAM_SIZE);
+  flash.Reset();
+  if(sram.is_open()) {
+    std::error_code error;
+    sram.sync(error);
+    sram.unmap();
+  }
   mmio.Reset();
 }
 
 void Mem::LoadSRAM(SaveType saveType, fs::path path) {
   if(saveType == SAVE_SRAM_256k) {
-    if(sram) {
-      memset(sram, 0, SRAM_SIZE);
-    } else {
-      sram = (u8 *) calloc(SRAM_SIZE, 1);
-    }
+    std::error_code error;
     sramPath = path.replace_extension(".sram").string();
+    if(sram.is_mapped()) {
+      sram.sync(error);
+      if(error) { Util::panic("Could not sync {}", sramPath); }
+      sram.unmap();
+    }
+
     FILE *f = fopen(sramPath.c_str(), "rb");
     if (!f) {
       f = fopen(sramPath.c_str(), "wb");
-      fwrite(sram, 1, SRAM_SIZE, f);
-      fclose(f);
-      f = fopen(sramPath.c_str(), "rb");
+      u8* dummy = (u8*)calloc(SRAM_SIZE, 1);
+      fwrite(dummy, 1, SRAM_SIZE, f);
     }
 
     fseek(f, 0, SEEK_END);
@@ -49,9 +54,10 @@ void Mem::LoadSRAM(SaveType saveType, fs::path path) {
     if (actualSize != SRAM_SIZE) {
       Util::panic("Corrupt SRAM!");
     }
-
-    fread(sram, 1, SRAM_SIZE, f);
     fclose(f);
+    sram = mio::make_mmap_sink(
+      sramPath, 0, mio::map_entire_file, error);
+    if (error) { Util::panic("Could not open {}", sramPath); }
   }
 }
 
@@ -170,13 +176,13 @@ u8 Mem::Read8(n64::Registers &regs, u32 paddr) {
             Util::panic("Accessing cartridge backup with save type SAVE_EEPROM");
             break;
           case SAVE_FLASH_1m:
-            if(flash.saveData) {
+            if(flash.flash.is_open()) {
               return flash.Read8(paddr - CART_REGION_START_2_2);
             } else {
               Util::panic("Invalid backup Write8 if save data is not initialized");
             }
           case SAVE_SRAM_256k:
-            if(sram) {
+            if(sram.is_open()) {
               return sram[paddr - CART_REGION_START_2_2];
             }
         }
@@ -343,14 +349,14 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
             Util::panic("Accessing cartridge backup with save type SAVE_EEPROM");
             break;
           case SAVE_FLASH_1m:
-            if(flash.saveData) {
+            if(flash.flash.is_open()) {
               flash.Write8(paddr - CART_REGION_START_2_2, val);
             } else {
               Util::panic("Invalid backup Write8 if save data is not initialized");
             }
             break;
           case SAVE_SRAM_256k:
-            if(sram) {
+            if(sram.is_open()) {
               sram[paddr - CART_REGION_START_2_2] = val;
             }
             break;
@@ -466,7 +472,7 @@ void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
       case 0x80000000 ... 0xFFFFFFFF: break;
       case CART_REGION_2_2:
         if (saveType == SAVE_FLASH_1m) {
-          if(flash.saveData) {
+          if(flash.flash.is_open()) {
             flash.Write32(paddr - CART_REGION_START_2_2, val);
           } else {
             Util::panic("Invalid write to cartridge backup if save data is not initialized!");

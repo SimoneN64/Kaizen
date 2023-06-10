@@ -14,7 +14,12 @@ jobs:
           sudo apt-get install -y vulkan-tools libvulkan1 libvulkan-dev vulkan-validationlayers-dev spirv-tools
           git clone --recursive https://github.com/fmtlib/fmt
           cd fmt
-          cmake -B build
+          cmake -B build -DFMT_TEST=OFF
+          cd build
+          sudo make install
+          git clone --recursive https://github.com/mandreyel/mio
+          cd mio
+          cmake -B build -DBUILD_TESTING=False -DCMAKE_BUILD_TYPE=Release
           cd build
           sudo make install
       - name: Build Kaizen
@@ -46,6 +51,7 @@ jobs:
           vcpkg install sdl2[vulkan]:x64-windows
           vcpkg install fmt:x64-windows
           vcpkg install nlohmann-json:x64-windows
+          vcpkg install mio:x64-windows
       - name: Build Kaizen
         run: |
           cmake -B build -T clangcl -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release -S src

@@ -3,6 +3,7 @@
 #include <SDL_gamecontroller.h>
 #include <GameDB.hpp>
 #include <filesystem>
+#include <mio/mmap.hpp>
 
 namespace fs = std::filesystem;
 
@@ -89,11 +90,11 @@ enum CICType {
 };
 
 struct PIF {
-  PIF();
-  ~PIF();
+  PIF() = default;
+  ~PIF() = default;
   void Reset();
-  void LoadMempak(fs::path);
-  void LoadEeprom(SaveType, fs::path);
+  void LoadMempak(std::string);
+  void LoadEeprom(SaveType, std::string);
   void ProcessCommands(Mem&);
   void InitDevices(SaveType);
   void CICChallenge();
@@ -103,14 +104,15 @@ struct PIF {
   bool ReadButtons(u8*) const;
   void ControllerID(u8*) const;
   void MempakRead(const u8*, u8*) const;
-  void MempakWrite(u8*, u8*) const;
+  void MempakWrite(u8*, u8*);
   void EepromRead(const u8*, u8*, const Mem&) const;
-  void EepromWrite(const u8*, u8*, const Mem&) const;
+  void EepromWrite(const u8*, u8*, const Mem&);
 
   bool gamepadConnected = false;
   SDL_GameController* gamepad{};
   JoybusDevice joybusDevices[6]{};
-  u8 bootrom[PIF_BOOTROM_SIZE]{}, ram[PIF_RAM_SIZE]{}, *mempak{}, *eeprom{};
+  u8 bootrom[PIF_BOOTROM_SIZE]{}, ram[PIF_RAM_SIZE]{};
+  mio::mmap_sink mempak, eeprom;
   int channel = 0;
   std::string mempakPath{}, eepromPath{};
   size_t eepromSize{};

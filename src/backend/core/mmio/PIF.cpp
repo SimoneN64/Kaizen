@@ -9,24 +9,37 @@
 #define MEMPAK_SIZE 32768
 
 namespace n64 {
-PIF::PIF() {
-  mempak = (u8*)calloc(MEMPAK_SIZE, 1);
-}
-
 void PIF::Reset() {
   memset(joybusDevices, 0, sizeof(JoybusDevice) * 6);
   memset(bootrom, 0, PIF_BOOTROM_SIZE);
   memset(ram, 0, PIF_RAM_SIZE);
+  std::error_code error;
+  if(mempak.is_mapped()) {
+    mempak.sync(error);
+    if (error) { Util::panic("Could not sync {}", mempakPath); }
+    mempak.unmap();
+  }
+  if(eeprom.is_mapped()) {
+    eeprom.sync(error);
+    if (error) { Util::panic("Could not sync {}", eepromPath); }
+    eeprom.unmap();
+  }
 }
 
-void PIF::LoadMempak(fs::path path) {
-  mempakPath = path.replace_extension(".mempak").string();
+void PIF::LoadMempak(std::string path) {
+  mempakPath = fs::path(path).replace_extension(".mempak").string();
+  std::error_code error;
+  if (mempak.is_mapped()) {
+    mempak.sync(error);
+    if (error) { Util::panic("Could not sync {}", mempakPath); }
+    mempak.unmap();
+  }
   FILE* f = fopen(mempakPath.c_str(), "rb");
   if (!f) {
     f = fopen(mempakPath.c_str(), "wb");
-    fwrite(mempak, 1, MEMPAK_SIZE, f);
-    fclose(f);
-    f = fopen(mempakPath.c_str(), "rb");
+    u8* dummy = (u8*)calloc(MEMPAK_SIZE, 1);
+    fwrite(dummy, 1, MEMPAK_SIZE, f);
+    free(dummy);
   }
 
   fseek(f, 0, SEEK_END);
@@ -35,9 +48,11 @@ void PIF::LoadMempak(fs::path path) {
   if (actualSize != MEMPAK_SIZE) {
     Util::panic("Corrupt mempak!");
   }
-
-  fread(mempak, 1, MEMPAK_SIZE, f);
   fclose(f);
+
+  mempak = mio::make_mmap_sink(
+    mempakPath, 0, mio::map_entire_file, error);
+  if (error) { Util::panic("Could not open {}", mempakPath); }
 }
 
 FORCE_INLINE size_t getSaveSize(SaveType saveType) {
@@ -57,20 +72,22 @@ FORCE_INLINE size_t getSaveSize(SaveType saveType) {
   }
 }
 
-void PIF::LoadEeprom(SaveType saveType, fs::path path) {
+void PIF::LoadEeprom(SaveType saveType, std::string path) {
   if(saveType == SAVE_EEPROM_16k || saveType == SAVE_EEPROM_4k) {
-    if (eeprom)
-      free(eeprom);
+    eepromPath = fs::path(path).replace_extension(".eeprom").string();
+    std::error_code error;
+    if (eeprom.is_mapped()) {
+      eeprom.sync(error);
+      if (error) { Util::panic("Could not sync {}", eepromPath); }
+      eeprom.unmap();
+    }
 
     eepromSize = getSaveSize(saveType);
-    eeprom = (u8 *) calloc(eepromSize, 1);
-    eepromPath = path.replace_extension(".eeprom").string();
     FILE *f = fopen(eepromPath.c_str(), "rb");
     if (!f) {
       f = fopen(eepromPath.c_str(), "wb");
-      fwrite(eeprom, 1, eepromSize, f);
-      fclose(f);
-      f = fopen(eepromPath.c_str(), "rb");
+      u8* dummy = (u8*)calloc(eepromSize, 1);
+      fwrite(dummy, 1, eepromSize, f);
     }
 
     fseek(f, 0, SEEK_END);
@@ -79,22 +96,11 @@ void PIF::LoadEeprom(SaveType saveType, fs::path path) {
     if (actualSize != eepromSize) {
       Util::panic("Corrupt eeprom!");
     }
+    fclose(f);
 
-    fread(eeprom, 1, eepromSize, f);
-    fclose(f);
-  }
-}
-
-PIF::~PIF() {
-  FILE* f = fopen(mempakPath.c_str(), "wb");
-  if(f) {
-    fwrite(mempak, 1, MEMPAK_SIZE, f);
-    fclose(f);
-  }
-  f = fopen(eepromPath.c_str(), "wb");
-  if(f) {
-    fwrite(eeprom, 1, eepromSize, f);
-    fclose(f);
+    eeprom = mio::make_mmap_sink(
+      eepromPath, 0, mio::map_entire_file, error);
+    if (error) { Util::panic("Could not open {}", eepromPath); }
   }
 }
 
@@ -257,23 +263,19 @@ void PIF::MempakRead(const u8* cmd, u8* res) const {
       break;
     case ACCESSORY_MEMPACK:
       if (offset <= MEMPAK_SIZE - 0x20) {
-        for (int i = 0; i < 32; i++) {
-          res[i] = mempak[offset + i];
-        }
+        std::copy_n(mempak.begin() + offset, 32, res);
       }
       break;
     case ACCESSORY_RUMBLE_PACK:
-      for (int i = 0; i < 32; i++) {
-        res[i] = 0x80;
-      }
+      memset(res, 0x80, 32);
       break;
   }
 
   // CRC byte
-  res[32] = data_crc(&res[0]);
+  res[32] = data_crc(res);
 }
 
-void PIF::MempakWrite(u8* cmd, u8* res) const {
+void PIF::MempakWrite(u8* cmd, u8* res) {
   // First two bytes in the command are the offset
   u16 offset = cmd[3] << 8;
   offset |= cmd[4];
@@ -288,9 +290,7 @@ void PIF::MempakWrite(u8* cmd, u8* res) const {
       break;
     case ACCESSORY_MEMPACK:
       if (offset <= MEMPAK_SIZE - 0x20) {
-        for (int i = 0; i < 32; i++) {
-          mempak[offset + i] = cmd[5 + i];
-        }
+        std::copy_n(cmd + 5, 32, mempak.begin() + offset);
       }
       break;
     case ACCESSORY_RUMBLE_PACK: break;
@@ -307,15 +307,13 @@ void PIF::EepromRead(const u8* cmd, u8* res, const Mem& mem) const {
       Util::panic("Out of range EEPROM read! offset: {:02X}", offset);
     }
 
-    for (int i = 0; i < 8; i++) {
-      res[i] = eeprom[(offset * 8) + i];
-    }
+    std::copy_n(eeprom.begin() + offset * 8, 8, res);
   } else {
     Util::panic("EEPROM read on bad channel {}", channel);
   }
 }
 
-void PIF::EepromWrite(const u8* cmd, u8* res, const Mem& mem) const {
+void PIF::EepromWrite(const u8* cmd, u8* res, const Mem& mem) {
   assert(mem.saveType == SAVE_EEPROM_4k || mem.saveType == SAVE_EEPROM_16k);
   if (channel == 4) {
     u8 offset = cmd[3];
@@ -323,9 +321,7 @@ void PIF::EepromWrite(const u8* cmd, u8* res, const Mem& mem) const {
       Util::panic("Out of range EEPROM write! offset: {:02X}", offset);
     }
 
-    for (int i = 0; i < 8; i++) {
-      eeprom[(offset * 8) + i] = cmd[4 + i];
-    }
+    std::copy_n(cmd + 4, 8, eeprom.begin() + offset * 8);
 
     res[0] = 0; // Error byte, I guess it always succeeds?
   } else {

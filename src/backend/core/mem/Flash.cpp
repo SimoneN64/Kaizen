@@ -1,32 +1,45 @@
 #include <Mem.hpp>
 
 namespace n64 {
-void Flash::Load(SaveType saveType, fs::path path) {
+constexpr auto FLASH_SIZE = 1_mb;
+
+void Flash::Reset() {
+  if (flash.is_mapped()) {
+    std::error_code error;
+    flash.sync(error);
+    if (error) { Util::panic("Could not sync {}", flashPath); }
+    flash.unmap();
+  }
+}
+
+void Flash::Load(SaveType saveType, std::string path) {
   if(saveType == SAVE_FLASH_1m) {
-    if(saveData) {
-      memset(saveData, 0xff, 1_mb);
-    } else {
-      saveData = (u8 *) malloc(1_mb);
-      memset(saveData, 0xff, 1_mb);
+    flashPath = fs::path(path).replace_extension(".flash").string();
+    std::error_code error;
+    if (flash.is_mapped()) {
+      flash.sync(error);
+      if (error) { Util::panic("Could not sync {}", flashPath); }
+      flash.unmap();
     }
-    saveDataPath = path.replace_extension(".flash").string();
-    FILE *f = fopen(saveDataPath.c_str(), "rb");
+
+    FILE *f = fopen(flashPath.c_str(), "rb");
     if (!f) {
-      f = fopen(saveDataPath.c_str(), "wb");
-      fwrite(saveData, 1, 1_mb, f);
-      fclose(f);
-      f = fopen(saveDataPath.c_str(), "rb");
+      f = fopen(flashPath.c_str(), "wb");
+      u8* dummy = (u8*)calloc(FLASH_SIZE, 1);
+      fwrite(dummy, 1, FLASH_SIZE, f);
     }
 
     fseek(f, 0, SEEK_END);
     size_t actualSize = ftell(f);
     fseek(f, 0, SEEK_SET);
-    if (actualSize != 1_mb) {
+    if (actualSize != FLASH_SIZE) {
       Util::panic("Corrupt flash!");
     }
-
-    fread(saveData, 1, 1_mb, f);
     fclose(f);
+
+    flash = mio::make_mmap_sink(
+      flashPath, 0, mio::map_entire_file, error);
+    if (error) { Util::panic("Could not open {}", path); }
   }
 }
 
@@ -37,15 +50,13 @@ void Flash::CommandExecute() {
       break;
     case FlashState::Erase:
       for (int i = 0; i < 128; i++) {
-        saveData[eraseOffs + i] = 0xFF;
+        flash[eraseOffs + i] = 0xFF;
       }
-      saveDataDirty = true;
       break;
     case FlashState::Write:
       for (int i = 0; i < 128; i++) {
-        saveData[writeOffs + i] = writeBuf[i];
+        flash[writeOffs + i] = writeBuf[i];
       }
-      saveDataDirty = true;
       break;
     case FlashState::Read:
       Util::panic("Execute command when flash in read state");

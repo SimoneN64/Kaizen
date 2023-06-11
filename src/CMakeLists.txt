@@ -36,6 +36,7 @@ include_directories(
   ../external/imgui/imgui
   ../external/imgui/imgui/backends
   ../external/discord-rpc/include
+  ../external/unarr
   ${SDL2_INCLUDE_DIRS}
 )
 
@@ -63,6 +64,7 @@ add_subdirectory(../external/discord-rpc discord-rpc)
 add_subdirectory(../external/imgui imgui)
 add_subdirectory(../external/nativefiledialog-extended nfd)
 add_subdirectory(../external/parallel-rdp parallel-rdp)
+add_subdirectory(../external/unarr unarr)
 
 add_executable(kaizen main.cpp)
 
@@ -77,4 +79,4 @@ file(REMOVE
   ${PROJECT_BINARY_DIR}/resources/shader.vert)
 
 target_link_libraries(kaizen PUBLIC frontend frontend-imgui
-  discord-rpc imgui nfd parallel-rdp backend fmt::fmt mio::mio nlohmann_json::nlohmann_json core registers interpreter mem mmio rsp SDL2::SDL2main SDL2::SDL2)
+  discord-rpc imgui nfd parallel-rdp backend fmt::fmt unarr mio::mio nlohmann_json::nlohmann_json core registers interpreter mem mmio rsp SDL2::SDL2main SDL2::SDL2)

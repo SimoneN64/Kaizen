@@ -4,6 +4,7 @@
 #include <core/registers/Cop0.hpp>
 #include <core/Interpreter.hpp>
 #include <File.hpp>
+#include <unarr.h>
 
 namespace n64 {
 Mem::Mem() {
@@ -76,29 +77,75 @@ FORCE_INLINE void SetROMCIC(u32 checksum, ROM& rom) {
   }
 }
 
-void Mem::LoadROM(const std::string& filename) {
-  std::ifstream file(filename, std::ios::binary);
-  file.unsetf(std::ios::skipws);
+std::vector<u8> Mem::OpenArchive(const std::string &path, size_t& sizeAdjusted) {
+  auto stream = ar_open_file(fs::path(path).u8string().c_str());
 
-  if(!file.is_open()) {
-    Util::panic("Unable to open {}!", filename);
+  if(!stream) {
+    Util::panic("Could not open archive! Are you sure it's an archive?");
   }
 
-  file.seekg(0, std::ios::end);
-  size_t size = file.tellg();
-  file.seekg(0, std::ios::beg);
+  ar_archive* archive = ar_open_zip_archive(stream, false);
 
-  size_t sizeAdjusted = Util::NextPow2(size);
-  rom.mask = sizeAdjusted - 1;
-  u8* buf = (u8*)malloc(sizeAdjusted);
-  file.read(reinterpret_cast<char*>(buf), size);
-  file.close();
+  if(!archive) archive = ar_open_rar_archive(stream);
+  if(!archive) archive = ar_open_7z_archive(stream);
+  if(!archive) archive = ar_open_tar_archive(stream);
+
+  if(!archive) {
+    ar_close(stream);
+    Util::panic("Could not open archive! Are you sure it's a supported archive? (7z, zip, rar and tar are supported)");
+  }
+
+  std::vector<u8> buf{};
+
+  while(ar_parse_entry(archive)) {
+    auto filename = ar_entry_get_name(archive);
+    auto extension = fs::path(filename).extension();
+
+    if(std::any_of(std::begin(ROM_EXTENSIONS), std::end(ROM_EXTENSIONS), [&](auto x) {
+      return extension == x;
+    })) {
+      auto size = ar_entry_get_size(archive);
+      sizeAdjusted = Util::NextPow2(size);
+      buf.resize(sizeAdjusted);
+      ar_entry_uncompress(archive, buf.data(), size);
+      break;
+    } else {
+      ar_close_archive(archive);
+      ar_close(stream);
+      Util::panic("Could not find any rom image in the archive!");
+    }
+  }
+
+  ar_close_archive(archive);
+  ar_close(stream);
+  return buf;
+}
+
+std::vector<u8> Mem::OpenROM(const std::string& filename, size_t& sizeAdjusted) {
+  auto buf = Util::ReadFileBinary(filename);
+  sizeAdjusted = Util::NextPow2(buf.size());
+  return buf;
+}
+
+void Mem::LoadROM(bool isArchive, const std::string& filename) {
+  size_t sizeAdjusted;
+  u8* buf;
+  std::vector<u8> temp{};
+  if(isArchive) {
+    temp = OpenArchive(filename, sizeAdjusted);
+  } else {
+    temp = OpenROM(filename, sizeAdjusted);
+  }
+
+  buf = (u8*)calloc(sizeAdjusted, 1);
+  std::copy(temp.begin(), temp.end(), buf);
 
   u32 endianness = be32toh(*reinterpret_cast<u32*>(buf));
   Util::SwapN64Rom<true>(sizeAdjusted, buf, endianness);
 
   memcpy(rom.cart, buf, sizeAdjusted);
   rom.size = sizeAdjusted;
+  rom.mask = sizeAdjusted - 1;
   memcpy(&rom.header, buf, sizeof(ROMHeader));
   memcpy(rom.gameNameCart, rom.header.imageName, sizeof(rom.header.imageName));
 

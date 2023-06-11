@@ -134,7 +134,9 @@ struct Mem {
   Mem();
   void Reset();
   void LoadSRAM(SaveType, fs::path);
-  void LoadROM(const std::string&);
+  static std::vector<u8> OpenROM(const std::string&, size_t&);
+  static std::vector<u8> OpenArchive(const std::string&, size_t&);
+  void LoadROM(bool, const std::string&);
   [[nodiscard]] auto GetRDRAM() const -> u8* {
     return mmio.rdp.rdram;
   }

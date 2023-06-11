@@ -154,11 +154,14 @@ void LoadParallelRDP(const u8* rdram) {
   fragLayout.sets[0].fp_mask = 1;
   fragLayout.sets[0].array_size[0] = 1;
 
-  u32* fullscreenQuadVert, *fullscreenQuadFrag;
-  auto sizeVert = Util::ReadFileBinary("resources/vert.spv", &fullscreenQuadVert);
-  auto sizeFrag = Util::ReadFileBinary("resources/frag.spv", &fullscreenQuadFrag);
+  auto fullscreenQuadVert = Util::ReadFileBinary("resources/vert.spv");
+  auto fullscreenQuadFrag = Util::ReadFileBinary("resources/frag.spv");
+  auto sizeVert = fullscreenQuadVert.size();
+  auto sizeFrag = fullscreenQuadFrag.size();
 
-  fullscreen_quad_program = wsi->get_device().request_program(fullscreenQuadVert, sizeVert, fullscreenQuadFrag, sizeFrag, &vertLayout, &fragLayout);
+  fullscreen_quad_program = wsi->get_device().request_program(reinterpret_cast<u32*>(fullscreenQuadVert.data()), sizeVert,
+                                                              reinterpret_cast<u32*>(fullscreenQuadFrag.data()), sizeFrag,
+                                                              &vertLayout, &fragLayout);
 
   auto aligned_rdram = reinterpret_cast<uintptr_t>(rdram);
   uintptr_t offset = 0;

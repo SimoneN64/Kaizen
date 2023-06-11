@@ -3,21 +3,9 @@
 #include <log.hpp>
 
 namespace Util {
-FORCE_INLINE auto ReadFileBinary(const std::string& path, u32** buf) {
+FORCE_INLINE std::vector<u8> ReadFileBinary(const std::string& path) {
   std::ifstream file(path, std::ios::binary);
-  file.unsetf(std::ios::skipws);
-  if(!file.is_open()) {
-    panic("Could not load file '{}'!", path);
-  }
-
-  file.seekg(0, std::ios::end);
-  size_t size = file.tellg();
-  file.seekg(0, std::ios::beg);
-
-  *buf = (u32*)calloc(size, 1);
-  file.read(reinterpret_cast<char*>(*buf), size);
-  file.close();
-  return size;
+  return {std::istreambuf_iterator{file}, {}};
 }
 
 FORCE_INLINE size_t NextPow2(size_t num) {

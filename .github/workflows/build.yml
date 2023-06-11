@@ -48,10 +48,7 @@ jobs:
           submodules: recursive
       - name: Setup dependencies
         run: |
-          vcpkg install sdl2[vulkan]:x64-windows
-          vcpkg install fmt:x64-windows
-          vcpkg install nlohmann-json:x64-windows
-          vcpkg install mio:x64-windows
+          vcpkg install sdl2[vulkan]:x64-windows fmt:x64-windows nlohmann-json:x64-windows mio:x64-windows
       - name: Build Kaizen
         run: |
           cmake -B build -T clangcl -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release -S src

@@ -20,15 +20,21 @@ void Core::LoadROM(const std::string& rom_) {
   cpu.Reset();
   pause = false;
   romLoaded = true;
-  
-  cpu.mem.LoadROM(rom);
+
+  auto extension = fs::path(rom).extension().string();
+
+  bool isArchive = std::any_of(std::begin(ARCHIVE_TYPES), std::end(ARCHIVE_TYPES), [&](auto i) {
+    return extension == i;
+  });
+
+  cpu.mem.LoadROM(isArchive, rom);
   GameDB::match(cpu.mem);
   cpu.mem.mmio.vi.isPal = cpu.mem.IsROMPAL();
   cpu.mem.mmio.si.pif.InitDevices(cpu.mem.saveType);
-  cpu.mem.mmio.si.pif.LoadMempak(rom_);
-  cpu.mem.mmio.si.pif.LoadEeprom(cpu.mem.saveType, rom_);
-  cpu.mem.flash.Load(cpu.mem.saveType, rom_);
-  cpu.mem.LoadSRAM(cpu.mem.saveType, rom_);
+  cpu.mem.mmio.si.pif.LoadMempak(rom);
+  cpu.mem.mmio.si.pif.LoadEeprom(cpu.mem.saveType, rom);
+  cpu.mem.flash.Load(cpu.mem.saveType, rom);
+  cpu.mem.LoadSRAM(cpu.mem.saveType, rom);
   cpu.mem.mmio.si.pif.ExecutePIF(cpu.mem, cpu.regs);
 }
 

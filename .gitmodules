@@ -7,3 +7,6 @@
 [submodule "external/fmt"]
 	path = external/fmt
 	url = https://github.com/fmtlib/fmt
+[submodule "external/unarr"]
+	path = external/unarr
+	url = https://github.com/selmf/unarr

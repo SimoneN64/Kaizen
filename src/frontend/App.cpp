@@ -49,7 +49,7 @@ void App::Run() {
           switch(event.key.keysym.sym) {
             case SDLK_o: {
               nfdchar_t* outpath;
-              const nfdu8filteritem_t filter {"Nintendo 64 roms", "n64,z64,v64,N64,Z64,V64"};
+              const nfdu8filteritem_t filter {"Nintendo 64 roms/archives", "n64,z64,v64,N64,Z64,V64,zip,tar,rar,7z"};
               nfdresult_t result = NFD_OpenDialog(&outpath, &filter, 1, nullptr);
               if(result == NFD_OKAY) {
                 LoadROM(outpath);

@@ -15,8 +15,18 @@ using u128 = __uint128_t;
 using s128 = __int128_t;
 using m128i = __m128i;
 
-#define N64_CPU_FREQ 93750000
-#define N64_CYCLES_PER_FRAME(pal) ((N64_CPU_FREQ) / (pal ? 50 : 60))
+#define FORCE_INLINE inline __attribute__((always_inline))
+
+constexpr u32 N64_CPU_FREQ = 93750000;
+
+static FORCE_INLINE constexpr u32 GetCyclesPerFrame(bool pal) {
+  if (pal) {
+    return N64_CPU_FREQ / 50;
+  } else {
+    return N64_CPU_FREQ / 60;
+  }
+}
+
 #define HALF_ADDRESS(addr) ((addr) ^ 2)
 #define BYTE_ADDRESS(addr) ((addr) ^ 3)
 
@@ -40,4 +50,3 @@ using m128i = __m128i;
 
 #define unlikely(exp) __builtin_expect(exp, 0)
 #define likely(exp) __builtin_expect(exp, 1)
-#define FORCE_INLINE inline __attribute__((always_inline))

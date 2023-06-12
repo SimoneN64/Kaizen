@@ -8,7 +8,7 @@ struct Window;
 
 namespace n64 {
 struct Core {
-  ~Core() { Stop(); }
+  ~Core() { Stop(); delete cpu; }
   Core();
   void Stop();
   void LoadROM(const std::string&);
@@ -23,6 +23,6 @@ struct Core {
   bool romLoaded = false;
   bool done = false;
   std::string rom;
-  Interpreter cpu;
+  Interpreter* cpu = nullptr;
 };
 }

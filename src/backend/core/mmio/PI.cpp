@@ -122,7 +122,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       for (int i = 0; i < rdLen; i++) {
         mem.rom.cart[BYTE_ADDRESS(cartAddrInternal + i) & mem.rom.mask] = mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE];
       }
-      Util::debug("PI DMA from RDRAM to CARTRIDGE (size: {} B, {:08X} to {:08X})", len, dramAddr, cartAddr);
+      Util::trace("PI DMA from RDRAM to CARTRIDGE (size: {} B, {:08X} to {:08X})", len, dramAddr, cartAddr);
       dmaBusy = true;
       ioBusy = true;
       scheduler.enqueueRelative(Event{PIAccessTiming(*this, PIGetDomain(cartAddr), len), OnDMAComplete<true>});
@@ -140,7 +140,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       }
       dmaBusy = true;
       ioBusy = true;
-      Util::debug("PI DMA from CARTRIDGE to RDRAM (size: {} B, {:08X} to {:08X})", len, cartAddr, dramAddr);
+      Util::trace("PI DMA from CARTRIDGE to RDRAM (size: {} B, {:08X} to {:08X})", len, cartAddr, dramAddr);
       scheduler.enqueueRelative(Event{PIAccessTiming(*this, PIGetDomain(cartAddr), len), OnDMAComplete<false>});
     } break;
     case 0x04600010:

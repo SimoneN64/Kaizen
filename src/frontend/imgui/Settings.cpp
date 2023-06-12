@@ -70,6 +70,7 @@ Settings::~Settings() {
 
 void Settings::RenderWidget(bool& show) {
   if(show) {
+    static float oldVolumeL = volumeL, oldVolumeR = volumeR;
     ImGui::OpenPopup("Settings");
     if(ImGui::BeginPopupModal("Settings", &show)) {
       enum class SelectedSetting { Audio, COUNT };
@@ -80,15 +81,36 @@ void Settings::RenderWidget(bool& show) {
       switch (selectedSetting) {
         case SelectedSetting::Audio:
             ImGui::Checkbox("Lock channels", &lockChannels);
-            ImGui::SliderFloat("Volume L", &volumeL, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
-            if (!lockChannels) {
-              ImGui::SliderFloat("Volume R", &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
-            } else {
-              volumeR = volumeL;
+            ImGui::Checkbox("Mute", &mute);
+            if(mute) {
+              volumeL = 0;
+              volumeR = 0;
+
               ImGui::BeginDisabled();
-              ImGui::SliderFloat("Volume R", &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+              ImGui::SliderFloat("Volume L", &oldVolumeL, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+              if (lockChannels) {
+                oldVolumeR = oldVolumeL;
+              }
+              ImGui::SliderFloat("Volume R", &oldVolumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
               ImGui::EndDisabled();
+            } else {
+              volumeL = oldVolumeL;
+              volumeR = oldVolumeR;
+
+              ImGui::SliderFloat("Volume L", &volumeL, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+              if (!lockChannels) {
+                ImGui::SliderFloat("Volume R", &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+              } else {
+                volumeR = volumeL;
+                ImGui::BeginDisabled();
+                ImGui::SliderFloat("Volume R", &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+                ImGui::EndDisabled();
+              }
+
+              oldVolumeL = volumeL;
+              oldVolumeR = volumeR;
             }
+
             break;
         case SelectedSetting::COUNT:
           Util::panic("BRUH");

@@ -8,7 +8,11 @@ enum LogLevel : u8 {
   Trace, Info, Debug, Warn, Error
 };
 
+#ifndef _NDEBUG
+static constexpr auto globalLogLevel = Debug;
+#else
 static constexpr auto globalLogLevel = Warn;
+#endif
 
 template <LogLevel messageType = Info, typename ...Args>
 constexpr void print(const std::string& fmt, Args... args) {
@@ -44,6 +48,11 @@ constexpr void panic(const std::string& fmt, Args... args) {
 }
 
 template <typename ...Args>
+constexpr void error(const std::string& fmt, Args... args) {
+  print<Error>(fmt + "\n", args...);
+}
+
+template <typename ...Args>
 constexpr void warn(const std::string& fmt, Args... args) {
   print<Warn>(fmt + "\n", args...);
 }
@@ -56,5 +65,10 @@ constexpr void info(const std::string& fmt, Args... args) {
 template <typename ...Args>
 constexpr void debug(const std::string& fmt, Args... args) {
   print<Debug>(fmt + "\n", args...);
+}
+
+template <typename ...Args>
+constexpr void trace(const std::string& fmt, Args... args) {
+  print<Trace>(fmt + "\n", args...);
 }
 }

@@ -27,6 +27,14 @@ static FORCE_INLINE constexpr u32 GetCyclesPerFrame(bool pal) {
   }
 }
 
+static FORCE_INLINE constexpr u32 GetVideoFrequency(bool pal) {
+  if (pal) {
+    return 49'656'530;
+  } else {
+    return 48'681'812;
+  }
+}
+
 #define HALF_ADDRESS(addr) ((addr) ^ 2)
 #define BYTE_ADDRESS(addr) ((addr) ^ 3)
 

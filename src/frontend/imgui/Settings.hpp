@@ -17,5 +17,6 @@ struct Settings {
 private:
   float volumeL = 0.0, volumeR = 0.0;
   bool lockChannels = true;
+  bool mute = false;
   json settings;
 };

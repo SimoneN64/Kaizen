@@ -48,20 +48,14 @@ void App::Run() {
         case SDL_KEYDOWN:
           switch (event.key.keysym.sym) {
             case SDLK_o: {
-              nfdchar_t *outpath;
-              const nfdu8filteritem_t filter{"Nintendo 64 roms/archives", "n64,z64,v64,N64,Z64,V64,zip,tar,rar,7z"};
-              nfdresult_t result = NFD_OpenDialog(&outpath, &filter, 1, nullptr);
-              if (result == NFD_OKAY) {
-                LoadROM(outpath);
-                NFD_FreePath(outpath);
-              }
+              OpenROMDialog(window, core);
             } break;
           }
           break;
         case SDL_DROPFILE: {
           char *droppedDir = event.drop.file;
           if (droppedDir) {
-            LoadROM(droppedDir);
+            window.LoadROM(core, droppedDir);
             free(droppedDir);
           }
         } break;

@@ -6,7 +6,7 @@ namespace n64 {
 #define AUDIO_SAMPLE_RATE 44100
 #define SYSTEM_SAMPLE_FORMAT AUDIO_F32SYS
 #define SYSTEM_SAMPLE_SIZE 4
-#define BYTES_PER_HALF_SECOND ((AUDIO_SAMPLE_RATE / 2) * SYSTEM_SAMPLE_SIZE)
+#define BYTES_PER_HALF_SECOND (((float)AUDIO_SAMPLE_RATE / 2) * SYSTEM_SAMPLE_SIZE)
 
 static SDL_AudioStream* audioStream = nullptr;
 SDL_mutex* audioStreamMutex;
@@ -70,7 +70,7 @@ void PushSample(float left, float volumeL, float right, float volumeR) {
   float adjustedR = right * volumeR;
   float samples[2]{ adjustedL, adjustedR };
 
-  int availableBytes = SDL_AudioStreamAvailable(audioStream);
+  float availableBytes = SDL_AudioStreamAvailable(audioStream);
   if(availableBytes <= BYTES_PER_HALF_SECOND) {
     SDL_AudioStreamPut(audioStream, samples, 2 * sizeof(float));
   }

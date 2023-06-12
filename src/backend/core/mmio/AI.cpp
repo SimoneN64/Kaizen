@@ -32,8 +32,6 @@ auto AI::Read(u32 addr) const -> u32 {
   return dmaLen[0];
 }
 
-#define max(x, y) ((x) > (y) ? (x) : (y))
-
 void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
   switch(addr) {
     case 0x04500000:
@@ -43,8 +41,8 @@ void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       break;
     case 0x04500004: {
       u32 len = (val & 0x3FFFF) & ~7;
-      if((dmaCount < 2) && len) {
-        // if(dmaCount == 0) InterruptRaise(mem.mmio.mi, regs, Interrupt::AI);
+      if(dmaCount < 2) {
+        if(dmaCount == 0) InterruptRaise(mem.mmio.mi, regs, Interrupt::AI);
         dmaLen[dmaCount] = len;
         dmaCount++;
       }
@@ -58,7 +56,7 @@ void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
     case 0x04500010: {
       u32 old_dac_freq = dac.freq;
       dacRate = val & 0x3FFF;
-      dac.freq = max(1, N64_CPU_FREQ / 2 / (dacRate + 1)) * 1.037;
+      dac.freq = std::max(1u, GetVideoFrequency(mem.IsROMPAL()) / (dacRate + 1));
       dac.period = N64_CPU_FREQ / dac.freq;
       if(old_dac_freq != dac.freq) {
         AdjustSampleRate(dac.freq);

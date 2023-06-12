@@ -1,13 +1,10 @@
 #include <PIF.hpp>
 #include <MupenMovie.hpp>
-#include <PIF/Device.hpp>
 #include <Netplay.hpp>
-#include "log.hpp"
+#include <log.hpp>
 #include <SDL2/SDL_keyboard.h>
 
 namespace n64 {
-JoybusDevice players[4]{};
-
 void PIF::InitDevices(SaveType saveType) {
   for (int i = 0; i < 4; i++) { //TODO: make this configurable
     joybusDevices[i].type = JOYBUS_CONTROLLER;
@@ -44,21 +41,21 @@ void PIF::PollController() {
     bool CLEFT = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_RIGHTX) <= -127;
     bool CRIGHT = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_RIGHTX) >= 127;
 
-    players[0].controller.a = A;
-    players[0].controller.b = B;
-    players[0].controller.z = Z;
-    players[0].controller.start = START;
-    players[0].controller.dp_up = DUP;
-    players[0].controller.dp_down = DDOWN;
-    players[0].controller.dp_left = DLEFT;
-    players[0].controller.dp_right = DRIGHT;
-    players[0].controller.joy_reset = L && R && START;
-    players[0].controller.l = L;
-    players[0].controller.r = R;
-    players[0].controller.c_up = CUP;
-    players[0].controller.c_down = CDOWN;
-    players[0].controller.c_left = CLEFT;
-    players[0].controller.c_right = CRIGHT;
+    joybusDevices[channel].controller.a = A;
+    joybusDevices[channel].controller.b = B;
+    joybusDevices[channel].controller.z = Z;
+    joybusDevices[channel].controller.start = START;
+    joybusDevices[channel].controller.dp_up = DUP;
+    joybusDevices[channel].controller.dp_down = DDOWN;
+    joybusDevices[channel].controller.dp_left = DLEFT;
+    joybusDevices[channel].controller.dp_right = DRIGHT;
+    joybusDevices[channel].controller.joy_reset = L && R && START;
+    joybusDevices[channel].controller.l = L;
+    joybusDevices[channel].controller.r = R;
+    joybusDevices[channel].controller.c_up = CUP;
+    joybusDevices[channel].controller.c_down = CDOWN;
+    joybusDevices[channel].controller.c_left = CLEFT;
+    joybusDevices[channel].controller.c_right = CRIGHT;
 
     float xclamped = GET_AXIS(gamepad, SDL_CONTROLLER_AXIS_LEFTX);
     if(xclamped < 0) {
@@ -78,31 +75,31 @@ void PIF::PollController() {
 
     yclamped *= 86;
 
-    players[0].controller.joy_x = xclamped;
-    players[0].controller.joy_y = -yclamped;
+    joybusDevices[channel].controller.joy_x = xclamped;
+    joybusDevices[channel].controller.joy_y = -yclamped;
 
-    if (players[0].controller.joy_reset) {
-      players[0].controller.start = false;
-      players[0].controller.joy_x = 0;
-      players[0].controller.joy_y = 0;
+    if (joybusDevices[channel].controller.joy_reset) {
+      joybusDevices[channel].controller.start = false;
+      joybusDevices[channel].controller.joy_x = 0;
+      joybusDevices[channel].controller.joy_y = 0;
     }
   } else {
     const uint8_t* state = SDL_GetKeyboardState(nullptr);
-    players[0].controller.a = state[SDL_SCANCODE_X];
-    players[0].controller.b = state[SDL_SCANCODE_C];
-    players[0].controller.z = state[SDL_SCANCODE_Z];
-    players[0].controller.start = state[SDL_SCANCODE_RETURN];
-    players[0].controller.dp_up = state[SDL_SCANCODE_PAGEUP];
-    players[0].controller.dp_down = state[SDL_SCANCODE_PAGEDOWN];
-    players[0].controller.dp_left = state[SDL_SCANCODE_HOME];
-    players[0].controller.dp_right = state[SDL_SCANCODE_END];
-    players[0].controller.joy_reset = state[SDL_SCANCODE_RETURN] && state[SDL_SCANCODE_A] && state[SDL_SCANCODE_S];
-    players[0].controller.l = state[SDL_SCANCODE_A];
-    players[0].controller.r = state[SDL_SCANCODE_S];
-    players[0].controller.c_up = state[SDL_SCANCODE_I];
-    players[0].controller.c_down = state[SDL_SCANCODE_K];
-    players[0].controller.c_left = state[SDL_SCANCODE_J];
-    players[0].controller.c_right = state[SDL_SCANCODE_L];
+    joybusDevices[channel].controller.a = state[SDL_SCANCODE_X];
+    joybusDevices[channel].controller.b = state[SDL_SCANCODE_C];
+    joybusDevices[channel].controller.z = state[SDL_SCANCODE_Z];
+    joybusDevices[channel].controller.start = state[SDL_SCANCODE_RETURN];
+    joybusDevices[channel].controller.dp_up = state[SDL_SCANCODE_PAGEUP];
+    joybusDevices[channel].controller.dp_down = state[SDL_SCANCODE_PAGEDOWN];
+    joybusDevices[channel].controller.dp_left = state[SDL_SCANCODE_HOME];
+    joybusDevices[channel].controller.dp_right = state[SDL_SCANCODE_END];
+    joybusDevices[channel].controller.joy_reset = state[SDL_SCANCODE_RETURN] && state[SDL_SCANCODE_A] && state[SDL_SCANCODE_S];
+    joybusDevices[channel].controller.l = state[SDL_SCANCODE_A];
+    joybusDevices[channel].controller.r = state[SDL_SCANCODE_S];
+    joybusDevices[channel].controller.c_up = state[SDL_SCANCODE_I];
+    joybusDevices[channel].controller.c_down = state[SDL_SCANCODE_K];
+    joybusDevices[channel].controller.c_left = state[SDL_SCANCODE_J];
+    joybusDevices[channel].controller.c_right = state[SDL_SCANCODE_L];
 
     s16 xaxis = 0, yaxis = 0;
     if (state[SDL_SCANCODE_LEFT]) {
@@ -117,13 +114,13 @@ void PIF::PollController() {
       yaxis = 86;
     }
 
-    players[0].controller.joy_x = xaxis;
-    players[0].controller.joy_y = yaxis;
+    joybusDevices[channel].controller.joy_x = xaxis;
+    joybusDevices[channel].controller.joy_y = yaxis;
 
-    if (players[0].controller.joy_reset) {
-      players[0].controller.start = false;
-      players[0].controller.joy_x = 0;
-      players[0].controller.joy_y = 0;
+    if (joybusDevices[channel].controller.joy_reset) {
+      joybusDevices[channel].controller.start = false;
+      joybusDevices[channel].controller.joy_x = 0;
+      joybusDevices[channel].controller.joy_y = 0;
     }
   }
 }

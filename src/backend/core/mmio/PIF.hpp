@@ -10,7 +10,7 @@ namespace fs = std::filesystem;
 
 namespace n64 {
 
-enum AccessoryType {
+enum AccessoryType : u8 {
   ACCESSORY_NONE,
   ACCESSORY_MEMPACK,
   ACCESSORY_RUMBLE_PACK
@@ -18,7 +18,7 @@ enum AccessoryType {
 
 struct Controller {
   union {
-    u8 byte1;
+    u8 byte1{};
     struct {
       bool dp_right:1;
       bool dp_left:1;
@@ -31,7 +31,7 @@ struct Controller {
     };
   };
   union {
-    u8 byte2;
+    u8 byte2{};
     struct {
       bool c_right:1;
       bool c_left:1;
@@ -45,11 +45,21 @@ struct Controller {
   };
   s8 joy_x{};
   s8 joy_y{};
+
+  Controller() = default;
+  Controller& operator=(u32 v) {
+    joy_y = v & 0xff;
+    joy_x = v >> 8;
+    byte2 = v >> 16;
+    byte1 = v >> 24;
+
+    return *this;
+  }
 };
 
 static_assert(sizeof(Controller) == 4);
 
-enum JoybusType {
+enum JoybusType : u8 {
   JOYBUS_NONE,
   JOYBUS_CONTROLLER,
   JOYBUS_DANCEPAD,
@@ -66,8 +76,12 @@ struct JoybusDevice {
   AccessoryType accessoryType{};
   Controller controller{};
 
-  auto operator<<(const sf::Packet& packet) {
+  JoybusDevice() = default;
 
+  explicit JoybusDevice(const u64& packet) {
+    type = static_cast<JoybusType>(packet >> offsetof(JoybusDevice, type));
+    accessoryType = static_cast<AccessoryType>((packet >> offsetof(JoybusDevice, accessoryType)) & 0xff);
+    controller = packet >> offsetof(JoybusDevice, controller);
   }
 };
 

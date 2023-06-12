@@ -6,7 +6,6 @@
 #include <cic_nus_6105/n64_cic_nus_6105.hpp>
 #include <cassert>
 #include <Netplay.hpp>
-#include <PIF/Device.hpp>
 
 #define MEMPAK_SIZE 32768
 
@@ -207,10 +206,7 @@ void PIF::ProcessCommands(Mem &mem) {
             break;
           case 7:
             switch(cmd[CMD_START]) {
-              case 0: case 3:
-                for(int i = 0; i < 8; i++) {
-                  res[i] = 0;
-                }
+              case 0: case 1: case 3:
                 break;
               case 2: {
                 auto now = std::time(nullptr);
@@ -332,21 +328,11 @@ void PIF::EepromWrite(const u8* cmd, u8* res, const Mem& mem) {
 }
 
 void PIF::UpdateController() {
-  joybusDevices[channel].controller.a = players[channel].controller.a;
-  joybusDevices[channel].controller.b = players[channel].controller.b;
-  joybusDevices[channel].controller.z = players[channel].controller.z;
-  joybusDevices[channel].controller.start = players[channel].controller.start;
-  joybusDevices[channel].controller.dp_up = players[channel].controller.dp_up;
-  joybusDevices[channel].controller.dp_down = players[channel].controller.dp_down;
-  joybusDevices[channel].controller.dp_left = players[channel].controller.dp_left;
-  joybusDevices[channel].controller.dp_right = players[channel].controller.dp_right;
-  joybusDevices[channel].controller.joy_reset = players[channel].controller.joy_reset;
-  joybusDevices[channel].controller.l = players[channel].controller.l;
-  joybusDevices[channel].controller.r = players[channel].controller.r;
-  joybusDevices[channel].controller.c_up = players[channel].controller.c_up;
-  joybusDevices[channel].controller.c_down = players[channel].controller.c_down;
-  joybusDevices[channel].controller.c_left = players[channel].controller.c_left;
-  joybusDevices[channel].controller.c_right = players[channel].controller.c_right;
+  if(Netplay::connected) {
+    Util::panic("Netplay!!!");
+  } else {
+    PollController();
+  }
 }
 
 void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {

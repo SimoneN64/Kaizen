@@ -8,7 +8,7 @@ int main(int argc, char** argv) {
     if(argc > 2) {
       LoadTAS(argv[2]);
     }
-    app->LoadROM(argv[1]);
+    app->window.LoadROM(app->core, argv[1]);
   }
 
   app->Run();

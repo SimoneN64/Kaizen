@@ -6,6 +6,8 @@
 #include <SDL2/SDL.h>
 #include <vector>
 #include <frontend/imgui/Settings.hpp>
+#include <nfd.hpp>
+#include "Discord.hpp"
 
 struct Window {
   explicit Window(n64::Core& core);
@@ -17,12 +19,12 @@ struct Window {
   Settings settings;
   void LoadROM(n64::Core& core, const std::string& path);
   bool done = false;
+  std::string gameName{};
 private:
   bool showSettings = false;
   SDL_Window* window{};
   std::string windowTitle{"Kaizen"};
   std::string shadowWindowTitle{windowTitle};
-  std::string gameName{};
   void InitSDL();
   void InitImgui();
   void Render(n64::Core& core);
@@ -38,3 +40,13 @@ private:
 
   u32 minImageCount = 2;
 };
+
+static void FORCE_INLINE OpenROMDialog(Window& window, n64::Core& core) {
+  nfdchar_t *outpath;
+  const nfdu8filteritem_t filter{"Nintendo 64 roms/archives", "n64,z64,v64,N64,Z64,V64,zip,tar,rar,7z"};
+  nfdresult_t result = NFD_OpenDialog(&outpath, &filter, 1, nullptr);
+  if (result == NFD_OKAY) {
+    window.LoadROM(core, outpath);
+    NFD_FreePath(outpath);
+  }
+}

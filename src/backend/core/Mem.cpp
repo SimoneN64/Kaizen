@@ -31,8 +31,8 @@ void Mem::Reset() {
   mmio.Reset();
 }
 
-void Mem::LoadSRAM(SaveType saveType, fs::path path) {
-  if(saveType == SAVE_SRAM_256k) {
+void Mem::LoadSRAM(SaveType save_type, fs::path path) {
+  if(save_type == SAVE_SRAM_256k) {
     std::error_code error;
     sramPath = path.replace_extension(".sram").string();
     if(sram.is_mapped()) {
@@ -303,7 +303,7 @@ u32 Mem::Read32(n64::Registers &regs, u32 paddr) {
         } else if (saveType == SAVE_FLASH_1m) {
           return flash.Read32(paddr - CART_REGION_START_2_2);
         } else {
-          Util::panic("Cartridge backup Read32 with unknown save type!");;
+          Util::panic("Cartridge backup Read32 with unknown save type!");
         }
       case PIF_ROM_REGION:
         return Util::ReadAccess<u32>(si.pif.bootrom, paddr - PIF_ROM_REGION_START);

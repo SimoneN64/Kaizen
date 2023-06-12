@@ -16,8 +16,8 @@ Window::Window(n64::Core& core) : settings() {
   NFD::Init();
 }
 
-[[nodiscard]] bool Window::gotClosed(SDL_Event event) {
-  return event.window.event == SDL_WINDOWEVENT_CLOSE
+void Window::onClose(SDL_Event event) {
+  done = event.window.event == SDL_WINDOWEVENT_CLOSE
       && event.window.windowID == SDL_GetWindowID(window);
 }
 
@@ -190,7 +190,7 @@ void Window::RenderMainMenuBar(n64::Core &core) {
       core.cpu->mem.DumpDMEM();
     }
     if (ImGui::MenuItem("Exit")) {
-      core.done = true;
+      done = true;
     }
     ImGui::EndMenu();
   }

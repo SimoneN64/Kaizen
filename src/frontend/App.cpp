@@ -11,7 +11,7 @@ void App::Run() {
   SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
   n64::SI& si = core.cpu->mem.mmio.si;
 
-  while (!core.done) {
+  while (!window.done) {
     if(core.romLoaded) {
       if(!core.pause) {
         core.Run(window.settings.GetVolumeL(), window.settings.GetVolumeR());
@@ -26,10 +26,10 @@ void App::Run() {
       ImGui_ImplSDL2_ProcessEvent(&event);
       switch(event.type) {
         case SDL_QUIT:
-          core.done = true;
+          window.done = true;
           break;
         case SDL_WINDOWEVENT:
-          core.done = window.gotClosed(event);
+          window.onClose(event);
           break;
         case SDL_CONTROLLERDEVICEADDED: {
           const int index = event.cdevice.which;
@@ -46,24 +46,25 @@ void App::Run() {
           si.pif.gamepadConnected = false;
           break;
         case SDL_KEYDOWN:
-          switch(event.key.keysym.sym) {
+          switch (event.key.keysym.sym) {
             case SDLK_o: {
-              nfdchar_t* outpath;
-              const nfdu8filteritem_t filter {"Nintendo 64 roms/archives", "n64,z64,v64,N64,Z64,V64,zip,tar,rar,7z"};
+              nfdchar_t *outpath;
+              const nfdu8filteritem_t filter{"Nintendo 64 roms/archives", "n64,z64,v64,N64,Z64,V64,zip,tar,rar,7z"};
               nfdresult_t result = NFD_OpenDialog(&outpath, &filter, 1, nullptr);
-              if(result == NFD_OKAY) {
+              if (result == NFD_OKAY) {
                 LoadROM(outpath);
                 NFD_FreePath(outpath);
               }
             } break;
-          } break;
-          case SDL_DROPFILE: {
-            char* droppedDir = event.drop.file;
-            if(droppedDir) {
-              LoadROM(droppedDir);
-              free(droppedDir);
-            }
-          } break;
+          }
+          break;
+        case SDL_DROPFILE: {
+          char *droppedDir = event.drop.file;
+          if (droppedDir) {
+            LoadROM(droppedDir);
+            free(droppedDir);
+          }
+        } break;
       }
     }
   }

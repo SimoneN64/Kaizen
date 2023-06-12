@@ -21,7 +21,6 @@ struct Core {
   bool pause = true;
   int cycles = 0;
   bool romLoaded = false;
-  bool done = false;
   std::string rom;
   Interpreter* cpu = nullptr;
 };

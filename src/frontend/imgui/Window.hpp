@@ -12,10 +12,11 @@ struct Window {
   ~Window();
   ImDrawData* Present(n64::Core& core);
 
-  [[nodiscard]] bool gotClosed(SDL_Event event);
+  void onClose(SDL_Event event);
   ImFont *uiFont{};
   Settings settings;
   void LoadROM(n64::Core& core, const std::string& path);
+  bool done = false;
 private:
   bool showSettings = false;
   SDL_Window* window{};

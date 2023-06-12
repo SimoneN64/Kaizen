@@ -98,7 +98,7 @@ FORCE_INLINE VPR Broadcast(const VPR& vt, int l0, int l1, int l2, int l3, int l4
 FORCE_INLINE VPR GetVTE(const VPR& vt, u8 e) {
   VPR vte{};
   e &= 0xf;
-  switch(e) {
+  switch(e & 0xf) {
     case 0 ... 1: return vt;
     case 2: vte.single = _mm_shufflehi_epi16(_mm_shufflelo_epi16(vt.single, 0xF5), 0xF5); break;
     case 3: vte.single = _mm_shufflehi_epi16(_mm_shufflelo_epi16(vt.single, 0xA0), 0xA0); break;
@@ -487,7 +487,7 @@ void RSP::lfv(u32 instr) {
   int end = std::min(start + 8, 16);
 
   // TODO: should be possible to do with one loop
-  VPR tmp;
+  VPR tmp{};
   for (u32 offset = 0; offset < 4; offset++) {
     tmp.element[ELEMENT_INDEX(offset + 0)] = ReadByte(address + (base + offset * 4 + 0 & 15)) << 7;
     tmp.element[ELEMENT_INDEX(offset + 4)] = ReadByte(address + (base + offset * 4 + 8 & 15)) << 7;

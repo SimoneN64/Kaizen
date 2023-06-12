@@ -150,10 +150,7 @@ void Cop1::decode(Registers& regs, Interpreter& cpu, u32 instr) {
         case 0x06: movl(regs, instr); break;
         case 0x20: cvtsl(regs, instr); break;
         case 0x21: cvtdl(regs, instr); break;
-        case 0x24:
-          FireException(regs, ExceptionCode::ReservedInstruction, 1, true);
-          break;
-        case 0x25:
+        case 0x24: case 0x25:
           FireException(regs, ExceptionCode::ReservedInstruction, 1, true);
           break;
         default: Util::panic("Unimplemented COP1 function L[{} {}] ({:08X}) ({:016X})", mask_fun >> 3, mask_fun & 7, instr, (u64)regs.oldPC);

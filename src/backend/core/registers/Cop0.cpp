@@ -16,8 +16,8 @@ void Cop0::Reset() {
   status.fr = 1;
   PRId = 0x00000B22;
   Config = 0x7006E463;
-  EPC = 0xFFFFFFFFFFFFFFFF;
-  ErrorEPC = 0xFFFFFFFFFFFFFFFF;
+  EPC = 0xFFFFFFFFFFFFFFFFll;
+  ErrorEPC = 0xFFFFFFFFFFFFFFFFll;
   wired = 0;
   index = 63;
   badVaddr = 0xFFFFFFFFFFFFFFFF;
@@ -58,7 +58,7 @@ u32 Cop0::GetReg32(u8 addr) {
   }
 }
 
-u64 Cop0::GetReg64(u8 addr) {
+u64 Cop0::GetReg64(u8 addr) const {
   switch(addr) {
     case COP0_REG_ENTRYLO0: return entryLo0.raw;
     case COP0_REG_ENTRYLO1: return entryLo1.raw;
@@ -280,15 +280,15 @@ void FireException(Registers& regs, ExceptionCode code, int cop, bool useOldPC) 
       case ExceptionCode::ReservedInstruction: case ExceptionCode::CoprocessorUnusable:
       case ExceptionCode::Overflow: case ExceptionCode::Trap:
       case ExceptionCode::FloatingPointError: case ExceptionCode::Watch:
-        regs.SetPC32(0x80000180);
+        regs.SetPC32(s32(0x80000180));
         break;
       case ExceptionCode::TLBLoad: case ExceptionCode::TLBStore:
         if(old_exl || regs.cop0.tlbError == INVALID) {
-          regs.SetPC32(0x80000180);
+          regs.SetPC32(s32(0x80000180));
         } else if(Is64BitAddressing(regs.cop0, regs.cop0.badVaddr)) {
-          regs.SetPC32(0x80000080);
+          regs.SetPC32(s32(0x80000080));
         } else {
-          regs.SetPC32(0x80000000);
+          regs.SetPC32(s32(0x80000000));
         }
         break;
       default: Util::panic("Unhandled exception! {}", static_cast<u8>(code));

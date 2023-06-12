@@ -26,7 +26,7 @@ void PIF::Reset() {
   }
 }
 
-void PIF::LoadMempak(std::string path) {
+void PIF::LoadMempak(const std::string& path) {
   mempakPath = fs::path(path).replace_extension(".mempak").string();
   std::error_code error;
   if (mempak.is_mapped()) {
@@ -72,7 +72,7 @@ FORCE_INLINE size_t getSaveSize(SaveType saveType) {
   }
 }
 
-void PIF::LoadEeprom(SaveType saveType, std::string path) {
+void PIF::LoadEeprom(SaveType saveType, const std::string& path) {
   if(saveType == SAVE_EEPROM_16k || saveType == SAVE_EEPROM_4k) {
     eepromPath = fs::path(path).replace_extension(".eeprom").string();
     std::error_code error;
@@ -443,20 +443,20 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
     case CIC_NUS_6101:
       regs.gpr[0] = 0x0000000000000000;
       regs.gpr[1] = 0x0000000000000000;
-      regs.gpr[2] = 0xFFFFFFFFDF6445CC;
-      regs.gpr[3] = 0xFFFFFFFFDF6445CC;
+      regs.gpr[2] = 0xFFFFFFFFDF6445CCll;
+      regs.gpr[3] = 0xFFFFFFFFDF6445CCll;
       regs.gpr[4] = 0x00000000000045CC;
       regs.gpr[5] = 0x0000000073EE317A;
-      regs.gpr[6] = 0xFFFFFFFFA4001F0C;
-      regs.gpr[7] = 0xFFFFFFFFA4001F08;
+      regs.gpr[6] = 0xFFFFFFFFA4001F0Cll;
+      regs.gpr[7] = 0xFFFFFFFFA4001F08ll;
       regs.gpr[8] = 0x00000000000000C0;
       regs.gpr[9] = 0x0000000000000000;
       regs.gpr[10] = 0x0000000000000040;
-      regs.gpr[11] = 0xFFFFFFFFA4000040;
-      regs.gpr[12] = 0xFFFFFFFFC7601FAC;
-      regs.gpr[13] = 0xFFFFFFFFC7601FAC;
-      regs.gpr[14] = 0xFFFFFFFFB48E2ED6;
-      regs.gpr[15] = 0xFFFFFFFFBA1A7D4B;
+      regs.gpr[11] = 0xFFFFFFFFA4000040ll;
+      regs.gpr[12] = 0xFFFFFFFFC7601FACll;
+      regs.gpr[13] = 0xFFFFFFFFC7601FACll;
+      regs.gpr[14] = 0xFFFFFFFFB48E2ED6ll;
+      regs.gpr[15] = 0xFFFFFFFFBA1A7D4Bll;
       regs.gpr[16] = 0x0000000000000000;
       regs.gpr[17] = 0x0000000000000000;
       regs.gpr[18] = 0x0000000000000000;
@@ -465,16 +465,16 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
       regs.gpr[21] = 0x0000000000000000;
       regs.gpr[23] = 0x0000000000000001;
       regs.gpr[24] = 0x0000000000000002;
-      regs.gpr[25] = 0xFFFFFFFF905F4718;
+      regs.gpr[25] = 0xFFFFFFFF905F4718ll;
       regs.gpr[26] = 0x0000000000000000;
       regs.gpr[27] = 0x0000000000000000;
       regs.gpr[28] = 0x0000000000000000;
-      regs.gpr[29] = 0xFFFFFFFFA4001FF0;
+      regs.gpr[29] = 0xFFFFFFFFA4001FF0ll;
       regs.gpr[30] = 0x0000000000000000;
-      regs.gpr[31] = 0xFFFFFFFFA4001550;
+      regs.gpr[31] = 0xFFFFFFFFA4001550ll;
 
-      regs.lo = 0xFFFFFFFFBA1A7D4B;
-      regs.hi = 0xFFFFFFFF997EC317;
+      regs.lo = 0xFFFFFFFFBA1A7D4Bll;
+      regs.hi = 0xFFFFFFFF997EC317ll;
       break;
     case CIC_NUS_7102:
       regs.gpr[0]  = 0x0000000000000000;
@@ -483,16 +483,16 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
       regs.gpr[3]  = 0x000000001E324416;
       regs.gpr[4]  = 0x0000000000004416;
       regs.gpr[5]  = 0x000000000EC5D9AF;
-      regs.gpr[6]  = 0xFFFFFFFFA4001F0C;
-      regs.gpr[7]  = 0xFFFFFFFFA4001F08;
+      regs.gpr[6]  = 0xFFFFFFFFA4001F0Cll;
+      regs.gpr[7]  = 0xFFFFFFFFA4001F08ll;
       regs.gpr[8]  = 0x00000000000000C0;
       regs.gpr[9]  = 0x0000000000000000;
       regs.gpr[10] = 0x0000000000000040;
-      regs.gpr[11] = 0xFFFFFFFFA4000040;
+      regs.gpr[11] = 0xFFFFFFFFA4000040ll;
       regs.gpr[12] = 0x00000000495D3D7B;
-      regs.gpr[13] = 0xFFFFFFFF8B3DFA1E;
+      regs.gpr[13] = 0xFFFFFFFF8B3DFA1Ell;
       regs.gpr[14] = 0x000000004798E4D4;
-      regs.gpr[15] = 0xFFFFFFFFF1D30682;
+      regs.gpr[15] = 0xFFFFFFFFF1D30682ll;
       regs.gpr[16] = 0x0000000000000000;
       regs.gpr[17] = 0x0000000000000000;
       regs.gpr[18] = 0x0000000000000000;
@@ -506,11 +506,11 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
       regs.gpr[26] = 0x0000000000000000;
       regs.gpr[27] = 0x0000000000000000;
       regs.gpr[28] = 0x0000000000000000;
-      regs.gpr[29] = 0xFFFFFFFFA4001FF0;
+      regs.gpr[29] = 0xFFFFFFFFA4001FF0ll;
       regs.gpr[30] = 0x0000000000000000;
-      regs.gpr[31] = 0xFFFFFFFFA4001554;
+      regs.gpr[31] = 0xFFFFFFFFA4001554ll;
 
-      regs.lo = 0xFFFFFFFFF1D30682;
+      regs.lo = 0xFFFFFFFFF1D30682ll;
       regs.hi = 0x0000000010054A98;
       break;
     case CIC_NUS_6102_7101:
@@ -519,14 +519,14 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
       regs.gpr[2]  = 0x000000000EBDA536;
       regs.gpr[3]  = 0x000000000EBDA536;
       regs.gpr[4]  = 0x000000000000A536;
-      regs.gpr[5]  = 0xFFFFFFFFC0F1D859;
-      regs.gpr[6]  = 0xFFFFFFFFA4001F0C;
-      regs.gpr[7]  = 0xFFFFFFFFA4001F08;
+      regs.gpr[5]  = 0xFFFFFFFFC0F1D859ll;
+      regs.gpr[6]  = 0xFFFFFFFFA4001F0Cll;
+      regs.gpr[7]  = 0xFFFFFFFFA4001F08ll;
       regs.gpr[8]  = 0x00000000000000C0;
       regs.gpr[9]  = 0x0000000000000000;
       regs.gpr[10] = 0x0000000000000040;
-      regs.gpr[11] = 0xFFFFFFFFA4000040;
-      regs.gpr[12] = 0xFFFFFFFFED10D0B3;
+      regs.gpr[11] = 0xFFFFFFFFA4000040ll;
+      regs.gpr[12] = 0xFFFFFFFFED10D0B3ll;
       regs.gpr[13] = 0x000000001402A4CC;
       regs.gpr[14] = 0x000000002DE108EA;
       regs.gpr[15] = 0x000000003103E121;
@@ -538,13 +538,13 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
       regs.gpr[21] = 0x0000000000000000;
       regs.gpr[23] = 0x0000000000000000;
       regs.gpr[24] = 0x0000000000000000;
-      regs.gpr[25] = 0xFFFFFFFF9DEBB54F;
+      regs.gpr[25] = 0xFFFFFFFF9DEBB54Fll;
       regs.gpr[26] = 0x0000000000000000;
       regs.gpr[27] = 0x0000000000000000;
       regs.gpr[28] = 0x0000000000000000;
-      regs.gpr[29] = 0xFFFFFFFFA4001FF0;
+      regs.gpr[29] = 0xFFFFFFFFA4001FF0ll;
       regs.gpr[30] = 0x0000000000000000;
-      regs.gpr[31] = 0xFFFFFFFFA4001550;
+      regs.gpr[31] = 0xFFFFFFFFA4001550ll;
 
       regs.hi = 0x000000003FC18657;
       regs.lo = 0x000000003103E121;
@@ -552,7 +552,7 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
       if (pal) {
         regs.gpr[20] = 0x0000000000000000;
         regs.gpr[23] = 0x0000000000000006;
-        regs.gpr[31] = 0xFFFFFFFFA4001554;
+        regs.gpr[31] = 0xFFFFFFFFA4001554ll;
       }
       break;
     case CIC_NUS_6103_7103:
@@ -561,15 +561,15 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
       regs.gpr[2]  = 0x0000000049A5EE96;
       regs.gpr[3]  = 0x0000000049A5EE96;
       regs.gpr[4]  = 0x000000000000EE96;
-      regs.gpr[5]  = 0xFFFFFFFFD4646273;
-      regs.gpr[6]  = 0xFFFFFFFFA4001F0C;
-      regs.gpr[7]  = 0xFFFFFFFFA4001F08;
+      regs.gpr[5]  = 0xFFFFFFFFD4646273ll;
+      regs.gpr[6]  = 0xFFFFFFFFA4001F0Cll;
+      regs.gpr[7]  = 0xFFFFFFFFA4001F08ll;
       regs.gpr[8]  = 0x00000000000000C0;
       regs.gpr[9]  = 0x0000000000000000;
       regs.gpr[10] = 0x0000000000000040;
-      regs.gpr[11] = 0xFFFFFFFFA4000040;
-      regs.gpr[12] = 0xFFFFFFFFCE9DFBF7;
-      regs.gpr[13] = 0xFFFFFFFFCE9DFBF7;
+      regs.gpr[11] = 0xFFFFFFFFA4000040ll;
+      regs.gpr[12] = 0xFFFFFFFFCE9DFBF7ll;
+      regs.gpr[13] = 0xFFFFFFFFCE9DFBF7ll;
       regs.gpr[14] = 0x000000001AF99984;
       regs.gpr[15] = 0x0000000018B63D28;
       regs.gpr[16] = 0x0000000000000000;
@@ -580,13 +580,13 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
       regs.gpr[21] = 0x0000000000000000;
       regs.gpr[23] = 0x0000000000000000;
       regs.gpr[24] = 0x0000000000000000;
-      regs.gpr[25] = 0xFFFFFFFF825B21C9;
+      regs.gpr[25] = 0xFFFFFFFF825B21C9ll;
       regs.gpr[26] = 0x0000000000000000;
       regs.gpr[27] = 0x0000000000000000;
       regs.gpr[28] = 0x0000000000000000;
-      regs.gpr[29] = 0xFFFFFFFFA4001FF0;
+      regs.gpr[29] = 0xFFFFFFFFA4001FF0ll;
       regs.gpr[30] = 0x0000000000000000;
-      regs.gpr[31] = 0xFFFFFFFFA4001550;
+      regs.gpr[31] = 0xFFFFFFFFA4001550ll;
 
       regs.lo = 0x0000000018B63D28;
       regs.hi = 0x00000000625C2BBE;
@@ -594,23 +594,23 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
       if (pal) {
         regs.gpr[20] = 0x0000000000000000;
         regs.gpr[23] = 0x0000000000000006;
-        regs.gpr[31] = 0xFFFFFFFFA4001554;
+        regs.gpr[31] = 0xFFFFFFFFA4001554ll;
       }
       break;
     case CIC_NUS_6105_7105:
       regs.gpr[0]  = 0x0000000000000000;
       regs.gpr[1]  = 0x0000000000000000;
-      regs.gpr[2]  = 0xFFFFFFFFF58B0FBF;
-      regs.gpr[3]  = 0xFFFFFFFFF58B0FBF;
+      regs.gpr[2]  = 0xFFFFFFFFF58B0FBFll;
+      regs.gpr[3]  = 0xFFFFFFFFF58B0FBFll;
       regs.gpr[4]  = 0x0000000000000FBF;
-      regs.gpr[5]  = 0xFFFFFFFFDECAAAD1;
-      regs.gpr[6]  = 0xFFFFFFFFA4001F0C;
-      regs.gpr[7]  = 0xFFFFFFFFA4001F08;
+      regs.gpr[5]  = 0xFFFFFFFFDECAAAD1ll;
+      regs.gpr[6]  = 0xFFFFFFFFA4001F0Cll;
+      regs.gpr[7]  = 0xFFFFFFFFA4001F08ll;
       regs.gpr[8]  = 0x00000000000000C0;
       regs.gpr[9]  = 0x0000000000000000;
       regs.gpr[10] = 0x0000000000000040;
-      regs.gpr[11] = 0xFFFFFFFFA4000040;
-      regs.gpr[12] = 0xFFFFFFFF9651F81E;
+      regs.gpr[11] = 0xFFFFFFFFA4000040ll;
+      regs.gpr[12] = 0xFFFFFFFF9651F81Ell;
       regs.gpr[13] = 0x000000002D42AAC5;
       regs.gpr[14] = 0x00000000489B52CF;
       regs.gpr[15] = 0x0000000056584D60;
@@ -622,13 +622,13 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
       regs.gpr[21] = 0x0000000000000000;
       regs.gpr[23] = 0x0000000000000000;
       regs.gpr[24] = 0x0000000000000002;
-      regs.gpr[25] = 0xFFFFFFFFCDCE565F;
+      regs.gpr[25] = 0xFFFFFFFFCDCE565Fll;
       regs.gpr[26] = 0x0000000000000000;
       regs.gpr[27] = 0x0000000000000000;
       regs.gpr[28] = 0x0000000000000000;
-      regs.gpr[29] = 0xFFFFFFFFA4001FF0;
+      regs.gpr[29] = 0xFFFFFFFFA4001FF0ll;
       regs.gpr[30] = 0x0000000000000000;
-      regs.gpr[31] = 0xFFFFFFFFA4001550;
+      regs.gpr[31] = 0xFFFFFFFFA4001550ll;
 
       regs.lo = 0x0000000056584D60;
       regs.hi = 0x000000004BE35D1F;
@@ -636,7 +636,7 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
       if (pal) {
         regs.gpr[20] = 0x0000000000000000;
         regs.gpr[23] = 0x0000000000000006;
-        regs.gpr[31] = 0xFFFFFFFFA4001554;
+        regs.gpr[31] = 0xFFFFFFFFA4001554ll;
       }
 
       mem.Write32(regs, IMEM_REGION_START + 0x00, 0x3C0DBFC0);
@@ -651,18 +651,18 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
     case CIC_NUS_6106_7106:
       regs.gpr[0] = 0x0000000000000000;
       regs.gpr[1] = 0x0000000000000000;
-      regs.gpr[2] = 0xFFFFFFFFA95930A4;
-      regs.gpr[3] = 0xFFFFFFFFA95930A4;
+      regs.gpr[2] = 0xFFFFFFFFA95930A4ll;
+      regs.gpr[3] = 0xFFFFFFFFA95930A4ll;
       regs.gpr[4] = 0x00000000000030A4;
-      regs.gpr[5] = 0xFFFFFFFFB04DC903;
-      regs.gpr[6] = 0xFFFFFFFFA4001F0C;
-      regs.gpr[7] = 0xFFFFFFFFA4001F08;
+      regs.gpr[5] = 0xFFFFFFFFB04DC903ll;
+      regs.gpr[6] = 0xFFFFFFFFA4001F0Cll;
+      regs.gpr[7] = 0xFFFFFFFFA4001F08ll;
       regs.gpr[8] = 0x00000000000000C0;
       regs.gpr[9] = 0x0000000000000000;
       regs.gpr[10] = 0x0000000000000040;
-      regs.gpr[11] = 0xFFFFFFFFA4000040;
-      regs.gpr[12] = 0xFFFFFFFFBCB59510;
-      regs.gpr[13] = 0xFFFFFFFFBCB59510;
+      regs.gpr[11] = 0xFFFFFFFFA4000040ll;
+      regs.gpr[12] = 0xFFFFFFFFBCB59510ll;
+      regs.gpr[13] = 0xFFFFFFFFBCB59510ll;
       regs.gpr[14] = 0x000000000CF85C13;
       regs.gpr[15] = 0x000000007A3C07F4;
       regs.gpr[16] = 0x0000000000000000;
@@ -677,16 +677,16 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
       regs.gpr[26] = 0x0000000000000000;
       regs.gpr[27] = 0x0000000000000000;
       regs.gpr[28] = 0x0000000000000000;
-      regs.gpr[29] = 0xFFFFFFFFA4001FF0;
+      regs.gpr[29] = 0xFFFFFFFFA4001FF0ll;
       regs.gpr[30] = 0x0000000000000000;
-      regs.gpr[31] = 0xFFFFFFFFA4001550;
+      regs.gpr[31] = 0xFFFFFFFFA4001550ll;
       regs.lo = 0x000000007A3C07F4;
       regs.hi = 0x0000000023953898;
 
       if (pal) {
         regs.gpr[20] = 0x0000000000000000;
         regs.gpr[23] = 0x0000000000000006;
-        regs.gpr[31] = 0xFFFFFFFFA4001554;
+        regs.gpr[31] = 0xFFFFFFFFA4001554ll;
       }
       break;
   }
@@ -695,7 +695,7 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
   regs.cop0.Reset();
   mem.Write32(regs, 0x04300004, 0x01010101);
   memcpy(mem.mmio.rsp.dmem, mem.rom.cart, 0x1000);
-  regs.SetPC32(0xA4000040);
+  regs.SetPC32(s32(0xA4000040));
 }
 
 void PIF::ExecutePIF(Mem& mem, Registers& regs) {

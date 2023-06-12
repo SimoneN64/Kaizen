@@ -46,7 +46,7 @@ struct Flash {
   Flash() = default;
   ~Flash() = default;
   void Reset();
-  void Load(SaveType, std::string);
+  void Load(SaveType, const std::string&);
   FlashState state{};
   u64 status{};
   size_t eraseOffs{};

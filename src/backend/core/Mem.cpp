@@ -1,5 +1,4 @@
 #include <Mem.hpp>
-#include <fstream>
 #include <core/registers/Registers.hpp>
 #include <core/registers/Cop0.hpp>
 #include <core/Interpreter.hpp>

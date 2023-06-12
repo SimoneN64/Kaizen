@@ -136,16 +136,10 @@ FORCE_INLINE void cop2(RSP& rsp, u32 instr) {
     case 0x13: rsp.vabs(instr); break;
     case 0x14: rsp.vaddc(instr); break;
     case 0x15: rsp.vsubc(instr); break;
-    case 0x16: rsp.vzero(instr); break;
-    case 0x17: rsp.vzero(instr); break;
-    case 0x18: rsp.vzero(instr); break;
-    case 0x19: rsp.vzero(instr); break;
-    case 0x1A: rsp.vzero(instr); break;
-    case 0x1B: rsp.vzero(instr); break;
-    case 0x1C: rsp.vzero(instr); break;
+    case 0x16 ... 0x1C: case 0x1E: case 0x1F: case 0x2E: case 0x2F:
+      rsp.vzero(instr);
+      break;
     case 0x1D: rsp.vsar(instr); break;
-    case 0x1E: rsp.vzero(instr); break;
-    case 0x1F: rsp.vzero(instr); break;
     case 0x20: rsp.vlt(instr); break;
     case 0x21: rsp.veq(instr); break;
     case 0x22: rsp.vne(instr); break;
@@ -160,8 +154,6 @@ FORCE_INLINE void cop2(RSP& rsp, u32 instr) {
     case 0x2B: rsp.vnor(instr); break;
     case 0x2C: rsp.vxor(instr); break;
     case 0x2D: rsp.vnxor(instr); break;
-    case 0x2E: rsp.vzero(instr); break;
-    case 0x2F: rsp.vzero(instr); break;
     case 0x31: rsp.vrcpl(instr); break;
     case 0x35: rsp.vrsql(instr); break;
     case 0x32: case 0x36:
@@ -196,7 +188,6 @@ FORCE_INLINE void cop0(Registers& regs, Mem& mem, u32 instr) {
 void RSP::Exec(Registers &regs, Mem& mem, u32 instr) {
   u8 mask = (instr >> 26) & 0x3F;
   MMIO& mmio = mem.mmio;
-  RDP& rdp = mmio.rdp;
   MI& mi = mmio.mi;
   //Util::print("RSP {:02X}", mask);
   switch(mask) {

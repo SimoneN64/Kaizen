@@ -32,6 +32,7 @@ struct SI {
   PIF pif;
 };
 
-static void DMA(Mem& mem, Registers& regs);
+// just to silence warning, it is used.
+[[maybe_unused]] static void DMA(Mem& mem, Registers& regs);
 #define SI_DMA_DELAY (65536 * 2)
 }

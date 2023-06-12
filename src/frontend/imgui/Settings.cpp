@@ -1,7 +1,6 @@
 #include <Settings.hpp>
 #include <fstream>
 #include <filesystem>
-#include <nfd.h>
 #include <Widgets.hpp>
 #include <Core.hpp>
 
@@ -12,17 +11,17 @@ namespace fs = std::filesystem;
     auto name##Entry = settings[param1][param2];  \
     if(!name##Entry.empty()) {                    \
       auto value = name##Entry.get<type>();       \
-      name = value;                               \
+      (name) = value;                             \
     } else {                                      \
       settingsFile.clear();                       \
       settings[param1][param2] = defaultVal;      \
       settingsFile << settings;                   \
-      name = defaultVal;                          \
+      (name) = defaultVal;                        \
     }                                             \
   } while(0)
 
 
-Settings::Settings(n64::Core& core) {
+Settings::Settings() {
   auto fileExists = fs::exists("resources/settings.json");
   std::fstream settingsFile;
   if(fileExists) {

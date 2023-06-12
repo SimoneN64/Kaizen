@@ -93,13 +93,13 @@ struct PIF {
   PIF() = default;
   ~PIF() = default;
   void Reset();
-  void LoadMempak(std::string);
-  void LoadEeprom(SaveType, std::string);
+  void LoadMempak(const std::string&);
+  void LoadEeprom(SaveType, const std::string&);
   void ProcessCommands(Mem&);
   void InitDevices(SaveType);
   void CICChallenge();
-  void ExecutePIF(Mem& mem, Registers& regs);
-  void DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType);
+  static void ExecutePIF(Mem& mem, Registers& regs);
+  static void DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType);
   void UpdateController();
   bool ReadButtons(u8*) const;
   void ControllerID(u8*) const;

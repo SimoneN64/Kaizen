@@ -85,13 +85,13 @@ struct VI {
   VIStatus status{};
   VIBurst burst{};
   u32 vburst{};
-  u32 origin, width, current;
-  u32 vsync, hsync, intr;
+  u32 origin{}, width{}, current{};
+  u32 vsync{}, hsync{}, intr{};
   AxisStart hstart{}, vstart{};
   bool isPal = false;
   int swaps{};
-  int numHalflines;
-  int numFields;
-  int cyclesPerHalfline;
+  int numHalflines{};
+  int numFields{};
+  int cyclesPerHalfline{};
 };
 } // backend

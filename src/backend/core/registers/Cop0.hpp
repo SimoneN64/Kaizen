@@ -203,34 +203,34 @@ struct Cop0 {
   Cop0();
 
   u32 GetReg32(u8);
-  u64 GetReg64(u8);
+  u64 GetReg64(u8) const;
 
   void SetReg32(u8, u32);
   void SetReg64(u8, u64);
 
   void Reset();
 
-  bool kernel_mode;
-  bool supervisor_mode;
-  bool user_mode;
-  bool is_64bit_addressing;
-  bool llbit;
+  bool kernel_mode{};
+  bool supervisor_mode{};
+  bool user_mode{};
+  bool is_64bit_addressing{};
+  bool llbit{};
 
   PageMask pageMask{};
   EntryHi entryHi{};
   EntryLo entryLo0{}, entryLo1{};
-  u32 index;
+  u32 index{};
   Cop0Context context{};
-  u32 wired, r7{};
+  u32 wired{}, r7{};
   u64 badVaddr{}, count{};
   u32 compare{};
   Cop0Status status{};
   Cop0Cause cause{};
-  s64 EPC;
-  u32 PRId, Config, LLAddr{}, WatchLo{}, WatchHi{};
+  s64 EPC{};
+  u32 PRId{}, Config{}, LLAddr{}, WatchLo{}, WatchHi{};
   Cop0XContext xcontext{};
   u32 r21{}, r22{}, r23{}, r24{}, r25{}, ParityError{}, CacheError{}, TagLo{}, TagHi{};
-  s64 ErrorEPC;
+  s64 ErrorEPC{};
   u32 r31{};
   TLBEntry tlb[32]{};
   TLBError tlbError = NONE;

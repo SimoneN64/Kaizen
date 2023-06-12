@@ -12,7 +12,7 @@ void Flash::Reset() {
   }
 }
 
-void Flash::Load(SaveType saveType, std::string path) {
+void Flash::Load(SaveType saveType, const std::string& path) {
   if(saveType == SAVE_FLASH_1m) {
     flashPath = fs::path(path).replace_extension(".flash").string();
     std::error_code error;

@@ -9,7 +9,7 @@
 VkInstance instance{};
 namespace fs = std::filesystem;
 
-Window::Window(n64::Core& core) : settings(core) {
+Window::Window(n64::Core& core) : settings() {
   InitSDL();
   InitParallelRDP(core.cpu.mem.GetRDRAM(), window);
   InitImgui();

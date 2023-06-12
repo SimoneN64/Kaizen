@@ -127,12 +127,12 @@ struct RSP {
   auto Read(u32 addr) -> u32;
   void Write(Mem& mem, Registers& regs, u32 addr, u32 value);
   void Exec(Registers& regs, Mem& mem, u32 instr);
-  SPStatus spStatus;
+  SPStatus spStatus{};
   u16 oldPC{}, pc{}, nextPC{};
   SPDMASPAddr spDMASPAddr{};
   SPDMADRAMAddr spDMADRAMAddr{};
-  SPDMASPAddr lastSuccessfulSPAddr;
-  SPDMADRAMAddr lastSuccessfulDRAMAddr;
+  SPDMASPAddr lastSuccessfulSPAddr{};
+  SPDMADRAMAddr lastSuccessfulDRAMAddr{};
   SPDMALen spDMALen{};
   u8 dmem[DMEM_SIZE]{}, imem[IMEM_SIZE]{};
   VPR vpr[32]{};

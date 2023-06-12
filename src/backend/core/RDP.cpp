@@ -72,7 +72,7 @@ void RDP::WriteStatus(MI& mi, Registers& regs, RSP& rsp, u32 val) {
     RunCommand(mi, regs, rsp);
   }
 }
-
+/*
 FORCE_INLINE void logCommand(u8 cmd) {
   switch(cmd) {
     case 0x08: Util::debug("Fill triangle"); break;
@@ -112,6 +112,7 @@ FORCE_INLINE void logCommand(u8 cmd) {
     case 0x3f: Util::debug("Set color image"); break;
   }
 }
+ */
 
 void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
   if (dpc.status.freeze) {

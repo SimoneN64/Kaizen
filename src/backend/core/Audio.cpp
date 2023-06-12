@@ -17,7 +17,7 @@ SDL_AudioDeviceID audioDev{};
 #define LockAudioMutex() SDL_LockMutex(audioStreamMutex)
 #define UnlockAudioMutex() SDL_UnlockMutex(audioStreamMutex)
 
-void audioCallback(void* userdata, Uint8* stream, int length) {
+void audioCallback(void*, Uint8* stream, int length) {
   int gotten = 0;
   LockAudioMutex();
   int available = SDL_AudioStreamAvailable(audioStream);

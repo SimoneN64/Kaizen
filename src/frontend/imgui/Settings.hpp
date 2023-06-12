@@ -6,12 +6,12 @@ namespace n64 { struct Core; }
 using namespace nlohmann;
 
 struct Settings {
-  Settings(n64::Core&);
+  Settings();
   ~Settings();
 
-  FORCE_INLINE float GetVolumeL() const { return volumeL; };
-  FORCE_INLINE float GetVolumeR() const { return volumeR; };
-  FORCE_INLINE bool GetLockChannels() const { return lockChannels; }
+  [[nodiscard]] FORCE_INLINE float GetVolumeL() const { return volumeL; };
+  [[nodiscard]] FORCE_INLINE float GetVolumeR() const { return volumeR; };
+  [[nodiscard]] FORCE_INLINE bool GetLockChannels() const { return lockChannels; }
 
   void RenderWidget(bool& show);
 private:

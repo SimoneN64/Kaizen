@@ -4,6 +4,7 @@
 #include <GameDB.hpp>
 #include <filesystem>
 #include <mio/mmap.hpp>
+#include <SFML/Network/Packet.hpp>
 
 namespace fs = std::filesystem;
 
@@ -64,6 +65,10 @@ struct JoybusDevice {
   JoybusType type{};
   AccessoryType accessoryType{};
   Controller controller{};
+
+  auto operator<<(const sf::Packet& packet) {
+
+  }
 };
 
 struct Mem;
@@ -100,7 +105,6 @@ struct PIF {
   void CICChallenge();
   static void ExecutePIF(Mem& mem, Registers& regs);
   static void DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType);
-  template <int port = 0>
   void PollController();
   void UpdateController();
   bool ReadButtons(u8*) const;

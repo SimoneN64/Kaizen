@@ -100,6 +100,8 @@ struct PIF {
   void CICChallenge();
   static void ExecutePIF(Mem& mem, Registers& regs);
   static void DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType);
+  template <int port = 0>
+  void PollController();
   void UpdateController();
   bool ReadButtons(u8*) const;
   void ControllerID(u8*) const;

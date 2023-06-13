@@ -11,7 +11,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y build-essential libgtk-3-dev libsdl2-dev git ninja-build nlohmann-json3-dev
-          sudo apt-get install -y vulkan-tools libvulkan1 libvulkan-dev vulkan-validationlayers-dev spirv-tools
+          sudo apt-get install -y vulkan-tools libvulkan1 libvulkan-dev vulkan-validationlayers-dev spirv-tools libsfml-dev
           git clone --recursive https://github.com/fmtlib/fmt
           cd fmt
           cmake -B build -DFMT_TEST=OFF
@@ -48,7 +48,7 @@ jobs:
           submodules: recursive
       - name: Setup dependencies
         run: |
-          vcpkg install sdl2[vulkan]:x64-windows fmt:x64-windows nlohmann-json:x64-windows mio:x64-windows
+          vcpkg install sdl2[vulkan]:x64-windows fmt:x64-windows nlohmann-json:x64-windows mio:x64-windows sfml:x64-windows
       - name: Build Kaizen
         run: |
           cmake -B build -T clangcl -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release -S src

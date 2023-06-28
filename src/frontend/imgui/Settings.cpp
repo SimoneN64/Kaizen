@@ -28,18 +28,23 @@ Settings::Settings() {
     settingsFile = std::fstream("resources/settings.json", std::fstream::in | std::fstream::out);
     settings = json::parse(settingsFile);
 
-    checkjsonentry(volumeR, float, "audio", "volumeR", 0.5);
-    checkjsonentry(volumeL, float, "audio", "volumeL", 0.5);
+    checkjsonentry(oldVolumeL, float, "audio", "volumeL", 0.5);
+    volumeL = oldVolumeL;
+    checkjsonentry(oldVolumeR, float, "audio", "volumeR", 0.5);
+    volumeR = oldVolumeR;
+    checkjsonentry(mute, bool, "audio", "mute", false);
     checkjsonentry(lockChannels, bool, "audio", "lockChannels", true);
   } else {
     settingsFile = std::fstream("resources/settings.json", std::fstream::trunc | std::fstream::in | std::fstream::out);
     settings["audio"]["volumeR"] = 0.5;
     settings["audio"]["volumeL"] = 0.5;
     settings["audio"]["lockChannels"] = true;
+    settings["audio"]["mute"] = false;
 
-    volumeR = 0.5;
-    volumeL = 0.5;
+    oldVolumeR = volumeR = 0.5;
+    oldVolumeL = volumeL = 0.5;
     lockChannels = true;
+    mute = false;
 
     settingsFile << settings;
   }
@@ -51,26 +56,21 @@ Settings::~Settings() {
   std::fstream settingsFile;
   if(fileExists) {
     settingsFile = std::fstream("resources/settings.json", std::fstream::trunc | std::fstream::out);
-
-    settings["audio"]["volumeR"] = volumeR;
-    settings["audio"]["volumeL"] = volumeL;
-    settings["audio"]["lockChannels"] = lockChannels;
-    settingsFile << settings;
   } else {
     settingsFile = std::fstream("resources/settings.json", std::fstream::out);
-
-    settings["audio"]["volumeR"] = volumeR;
-    settings["audio"]["volumeL"] = volumeL;
-    settings["audio"]["lockChannels"] = lockChannels;
-    settingsFile << settings;
   }
+
+  settings["audio"]["volumeR"] = oldVolumeR;
+  settings["audio"]["volumeL"] = oldVolumeL;
+  settings["audio"]["lockChannels"] = lockChannels;
+  settings["audio"]["mute"] = mute;
+  settingsFile << settings;
 
   settingsFile.close();
 }
 
 void Settings::RenderWidget(bool& show) {
   if(show) {
-    static float oldVolumeL = volumeL, oldVolumeR = volumeR;
     ImGui::OpenPopup("Settings");
     if(ImGui::BeginPopupModal("Settings", &show)) {
       enum class SelectedSetting { Audio, COUNT };

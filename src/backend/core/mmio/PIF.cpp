@@ -328,11 +328,11 @@ void PIF::EepromWrite(const u8* cmd, u8* res, const Mem& mem) {
 }
 
 void PIF::UpdateController() {
-  if(Netplay::connected) {
-    Util::panic("Netplay!!!");
-  } else {
+  //if(Netplay::connected) {
+  //  Util::panic("Netplay!!!");
+  //} else {
     PollController();
-  }
+  //}
 }
 
 void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {

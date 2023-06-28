@@ -3,5 +3,4 @@
 #include <PIF.hpp>
 
 namespace Netplay {
-extern bool connected;
 }

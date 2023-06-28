@@ -4,5 +4,4 @@
 #include <array>
 
 namespace Netplay {
-bool connected = false;
 }

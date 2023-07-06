@@ -14,6 +14,7 @@ Rewrite of my Nintendo 64 emulator "[shibumi](https://github.com/SimoneN64/shibu
 | [ Linux ](https://nightly.link/SimoneN64/Kaizen/workflows/build/master/kaizen-linux.zip)   |
 
 ## Sister projects
+- [**n64**](https://github.com/dillonb/n64): Low-level, fast, accurate and easy to use Nintendo 64 emulator
 - [**Panda3DS**](https://github.com/wheremyfoodat/Panda3DS): A new HLE Nintendo 3DS emulator
 - [**Dust**](https://github.com/kelpsyberry/dust): Nintendo DS emulator for desktop devices and the web, with debugging features and a focus on accuracy
 - [**SkyEmu**](https://github.com/skylersaleh/SkyEmu): A low-level GameBoy, GameBoy Color, GameBoy Advance and Nintendo DS emulator that is designed to be easy to use, cross platform and accurate

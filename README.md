@@ -18,6 +18,7 @@ Rewrite of my Nintendo 64 emulator "[shibumi](https://github.com/SimoneN64/shibu
 - [**Dust**](https://github.com/kelpsyberry/dust): Nintendo DS emulator for desktop devices and the web, with debugging features and a focus on accuracy
 - [**SkyEmu**](https://github.com/skylersaleh/SkyEmu): A low-level GameBoy, GameBoy Color, GameBoy Advance and Nintendo DS emulator that is designed to be easy to use, cross platform and accurate
 - [**NanoBoyAdvance**](https://github.com/nba-emu/NanoBoyAdvance): A Game Boy Advance emulator focusing on hardware research and cycle-accurate emulation
+- [**melonDS**](https://github.com/melonDS-emu/melonDS): "DS emulator, sorta"; a Nintendo DS emulator focused on accuracy and ease-of-use
 
 ## Build instructions:
 First clone the repository: `git clone --recursive https://github.com/SimoneN64/Kaizen`

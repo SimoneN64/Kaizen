@@ -4,7 +4,6 @@
 #include <GameDB.hpp>
 #include <filesystem>
 #include <mio/mmap.hpp>
-#include <SFML/Network/Packet.hpp>
 
 namespace fs = std::filesystem;
 
@@ -77,12 +76,6 @@ struct JoybusDevice {
   Controller controller{};
 
   JoybusDevice() = default;
-
-  explicit JoybusDevice(const u64& packet) {
-    type = static_cast<JoybusType>(packet >> offsetof(JoybusDevice, type));
-    accessoryType = static_cast<AccessoryType>((packet >> offsetof(JoybusDevice, accessoryType)) & 0xff);
-    controller = packet >> offsetof(JoybusDevice, controller);
-  }
 };
 
 struct Mem;

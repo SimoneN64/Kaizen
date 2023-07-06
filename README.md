@@ -13,6 +13,11 @@ Rewrite of my Nintendo 64 emulator "[shibumi](https://github.com/SimoneN64/shibu
 | [Windows](https://nightly.link/SimoneN64/Kaizen/workflows/build/master/kaizen-windows.zip) |
 | [ Linux ](https://nightly.link/SimoneN64/Kaizen/workflows/build/master/kaizen-linux.zip)   |
 
+## Sister projects
+- [**Panda3DS**](https://github.com/wheremyfoodat/Panda3DS): A new HLE Nintendo 3DS emulator
+- [**Dust**](https://github.com/kelpsyberry/dust): Nintendo DS emulator for desktop devices and the web, with debugging features and a focus on accuracy
+- [**SkyEmu**](https://github.com/skylersaleh/SkyEmu): A low-level GameBoy, GameBoy Color, GameBoy Advance and Nintendo DS emulator that is designed to be easy to use, cross platform and accurate
+- [**NanoBoyAdvance**](https://github.com/nba-emu/NanoBoyAdvance): A Game Boy Advance emulator focusing on hardware research and cycle-accurate emulation
 
 ## Build instructions:
 First clone the repository: `git clone --recursive https://github.com/SimoneN64/Kaizen`
@@ -79,7 +84,7 @@ This list will probably grow with time!
 
 - [Dillonb](https://github.com/Dillonb) and [KieronJ](https://github.com/KieronJ) for bearing with me and my recurring brainfarts, and for the support :heart:
 - [WhoBrokeTheBuild](https://github.com/WhoBrokeTheBuild) for the shader that allows letterboxing :rocket:
-- [Kelpsy](https://github.com/Kelpsy), [fleroviux](https://github.com/fleroviux), [Kim-Dewelski](https://github.com/Kim-Dewelski), [Peach](https://github.com/wheremyfoodat/),
+- [Kelpsy](https://github.com/kelpsyberry), [fleroviux](https://github.com/fleroviux), [Kim-Dewelski](https://github.com/Kim-Dewelski), [Peach](https://github.com/wheremyfoodat/),
   [kivan](https://github.com/kivan117), [liuk](https://github.com/liuk7071) and [Skyler](https://github.com/skylersaleh) for the general support and motivation :heart:
 - [Spec](https://github.com/spec-chum/) for help with testing on Windows, that helped form the final build instructions :heart:
 

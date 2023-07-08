@@ -13,6 +13,9 @@ Rewrite of my Nintendo 64 emulator "[shibumi](https://github.com/SimoneN64/shibu
 | [Windows](https://nightly.link/SimoneN64/Kaizen/workflows/build/master/kaizen-windows.zip) |
 | [ Linux ](https://nightly.link/SimoneN64/Kaizen/workflows/build/master/kaizen-linux.zip)   |
 
+## Socials
+We have a [Discord server](https://discord.gg/hxz6PPcM)
+
 ## Sister projects
 - [**n64**](https://github.com/dillonb/n64): Low-level, fast, accurate and easy to use Nintendo 64 emulator
 - [**Panda3DS**](https://github.com/wheremyfoodat/Panda3DS): A new HLE Nintendo 3DS emulator

@@ -56,7 +56,7 @@ void App::Run() {
           char *droppedDir = event.drop.file;
           if (droppedDir) {
             window.LoadROM(core, droppedDir);
-            free(droppedDir);
+            SDL_free(droppedDir);
           }
         } break;
       }

@@ -12,15 +12,6 @@ void App::Run() {
   n64::SI& si = core.cpu.mem.mmio.si;
 
   while (!window.done) {
-    if(core.romLoaded) {
-      if(!core.pause) {
-        core.Run(window.settings.GetVolumeL(), window.settings.GetVolumeR());
-      }
-      UpdateScreenParallelRdp(core, window, core.GetVI());
-    } else {
-      UpdateScreenParallelRdpNoGame(core, window);
-    }
-
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
       ImGui_ImplSDL2_ProcessEvent(&event);
@@ -29,7 +20,7 @@ void App::Run() {
           window.done = true;
           break;
         case SDL_WINDOWEVENT:
-          window.onClose(event);
+          window.handleEvents(event, core);
           break;
         case SDL_CONTROLLERDEVICEADDED: {
           const int index = event.cdevice.which;
@@ -59,6 +50,19 @@ void App::Run() {
             SDL_free(droppedDir);
           }
         } break;
+      }
+    }
+
+    if(core.romLoaded) {
+      if(!core.pause) {
+        core.Run(window.settings.GetVolumeL(), window.settings.GetVolumeR());
+      }
+      if(core.render) {
+        UpdateScreenParallelRdp(core, window, core.GetVI());
+      }
+    } else {
+      if(core.render) {
+        UpdateScreenParallelRdpNoGame(core, window);
       }
     }
   }

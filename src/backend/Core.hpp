@@ -19,6 +19,7 @@ struct Core {
   u32 breakpoint = 0;
 
   bool pause = true;
+  bool render = true;
   int cycles = 0;
   bool romLoaded = false;
   std::string rom;

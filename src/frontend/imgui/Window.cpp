@@ -15,9 +15,13 @@ Window::Window(n64::Core& core) : settings() {
   NFD::Init();
 }
 
-void Window::onClose(SDL_Event event) {
+void Window::handleEvents(SDL_Event event, n64::Core& core) {
   done = event.window.event == SDL_WINDOWEVENT_CLOSE
       && event.window.windowID == SDL_GetWindowID(window);
+
+  bool minimized = SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED;
+  core.pause = event.window.event == SDL_WINDOWEVENT_FOCUS_LOST || minimized;
+  core.render = !minimized;
 }
 
 static void check_vk_result(VkResult err) {
@@ -222,7 +226,7 @@ void Window::Render(n64::Core& core) {
 
   u32 ticks = SDL_GetTicks();
   static u32 lastFrame = 0;
-  if(!core.pause && lastFrame < ticks - 1000) {
+  if(!core.pause && core.romLoaded && lastFrame < ticks - 1000) {
     lastFrame = ticks;
     windowTitle += fmt::format("  | {:02d} VI/s", core.cpu.mem.mmio.vi.swaps);
     core.cpu.mem.mmio.vi.swaps = 0;

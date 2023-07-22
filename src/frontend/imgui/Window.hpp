@@ -14,7 +14,7 @@ struct Window {
   ~Window();
   ImDrawData* Present(n64::Core& core);
 
-  void onClose(SDL_Event event);
+  void handleEvents(SDL_Event event, n64::Core&);
   ImFont *uiFont{};
   Settings settings;
   void LoadROM(n64::Core& core, const std::string& path);

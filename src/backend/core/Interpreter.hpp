@@ -1,13 +1,14 @@
 #pragma once
 #include <Mem.hpp>
 #include <vector>
+#include "BaseCPU.hpp"
 
 namespace n64 {
 struct Core;
-struct Interpreter {
+struct Interpreter : BaseCPU {
   Interpreter() = default;
-  ~Interpreter() = default;
-  FORCE_INLINE int Step() {
+  ~Interpreter() override = default;
+  FORCE_INLINE int Step() override {
     CheckCompareInterrupt();
 
     regs.prevDelaySlot = regs.delaySlot;
@@ -35,7 +36,7 @@ struct Interpreter {
 
     return 1;
   }
-  void Reset();
+  void Reset() override;
   Registers regs;
   Mem mem;
 private:

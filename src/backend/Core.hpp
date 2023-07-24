@@ -14,7 +14,7 @@ struct Core {
   void LoadROM(const std::string&);
   void Run(float volumeL, float volumeR);
   void TogglePause() { pause = !pause; }
-  [[nodiscard]] VI& GetVI() { return cpu.mem.mmio.vi; }
+  [[nodiscard]] VI& GetVI() { return cpu->mem.mmio.vi; }
 
   u32 breakpoint = 0;
 
@@ -23,6 +23,6 @@ struct Core {
   int cycles = 0;
   bool romLoaded = false;
   std::string rom;
-  Interpreter cpu;
+  std::unique_ptr<BaseCPU> cpu;
 };
 }

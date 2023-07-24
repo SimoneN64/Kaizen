@@ -9,7 +9,7 @@ App::App() : window(core) {
 
 void App::Run() {
   SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
-  n64::SI& si = core.cpu.mem.mmio.si;
+  n64::SI& si = core.cpu->mem.mmio.si;
 
   while (!window.done) {
     SDL_Event event;

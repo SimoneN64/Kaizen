@@ -21,7 +21,7 @@ namespace fs = std::filesystem;
   } while(0)
 
 
-Settings::Settings() {
+Settings::Settings(n64::Core& core) {
   auto fileExists = fs::exists("resources/settings.json");
   std::fstream settingsFile;
   if(fileExists) {
@@ -34,19 +34,28 @@ Settings::Settings() {
     volumeR = oldVolumeR;
     checkjsonentry(mute, bool, "audio", "mute", false);
     checkjsonentry(lockChannels, bool, "audio", "lockChannels", true);
+    checkjsonentry(jit, bool, "cpu", "enableJIT", false);
   } else {
     settingsFile = std::fstream("resources/settings.json", std::fstream::trunc | std::fstream::in | std::fstream::out);
     settings["audio"]["volumeR"] = 0.5;
     settings["audio"]["volumeL"] = 0.5;
     settings["audio"]["lockChannels"] = true;
     settings["audio"]["mute"] = false;
+    settings["cpu"]["enableJIT"] = false;
 
     oldVolumeR = volumeR = 0.5;
     oldVolumeL = volumeL = 0.5;
     lockChannels = true;
     mute = false;
+    jit = false;
 
     settingsFile << settings;
+  }
+
+  if(jit) {
+    Util::panic("JIT is unimplemented!");
+  } else {
+    core.cpu = std::make_unique<n64::Interpreter>();
   }
   settingsFile.close();
 }
@@ -64,6 +73,7 @@ Settings::~Settings() {
   settings["audio"]["volumeL"] = oldVolumeL;
   settings["audio"]["lockChannels"] = lockChannels;
   settings["audio"]["mute"] = mute;
+  settings["cpu"]["enableJIT"] = jit;
   settingsFile << settings;
 
   settingsFile.close();
@@ -73,9 +83,9 @@ void Settings::RenderWidget(bool& show) {
   if(show) {
     ImGui::OpenPopup("Settings");
     if(ImGui::BeginPopupModal("Settings", &show)) {
-      enum class SelectedSetting { Audio, COUNT };
-      static SelectedSetting selectedSetting = SelectedSetting::Audio;
-      const char *categories[(int)SelectedSetting::COUNT] = { "Audio" };
+      enum class SelectedSetting { CPU, Audio, COUNT };
+      static SelectedSetting selectedSetting = SelectedSetting::CPU;
+      const char *categories[(int)SelectedSetting::COUNT] = { "CPU", "Audio" };
       CreateComboList("##", (int*)&selectedSetting, categories, (int)SelectedSetting::COUNT);
       ImGui::Separator();
       switch (selectedSetting) {
@@ -112,6 +122,9 @@ void Settings::RenderWidget(bool& show) {
             }
 
             break;
+        case SelectedSetting::CPU:
+          ImGui::Checkbox("Enable JIT", &jit);
+          break;
         case SelectedSetting::COUNT:
           Util::panic("BRUH");
       }

@@ -9,15 +9,15 @@ Core::Core() {
 }
 
 void Core::Stop() {
-  cpu.Reset();
-  cpu.mem.Reset();
+  cpu->Reset();
+  cpu->mem.Reset();
   pause = true;
   romLoaded = false;
 }
 
 void Core::LoadROM(const std::string& rom_) {
   rom = rom_;
-  cpu.Reset();
+  cpu->Reset();
   pause = false;
   romLoaded = true;
 
@@ -30,21 +30,21 @@ void Core::LoadROM(const std::string& rom_) {
     }
   }
 
-  cpu.mem.LoadROM(isArchive, rom);
-  GameDB::match(cpu.mem);
-  cpu.mem.mmio.vi.isPal = cpu.mem.IsROMPAL();
-  cpu.mem.mmio.si.pif.InitDevices(cpu.mem.saveType);
-  cpu.mem.mmio.si.pif.LoadMempak(rom);
-  cpu.mem.mmio.si.pif.LoadEeprom(cpu.mem.saveType, rom);
-  cpu.mem.flash.Load(cpu.mem.saveType, rom);
-  cpu.mem.LoadSRAM(cpu.mem.saveType, rom);
-  PIF::ExecutePIF(cpu.mem, cpu.regs);
+  cpu->mem.LoadROM(isArchive, rom);
+  GameDB::match(cpu->mem);
+  cpu->mem.mmio.vi.isPal = cpu->mem.IsROMPAL();
+  cpu->mem.mmio.si.pif.InitDevices(cpu->mem.saveType);
+  cpu->mem.mmio.si.pif.LoadMempak(rom);
+  cpu->mem.mmio.si.pif.LoadEeprom(cpu->mem.saveType, rom);
+  cpu->mem.flash.Load(cpu->mem.saveType, rom);
+  cpu->mem.LoadSRAM(cpu->mem.saveType, rom);
+  PIF::ExecutePIF(cpu->mem, cpu->regs);
 }
 
 void Core::Run(float volumeL, float volumeR) {
-  Mem& mem = cpu.mem;
+  Mem& mem = cpu->mem;
   MMIO& mmio = mem.mmio;
-  Registers& regs = cpu.regs;
+  Registers& regs = cpu->regs;
 
   for (int field = 0; field < mmio.vi.numFields; field++) {
     int frameCycles = 0;
@@ -56,7 +56,7 @@ void Core::Run(float volumeL, float volumeR) {
       }
 
       for(; cycles < mem.mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
-        int taken = cpu.Step();
+        int taken = cpu->Step();
         static int cpuSteps = 0;
         cpuSteps += taken;
         if(mmio.rsp.spStatus.halt) {
@@ -86,7 +86,7 @@ void Core::Run(float volumeL, float volumeR) {
       InterruptRaise(mmio.mi, regs, Interrupt::VI);
     }
 
-    mmio.ai.Step(cpu.mem, regs, frameCycles, volumeL, volumeR);
+    mmio.ai.Step(cpu->mem, regs, frameCycles, volumeL, volumeR);
     scheduler.tick(frameCycles, mem, regs);
   }
 }

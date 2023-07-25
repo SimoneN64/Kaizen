@@ -186,10 +186,14 @@ u8 Mem::Read8(n64::Registers &regs, u32 paddr) {
     switch (paddr) {
       case RDRAM_REGION:
         return mmio.rdp.rdram[BYTE_ADDRESS(paddr)];
-      case DMEM_REGION:
-        return mmio.rsp.dmem[BYTE_ADDRESS(paddr) - DMEM_REGION_START];
-      case IMEM_REGION:
-        return mmio.rsp.imem[BYTE_ADDRESS(paddr) - IMEM_REGION_START];
+      case RSP_MEM_REGION: {
+        u32 mirrAddr = paddr & 0x1FFF;
+        if(mirrAddr >= 0x1000) {
+          return mmio.rsp.imem[BYTE_ADDRESS(paddr) & IMEM_DSIZE];
+        } else {
+          return mmio.rsp.dmem[BYTE_ADDRESS(paddr) & DMEM_DSIZE];
+        }
+      }
       case 0x04040000 ... 0x040FFFFF:
       case 0x04100000 ... 0x041FFFFF:
       case 0x04600000 ... 0x048FFFFF:
@@ -251,10 +255,14 @@ u16 Mem::Read16(n64::Registers &regs, u32 paddr) {
     switch (paddr) {
       case RDRAM_REGION:
         return Util::ReadAccess<u16>(mmio.rdp.rdram, HALF_ADDRESS(paddr));
-      case DMEM_REGION:
-          return Util::ReadAccess<u16>(mmio.rsp.dmem, HALF_ADDRESS(paddr) & DMEM_DSIZE);
-      case IMEM_REGION:
+      case RSP_MEM_REGION: {
+        u32 mirrAddr = paddr & 0x1FFF;
+        if(mirrAddr >= 0x1000) {
           return Util::ReadAccess<u16>(mmio.rsp.imem, HALF_ADDRESS(paddr) & IMEM_DSIZE);
+        } else {
+          return Util::ReadAccess<u16>(mmio.rsp.dmem, HALF_ADDRESS(paddr) & DMEM_DSIZE);
+        }
+      }
       case MMIO_REGION:
         return mmio.Read(paddr);
       case CART_REGION_1_2:
@@ -287,10 +295,14 @@ u32 Mem::Read32(n64::Registers &regs, u32 paddr) {
     switch(paddr) {
       case RDRAM_REGION:
         return Util::ReadAccess<u32>(mmio.rdp.rdram, paddr);
-      case DMEM_REGION:
-        return Util::ReadAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE);
-      case IMEM_REGION:
-        return Util::ReadAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE);
+      case RSP_MEM_REGION: {
+        u32 mirrAddr = paddr & 0x1FFF;
+        if(mirrAddr >= 0x1000) {
+          return Util::ReadAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE);
+        } else {
+          return Util::ReadAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE);
+        }
+      }
       case MMIO_REGION:
         return mmio.Read(paddr);
       case CART_REGION_1_2:
@@ -329,10 +341,14 @@ u64 Mem::Read64(n64::Registers &regs, u32 paddr) {
     switch (paddr) {
       case RDRAM_REGION:
         return Util::ReadAccess<u64>(mmio.rdp.rdram, paddr);
-      case DMEM_REGION:
-        return Util::ReadAccess<u64>(mmio.rsp.dmem, paddr & DMEM_DSIZE);
-      case IMEM_REGION:
-        return Util::ReadAccess<u64>(mmio.rsp.imem, paddr & IMEM_DSIZE);
+      case RSP_MEM_REGION: {
+        u32 mirrAddr = paddr & 0x1FFF;
+        if(mirrAddr >= 0x1000) {
+          return Util::ReadAccess<u64>(mmio.rsp.imem, paddr & IMEM_DSIZE);
+        } else {
+          return Util::ReadAccess<u64>(mmio.rsp.dmem, paddr & DMEM_DSIZE);
+        }
+      }
       case MMIO_REGION:
         return mmio.Read(paddr);
       case CART_REGION_1_2:
@@ -365,16 +381,17 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
       case RDRAM_REGION:
         mmio.rdp.rdram[BYTE_ADDRESS(paddr)] = val;
         break;
-      case DMEM_REGION:
+      case RSP_MEM_REGION: {
+        u32 mirrAddr = paddr & 0x1FFF;
         val = val << (8 * (3 - (paddr & 3)));
-        paddr = (paddr & DMEM_DSIZE) & ~3;
-        Util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
-        break;
-      case IMEM_REGION:
-        val = val << (8 * (3 - (paddr & 3)));
-        paddr = (paddr & IMEM_SIZE) & ~3;
-        Util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_SIZE, val);
-        break;
+        if(mirrAddr >= 0x1000) {
+          paddr = (paddr & IMEM_SIZE) & ~3;
+          Util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
+        } else {
+          paddr = (paddr & DMEM_SIZE) & ~3;
+          Util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
+        }
+      } break;
       case MMIO_REGION:
         Util::panic("MMIO Write8!");
       case CART_REGION_1_2:
@@ -435,16 +452,17 @@ void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
       case RDRAM_REGION:
         Util::WriteAccess<u16>(mmio.rdp.rdram, HALF_ADDRESS(paddr), val);
         break;
-      case DMEM_REGION:
+      case RSP_MEM_REGION: {
+        u32 mirrAddr = paddr & 0x1FFF;
         val = val << (16 * !(paddr & 2));
-        paddr = (paddr & DMEM_SIZE) & ~3;
-        Util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
-        break;
-      case IMEM_REGION:
-        val = val << (16 * !(paddr & 2));
-        paddr = (paddr & IMEM_SIZE) & ~3;
-        Util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_SIZE, val);
-        break;
+        if(mirrAddr >= 0x1000) {
+          paddr = (paddr & IMEM_SIZE) & ~3;
+          Util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
+        } else {
+          paddr = (paddr & DMEM_SIZE) & ~3;
+          Util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
+        }
+      } break;
       case MMIO_REGION:
         Util::panic("MMIO Write16!");
       case CART_REGION_1_2:
@@ -484,12 +502,14 @@ void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
       case RDRAM_REGION:
         Util::WriteAccess<u32>(mmio.rdp.rdram, paddr, val);
         break;
-      case DMEM_REGION:
-        Util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
-        break;
-      case IMEM_REGION:
-        Util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_SIZE, val);
-        break;
+      case RSP_MEM_REGION: {
+        u32 mirrAddr = paddr & 0x1FFF;
+        if(mirrAddr >= 0x1000) {
+          Util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
+        } else {
+          Util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
+        }
+      } break;
       case MMIO_REGION:
         mmio.Write(*this, regs, paddr, val);
         break;
@@ -548,14 +568,15 @@ void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
       case RDRAM_REGION:
         Util::WriteAccess<u64>(mmio.rdp.rdram, paddr, val);
         break;
-      case DMEM_REGION:
+      case RSP_MEM_REGION: {
+        u32 mirrAddr = paddr & 0x1FFF;
         val >>= 32;
-        Util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
-        break;
-      case IMEM_REGION:
-        val >>= 32;
-        Util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_SIZE, val);
-        break;
+        if(mirrAddr >= 0x1000) {
+          Util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
+        } else {
+          Util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
+        }
+      } break;
       case MMIO_REGION:
         Util::panic("MMIO Write64!");
       case CART_REGION_1_2:

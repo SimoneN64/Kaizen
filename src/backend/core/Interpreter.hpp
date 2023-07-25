@@ -8,34 +8,7 @@ struct Core;
 struct Interpreter : BaseCPU {
   Interpreter() = default;
   ~Interpreter() override = default;
-  FORCE_INLINE int Step() override {
-    CheckCompareInterrupt();
-
-    regs.prevDelaySlot = regs.delaySlot;
-    regs.delaySlot = false;
-
-    u32 paddr = 0;
-    if(!MapVAddr(regs, LOAD, regs.pc, paddr)) {
-      HandleTLBException(regs, regs.pc);
-      FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, false);
-      return 0;
-    }
-
-    u32 instruction = mem.Read32(regs, paddr);
-
-    if(ShouldServiceInterrupt()) {
-      FireException(regs, ExceptionCode::Interrupt, 0, false);
-      return 0;
-    }
-
-    regs.oldPC = regs.pc;
-    regs.pc = regs.nextPC;
-    regs.nextPC += 4;
-
-    Exec(instruction);
-
-    return 1;
-  }
+  int Step() override;
   void Reset() override;
   Registers regs;
   Mem mem;

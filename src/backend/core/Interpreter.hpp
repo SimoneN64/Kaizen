@@ -10,8 +10,6 @@ struct Interpreter : BaseCPU {
   ~Interpreter() override = default;
   int Step() override;
   void Reset() override;
-  Registers regs;
-  Mem mem;
 private:
   u64 cop2Latch{};
   friend struct Cop1;

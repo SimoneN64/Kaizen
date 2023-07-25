@@ -187,13 +187,13 @@ u8 Mem::Read8(n64::Registers &regs, u32 paddr) {
       case RDRAM_REGION:
         return mmio.rdp.rdram[BYTE_ADDRESS(paddr)];
       case DMEM_REGION:
-          return mmio.rsp.dmem[BYTE_ADDRESS(paddr) - DMEM_REGION_START];
+        return mmio.rsp.dmem[BYTE_ADDRESS(paddr) - DMEM_REGION_START];
       case IMEM_REGION:
-          return mmio.rsp.imem[BYTE_ADDRESS(paddr) - IMEM_REGION_START];
+        return mmio.rsp.imem[BYTE_ADDRESS(paddr) - IMEM_REGION_START];
       case 0x04040000 ... 0x040FFFFF:
       case 0x04100000 ... 0x041FFFFF:
       case 0x04600000 ... 0x048FFFFF:
-      case 0x04300000 ...  0x044FFFFF:
+      case 0x04300000 ... 0x044FFFFF:
         Util::panic("MMIO Read8!\n");
       case AI_REGION: {
         u32 w = mmio.ai.Read(paddr & ~3);
@@ -288,9 +288,9 @@ u32 Mem::Read32(n64::Registers &regs, u32 paddr) {
       case RDRAM_REGION:
         return Util::ReadAccess<u32>(mmio.rdp.rdram, paddr);
       case DMEM_REGION:
-          return Util::ReadAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE);
+        return Util::ReadAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE);
       case IMEM_REGION:
-          return Util::ReadAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE);
+        return Util::ReadAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE);
       case MMIO_REGION:
         return mmio.Read(paddr);
       case CART_REGION_1_2:

@@ -1,6 +1,7 @@
 #pragma once
 #include <SDL2/SDL_events.h>
 #include <backend/core/Interpreter.hpp>
+#include <backend/core/JIT.hpp>
 #include <string>
 #include <SDL2/SDL_timer.h>
 

@@ -1,7 +1,24 @@
-#include <Core.hpp>
+#include <JIT.hpp>
 
 namespace n64 {
-int Interpreter::Step() {
+using namespace Xbyak;
+JIT::JIT() : CodeGenerator(0x80000) { }
+
+void JIT::Reset() {
+  reset();
+  regs.Reset();
+  mem.Reset();
+}
+
+bool JIT::ShouldServiceInterrupt() {
+
+}
+
+void JIT::CheckCompareInterrupt() {
+
+}
+
+int JIT::Step() {
   CheckCompareInterrupt();
 
   regs.prevDelaySlot = regs.delaySlot;
@@ -24,8 +41,6 @@ int Interpreter::Step() {
   regs.oldPC = regs.pc;
   regs.pc = regs.nextPC;
   regs.nextPC += 4;
-
-  Exec(instruction);
 
   return 1;
 }

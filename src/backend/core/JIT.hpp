@@ -2,40 +2,25 @@
 #include <Mem.hpp>
 #include <vector>
 #include <BaseCPU.hpp>
+#include <xbyak.h>
 
 namespace n64 {
-struct Core;
-struct Interpreter : BaseCPU {
-  Interpreter() = default;
-  ~Interpreter() override = default;
+using Fn = void(*)();
+
+struct JIT : BaseCPU, Xbyak::CodeGenerator {
+  JIT();
+  ~JIT() override = default;
   int Step() override;
+  void Reset() override;
 private:
-  u64 cop2Latch{};
-  friend struct Cop1;
+  bool ShouldServiceInterrupt() override;
+  void CheckCompareInterrupt() override;
 
-  [[nodiscard]] FORCE_INLINE bool ShouldServiceInterrupt() override {
-    bool interrupts_pending = (regs.cop0.status.im & regs.cop0.cause.interruptPending) != 0;
-    bool interrupts_enabled = regs.cop0.status.ie == 1;
-    bool currently_handling_exception = regs.cop0.status.exl == 1;
-    bool currently_handling_error = regs.cop0.status.erl == 1;
-
-    return interrupts_pending && interrupts_enabled &&
-           !currently_handling_exception && !currently_handling_error;
-  }
-
-  FORCE_INLINE void CheckCompareInterrupt() override {
-    regs.cop0.count++;
-    regs.cop0.count &= 0x1FFFFFFFF;
-    if(regs.cop0.count == (u64)regs.cop0.compare << 1) {
-      regs.cop0.cause.ip7 = 1;
-      UpdateInterrupt(mem.mmio.mi, regs);
-    }
-  }
+  Fn* blocks[0x80000]{};
 
   void cop2Decode(u32);
   void special(u32);
   void regimm(u32);
-  void Exec(u32);
   void add(u32);
   void addu(u32);
   void addi(u32);

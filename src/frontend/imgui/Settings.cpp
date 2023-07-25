@@ -53,7 +53,7 @@ Settings::Settings(n64::Core& core) {
   }
 
   if(jit) {
-    Util::panic("JIT is unimplemented!");
+    core.cpu = std::make_unique<n64::JIT>();
   } else {
     core.cpu = std::make_unique<n64::Interpreter>();
   }

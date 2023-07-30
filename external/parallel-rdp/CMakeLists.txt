@@ -22,9 +22,10 @@ add_library(parallel-rdp
   parallel-rdp-standalone/vulkan/render_pass.cpp
   parallel-rdp-standalone/vulkan/sampler.cpp
   parallel-rdp-standalone/vulkan/semaphore.cpp
+  parallel-rdp-standalone/vulkan/indirect_layout.cpp
   parallel-rdp-standalone/vulkan/semaphore_manager.cpp
   parallel-rdp-standalone/vulkan/shader.cpp
-  parallel-rdp-standalone/vulkan/texture_format.cpp
+  parallel-rdp-standalone/vulkan/texture/texture_format.cpp
   parallel-rdp-standalone/vulkan/wsi.cpp
   parallel-rdp-standalone/vulkan/wsi.hpp
   parallel-rdp-standalone/vulkan/memory_allocator.cpp

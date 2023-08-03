@@ -23,7 +23,8 @@ We have a [Discord server](https://discord.gg/hxz6PPcM)
 - [**SkyEmu**](https://github.com/skylersaleh/SkyEmu): A low-level GameBoy, GameBoy Color, GameBoy Advance and Nintendo DS emulator that is designed to be easy to use, cross platform and accurate
 - [**NanoBoyAdvance**](https://github.com/nba-emu/NanoBoyAdvance): A Game Boy Advance emulator focusing on hardware research and cycle-accurate emulation
 - [**melonDS**](https://github.com/melonDS-emu/melonDS): "DS emulator, sorta"; a Nintendo DS emulator focused on accuracy and ease-of-use
-- [**n64-emu**](https://github.com/kmc-jp/n64-emu): "Experimental N64 emulator"
+- [**n64-emu**](https://github.com/kmc-jp/n64-emu): Experimental N64 emulator
+- [**ares**](https://github.com/ares-emulator/ares): ares is a multi-system emulator that began development on October 14th, 2004. It focuses on accuracy and preservation.
 
 ## Build instructions:
 First clone the repository: `git clone --recursive https://github.com/SimoneN64/Kaizen`

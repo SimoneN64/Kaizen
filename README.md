@@ -14,7 +14,7 @@ Rewrite of my Nintendo 64 emulator "[shibumi](https://github.com/SimoneN64/shibu
 | [ Linux ](https://nightly.link/SimoneN64/Kaizen/workflows/build/master/kaizen-linux.zip)   |
 
 ## Socials
-We have a [Discord server](https://discord.gg/hxz6PPcM)
+We have a [Discord server](https://discord.gg/e5zYtJE8)
 
 ## Sister projects
 - [**n64**](https://github.com/dillonb/n64): Low-level, fast, accurate and easy to use Nintendo 64 emulator

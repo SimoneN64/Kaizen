@@ -81,6 +81,8 @@ struct JoybusDevice {
 struct Mem;
 struct Registers;
 
+// https://github.com/ares-emulator/ares/blob/master/ares/n64/cic/cic.cpp
+// https://github.com/ares-emulator/ares/blob/master/LICENSE
 constexpr u32 cicSeeds[] = {
   0x0,
   0x00043F3F, // CIC_NUS_6101

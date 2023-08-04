@@ -17,6 +17,8 @@ void AI::Reset() {
   dac = {44100, N64_CPU_FREQ / dac.freq, 16};
 }
 
+// https://github.com/ares-emulator/ares/blob/master/ares/n64/ai/io.cpp
+// https://github.com/ares-emulator/ares/blob/master/LICENSE
 auto AI::Read(u32 addr) const -> u32 {
   if(addr == 0x0450000C) {
     u32 val = 0;

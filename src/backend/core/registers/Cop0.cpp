@@ -323,7 +323,22 @@ ExceptionCode GetTLBExceptionCode(TLBError error, TLBAccessType accessType) {
   }
 }
 
-void Cop0::decode(Registers& regs, u32 instr) {
+template<class T>
+void Cop0::decode(T& cpu, u32 instr) {
+  if constexpr (std::is_same_v<decltype(cpu), Interpreter>()) {
+    decodeInterpreter(cpu.regs, instr);
+  } else if constexpr (std::is_same_v<decltype(cpu), JIT>()) {
+    decodeJIT(cpu, instr);
+  } else {
+    Util::panic("What the fuck did you just give me?!!");
+  }
+}
+
+void Cop0::decodeJIT(JIT& cpu, u32 instr) {
+
+}
+
+void Cop0::decodeInterp(Registers& regs, u32 instr) {
   u8 mask_cop = (instr >> 21) & 0x1F;
   u8 mask_cop2 = instr & 0x3F;
   switch(mask_cop) {

@@ -12,6 +12,8 @@ struct JIT : BaseCPU, Xbyak::CodeGenerator {
   ~JIT() override = default;
   int Step() override;
   void Reset() override;
+  friend struct Cop1;
+  friend struct Cop0;
 private:
   bool ShouldServiceInterrupt() override;
   void CheckCompareInterrupt() override;

@@ -130,8 +130,8 @@ void JIT::Emit(u32 instr) {
     case 0x0D: ori(instr); break;
     case 0x0E: xori(instr); break;
     case 0x0F: lui(instr); break;
-    case 0x10: regs.cop0.decode(regs, instr); break;
-    case 0x11: regs.cop1.decode(regs, *this, instr); break;
+    case 0x10: regs.cop0.decode(*this, instr); break;
+    case 0x11: regs.cop1.decode(*this, instr); break;
     case 0x12: cop2Decode(instr); break;
     case 0x14: bl(instr, regs.gpr[RS(instr)] == regs.gpr[RT(instr)]); break;
     case 0x15: bl(instr, regs.gpr[RS(instr)] != regs.gpr[RT(instr)]); break;

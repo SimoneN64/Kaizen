@@ -56,6 +56,7 @@ union FGR {
 };
 
 struct Interpreter;
+struct JIT;
 struct Registers;
 
 struct Cop1 {
@@ -65,8 +66,9 @@ struct Cop1 {
   FGR fgr[32]{};
   void Reset();
   template <class T> // either JIT or Interpreter
-  void decode(Registers&, T&, u32);
+  void decode(T&, u32);
   friend struct Interpreter;
+  friend struct JIT;
 
   template <typename T>
   FORCE_INLINE void SetReg(Cop0& cop0, u8 index, T value) {
@@ -136,8 +138,8 @@ struct Cop1 {
     return value;
   }
 private:
-  void decodeInterp(Registers&, Interpreter&, u32);
-  void decodeJIT(Registers&, JIT&, u32);
+  void decodeInterp(Interpreter&, u32);
+  void decodeJIT(JIT&, u32);
   void absd(Registers&, u32 instr);
   void abss(Registers&, u32 instr);
   void absw(Registers&, u32 instr);
@@ -188,14 +190,27 @@ private:
   void negd(Registers&, u32 instr);
   void sqrts(Registers&, u32 instr);
   void sqrtd(Registers&, u32 instr);
-  void lwc1(Registers&, Mem&, u32 instr);
-  void swc1(Registers&, Mem&, u32 instr);
-  void ldc1(Registers&, Mem&, u32 instr);
+  template<class T>
+  void lwc1(T&, Mem&, u32);
+  template<class T>
+  void swc1(T&, Mem&, u32);
+  template<class T>
+  void ldc1(T&, Mem&, u32);
+  template<class T>
+  void sdc1(T&, Mem&, u32);
+
+  void lwc1Interp(Registers&, Mem&, u32);
+  void swc1Interp(Registers&, Mem&, u32);
+  void ldc1Interp(Registers&, Mem&, u32);
+  void sdc1Interp(Registers&, Mem&, u32);
+  void lwc1JIT(JIT&, Mem&, u32);
+  void swc1JIT(JIT&, Mem&, u32);
+  void ldc1JIT(JIT&, Mem&, u32);
+  void sdc1JIT(JIT&, Mem&, u32);
   void mfc1(Registers&, u32 instr);
   void dmfc1(Registers&, u32 instr);
   void mtc1(Registers&, u32 instr);
   void dmtc1(Registers&, u32 instr);
-  void sdc1(Registers&, Mem&, u32 instr);
   void truncws(Registers&, u32 instr);
   void truncwd(Registers&, u32 instr);
   void truncls(Registers&, u32 instr);

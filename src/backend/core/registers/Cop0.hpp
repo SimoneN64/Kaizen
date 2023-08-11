@@ -35,7 +35,8 @@ namespace n64 {
 #define ENTRY_HI_MASK 0xC00000FFFFFFE0FF
 #define PAGEMASK_MASK 0x1FFE000
 
-struct Cpu;
+struct JIT;
+struct Interpreter;
 struct Registers;
 struct Mem;
 
@@ -235,7 +236,8 @@ struct Cop0 {
   TLBEntry tlb[32]{};
   TLBError tlbError = NONE;
   s64 openbus{};
-  void decode(Registers&, u32);
+  template <class T>
+  void decode(T&, u32);
   FORCE_INLINE u32 GetRandom() {
     int val = rand();
     int wired = GetWired();
@@ -255,11 +257,13 @@ private:
   FORCE_INLINE u32 GetWired() { return wired & 0x3F; }
   FORCE_INLINE u32 GetCount() { return u32(u64(count >> 1)); }
 
-  void mtc0(n64::Registers&, u32);
-  void dmtc0(n64::Registers&, u32);
-  void mfc0(n64::Registers&, u32);
-  void dmfc0(n64::Registers&, u32);
-  void eret(n64::Registers&);
+  void decodeInterp(Registers&, u32);
+  void decodeJIT(JIT&, u32);
+  void mtc0(Registers&, u32);
+  void dmtc0(Registers&, u32);
+  void mfc0(Registers&, u32);
+  void dmfc0(Registers&, u32);
+  void eret(Registers&);
 
   void tlbr();
   void tlbw(int);

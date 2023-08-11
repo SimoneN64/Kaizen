@@ -57,6 +57,7 @@ add_subdirectory(src/backend)
 add_subdirectory(src/backend/netplay)
 add_subdirectory(src/backend/core)
 add_subdirectory(src/backend/core/interpreter)
+add_subdirectory(src/backend/core/JIT)
 add_subdirectory(src/backend/core/mem)
 add_subdirectory(src/backend/core/mmio)
 add_subdirectory(src/backend/core/registers)
@@ -80,4 +81,4 @@ file(REMOVE
   ${PROJECT_BINARY_DIR}/resources/shader.vert)
 
 target_link_libraries(kaizen PUBLIC frontend frontend-imgui
-  discord-rpc imgui nfd parallel-rdp backend fmt::fmt mio::mio nlohmann_json::nlohmann_json core registers interpreter mem unarr mmio rsp SDL2::SDL2main SDL2::SDL2)
+  discord-rpc imgui nfd parallel-rdp backend fmt::fmt mio::mio nlohmann_json::nlohmann_json core registers jit interpreter mem unarr mmio rsp SDL2::SDL2main SDL2::SDL2)

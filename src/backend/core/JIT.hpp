@@ -21,6 +21,7 @@ private:
   void cop2Decode(u32);
   void special(u32);
   void regimm(u32);
+  void Emit(u32);
   void add(u32);
   void addu(u32);
   void addi(u32);

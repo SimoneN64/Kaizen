@@ -64,7 +64,8 @@ struct Cop1 {
   FCR31 fcr31{};
   FGR fgr[32]{};
   void Reset();
-  void decode(Registers&, Interpreter&, u32);
+  template <class T> // either JIT or Interpreter
+  void decode(Registers&, T&, u32);
   friend struct Interpreter;
 
   template <typename T>
@@ -135,6 +136,8 @@ struct Cop1 {
     return value;
   }
 private:
+  void decodeInterp(Registers&, Interpreter&, u32);
+  void decodeJIT(Registers&, JIT&, u32);
   void absd(Registers&, u32 instr);
   void abss(Registers&, u32 instr);
   void absw(Registers&, u32 instr);

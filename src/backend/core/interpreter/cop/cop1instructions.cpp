@@ -226,7 +226,7 @@ void Cop1::cvtld(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-FORCE_INLINE bool CalculateCondition(Registers& regs, T fs, T ft, CompConds cond) {
+inline bool CalculateCondition(Registers& regs, T fs, T ft, CompConds cond) {
   switch(cond) {
     case F: return false;
     case UN: return std::isnan(fs) || std::isnan(ft);

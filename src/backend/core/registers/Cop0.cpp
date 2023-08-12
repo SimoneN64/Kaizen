@@ -325,14 +325,17 @@ ExceptionCode GetTLBExceptionCode(TLBError error, TLBAccessType accessType) {
 
 template<class T>
 void Cop0::decode(T& cpu, u32 instr) {
-  if constexpr (std::is_same_v<decltype(cpu), Interpreter>()) {
-    decodeInterpreter(cpu.regs, instr);
-  } else if constexpr (std::is_same_v<decltype(cpu), JIT>()) {
+  if constexpr (std::is_same_v<decltype(cpu), Interpreter&>) {
+    decodeInterp(cpu.regs, instr);
+  } else if constexpr (std::is_same_v<decltype(cpu), JIT&>) {
     decodeJIT(cpu, instr);
   } else {
     Util::panic("What the fuck did you just give me?!!");
   }
 }
+
+template void Cop0::decode<Interpreter>(Interpreter&, u32);
+template void Cop0::decode<JIT>(JIT&, u32);
 
 void Cop0::decodeJIT(JIT& cpu, u32 instr) {
 

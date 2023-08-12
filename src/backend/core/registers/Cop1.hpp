@@ -203,10 +203,18 @@ private:
   void swc1Interp(Registers&, Mem&, u32);
   void ldc1Interp(Registers&, Mem&, u32);
   void sdc1Interp(Registers&, Mem&, u32);
-  void lwc1JIT(JIT&, Mem&, u32);
-  void swc1JIT(JIT&, Mem&, u32);
-  void ldc1JIT(JIT&, Mem&, u32);
-  void sdc1JIT(JIT&, Mem&, u32);
+  void lwc1JIT(JIT&, Mem&, u32) {
+    Util::panic("[JIT]: lwc1 not implemented!");
+  }
+  void swc1JIT(JIT&, Mem&, u32) {
+    Util::panic("[JIT]: swc1 not implemented!");
+  }
+  void ldc1JIT(JIT&, Mem&, u32) {
+    Util::panic("[JIT]: ldc1 not implemented!");
+  }
+  void sdc1JIT(JIT&, Mem&, u32) {
+    Util::panic("[JIT]: sdc1 not implemented!");
+  }
   void mfc1(Registers&, u32 instr);
   void dmfc1(Registers&, u32 instr);
   void mtc1(Registers&, u32 instr);

@@ -1,5 +1,7 @@
 #include <core/registers/Cop1.hpp>
 #include <core/registers/Registers.hpp>
+#include <core/Interpreter.hpp>
+#include <core/JIT.hpp>
 #include <core/Mem.hpp>
 #include <cmath>
 #include <cfenv>
@@ -445,47 +447,59 @@ void Cop1::floorwd(Registers& regs, u32 instr) {
 
 template<class T>
 void Cop1::lwc1(T &cpu, Mem &mem, u32 instr) {
-  if constexpr(std::is_same_v<decltype(cpu), Interpreter>()) {
+  if constexpr(std::is_same_v<decltype(cpu), Interpreter&>) {
     lwc1Interp(cpu.regs, mem, instr);
-  } else if(std::is_same_v<decltype(cpu), JIT>()) {
+  } else if constexpr (std::is_same_v<decltype(cpu), JIT&>) {
     lwc1JIT(cpu, mem, instr);
   } else {
     Util::panic("What the fuck did you just give me?!!");
   }
 }
 
+template void Cop1::lwc1<Interpreter>(Interpreter&, Mem&, u32);
+template void Cop1::lwc1<JIT>(JIT&, Mem&, u32);
+
 template<class T>
 void Cop1::swc1(T &cpu, Mem &mem, u32 instr) {
-  if constexpr(std::is_same_v<decltype(cpu), Interpreter>()) {
+  if constexpr(std::is_same_v<decltype(cpu), Interpreter&>) {
     swc1Interp(cpu.regs, mem, instr);
-  } else if(std::is_same_v<decltype(cpu), JIT>()) {
+  } else if constexpr (std::is_same_v<decltype(cpu), JIT&>) {
     swc1JIT(cpu, mem, instr);
   } else {
     Util::panic("What the fuck did you just give me?!!");
   }
 }
 
+template void Cop1::swc1<Interpreter>(Interpreter&, Mem&, u32);
+template void Cop1::swc1<JIT>(JIT&, Mem&, u32);
+
 template<class T>
 void Cop1::ldc1(T &cpu, Mem &mem, u32 instr) {
-  if constexpr(std::is_same_v<decltype(cpu), Interpreter>()) {
+  if constexpr(std::is_same_v<decltype(cpu), Interpreter&>) {
     ldc1Interp(cpu.regs, mem, instr);
-  } else if(std::is_same_v<decltype(cpu), JIT>()) {
+  } else if constexpr (std::is_same_v<decltype(cpu), JIT&>) {
     ldc1JIT(cpu, mem, instr);
   } else {
     Util::panic("What the fuck did you just give me?!!");
   }
 }
 
+template void Cop1::ldc1<Interpreter>(Interpreter&, Mem&, u32);
+template void Cop1::ldc1<JIT>(JIT&, Mem&, u32);
+
 template<class T>
 void Cop1::sdc1(T &cpu, Mem &mem, u32 instr) {
-  if constexpr(std::is_same_v<decltype(cpu), Interpreter>()) {
+  if constexpr(std::is_same_v<decltype(cpu), Interpreter&>) {
     sdc1Interp(cpu.regs, mem, instr);
-  } else if(std::is_same_v<decltype(cpu), JIT>()) {
+  } else if constexpr (std::is_same_v<decltype(cpu), JIT&>) {
     sdc1JIT(cpu, mem, instr);
   } else {
     Util::panic("What the fuck did you just give me?!!");
   }
 }
+
+template void Cop1::sdc1<Interpreter>(Interpreter&, Mem&, u32);
+template void Cop1::sdc1<JIT>(JIT&, Mem&, u32);
 
 void Cop1::lwc1Interp(Registers& regs, Mem& mem, u32 instr) {
   if(!regs.cop0.status.cu1) {

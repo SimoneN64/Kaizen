@@ -17,14 +17,17 @@ void Cop1::Reset() {
 
 template <class T>
 void Cop1::decode(T& cpu, u32 instr) {
-  if constexpr (std::is_same_v<decltype(cpu), Interpreter>()) {
+  if constexpr (std::is_same_v<decltype(cpu), Interpreter&>) {
     decodeInterp(cpu, instr);
-  } else if constexpr (std::is_same_v<decltype(cpu), JIT>()) {
+  } else if constexpr (std::is_same_v<decltype(cpu), JIT&>) {
     decodeJIT(cpu, instr);
   } else {
     Util::panic("What the fuck did you just give me?!");
   }
 }
+
+template void Cop1::decode<Interpreter>(Interpreter&, u32);
+template void Cop1::decode<JIT>(JIT&, u32);
 
 void Cop1::decodeInterp(Interpreter &cpu, u32 instr) {
   Registers &regs = cpu.regs;

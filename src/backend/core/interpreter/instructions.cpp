@@ -256,16 +256,17 @@ void Interpreter::ll(u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
   } else {
+    s32 result = mem.Read32(regs, physical);
     if ((address & 0b11) > 0) {
       FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
       return;
-    } else {
-      regs.gpr[RT(instr)] = (s32)mem.Read32(regs, physical);
     }
-  }
+    
+    regs.gpr[RT(instr)] = result;
 
-  regs.cop0.llbit = true;
-  regs.cop0.LLAddr = physical >> 4;
+    regs.cop0.llbit = true;
+    regs.cop0.LLAddr = physical >> 4;
+  }
 }
 
 void Interpreter::lwl(u32 instr) {

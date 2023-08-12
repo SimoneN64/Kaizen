@@ -15,8 +15,30 @@ struct JIT : BaseCPU, Xbyak::CodeGenerator {
   friend struct Cop1;
   friend struct Cop0;
 private:
+  int cycles = 0;
   bool ShouldServiceInterrupt() override;
   void CheckCompareInterrupt() override;
+  Fn Recompile();
+
+  bool isStable(u32 instr) {
+    switch(instr) {
+      default: return false;
+    }
+  }
+
+  FORCE_INLINE void prologue() {
+    const Xbyak::Reg64 allRegs[]{rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15};
+    for(auto r : allRegs) {
+      push(r);
+    }
+  }
+
+  FORCE_INLINE void epilogue() {
+    const Xbyak::Reg64 allRegs[]{r15, r14, r13, r12, r11, r10, r9, r8, rdi, rsi, rbp, rsp, rbx, rdx, rcx, rax};
+    for(auto r : allRegs) {
+      pop(r);
+    }
+  }
 
   Fn* blocks[0x80000]{};
 

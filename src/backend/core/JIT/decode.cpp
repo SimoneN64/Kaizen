@@ -159,14 +159,14 @@ void JIT::Emit(u32 instr) {
     case 0x2E: swr(instr); break;
     case 0x2F: break; // CACHE
     case 0x30: ll(instr); break;
-    case 0x31: regs.cop1.lwc1(regs, mem, instr); break;
+    case 0x31: regs.cop1.lwc1(*this, mem, instr); break;
     case 0x34: lld(instr); break;
-    case 0x35: regs.cop1.ldc1(regs, mem, instr); break;
+    case 0x35: regs.cop1.ldc1(*this, mem, instr); break;
     case 0x37: ld(instr); break;
     case 0x38: sc(instr); break;
-    case 0x39: regs.cop1.swc1(regs, mem, instr); break;
+    case 0x39: regs.cop1.swc1(*this, mem, instr); break;
     case 0x3C: scd(instr); break;
-    case 0x3D: regs.cop1.sdc1(regs, mem, instr); break;
+    case 0x3D: regs.cop1.sdc1(*this, mem, instr); break;
     case 0x3F: sd(instr); break;
     default:
       Util::panic("Unimplemented instruction {:02X} ({:08X}) (pc: {:016X})", mask, instr, (u64)regs.oldPC);

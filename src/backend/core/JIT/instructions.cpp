@@ -58,23 +58,37 @@ void JIT::daddiu(u32 instr) {
 }
 
 void JIT::div(u32 instr) {
+  movsxd(rax, dword[rdi + offsetof(Registers, gpr[RS(instr)])]); // dividend
+  movsxd(rcx, dword[rdi + offsetof(Registers, gpr[RS(instr)])]); // divisor
+  cmp(rcx, 0);
+  je("divisor==0");
 
+  CodeGenerator::div(rcx);
+  mov(qword[rdi + offsetof(Registers, lo)], eax);
+  mov(qword[rdi + offsetof(Registers, hi)], edx);
+
+  L("divisor==0");
+    mov(qword[rdi + offsetof(Registers, hi)], rax);
+    cmp(rax, 0);
+    jge("dividend>=0");
+    mov(qword[rdi + offsetof(Registers, lo)], s64(1));
+    L("dividend>=0");
+      mov(qword[rdi + offsetof(Registers, lo)], s64(-1));
 }
 
 void JIT::divu(u32 instr) {
-  mov(rax, dword[rdi + offsetof(Registers, gpr[RS(instr)])]);
-  mov(rcx, dword[rdi + offsetof(Registers, gpr[RS(instr)])]);
+  movsxd(rax, dword[rdi + offsetof(Registers, gpr[RS(instr)])]); // dividend
+  movsxd(rcx, dword[rdi + offsetof(Registers, gpr[RS(instr)])]); // divisor
   cmp(rcx, 0);
-  je("");
-  if(divisor == 0) {
-    regs.lo = -1;
-    regs.hi = (s32)dividend;
-  } else {
-    s32 quotient = (s32)(dividend / divisor);
-    s32 remainder = (s32)(dividend % divisor);
-    regs.lo = quotient;
-    regs.hi = remainder;
-  }
+  je("divisor==0");
+
+  CodeGenerator::div(rcx);
+  mov(qword[rdi + offsetof(Registers, lo)], eax);
+  mov(qword[rdi + offsetof(Registers, hi)], edx);
+
+  L("divisor==0");
+    mov(qword[rdi + offsetof(Registers, hi)], rax);
+    mov(qword[rdi + offsetof(Registers, lo)], -1);
 }
 
 void JIT::ddiv(u32 instr) {
@@ -159,9 +173,10 @@ void JIT::bllink(u32 instr, bool cond) {
 }
 
 void JIT::lui(u32 instr) {
-  u64 val = s64((s16)instr);
+  u64 val = s64(s16(instr));
   val <<= 16;
-  regs.gpr[RT(instr)] = val;
+  mov(qword[rdi + offsetof(Registers, gpr[RT(instr)])],
+      val);
 }
 
 void JIT::lb(u32 instr) {

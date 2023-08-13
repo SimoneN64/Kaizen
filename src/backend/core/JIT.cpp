@@ -35,14 +35,16 @@ Fn JIT::Recompile() {
   cycles = 0;
   prologue();
   while(stable) {
+    mov(rdi, u64(this) + offsetof(JIT, regs));
+    cycles++;
     CheckCompareInterrupt();
 
-    regs.prevDelaySlot = regs.delaySlot;
-    regs.delaySlot = false;
-\
+    mov(rax, byte[rdi + offsetof(Registers, delaySlot)]);
+    mov(byte[rdi + offsetof(Registers, prevDelaySlot)], rax);
+    mov(byte[rdi + offsetof(Registers, delaySlot)], 0);
+
     u32 paddr = 0;
     if (!MapVAddr(regs, LOAD, regs.pc, paddr)) {
-      mov(rdi, u64(this) + offsetof(JIT, regs));
       mov(rsi, regs.pc);
       push(rax);
       call(HandleTLBException);
@@ -51,28 +53,33 @@ Fn JIT::Recompile() {
       CodeGenerator::xor_(rcx, rcx);
       push(rax);
       call(FireException);
-      return getCode<Fn>();
+      goto _epilogue;
     }
 
     u32 instr = mem.Read32(regs, paddr);
     stable = isStable(instr);
+    Emit(instr);
 
     if (ShouldServiceInterrupt()) {
-      mov(rdi, u64(this) + offsetof(JIT, regs));
       mov(rsi, u64(ExceptionCode::Interrupt));
       CodeGenerator::xor_(rdx, rdx);
       CodeGenerator::xor_(rcx, rcx);
       push(rax);
       call(FireException);
-      return getCode<Fn>();
+      goto _epilogue;
     }
 
-    regs.oldPC = regs.pc;
-    regs.pc = regs.nextPC;
-    regs.nextPC += 4;
+    mov(rax, qword[rdi + offsetof(Registers, pc)]);
+    mov(qword[rdi + offsetof(Registers, oldPC)], rax);
+    mov(rax, qword[rdi + offsetof(Registers, nextPC)]);
+    mov(qword[rdi + offsetof(Registers, pc)], rax);
+    CodeGenerator::add(qword[rdi + offsetof(Registers, nextPC)], 4);
   }
-
+_epilogue:
   epilogue();
+  mov(rax, cycles);
+  ready();
+  return getCode<Fn>();
 }
 
 int JIT::Step() {
@@ -85,7 +92,6 @@ int JIT::Step() {
     blocks[regs.pc >> 20][regs.pc & 0xfff] = Recompile();
   }
 
-  blocks[regs.pc >> 20][regs.pc & 0xfff]();
-  return cycles;
+  return blocks[regs.pc >> 20][regs.pc & 0xfff]();
 }
 }

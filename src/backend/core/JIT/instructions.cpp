@@ -6,105 +6,66 @@
 
 namespace n64 {
 void JIT::add(u32 instr) {
-  u32 rs = (s32)regs.gpr[RS(instr)];
-  u32 rt = (s32)regs.gpr[RT(instr)];
-  u32 result = rs + rt;
-  if(check_signed_overflow(rs, rt, result)) {
-    FireException(regs, ExceptionCode::Overflow, 0, true);
-  } else {
-    if(likely(RD(instr) != 0)) {
-      regs.gpr[RD(instr)] = s32(result);
-    }
+  if(likely(RD(instr) != 0)) {
+    movsx(eax, dword[rdi + offsetof(Registers, gpr[RS(instr)])]); // rs
+    movsx(ecx, dword[rdi + offsetof(Registers, gpr[RT(instr)])]); // rt
+    CodeGenerator::add(eax, ecx);
+    mov(dword[rdi + offsetof(Registers, gpr[RD(instr)])], eax); // rd
   }
 }
 
 void JIT::addu(u32 instr) {
-  if(likely(RD(instr) != 0)) {
-    s32 rs = (s32)regs.gpr[RS(instr)];
-    s32 rt = (s32)regs.gpr[RT(instr)];
-    s32 result = rs + rt;
-    regs.gpr[RD(instr)] = result;
-  }
+  add(instr);
 }
 
 void JIT::addi(u32 instr) {
-  u32 rs = regs.gpr[RS(instr)];
-  u32 imm = s32(s16(instr));
-  u32 result = rs + imm;
-  if(check_signed_overflow(rs, imm, result)) {
-    FireException(regs, ExceptionCode::Overflow, 0, true);
-  } else {
-    regs.gpr[RT(instr)] = s32(result);
+  if(likely(RT(instr) != 0)) {
+    movsx(eax, dword[rdi + offsetof(Registers, gpr[RS(instr)])]);
+    mov(ecx, s32(s16(instr)));
+    CodeGenerator::add(eax, ecx);
+    mov(dword[rdi + offsetof(Registers, gpr[RT(instr)])], eax);
   }
 }
 
 void JIT::addiu(u32 instr) {
-  s32 rs = (s32)regs.gpr[RS(instr)];
-  s16 imm = (s16)(instr);
-  s32 result = rs + imm;
-  regs.gpr[RT(instr)] = result;
+  addi(instr);
 }
 
 void JIT::dadd(u32 instr) {
-  u64 rs = regs.gpr[RS(instr)];
-  u64 rt = regs.gpr[RT(instr)];
-  u64 result = rt + rs;
-  if(check_signed_overflow(rs, rt, result)) {
-    FireException(regs, ExceptionCode::Overflow, 0, true);
-  } else {
-    if(likely(RD(instr) != 0)) {
-      regs.gpr[RD(instr)] = result;
-    }
+  if(likely(RD(instr) != 0)) {
+    mov(rax, qword[rdi + offsetof(Registers, gpr[RS(instr)])]); // rs
+    mov(rcx, qword[rdi + offsetof(Registers, gpr[RT(instr)])]); // rt
+    CodeGenerator::add(rax, rcx);
+    mov(qword[rdi + offsetof(Registers, gpr[RD(instr)])], rax); // rd
   }
 }
 
 void JIT::daddu(u32 instr) {
-  if(likely(RD(instr) != 0)) {
-    s64 rs = regs.gpr[RS(instr)];
-    s64 rt = regs.gpr[RT(instr)];
-    regs.gpr[RD(instr)] = rs + rt;
-  }
+  dadd(instr);
 }
 
 void JIT::daddi(u32 instr) {
-  u64 imm = s64(s16(instr));
-  u64 rs = regs.gpr[RS(instr)];
-  u64 result = imm + rs;
-  if(check_signed_overflow(rs, imm, result)) {
-    FireException(regs, ExceptionCode::Overflow, 0, true);
-  } else {
-    regs.gpr[RT(instr)] = result;
+  if(likely(RT(instr) != 0)) {
+    mov(rax, qword[rdi + offsetof(Registers, gpr[RS(instr)])]);
+    mov(rcx, s64(s16(instr)));
+    CodeGenerator::add(rax, rcx);
+    mov(qword[rdi + offsetof(Registers, gpr[RT(instr)])], rax);
   }
 }
 
 void JIT::daddiu(u32 instr) {
-  s16 imm = (s16)(instr);
-  s64 rs = regs.gpr[RS(instr)];
-  regs.gpr[RT(instr)] = rs + imm;
+  daddi(instr);
 }
 
 void JIT::div(u32 instr) {
-  s64 dividend = (s32)regs.gpr[RS(instr)];
-  s64 divisor = (s32)regs.gpr[RT(instr)];
 
-  if(divisor == 0) {
-    regs.hi = dividend;
-    if(dividend >= 0) {
-      regs.lo = s64(-1);
-    } else {
-      regs.lo = s64(1);
-    }
-  } else {
-    s32 quotient = dividend / divisor;
-    s32 remainder = dividend % divisor;
-    regs.lo = quotient;
-    regs.hi = remainder;
-  }
 }
 
 void JIT::divu(u32 instr) {
-  u32 dividend = regs.gpr[RS(instr)];
-  u32 divisor = regs.gpr[RT(instr)];
+  mov(rax, dword[rdi + offsetof(Registers, gpr[RS(instr)])]);
+  mov(rcx, dword[rdi + offsetof(Registers, gpr[RS(instr)])]);
+  cmp(rcx, 0);
+  je("");
   if(divisor == 0) {
     regs.lo = -1;
     regs.hi = (s32)dividend;

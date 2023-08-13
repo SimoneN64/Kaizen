@@ -3,9 +3,10 @@
 #include <vector>
 #include <BaseCPU.hpp>
 #include <xbyak.h>
+#include "CpuDefinitions.hpp"
 
 namespace n64 {
-using Fn = void(*)();
+using Fn = int(*)();
 
 struct JIT : BaseCPU, Xbyak::CodeGenerator {
   JIT();
@@ -21,8 +22,27 @@ private:
   Fn Recompile();
 
   bool isStable(u32 instr) {
-    switch(instr) {
-      default: return false;
+    u8 mask = (instr >> 26) & 0x3f;
+    switch(mask) {
+      case SPECIAL:
+        mask = instr & 0x3f;
+        switch(mask) {
+          case JR ... JALR:
+          case SYSCALL: case BREAK:
+          case TGE ... TNE:
+            return false;
+          default: return true;
+        }
+      case REGIMM:
+      case J ... BGTZ:
+      case BEQL ... BGTZL:
+        return false;
+      case COP1:
+        mask = (instr >> 16) & 0x1f;
+        if(mask >= 0 && mask <= 3) {
+          return false;
+        }
+      default: return true;
     }
   }
 

@@ -58,9 +58,15 @@ private:
     for(auto r : allRegs) {
       pop(r);
     }
+    mov(rax, cycles);
+    ret();
   }
 
   Fn* blocks[0x80000]{};
+
+  enum BranchCond {
+    LT, GT, GE, LE, EQ, NE
+  };
 
   void cop2Decode(u32);
   void special(u32);
@@ -72,12 +78,11 @@ private:
   void addiu(u32);
   void andi(u32);
   void and_(u32);
-  void branch(bool, s64);
-  void branch_likely(bool, s64);
-  void b(u32, bool);
-  void blink(u32, bool);
-  void bl(u32, bool);
-  void bllink(u32, bool);
+  void emitCondition(const std::string&, BranchCond);
+  void b(u32, Xbyak::Operand, Xbyak::Operand, BranchCond);
+  void blink(u32, Xbyak::Operand, Xbyak::Operand, BranchCond);
+  void bl(u32, Xbyak::Operand, Xbyak::Operand, BranchCond);
+  void bllink(u32, Xbyak::Operand, Xbyak::Operand, BranchCond);
   void dadd(u32);
   void daddu(u32);
   void daddi(u32);

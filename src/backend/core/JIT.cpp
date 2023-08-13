@@ -3,7 +3,7 @@
 
 namespace n64 {
 using namespace Xbyak;
-JIT::JIT() : CodeGenerator(0x80000) { }
+JIT::JIT() : CodeGenerator(0x80000, AutoGrow) { }
 
 void JIT::Reset() {
   reset();
@@ -77,7 +77,6 @@ Fn JIT::Recompile() {
   }
 _epilogue:
   epilogue();
-  mov(rax, cycles);
   ready();
   return getCode<Fn>();
 }

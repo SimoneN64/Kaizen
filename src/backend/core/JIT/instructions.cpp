@@ -59,7 +59,7 @@ void JIT::daddiu(u32 instr) {
 
 void JIT::div(u32 instr) {
   movsxd(rax, dword[rdi + offsetof(Registers, gpr[RS(instr)])]); // dividend
-  movsxd(rcx, dword[rdi + offsetof(Registers, gpr[RS(instr)])]); // divisor
+  movsxd(rcx, dword[rdi + offsetof(Registers, gpr[RT(instr)])]); // divisor
   cmp(rcx, 0);
   je("divisor==0");
 
@@ -78,7 +78,7 @@ void JIT::div(u32 instr) {
 
 void JIT::divu(u32 instr) {
   movsxd(rax, dword[rdi + offsetof(Registers, gpr[RS(instr)])]); // dividend
-  movsxd(rcx, dword[rdi + offsetof(Registers, gpr[RS(instr)])]); // divisor
+  movsxd(rcx, dword[rdi + offsetof(Registers, gpr[RT(instr)])]); // divisor
   cmp(rcx, 0);
   je("divisor==0");
 
@@ -94,67 +94,96 @@ void JIT::divu(u32 instr) {
 void JIT::ddiv(u32 instr) {
   s64 dividend = regs.gpr[RS(instr)];
   s64 divisor = regs.gpr[RT(instr)];
-  if (dividend == 0x8000000000000000 && divisor == 0xFFFFFFFFFFFFFFFF) {
-    regs.lo = dividend;
-    regs.hi = 0;
-  } else if(divisor == 0) {
-    regs.hi = dividend;
-    if(dividend >= 0) {
-      regs.lo = -1;
-    } else {
-      regs.lo = 1;
-    }
-  } else {
-    s64 quotient = dividend / divisor;
-    s64 remainder = dividend % divisor;
-    regs.lo = quotient;
-    regs.hi = remainder;
-  }
+  mov(rax, qword[rdi + offsetof(Registers, gpr[RS(instr)])]);
+  mov(rcx, qword[rdi + offsetof(Registers, gpr[RT(instr)])]);
+  mov(r8, 0x8000000000000000);
+  cmp(rax, r8);
+  jne("else");
+  mov(r8, 0xFFFFFFFFFFFFFFFF);
+  cmp(rcx, r8);
+  jne("else");
+  cmp(rcx, 0);
+  jne("else");
+  je("else if");
+  mov(qword[rdi + offsetof(Registers, lo)], rax);
+  mov(qword[rdi + offsetof(Registers, hi)], 0);
+  L("else if");
+    mov(qword[rdi + offsetof(Registers, hi)], rax);
+    cmp(rax, 0);
+    jge("dividend>=0");
+    mov(qword[rdi + offsetof(Registers, lo)], 1);
+    L("dividend>=0");
+      mov(qword[rdi + offsetof(Registers, lo)], -1);
+  L("else");
+  CodeGenerator::div(rcx);
+  mov(qword[rdi + offsetof(Registers, lo)], rax);
+  mov(qword[rdi + offsetof(Registers, hi)], rdx);
 }
 
 void JIT::ddivu(u32 instr) {
-  u64 dividend = regs.gpr[RS(instr)];
-  u64 divisor = regs.gpr[RT(instr)];
-  if(divisor == 0) {
-    regs.lo = -1;
-    regs.hi = (s64)dividend;
-  } else {
-    u64 quotient = dividend / divisor;
-    u64 remainder = dividend % divisor;
-    regs.lo = (s64)quotient;
-    regs.hi = (s64)remainder;
+  mov(rax, qword[rdi + offsetof(Registers, gpr[RS(instr)])]);
+  mov(rcx, qword[rdi + offsetof(Registers, gpr[RT(instr)])]);
+  cmp(rcx, 0);
+  je("divisor==0");
+  CodeGenerator::div(rcx);
+  mov(qword[rdi + offsetof(Registers, lo)], rax);
+  mov(qword[rdi + offsetof(Registers, hi)], rdx);
+  L("divisor==0");
+    mov(qword[rdi + offsetof(Registers, lo)], -1);
+    mov(qword[rdi + offsetof(Registers, hi)], rax);
+}
+
+void JIT::emitCondition(const std::string& name, BranchCond cond) {
+  switch(cond) {
+    case LT:
+      jnl(name);
+      break;
+    case GT:
+      jng(name);
+      break;
+    case GE:
+      jnge(name);
+      break;
+    case LE:
+      jnle(name);
+      break;
+    case EQ:
+      jne(name);
+      break;
+    case NE:
+      je(name);
+      break;
   }
 }
 
-void JIT::branch(bool cond, s64 address) {
-  regs.delaySlot = true;
-  if (cond) {
-    regs.nextPC = address;
-  }
-}
-
-void JIT::branch_likely(bool cond, s64 address) {
-  if (cond) {
-    regs.delaySlot = true;
-    regs.nextPC = address;
-  } else {
-    regs.SetPC64(regs.nextPC);
-  }
-}
-
-void JIT::b(u32 instr, bool cond) {
+void JIT::b(u32 instr, Xbyak::Operand op1, Xbyak::Operand op2, BranchCond cond) {
   s16 imm = instr;
   s64 offset = u64((s64)imm) << 2;
-  s64 address = regs.pc + offset;
-  branch(cond, address);
+
+  cmp(op1, op2);
+  emitCondition("false", cond);
+
+  mov(byte[rdi + offsetof(Registers, delaySlot)], 1);
+  mov(rax, qword[rdi + offsetof(Registers, pc)]);
+  CodeGenerator::add(rax, offset);
+  mov(qword[rdi + offsetof(Registers, nextPC)], rax);
+  L("false");
 }
 
-void JIT::blink(u32 instr, bool cond) {
-  regs.gpr[31] = regs.nextPC;
+void JIT::blink(u32 instr, Xbyak::Operand op1, Xbyak::Operand op2, BranchCond cond) {
   s16 imm = instr;
   s64 offset = u64((s64)imm) << 2;
-  s64 address = regs.pc + offset;
-  branch(cond, address);
+
+  cmp(op1, op2);
+  emitCondition("false", cond);
+
+  mov(byte[rdi + offsetof(Registers, delaySlot)], 1);
+  mov(rax, qword[rdi + offsetof(Registers, pc)]);
+  CodeGenerator::add(rax, offset);
+  mov(rcx, qword[rdi + offsetof(Registers, nextPC)]);
+  mov(qword[rdi + offsetof(Registers, gpr[31])], rcx);
+  mov(qword[rdi + offsetof(Registers, nextPC)], rax);
+  L("false");
 }
 
 void JIT::bl(u32 instr, bool cond) {

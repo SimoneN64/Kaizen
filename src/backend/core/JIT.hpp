@@ -7,6 +7,8 @@
 
 namespace n64 {
 using Fn = int(*)();
+#define GPR(x) qword[rdi + offsetof(Registers, gpr[(x)])]
+#define REG(ptr, member) ptr[rdi + offsetof(Registers, member)]
 
 struct JIT : BaseCPU, Xbyak::CodeGenerator {
   JIT();
@@ -79,6 +81,8 @@ private:
   void andi(u32);
   void and_(u32);
   void emitCondition(const std::string&, BranchCond);
+  void branch(Xbyak::Operand, Xbyak::Operand, s64, BranchCond);
+  void branch_likely(Xbyak::Operand, Xbyak::Operand, s64, BranchCond);
   void b(u32, Xbyak::Operand, Xbyak::Operand, BranchCond);
   void blink(u32, Xbyak::Operand, Xbyak::Operand, BranchCond);
   void bl(u32, Xbyak::Operand, Xbyak::Operand, BranchCond);

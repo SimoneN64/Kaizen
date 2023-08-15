@@ -3,7 +3,7 @@
 
 namespace n64 {
 using namespace Xbyak;
-JIT::JIT() : CodeGenerator(0x80000, AutoGrow) { }
+JIT::JIT() : CodeGenerator(32*1024*1024, AutoGrow) { }
 
 void JIT::Reset() {
   reset();

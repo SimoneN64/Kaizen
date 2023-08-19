@@ -166,7 +166,8 @@ void JIT::emitCondition(const std::string& name, BranchCond cond) {
   }
 }
 
-void JIT::branch(Xbyak::Operand op1, Xbyak::Operand op2, s64 offset, BranchCond cond) {
+template <class T>
+void JIT::branch(const Xbyak::Operand& op1, const T& op2, s64 offset, BranchCond cond) {
   cmp(op1, op2);
   emitCondition("false", cond);
 
@@ -177,7 +178,10 @@ void JIT::branch(Xbyak::Operand op1, Xbyak::Operand op2, s64 offset, BranchCond 
   L("false");
 }
 
-void JIT::branch_likely(Xbyak::Operand op1, Xbyak::Operand op2, s64 offset, BranchCond cond) {
+template void JIT::branch<Xbyak::Operand>(const Xbyak::Operand& op1, const Xbyak::Operand& op2, s64 offset, BranchCond cond);
+template void JIT::branch<int>(const Xbyak::Operand& op1, const int& op2, s64 offset, BranchCond cond);
+
+void JIT::branch_likely(const Xbyak::Operand& op1, const Xbyak::Operand& op2, s64 offset, BranchCond cond) {
   mov(rax, qword[rdi + offsetof(Registers, pc)]);
   cmp(op1, op2);
   emitCondition("false", cond);
@@ -196,13 +200,13 @@ void JIT::branch_likely(Xbyak::Operand op1, Xbyak::Operand op2, s64 offset, Bran
   L("exit");
 }
 
-void JIT::b(u32 instr, Xbyak::Operand op1, Xbyak::Operand op2, BranchCond cond) {
+void JIT::b(u32 instr, const Xbyak::Operand& op1, const Xbyak::Operand& op2, BranchCond cond) {
   s16 imm = instr;
   s64 offset = u64((s64)imm) << 2;
   branch(op1, op2, offset, cond);
 }
 
-void JIT::blink(u32 instr, Xbyak::Operand op1, Xbyak::Operand op2, BranchCond cond) {
+void JIT::blink(u32 instr, const Xbyak::Operand& op1, const Xbyak::Operand& op2, BranchCond cond) {
   s16 imm = instr;
   s64 offset = u64((s64)imm) << 2;
   mov(rcx, qword[rdi + offsetof(Registers, nextPC)]);
@@ -210,13 +214,13 @@ void JIT::blink(u32 instr, Xbyak::Operand op1, Xbyak::Operand op2, BranchCond co
   branch(op1, op2, offset, cond);
 }
 
-void JIT::bl(u32 instr, Xbyak::Operand op1, Xbyak::Operand op2, BranchCond cond) {
+void JIT::bl(u32 instr, const Xbyak::Operand& op1, const Xbyak::Operand& op2, BranchCond cond) {
   s16 imm = instr;
   s64 offset = u64((s64)imm) << 2;
   branch_likely(op1, op2, offset, cond);
 }
 
-void JIT::bllink(u32 instr, Xbyak::Operand op1, Xbyak::Operand op2, BranchCond cond) {
+void JIT::bllink(u32 instr, const Xbyak::Operand& op1, const Xbyak::Operand& op2, BranchCond cond) {
   mov(rcx, qword[rdi + offsetof(Registers, nextPC)]);
   mov(GPR(31), rcx);
   s16 imm = instr;

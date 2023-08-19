@@ -71,20 +71,44 @@ void JIT::regimm(u32 instr) {
   u8 mask = ((instr >> 16) & 0x1F);
   // 000r_rccc
   switch (mask) { // TODO: named constants for clearer code
-    case 0x00: b(instr, regs.gpr[RS(instr)] < 0); break;
-    case 0x01: b(instr, regs.gpr[RS(instr)] >= 0); break;
-    case 0x02: bl(instr, regs.gpr[RS(instr)] < 0); break;
-    case 0x03: bl(instr, regs.gpr[RS(instr)] >= 0); break;
+    case 0x00: {
+      mov(rax, GPR(RS(instr)));
+      b(instr, rax, 0, LT);
+    } break;
+    case 0x01: {
+      mov(rax, GPR(RS(instr)));
+      b(instr, rax, 0, GE);
+    } break;
+    case 0x02: {
+      mov(rax, GPR(RS(instr)));
+      bl(instr, rax, 0, LT);
+    } break;
+    case 0x03: {
+      mov(rax, GPR(RS(instr)));
+      bl(instr, rax, 0, GE);
+    } break;
     case 0x08: trap(regs.gpr[RS(instr)] >= s64(s16(instr))); break;
     case 0x09: trap(u64(regs.gpr[RS(instr)]) >= u64(s64(s16(instr)))); break;
     case 0x0A: trap(regs.gpr[RS(instr)] < s64(s16(instr))); break;
     case 0x0B: trap(u64(regs.gpr[RS(instr)]) < u64(s64(s16(instr)))); break;
     case 0x0C: trap(regs.gpr[RS(instr)] == s64(s16(instr))); break;
     case 0x0E: trap(regs.gpr[RS(instr)] != s64(s16(instr))); break;
-    case 0x10: blink(instr, regs.gpr[RS(instr)] < 0); break;
-    case 0x11: blink(instr, regs.gpr[RS(instr)] >= 0); break;
-    case 0x12: bllink(instr, regs.gpr[RS(instr)] < 0); break;
-    case 0x13: bllink(instr, regs.gpr[RS(instr)] >= 0); break;
+    case 0x10: {
+      mov(rax, GPR(RS(instr)));
+      blink(instr, rax, 0, LT);
+    } break;
+    case 0x11: {
+      mov(rax, GPR(RS(instr)));
+      blink(instr, rax, 0, GE);
+    } break;
+    case 0x12: {
+      mov(rax, GPR(RS(instr)));
+      bllink(instr, rax, 0, LT);
+    } break;
+    case 0x13: {
+      mov(rax, GPR(RS(instr)));
+      bllink(instr, rax, 0, GE);
+    } break;
     default:
       Util::panic("Unimplemented regimm {} {} ({:08X}) (pc: {:016X})", (mask >> 3) & 3, mask & 7, instr, (u64)regs.oldPC);
   }
@@ -115,13 +139,24 @@ void JIT::Emit(u32 instr) {
     case 0x01: regimm(instr); break;
     case 0x02: j(instr); break;
     case 0x03: jal(instr); break;
-    case 0x04: b(instr, regs.gpr[RS(instr)] == regs.gpr[RT(instr)]); break;
-    case 0x05: {
-      //fmt::print("RS: {:016X}, RT: {:016X}", (u64)regs.gpr[RS(instr)], (u64)regs.gpr[RT(instr)]);
-      b(instr, regs.gpr[RS(instr)] != regs.gpr[RT(instr)]);
+    case 0x04: {
+      mov(rax, GPR(RS(instr)));
+      mov(rcx, GPR(RT(instr)));
+      b(instr, rax, rcx, EQ);
     } break;
-    case 0x06: b(instr, regs.gpr[RS(instr)] <= 0); break;
-    case 0x07: b(instr, regs.gpr[RS(instr)] > 0); break;
+    case 0x05: {
+      mov(rax, GPR(RS(instr)));
+      mov(rcx, GPR(RT(instr)));
+      b(instr, rax, rcx, NE);
+    } break;
+    case 0x06: {
+      mov(rax, GPR(RS(instr)));
+      b(instr, rax, 0, LE);
+    } break;
+    case 0x07: {
+      mov(rax, GPR(RS(instr)));
+      b(instr, rax, 0, GT);
+    } break;
     case 0x08: addi(instr); break;
     case 0x09: addiu(instr); break;
     case 0x0A: slti(instr); break;

@@ -36,7 +36,18 @@ union FCR31 {
     unsigned:14;
   } __attribute__((__packed__));
 
-  u32 raw;
+  u32 read() const {
+    return (fs << 24) | (compare << 23) | (cause << 12) | (enable << 7) | (flag << 2) | rounding_mode;
+  }
+
+  void write(u32 val) {
+    fs = (val & 0x01000000) >> 24;
+    compare = (val & 0x00800000) >> 23;
+    cause = (val & 0x0003f000) >> 12;
+    enable = (val & 0x00000f80) >> 7;
+    flag = (val & 0x0000007c) >> 2;
+    rounding_mode = val & 3;
+  }
 };
 
 enum CompConds {
@@ -70,92 +81,133 @@ struct Cop1 {
   friend struct Interpreter;
   friend struct JIT;
 
-  template <typename T>
-  FORCE_INLINE void SetReg(Cop0& cop0, u8 index, T value) {
-    if constexpr(sizeof(T) == 4) {
+  template<typename T>
+  FORCE_INLINE T GetFGR_FR(Cop0& cop0, u8 r) {
+    if constexpr (std::is_same_v<T, u32> || std::is_same_v<T, s32>) {
       if (cop0.status.fr) {
-        fgr[index].lo = value;
+        return fgr[r].lo;
       } else {
-        if (index & 1) {
-          fgr[index & ~1].hi = value;
+        if (r & 1) {
+          return fgr[r & ~1].hi;
         } else {
-          fgr[index].lo = value;
+          return fgr[r].lo;
         }
       }
-    } else if constexpr(sizeof(T) == 8) {
-      if(!cop0.status.fr) {
-        index &= ~1;
+    } else if constexpr (std::is_same_v<T, u64> || std::is_same_v<T, s64>) {
+      if (!cop0.status.fr) {
+        // When this bit is not set, accessing odd registers is not allowed.
+        r &= ~1;
       }
 
-      fgr[index].raw = value;
+      return fgr[r].raw;
     }
   }
 
-  template <typename T>
-  FORCE_INLINE T GetReg(Cop0& cop0, u8 index) {
-    if constexpr(sizeof(T) == 4) {
-      if(cop0.status.fr) {
-        return fgr[index].lo;
+  template<typename T>
+  FORCE_INLINE void SetFGR_FR(Cop0& cop0, u8 r, T value) {
+    if constexpr (std::is_same_v<T, u32> || std::is_same_v<T, s32>) {
+      if (cop0.status.fr) {
+        fgr[r].lo = value;
       } else {
-        if (index & 1) {
-          return fgr[index & ~1].hi;
+        if (r & 1) {
+          fgr[r & ~1].hi = value;
         } else {
-          return fgr[index].lo;
+          fgr[r].lo = value;
         }
       }
-    } else if constexpr(sizeof(T) == 8) {
-      if(!cop0.status.fr) {
-        index &= ~1;
+    } else if constexpr (std::is_same_v<T, u64> || std::is_same_v<T, s64>) {
+      if (!cop0.status.fr) {
+        // When this bit is not set, accessing odd registers is not allowed.
+        r &= ~1;
       }
 
-      return fgr[index].raw;
+      fgr[r].raw = value;
+    }
+  }
+
+  template<typename T>
+  FORCE_INLINE void SetFGR(u8 r, T value) {
+    fgr[r].raw = value;
+  }
+
+  template<typename T>
+  FORCE_INLINE u64 GetFGR(u8 r) {
+    if constexpr (std::is_same_v<T, u32> || std::is_same_v<T, s32>) {
+      return fgr[r].lo;
+    } else if constexpr (std::is_same_v<T, u64> || std::is_same_v<T, s64>) {
+      return fgr[r].raw;
     }
   }
 
   template <typename T>
-  FORCE_INLINE void SetCop1Reg(Cop0& cop0, u8 index, T value) {
-    if constexpr (sizeof(T) == 4) {
-      u32 raw;
-      memcpy(&raw, &value, sizeof(T));
-      SetReg<u32>(cop0, index, raw);
-    } else if constexpr (sizeof(T) == 8) {
-      u64 raw;
-      memcpy(&raw, &value, sizeof(T));
-      SetReg<u64>(cop0, index, raw);
+  FORCE_INLINE T GetFGR_FS(Cop0& cop0, u8 fs) {
+    if constexpr (std::is_same_v<T, u32> || std::is_same_v<T, s32>) {
+      if (!cop0.status.fr) {
+        fs &= ~1;
+      }
+      return fgr[fs].lo;
+    } else if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
+      if (!cop0.status.fr) {
+        fs &= ~1;
+      }
+      return GetFGR_Raw<T>(fs);
     }
   }
 
   template <typename T>
-  FORCE_INLINE T GetCop1Reg(Cop0& cop0, u8 index) {
-    T value;
-    if constexpr (sizeof(T) == 4) {
-      u32 raw = GetReg<u32>(cop0, index);
-      memcpy(&value, &raw, sizeof(T));
-    } else if constexpr (sizeof(T) == 8) {
-      u64 raw = GetReg<u64>(cop0, index);
-      memcpy(&value, &raw, sizeof(T));
+  FORCE_INLINE T GetFGR_Raw(u8 r) {
+    if constexpr (std::is_same_v<T, float>) {
+      static_assert(sizeof(float) == sizeof(u32), "float and u32 need to both be 32 bits for this to work.");
+      auto rawvalue = GetFGR<u32>(r);
+      float floatvalue;
+      memcpy(&floatvalue, &rawvalue, sizeof(float));
+      return floatvalue;
+    } else if constexpr (std::is_same_v<T, double>) {
+      static_assert(sizeof(double) == sizeof(u64), "double and u64 need to both be 64 bits for this to work.");
+      double doublevalue;
+      auto rawvalue = GetFGR<u64>(r);
+      memcpy(&doublevalue, &rawvalue, sizeof(double));
+      return doublevalue;
     }
-    return value;
+  }
+
+  template <typename T>
+  FORCE_INLINE void SetFGR_Raw(u8 r, T val) {
+    if constexpr (std::is_same_v<T, float>) {
+      static_assert(sizeof(float) == sizeof(u32), "float and u32 need to both be 32 bits for this to work.");
+
+      u32 rawvalue;
+      memcpy(&rawvalue, &val, sizeof(float));
+      SetFGR<u32>(r, rawvalue);
+    } else if constexpr (std::is_same_v<T, double>) {
+      static_assert(sizeof(double) == sizeof(u64), "double and u64 need to both be 64 bits for this to work.");
+
+      u64 rawvalue;
+      memcpy(&rawvalue, &val, sizeof(double));
+      SetFGR<u64>(r, rawvalue);
+    }
+  }
+
+  template <typename T>
+  FORCE_INLINE T GetFGR_FT(u8 ft) {
+    return GetFGR_Raw<T>(ft);
   }
 private:
   void decodeInterp(Interpreter&, u32);
   void decodeJIT(JIT&, u32);
   void absd(Registers&, u32 instr);
   void abss(Registers&, u32 instr);
-  void absw(Registers&, u32 instr);
-  void absl(Registers&, u32 instr);
   void adds(Registers&, u32 instr);
   void addd(Registers&, u32 instr);
   void subs(Registers&, u32 instr);
   void subd(Registers&, u32 instr);
-  void subw(Registers&, u32 instr);
-  void subl(Registers&, u32 instr);
   void ceills(Registers&, u32 instr);
   void ceilws(Registers&, u32 instr);
   void ceilld(Registers&, u32 instr);
   void ceilwd(Registers&, u32 instr);
   void cfc1(Registers&, u32 instr) const;
   void ctc1(Registers&, u32 instr);
+  void unimplemented(Registers&);
   void roundls(Registers&, u32 instr);
   void roundld(Registers&, u32 instr);
   void roundws(Registers&, u32 instr);
@@ -180,12 +232,8 @@ private:
   void divd(Registers&, u32 instr);
   void muls(Registers&, u32 instr);
   void muld(Registers&, u32 instr);
-  void mulw(Registers&, u32 instr);
-  void mull(Registers&, u32 instr);
   void movs(Registers&, u32 instr);
   void movd(Registers&, u32 instr);
-  void movw(Registers&, u32 instr);
-  void movl(Registers&, u32 instr);
   void negs(Registers&, u32 instr);
   void negd(Registers&, u32 instr);
   void sqrts(Registers&, u32 instr);

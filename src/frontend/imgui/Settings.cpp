@@ -29,10 +29,10 @@ Settings::Settings(n64::Core& core) {
     settings = json::parse(settingsFile);
 
     checkjsonentry(oldVolumeL, float, "audio", "volumeL", 0.5);
-    volumeL = oldVolumeL;
     checkjsonentry(oldVolumeR, float, "audio", "volumeR", 0.5);
-    volumeR = oldVolumeR;
     checkjsonentry(mute, bool, "audio", "mute", false);
+    volumeL = mute ? 0 : oldVolumeL;
+    volumeR = mute ? 0 : oldVolumeR;
     checkjsonentry(lockChannels, bool, "audio", "lockChannels", true);
     checkjsonentry(jit, bool, "cpu", "enableJIT", false);
   } else {

@@ -56,9 +56,6 @@ static FORCE_INLINE constexpr u32 GetVideoFrequency(bool pal) {
 #define ELEMENT_INDEX(i) (7 - (i))
 #define BYTE_INDEX(i)   (15 - (i))
 
-#define unlikely(exp) __builtin_expect(exp, 0)
-#define likely(exp) __builtin_expect(exp, 1)
-
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
 #define ABI_WINDOWS
 #else

@@ -6,7 +6,7 @@
 
 namespace n64 {
 void JIT::add(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     movsx(eax, dword[rdi + offsetof(Registers, gpr[RS(instr)])]); // rs
     movsx(ecx, dword[rdi + offsetof(Registers, gpr[RT(instr)])]); // rt
     CodeGenerator::add(eax, ecx);
@@ -19,7 +19,7 @@ void JIT::addu(u32 instr) {
 }
 
 void JIT::addi(u32 instr) {
-  if(likely(RT(instr) != 0)) {
+  if (RT(instr) != 0) [[likely]] {
     movsx(eax, dword[rdi + offsetof(Registers, gpr[RS(instr)])]);
     mov(ecx, s32(s16(instr)));
     CodeGenerator::add(eax, ecx);
@@ -32,7 +32,7 @@ void JIT::addiu(u32 instr) {
 }
 
 void JIT::dadd(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     mov(rax, GPR(RS(instr))); // rs
     mov(rcx, GPR(RT(instr))); // rt
     CodeGenerator::add(rax, rcx);
@@ -45,7 +45,7 @@ void JIT::daddu(u32 instr) {
 }
 
 void JIT::daddi(u32 instr) {
-  if(likely(RT(instr) != 0)) {
+  if (RT(instr) != 0) [[likely]] {
     mov(rax, GPR(RS(instr)));
     mov(rcx, s64(s16(instr)));
     CodeGenerator::add(rax, rcx);
@@ -665,7 +665,7 @@ void JIT::ori(u32 instr) {
 }
 
 void JIT::or_(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     mov(rax, GPR(RS(instr)));
     mov(rcx, GPR(RT(instr)));
     CodeGenerator::or_(rax, rcx);
@@ -674,7 +674,7 @@ void JIT::or_(u32 instr) {
 }
 
 void JIT::nor(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     mov(rax, GPR(RS(instr)));
     mov(rcx, GPR(RT(instr)));
     CodeGenerator::or_(rax, rcx);
@@ -702,7 +702,7 @@ void JIT::jalr(u32 instr) {
   mov(rax, GPR(RS(instr)));
   mov(qword[rdi + offsetof(Registers, nextPC)], rax);
 
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     mov(rax, qword[rdi + offsetof(Registers, pc)]);
     CodeGenerator::add(rax, 4);
     mov(GPR(RD(instr)), rax);
@@ -724,7 +724,7 @@ void JIT::sltiu(u32 instr) {
 }
 
 void JIT::slt(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     mov(rax, GPR(RS(instr)));
     mov(rcx, GPR(RT(instr)));
     cmp(rax, rcx);
@@ -733,7 +733,7 @@ void JIT::slt(u32 instr) {
 }
 
 void JIT::sltu(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     mov(rax, GPR(RS(instr)));
     mov(rcx, GPR(RT(instr)));
     cmp(rax, rcx);
@@ -750,7 +750,7 @@ void JIT::xori(u32 instr) {
 }
 
 void JIT::xor_(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     mov(rax, GPR(RT(instr)));
     mov(rcx, GPR(RS(instr)));
     CodeGenerator::xor_(rax, rcx);
@@ -767,7 +767,7 @@ void JIT::andi(u32 instr) {
 }
 
 void JIT::and_(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     mov(rax, GPR(RT(instr)));
     mov(rcx, GPR(RS(instr)));
     CodeGenerator::and_(rax, rcx);
@@ -776,7 +776,7 @@ void JIT::and_(u32 instr) {
 }
 
 void JIT::sll(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f);
     mov(rax, GPR(RT(instr)));
     sal(rax, sa);
@@ -786,7 +786,7 @@ void JIT::sll(u32 instr) {
 }
 
 void JIT::sllv(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     mov(rcx, GPR(RS(instr)));
     CodeGenerator::and_(cl, 0x1F);
     mov(rax, GPR(RT(instr)));
@@ -797,7 +797,7 @@ void JIT::sllv(u32 instr) {
 }
 
 void JIT::dsll32(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f) + 32;
     mov(rax, GPR(RT(instr)));
     sal(rax, sa);
@@ -806,7 +806,7 @@ void JIT::dsll32(u32 instr) {
 }
 
 void JIT::dsll(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f);
     mov(rax, GPR(RT(instr)));
     sal(rax, sa);
@@ -815,7 +815,7 @@ void JIT::dsll(u32 instr) {
 }
 
 void JIT::dsllv(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     mov(rcx, GPR(RS(instr)));
     CodeGenerator::and_(cl, 63);
     mov(rax, GPR(RT(instr)));
@@ -825,7 +825,7 @@ void JIT::dsllv(u32 instr) {
 }
 
 void JIT::srl(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f);
     mov(rax, GPR(RT(instr)));
     CodeGenerator::shr(rax, sa);
@@ -835,7 +835,7 @@ void JIT::srl(u32 instr) {
 }
 
 void JIT::srlv(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     mov(rcx, GPR(RS(instr)));
     CodeGenerator::and_(cl, 0x1F);
     mov(rax, GPR(RT(instr)));
@@ -846,7 +846,7 @@ void JIT::srlv(u32 instr) {
 }
 
 void JIT::dsrl(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f);
     mov(rax, GPR(RT(instr)));
     CodeGenerator::shr(rax, sa);
@@ -855,7 +855,7 @@ void JIT::dsrl(u32 instr) {
 }
 
 void JIT::dsrlv(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     mov(rcx, GPR(RS(instr)));
     CodeGenerator::and_(cl, 63);
     mov(rax, GPR(RT(instr)));
@@ -865,7 +865,7 @@ void JIT::dsrlv(u32 instr) {
 }
 
 void JIT::dsrl32(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f) + 32;
     mov(rax, GPR(RT(instr)));
     CodeGenerator::shr(rax, sa);
@@ -874,7 +874,7 @@ void JIT::dsrl32(u32 instr) {
 }
 
 void JIT::sra(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f);
     mov(rax, GPR(RT(instr)));
     sar(rax, sa);
@@ -884,7 +884,7 @@ void JIT::sra(u32 instr) {
 }
 
 void JIT::srav(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     mov(rcx, GPR(RS(instr)));
     CodeGenerator::and_(cl, 0x1F);
     mov(rax, GPR(RT(instr)));
@@ -895,7 +895,7 @@ void JIT::srav(u32 instr) {
 }
 
 void JIT::dsra(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f);
     mov(rax, GPR(RT(instr)));
     sar(rax, sa);
@@ -904,7 +904,7 @@ void JIT::dsra(u32 instr) {
 }
 
 void JIT::dsrav(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     mov(rcx, GPR(RS(instr)));
     CodeGenerator::and_(cl, 63);
     mov(rax, GPR(RT(instr)));
@@ -914,7 +914,7 @@ void JIT::dsrav(u32 instr) {
 }
 
 void JIT::dsra32(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f) + 32;
     mov(rax, GPR(RT(instr)));
     sar(rax, sa);
@@ -929,7 +929,7 @@ void JIT::jr(u32 instr) {
 }
 
 void JIT::dsub(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     mov(rax, GPR(RT(instr)));
     mov(rcx, GPR(RS(instr)));
     CodeGenerator::sub(rcx, rax);
@@ -942,7 +942,7 @@ void JIT::dsubu(u32 instr) {
 }
 
 void JIT::sub(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     mov(eax, GPR(RT(instr)));
     mov(ecx, GPR(RS(instr)));
     CodeGenerator::sub(ecx, eax);
@@ -988,13 +988,13 @@ void JIT::mult(u32 instr) {
 }
 
 void JIT::mflo(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     regs.gpr[RD(instr)] = regs.lo;
   }
 }
 
 void JIT::mfhi(u32 instr) {
-  if(likely(RD(instr) != 0)) {
+  if (RD(instr) != 0) [[likely]] {
     regs.gpr[RD(instr)] = regs.hi;
   }
 }

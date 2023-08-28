@@ -43,6 +43,10 @@ void Window::InitSDL() {
     SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI
   );
 
+  if(!window) {
+    Util::panic("Could not create SDL window: {}", SDL_GetError());
+  }
+
   check_vk_result(volkInitialize());
 }
 

@@ -61,40 +61,40 @@ void JIT::div(u32 instr) {
   movsxd(rax, dword[rdi + offsetof(Registers, gpr[RS(instr)])]); // dividend
   movsxd(rcx, dword[rdi + offsetof(Registers, gpr[RT(instr)])]); // divisor
   cmp(rcx, 0);
-  je("divisor==0");
+  je("div_divisor==0");
 
   CodeGenerator::div(rcx);
   mov(qword[rdi + offsetof(Registers, lo)], eax);
   mov(qword[rdi + offsetof(Registers, hi)], edx);
-  jmp("exit");
+  jmp("div_exit");
 
-  L("divisor==0");
+  L("div_divisor==0");
     mov(qword[rdi + offsetof(Registers, hi)], rax);
     cmp(rax, 0);
-    jge("dividend>=0");
+    jge("div_dividend>=0");
     mov(qword[rdi + offsetof(Registers, lo)], s64(1));
-    L("dividend>=0");
+    L("div_dividend>=0");
       mov(qword[rdi + offsetof(Registers, lo)], s64(-1));
 
-  L("exit");
+  L("div_exit");
 }
 
 void JIT::divu(u32 instr) {
   movsxd(rax, dword[rdi + offsetof(Registers, gpr[RS(instr)])]); // dividend
   movsxd(rcx, dword[rdi + offsetof(Registers, gpr[RT(instr)])]); // divisor
   cmp(rcx, 0);
-  je("divisor==0");
+  je("divu_divisor==0");
 
   CodeGenerator::div(rcx);
   mov(qword[rdi + offsetof(Registers, lo)], eax);
   mov(qword[rdi + offsetof(Registers, hi)], edx);
-  jmp("exit");
+  jmp("divu_exit");
 
-  L("divisor==0");
+  L("divu_divisor==0");
     mov(qword[rdi + offsetof(Registers, hi)], rax);
     mov(qword[rdi + offsetof(Registers, lo)], -1);
 
-  L("exit");
+  L("divu_exit");
 }
 
 void JIT::ddiv(u32 instr) {
@@ -108,39 +108,39 @@ void JIT::ddiv(u32 instr) {
   CodeGenerator::xor_(r10, r8);
   CodeGenerator::xor_(r9, r10);
   cmp(rcx, 0);
-  je("else if");
+  je("ddiv_else_if");
   cmp(r9, 1);
-  jne("else");
+  jne("ddiv_else");
   mov(qword[rdi + offsetof(Registers, lo)], rax);
   mov(qword[rdi + offsetof(Registers, hi)], 0);
-  jmp("exit");
-  L("else if");
+  jmp("ddiv_exit");
+  L("ddiv_else_if");
     mov(qword[rdi + offsetof(Registers, hi)], rax);
     cmp(rax, 0);
-    jge("dividend>=0");
+    jge("ddiv_dividend>=0");
     mov(qword[rdi + offsetof(Registers, lo)], 1);
-    L("dividend>=0");
+    L("ddiv_dividend>=0");
       mov(qword[rdi + offsetof(Registers, lo)], -1);
-  L("else");
+  L("ddiv_else");
     CodeGenerator::div(rcx);
     mov(qword[rdi + offsetof(Registers, lo)], rax);
     mov(qword[rdi + offsetof(Registers, hi)], rdx);
-  L("exit");
+  L("ddiv_exit");
 }
 
 void JIT::ddivu(u32 instr) {
   mov(rax, GPR(RS(instr)));
   mov(rcx, GPR(RT(instr)));
   cmp(rcx, 0);
-  je("divisor==0");
+  je("ddivu_divisor==0");
   CodeGenerator::div(rcx);
   mov(qword[rdi + offsetof(Registers, lo)], rax);
   mov(qword[rdi + offsetof(Registers, hi)], rdx);
-  jmp("exit");
-  L("divisor==0");
+  jmp("ddivu_exit");
+  L("ddivu_divisor==0");
     mov(qword[rdi + offsetof(Registers, lo)], -1);
     mov(qword[rdi + offsetof(Registers, hi)], rax);
-  L("exit");
+  L("ddivu_exit");
 }
 
 void JIT::emitCondition(const std::string& name, BranchCond cond) {
@@ -167,46 +167,55 @@ void JIT::emitCondition(const std::string& name, BranchCond cond) {
 }
 
 template <class T>
-void JIT::branch(const Xbyak::Operand& op1, const T& op2, s64 offset, BranchCond cond) {
+void JIT::branch(const Xbyak::Reg64& op1, const T& op2, s64 offset, BranchCond cond) {
   cmp(op1, op2);
-  emitCondition("false", cond);
+  emitCondition("branch_false", cond);
 
   mov(byte[rdi + offsetof(Registers, delaySlot)], 1);
   mov(rax, qword[rdi + offsetof(Registers, pc)]);
   CodeGenerator::add(rax, offset);
   mov(qword[rdi + offsetof(Registers, nextPC)], rax);
-  L("false");
+  L("branch_false");
 }
 
-template void JIT::branch<Xbyak::Operand>(const Xbyak::Operand& op1, const Xbyak::Operand& op2, s64 offset, BranchCond cond);
-template void JIT::branch<int>(const Xbyak::Operand& op1, const int& op2, s64 offset, BranchCond cond);
+template void JIT::branch<Xbyak::Reg64>(const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, s64 offset, BranchCond cond);
+template void JIT::branch<int>(const Xbyak::Reg64& op1, const int& op2, s64 offset, BranchCond cond);
 
-void JIT::branch_likely(const Xbyak::Operand& op1, const Xbyak::Operand& op2, s64 offset, BranchCond cond) {
+template <class T>
+void JIT::branch_likely(const Xbyak::Reg64& op1, const T& op2, s64 offset, BranchCond cond) {
   mov(rax, qword[rdi + offsetof(Registers, pc)]);
   cmp(op1, op2);
-  emitCondition("false", cond);
+  emitCondition("branch_likely_false", cond);
 
   mov(byte[rdi + offsetof(Registers, delaySlot)], 1);
   CodeGenerator::add(rax, offset);
   mov(qword[rdi + offsetof(Registers, nextPC)], rax);
-  jmp("exit");
+  jmp("branch_likely_exit");
 
-  L("false");
+  L("branch_likely_false");
   mov(qword[rdi + offsetof(Registers, oldPC)], rax);
   mov(rcx, qword[rdi + offsetof(Registers, nextPC)]);
   mov(qword[rdi + offsetof(Registers, pc)], rcx);
   CodeGenerator::add(rcx, 4);
   mov(qword[rdi + offsetof(Registers, nextPC)], rcx);
-  L("exit");
+  L("branch_likely_exit");
 }
 
-void JIT::b(u32 instr, const Xbyak::Operand& op1, const Xbyak::Operand& op2, BranchCond cond) {
+template void JIT::branch_likely<Xbyak::Reg64>(const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, s64 offset, BranchCond cond);
+template void JIT::branch_likely<int>(const Xbyak::Reg64& op1, const int& op2, s64 offset, BranchCond cond);
+
+template <class T>
+void JIT::b(u32 instr, const Xbyak::Reg64& op1, const T& op2, BranchCond cond) {
   s16 imm = instr;
   s64 offset = u64((s64)imm) << 2;
   branch(op1, op2, offset, cond);
 }
 
-void JIT::blink(u32 instr, const Xbyak::Operand& op1, const Xbyak::Operand& op2, BranchCond cond) {
+template void JIT::b<Xbyak::Reg64>(u32, const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, BranchCond cond);
+template void JIT::b<int>(u32, const Xbyak::Reg64& op1, const int& op2, BranchCond cond);
+
+template <class T>
+void JIT::blink(u32 instr, const Xbyak::Reg64& op1, const T& op2, BranchCond cond) {
   s16 imm = instr;
   s64 offset = u64((s64)imm) << 2;
   mov(rcx, qword[rdi + offsetof(Registers, nextPC)]);
@@ -214,19 +223,30 @@ void JIT::blink(u32 instr, const Xbyak::Operand& op1, const Xbyak::Operand& op2,
   branch(op1, op2, offset, cond);
 }
 
-void JIT::bl(u32 instr, const Xbyak::Operand& op1, const Xbyak::Operand& op2, BranchCond cond) {
+template void JIT::blink<Xbyak::Reg64>(u32, const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, BranchCond cond);
+template void JIT::blink<int>(u32, const Xbyak::Reg64& op1, const int& op2, BranchCond cond);
+
+template <class T>
+void JIT::bl(u32 instr, const Xbyak::Reg64& op1, const T& op2, BranchCond cond) {
   s16 imm = instr;
   s64 offset = u64((s64)imm) << 2;
   branch_likely(op1, op2, offset, cond);
 }
 
-void JIT::bllink(u32 instr, const Xbyak::Operand& op1, const Xbyak::Operand& op2, BranchCond cond) {
+template void JIT::bl<Xbyak::Reg64>(u32, const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, BranchCond cond);
+template void JIT::bl<int>(u32, const Xbyak::Reg64& op1, const int& op2, BranchCond cond);
+
+template <class T>
+void JIT::bllink(u32 instr, const Xbyak::Reg64& op1, const T& op2, BranchCond cond) {
   mov(rcx, qword[rdi + offsetof(Registers, nextPC)]);
   mov(GPR(31), rcx);
   s16 imm = instr;
   s64 offset = u64((s64)imm) << 2;
   branch_likely(op1, op2, offset, cond);
 }
+
+template void JIT::bllink<Xbyak::Reg64>(u32, const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, BranchCond cond);
+template void JIT::bllink<int>(u32, const Xbyak::Reg64& op1, const int& op2, BranchCond cond);
 
 void JIT::lui(u32 instr) {
   u64 val = s64(s16(instr));
@@ -235,14 +255,36 @@ void JIT::lui(u32 instr) {
 }
 
 void JIT::lb(u32 instr) {
-  u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 paddr = 0;
-  if(!MapVAddr(regs, LOAD, address, paddr)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
-  } else {
-    regs.gpr[RT(instr)] = (s8)mem.Read8(regs, paddr);
-  }
+  mov(rdx, GPR(RS(instr)));
+  CodeGenerator::add(rdx, s64(s16(instr)));
+  mov(rsi, LOAD);
+  push(rcx);
+  lea(rcx, dword[rbp-4]);
+  call(MapVAddr);
+  pop(rcx);
+  cmp(rax, 0);
+  je("lb_exception");
+  mov(rsi, dword[rbp-4]);
+  push(rcx);
+  emitMemberCall(&JIT::Read8, this);
+  pop(rcx);
+  mov(GPR(RT(instr)), rax.cvt8());
+  L("lb_exception");
+  mov(rsi, rdx);
+  push(rax);
+  call(HandleTLBException);
+  pop(rax);
+  push(rsi);
+  mov(rdi, REG(byte, cop0.tlbError));
+  mov(rsi, LOAD);
+  call(GetTLBExceptionCode);
+  pop(rsi);
+  mov(rsi, rax);
+  mov(rdx, 0);
+  mov(rcx, 1);
+  push(rax);
+  call(FireException);
+  pop(rax);
 }
 
 void JIT::lh(u32 instr) {

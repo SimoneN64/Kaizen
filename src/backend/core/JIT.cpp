@@ -34,8 +34,9 @@ Fn JIT::Recompile() {
   bool stable = true;
   cycles = 0;
   prologue();
+  mov(rbp, u64(this));
+  mov(rdi, u64(this) + offsetof(JIT, regs));
   while(stable) {
-    mov(rdi, u64(this) + offsetof(JIT, regs));
     cycles++;
     CheckCompareInterrupt();
 

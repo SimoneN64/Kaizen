@@ -5,6 +5,7 @@
 #include <log.hpp>
 
 namespace n64 {
+using namespace Xbyak;
 Cop1::Cop1() {
   Reset();
 }
@@ -176,6 +177,11 @@ void Cop1::decodeInterp(Interpreter &cpu, u32 instr) {
   }
 }
 
+#ifdef REG
+#undef REG
+#define REG(ptr, member) cpu.ptr[cpu.rdi + offsetof(Registers, member)]
+#endif
+
 void Cop1::decodeJIT(JIT &cpu, u32 instr) {
   Registers &regs = cpu.regs;
   if(!regs.cop0.status.cu1) {
@@ -197,13 +203,22 @@ void Cop1::decodeJIT(JIT &cpu, u32 instr) {
     case 0x06: ctc1(regs, instr); break;
     case 0x07: FireException(regs, ExceptionCode::ReservedInstruction, 1, true); break;
     case 0x08:
-      switch(mask_branch) {
-        case 0: cpu.b(instr, !regs.cop1.fcr31.compare); break;
-        case 1: cpu.b(instr, regs.cop1.fcr31.compare); break;
-        case 2: cpu.bl(instr, !regs.cop1.fcr31.compare); break;
-        case 3: cpu.bl(instr, regs.cop1.fcr31.compare); break;
+      /*switch(mask_branch) {
+        case 0: {
+          cpu.mov(cpu.rax, REG(byte, cop1.fcr31.compare));
+          cpu.b(instr, !regs.cop1.fcr31.compare);
+        } break;
+        case 1: {
+          cpu.b(instr, regs.cop1.fcr31.compare);
+        } break;
+        case 2: {
+          cpu.bl(instr, !regs.cop1.fcr31.compare);
+        } break;
+        case 3: {
+          cpu.bl(instr, regs.cop1.fcr31.compare);
+        } break;
         default: Util::panic("Undefined BC COP1 {:02X}", mask_branch);
-      }
+      }*/
       break;
     case 0x10: // s
       switch(mask_fun) {

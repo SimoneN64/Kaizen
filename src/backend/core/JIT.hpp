@@ -23,6 +23,33 @@ private:
   void CheckCompareInterrupt() override;
   Fn Recompile();
 
+  template<class T>
+  void emitMemberCall(T func, void* thisObj) {
+    void* funcPtr;
+    auto thisPtr = reinterpret_cast<uintptr_t>(thisObj);
+/*#ifdef ABI_WINDOWS
+    static_assert(sizeof(T) == 8, "[JIT]: Invalid size for member function pointer");
+    std::memcpy(&funcPtr, &func, sizeof(T));
+#elif defined(ABI_UNIX)
+    static_assert(sizeof(T) == 16, "[JIT]: Invalid size for member function pointer");
+    uintptr_t tmpArr[2];
+    std::memcpy(tmpArr, &func, sizeof(T));
+    funcPtr = reinterpret_cast<void*>(tmpArr[0]);
+    thisPtr += tmpArr[1];
+#else
+    Util::panic("Huh?!");
+#endif*/
+
+    push(rdi);
+    if(thisPtr == reinterpret_cast<uintptr_t>(this)) {
+      mov(rdi, rbp);
+    } else {
+      mov(rdi, (uintptr_t)thisPtr);
+    }
+    call(funcPtr);
+    pop(rdi);
+  }
+
   bool isStable(u32 instr) {
     u8 mask = (instr >> 26) & 0x3f;
     switch(mask) {
@@ -70,6 +97,10 @@ private:
     LT, GT, GE, LE, EQ, NE
   };
 
+  u8 Read8(u64 addr) {
+    return mem.Read8(regs, addr);
+  }
+
   void cop2Decode(u32);
   void special(u32);
   void regimm(u32);
@@ -82,22 +113,22 @@ private:
   void and_(u32);
   void emitCondition(const std::string&, BranchCond);
   template <class T>
-  void branch(const Xbyak::Operand&, const T&, s64, BranchCond);
+  void branch(const Xbyak::Reg64&, const T&, s64, BranchCond);
 
   template <class T>
-  void branch_likely(const Xbyak::Operand&, const T&, s64, BranchCond);
+  void branch_likely(const Xbyak::Reg64&, const T&, s64, BranchCond);
 
   template <class T>
-  void b(u32, const Xbyak::Operand&, const T&, BranchCond);
+  void b(u32, const Xbyak::Reg64&, const T&, BranchCond);
 
   template <class T>
-  void blink(u32, const Xbyak::Operand&, const T&, BranchCond);
+  void blink(u32, const Xbyak::Reg64&, const T&, BranchCond);
 
   template <class T>
-  void bl(u32, const Xbyak::Operand&, const T&, BranchCond);
+  void bl(u32, const Xbyak::Reg64&, const T&, BranchCond);
 
   template <class T>
-  void bllink(u32, const Xbyak::Operand&, const T&, BranchCond);
+  void bllink(u32, const Xbyak::Reg64&, const T&, BranchCond);
   void dadd(u32);
   void daddu(u32);
   void daddi(u32);

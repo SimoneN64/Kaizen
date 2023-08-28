@@ -168,10 +168,24 @@ void JIT::Emit(u32 instr) {
     case 0x10: regs.cop0.decode(*this, instr); break;
     case 0x11: regs.cop1.decode(*this, instr); break;
     case 0x12: cop2Decode(instr); break;
-    case 0x14: bl(instr, regs.gpr[RS(instr)] == regs.gpr[RT(instr)]); break;
-    case 0x15: bl(instr, regs.gpr[RS(instr)] != regs.gpr[RT(instr)]); break;
-    case 0x16: bl(instr, regs.gpr[RS(instr)] <= 0); break;
-    case 0x17: bl(instr, regs.gpr[RS(instr)] > 0); break;
+    case 0x14: {
+      mov(rax, GPR(RS(instr)));
+      mov(rcx, GPR(RT(instr)));
+      bl(instr, rax, rcx, EQ);
+    } break;
+    case 0x15: {
+      mov(rax, GPR(RS(instr)));
+      mov(rcx, GPR(RT(instr)));
+      bl(instr, rax, rcx, NE);
+    } break;
+    case 0x16: {
+      mov(rax, GPR(RS(instr)));
+      bl(instr, rax, 0, LE);
+    } break;
+    case 0x17: {
+      mov(rax, GPR(RS(instr)));
+      bl(instr, rax, 0, GT);
+    } break;
     case 0x18: daddi(instr); break;
     case 0x19: daddiu(instr); break;
     case 0x1A: ldl(instr); break;

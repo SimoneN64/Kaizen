@@ -32,12 +32,11 @@ void Cop0::eret(Registers& regs) {
 
 
 void Cop0::tlbr() {
-  u8 Index = index & 0b111111;
-  if (Index >= 32) {
-    Util::panic("TLBR with TLB index {}", index);
+  if (index.i >= 32) {
+    Util::panic("TLBR with TLB index {}", index.i);
   }
 
-  TLBEntry entry = tlb[Index];
+  TLBEntry entry = tlb[index.i];
 
   entryHi.raw = entry.entryHi.raw;
   entryLo0.raw = entry.entryLo0.raw & 0x3FFFFFFF;
@@ -48,34 +47,35 @@ void Cop0::tlbr() {
   pageMask.raw = entry.pageMask.raw;
 }
 
-void Cop0::tlbw(int index) {
+void Cop0::tlbw(int index_) {
   PageMask page_mask{};
   page_mask = pageMask;
   u32 top = page_mask.mask & 0xAAA;
   page_mask.mask = top | (top >> 1);
 
-  if(index >= 32) {
-    Util::panic("TLBWI with TLB index {}", index);
+  if(index_ >= 32) {
+    Util::panic("TLBWI with TLB index {}", index_);
   }
 
-  tlb[index].entryHi.raw  = entryHi.raw;
-  tlb[index].entryHi.vpn2 &= ~page_mask.mask;
+  tlb[index_].entryHi.raw  = entryHi.raw;
+  tlb[index_].entryHi.vpn2 &= ~page_mask.mask;
 
-  tlb[index].entryLo0.raw = entryLo0.raw & 0x03FFFFFE;
-  tlb[index].entryLo1.raw = entryLo1.raw & 0x03FFFFFE;
-  tlb[index].pageMask.raw = page_mask.raw;
+  tlb[index_].entryLo0.raw = entryLo0.raw & 0x03FFFFFE;
+  tlb[index_].entryLo1.raw = entryLo1.raw & 0x03FFFFFE;
+  tlb[index_].pageMask.raw = page_mask.raw;
 
-  tlb[index].global = entryLo0.g && entryLo1.g;
-  tlb[index].initialized = true;
+  tlb[index_].global = entryLo0.g && entryLo1.g;
+  tlb[index_].initialized = true;
 }
 
 void Cop0::tlbp(Registers& regs) {
   int match = -1;
   TLBEntry* entry = TLBTryMatch(regs, entryHi.raw, &match);
   if(entry && match >= 0) {
-    index = match;
+    index.i = match;
+    index.p = 0;
   } else {
-    index = 0x80000000;
+    index.p = 1;
   }
 }
 

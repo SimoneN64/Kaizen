@@ -19,13 +19,13 @@ void Cop0::Reset() {
   EPC = 0xFFFFFFFFFFFFFFFFll;
   ErrorEPC = 0xFFFFFFFFFFFFFFFFll;
   wired = 0;
-  index = 63;
+  index.raw = 63;
   badVaddr = 0xFFFFFFFFFFFFFFFF;
 }
 
 u32 Cop0::GetReg32(u8 addr) {
   switch(addr) {
-    case COP0_REG_INDEX: return index & 0x8000003F;
+    case COP0_REG_INDEX: return index.raw & INDEX_MASK;
     case COP0_REG_RANDOM: return GetRandom();
     case COP0_REG_ENTRYLO0: return entryLo0.raw;
     case COP0_REG_ENTRYLO1: return entryLo1.raw;
@@ -54,7 +54,7 @@ u32 Cop0::GetReg32(u8 addr) {
     case 23: case 24: case 25:
     case 31: return openbus;
     default:
-      Util::panic("Unsupported word read from COP0 register {}", index);
+      Util::panic("Unsupported word read from COP0 register {}", addr);
   }
 }
 
@@ -75,14 +75,14 @@ u64 Cop0::GetReg64(u8 addr) const {
     case 23: case 24: case 25:
     case 31: return openbus;
     default:
-      Util::panic("Unsupported dword read from COP0 register {}", index);
+      Util::panic("Unsupported dword read from COP0 register {}", addr);
   }
 }
 
 void Cop0::SetReg32(u8 addr, u32 value) {
   openbus = value & 0xFFFFFFFF;
   switch(addr) {
-    case COP0_REG_INDEX: index = value; break;
+    case COP0_REG_INDEX: index.raw = value & INDEX_MASK; break;
     case COP0_REG_RANDOM: break;
     case COP0_REG_ENTRYLO0:
       entryLo0.raw = value & ENTRY_LO_MASK;
@@ -137,7 +137,7 @@ void Cop0::SetReg32(u8 addr, u32 value) {
     case 23: case 24: case 25:
     case 31: break;
     default:
-      Util::panic("Unsupported word write from COP0 register {}", index);
+      Util::panic("Unsupported word write from COP0 register {}", addr);
   }
 }
 
@@ -352,7 +352,7 @@ void Cop0::decodeInterp(Registers& regs, u32 instr) {
     case 0x10 ... 0x1F:
       switch(mask_cop2) {
         case 0x01: tlbr(); break;
-        case 0x02: tlbw(index & 0x3F); break;
+        case 0x02: tlbw(index.i); break;
         case 0x06: tlbw(GetRandom()); break;
         case 0x08: tlbp(regs); break;
         case 0x18: eret(regs); break;

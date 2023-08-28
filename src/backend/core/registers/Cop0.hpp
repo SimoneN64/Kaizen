@@ -5,6 +5,7 @@
 namespace n64 {
 #define STATUS_MASK 0xFF57FFFF
 #define CONFIG_MASK 0x0F00800F
+#define INDEX_MASK 0x8000003F
 #define COP0_REG_INDEX 0
 #define COP0_REG_RANDOM 1
 #define COP0_REG_ENTRYLO0 2
@@ -133,6 +134,15 @@ union PageMask {
   };
 };
 
+union Index {
+  u32 raw;
+  struct {
+    unsigned i:6;
+    unsigned:25;
+    unsigned p:1;
+  };
+};
+
 struct TLBEntry {
   bool initialized;
   union {
@@ -220,7 +230,7 @@ struct Cop0 {
   PageMask pageMask{};
   EntryHi entryHi{};
   EntryLo entryLo0{}, entryLo1{};
-  u32 index{};
+  Index index{};
   Cop0Context context{};
   u32 wired{}, r7{};
   u64 badVaddr{}, count{};

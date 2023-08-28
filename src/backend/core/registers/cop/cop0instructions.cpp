@@ -72,9 +72,9 @@ void Cop0::tlbp(Registers& regs) {
   int match = -1;
   TLBEntry* entry = TLBTryMatch(regs, entryHi.raw, &match);
   if(entry && match >= 0) {
-    index.i = match;
-    index.p = 0;
+    index.raw = match;
   } else {
+    index.raw = 0;
     index.p = 1;
   }
 }

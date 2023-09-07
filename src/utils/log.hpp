@@ -5,13 +5,13 @@
 
 namespace Util {
 enum LogLevel : u8 {
-  Trace, Info, Debug, Warn, Error
+  Trace, Debug, Info, Warn, Error
 };
 
-#ifndef _NDEBUG
+#ifndef NDEBUG
 static constexpr auto globalLogLevel = Debug;
 #else
-static constexpr auto globalLogLevel = Warn;
+static constexpr auto globalLogLevel = Info;
 #endif
 
 template <LogLevel messageType = Info, typename ...Args>

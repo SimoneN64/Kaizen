@@ -104,9 +104,9 @@ void LoadTAS(const char* filename) {
 
   // TODO: check ROM CRC32 here
 
-  Util::print("Loaded movie '{}' ", loaded_tas_movie_header.movie_description);
-  Util::print("by {}", loaded_tas_movie_header.author_name);
-  Util::print("{} controller(s) connected", loaded_tas_movie_header.numControllers);
+  Util::info("Loaded movie '{}' ", loaded_tas_movie_header.movie_description);
+  Util::info("by {}", loaded_tas_movie_header.author_name);
+  Util::info("{} controller(s) connected", loaded_tas_movie_header.numControllers);
 
   if (loaded_tas_movie_header.numControllers != 1) {
     Util::panic("Currently, only movies with 1 controller connected are supported.");
@@ -120,22 +120,22 @@ bool TasMovieLoaded() {
 }
 
 FORCE_INLINE void LogController(const n64::Controller& controller) {
-  Util::print("c_right: {}", controller.c_right);
-  Util::print("c_left: {}", controller.c_left);
-  Util::print("c_down: {}", controller.c_down);
-  Util::print("c_up: {}", controller.c_up);
-  Util::print("r: {}", controller.r);
-  Util::print("l: {}", controller.l);
-  Util::print("dp_right: {}", controller.dp_right);
-  Util::print("dp_left: {}", controller.dp_left);
-  Util::print("dp_down: {}", controller.dp_down);
-  Util::print("dp_up: {}", controller.dp_up);
-  Util::print("z: {}", controller.z);
-  Util::print("b: {}", controller.b);
-  Util::print("a: {}", controller.a);
-  Util::print("start: {}", controller.start);
-  Util::print("joy_x: {}", controller.joy_x);
-  Util::print("joy_y: {}", controller.joy_y);
+  Util::info("c_right: {}", controller.c_right);
+  Util::info("c_left: {}", controller.c_left);
+  Util::info("c_down: {}", controller.c_down);
+  Util::info("c_up: {}", controller.c_up);
+  Util::info("r: {}", controller.r);
+  Util::info("l: {}", controller.l);
+  Util::info("dp_right: {}", controller.dp_right);
+  Util::info("dp_left: {}", controller.dp_left);
+  Util::info("dp_down: {}", controller.dp_down);
+  Util::info("dp_up: {}", controller.dp_up);
+  Util::info("z: {}", controller.z);
+  Util::info("b: {}", controller.b);
+  Util::info("a: {}", controller.a);
+  Util::info("start: {}", controller.start);
+  Util::info("joy_x: {}", controller.joy_x);
+  Util::info("joy_y: {}", controller.joy_y);
 }
 
 n64::Controller TasNextInputs() {
@@ -174,7 +174,7 @@ n64::Controller TasNextInputs() {
   controller.joy_x = movie_cdata.analog_x;
   controller.joy_y = movie_cdata.analog_y;
 
-  //LogController(controller);
+  LogController(controller);
 
   return controller;
 }

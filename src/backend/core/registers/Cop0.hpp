@@ -221,10 +221,10 @@ struct Cop0 {
 
   void Reset();
 
-  bool kernel_mode{};
-  bool supervisor_mode{};
-  bool user_mode{};
-  bool is_64bit_addressing{};
+  bool kernel_mode{true};
+  bool supervisor_mode{false};
+  bool user_mode{false};
+  bool is_64bit_addressing{false};
   bool llbit{};
 
   PageMask pageMask{};
@@ -263,6 +263,18 @@ struct Cop0 {
     val = (val % upper) + lower;
     return val;
   }
+
+  FORCE_INLINE void Update() {
+    bool exception = status.exl || status.erl;
+
+    kernel_mode     =  exception || status.ksu == 0;
+    supervisor_mode = !exception && status.ksu == 1;
+    user_mode       = !exception && status.ksu == 2;
+    is_64bit_addressing =
+      (kernel_mode && status.kx)
+      || (supervisor_mode && status.sx)
+      || (user_mode && status.ux);
+  }
 private:
   FORCE_INLINE u32 GetWired() { return wired & 0x3F; }
   FORCE_INLINE u32 GetCount() { return u32(u64(count >> 1)); }
@@ -289,20 +301,11 @@ enum TLBAccessType {
 
 bool ProbeTLB(Registers& regs, TLBAccessType access_type, u64 vaddr, u32& paddr, int* match);
 
-static FORCE_INLINE bool MapVAddr(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr) {
-  switch(u32(vaddr) >> 29) {
-    case 0 ... 3: case 7:
-      return ProbeTLB(regs, accessType, vaddr, paddr, nullptr);
-    case 4 ... 5:
-      paddr = vaddr & 0x1FFFFFFF;
-      return true;
-    case 6: Util::panic("Unimplemented virtual mapping in KSSEG! ({:08X})", vaddr);
-    default:
-      Util::panic("Should never end up in default case in map_vaddr! ({:08X})", vaddr);
-  }
-
-  return false;
-}
+bool MapVAddr(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr);
+bool UserMapVAddr32(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr);
+bool MapVAddr32(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr);
+bool UserMapVAddr64(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr);
+bool MapVAddr64(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr);
 
 TLBEntry* TLBTryMatch(Registers& regs, u64 vaddr, int* match);
 void HandleTLBException(Registers& regs, u64 vaddr);

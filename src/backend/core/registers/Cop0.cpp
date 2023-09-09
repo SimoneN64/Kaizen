@@ -1,4 +1,3 @@
-#include <core/registers/Cop0.hpp>
 #include <log.hpp>
 #include <core/registers/Registers.hpp>
 #include <core/Interpreter.hpp>
@@ -107,6 +106,7 @@ void Cop0::SetReg32(u8 addr, u32 value) {
     case COP0_REG_STATUS:
       status.raw &= ~STATUS_MASK;
       status.raw |= (value & STATUS_MASK);
+      Update();
       break;
     case COP0_REG_CAUSE: {
       Cop0Cause tmp{};
@@ -294,6 +294,8 @@ void FireException(Registers& regs, ExceptionCode code, int cop, bool useOldPC) 
       default: Util::panic("Unhandled exception! {}", static_cast<u8>(code));
     }
   }
+
+  regs.cop0.Update();
 }
 
 void HandleTLBException(Registers& regs, u64 vaddr) {
@@ -361,5 +363,117 @@ void Cop0::decodeInterp(Registers& regs, u32 instr) {
       break;
     default: Util::panic("Unimplemented COP0 instruction {} {}", mask_cop >> 4, mask_cop & 7);
   }
+}
+
+bool MapVAddr(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr) {
+  if(regs.cop0.is_64bit_addressing) [[unlikely]] {
+    if (regs.cop0.kernel_mode) [[likely]] {
+      return MapVAddr64(regs, accessType, vaddr, paddr);
+    } else if (regs.cop0.user_mode) {
+      return UserMapVAddr64(regs, accessType, vaddr, paddr);
+    } else if (regs.cop0.supervisor_mode) {
+      Util::panic("Supervisor mode memory access, 64 bit mode");
+    } else {
+      Util::panic("Unknown mode! This should never happen!");
+    }
+  } else {
+    if (regs.cop0.kernel_mode) [[likely]] {
+      return MapVAddr32(regs, accessType, vaddr, paddr);
+    } else if (regs.cop0.user_mode) {
+      return UserMapVAddr32(regs, accessType, vaddr, paddr);
+    } else if (regs.cop0.supervisor_mode) {
+      Util::panic("Supervisor mode memory access, 32 bit mode");
+    } else {
+      Util::panic("Unknown mode! This should never happen!");
+    }
+  }
+}
+
+bool UserMapVAddr32(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr) {
+  switch (vaddr) {
+    case VREGION_KUSEG:
+      return ProbeTLB(regs, accessType, s64(s32(vaddr)), paddr, nullptr);
+    default:
+      regs.cop0.tlbError = DISALLOWED_ADDRESS;
+      return false;
+  }
+}
+
+bool MapVAddr32(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr) {
+  switch((u32(vaddr) >> 29) & 7) {
+    case 0 ... 3: case 7:
+      return ProbeTLB(regs, accessType, s64(s32(vaddr)), paddr, nullptr);
+    case 4 ... 5:
+      paddr = vaddr & 0x1FFFFFFF;
+      return true;
+    case 6: Util::panic("Unimplemented virtual mapping in KSSEG! ({:08X})", vaddr);
+    default:
+      Util::panic("Should never end up in default case in map_vaddr! ({:08X})", vaddr);
+  }
+
+  return false;
+}
+
+bool UserMapVAddr64(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr) {
+  switch (vaddr) {
+    case VREGION_XKUSEG:
+      return ProbeTLB(regs, accessType, vaddr, paddr, nullptr);
+    default:
+      regs.cop0.tlbError = DISALLOWED_ADDRESS;
+      return false;
+  }
+}
+
+bool MapVAddr64(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr) {
+  switch (vaddr) {
+    case VREGION_XKUSEG: case VREGION_XKSSEG:
+      return ProbeTLB(regs, accessType, vaddr, paddr, nullptr);
+    case VREGION_XKPHYS: {
+      if (!regs.cop0.kernel_mode) {
+        Util::panic("Access to XKPHYS address 0x{:016X} when outside kernel mode!", vaddr);
+      }
+      u8 high_two_bits = (vaddr >> 62) & 0b11;
+      if (high_two_bits != 0b10) {
+        Util::panic("Access to XKPHYS address 0x{:016X} with high two bits != 0b10!", vaddr);
+      }
+      u8 subsegment = (vaddr >> 59) & 0b11;
+      bool cached = subsegment != 2; // do something with this eventually
+      // If any bits in the range of 58:32 are set, the address is invalid.
+      bool valid = (vaddr & 0x07FFFFFF00000000) == 0;
+      if (!valid) {
+        regs.cop0.tlbError = DISALLOWED_ADDRESS;
+        return false;
+      }
+      paddr = vaddr & 0xFFFFFFFF;
+      return true;
+    }
+    case VREGION_XKSEG:
+      return ProbeTLB(regs, accessType, vaddr, paddr, nullptr);
+    case VREGION_CKSEG0:
+      // Identical to kseg0 in 32 bit mode.
+      // Unmapped translation. Subtract the base address of the space to get the physical address.
+      paddr = vaddr - START_VREGION_KSEG0; // Implies cutting off the high 32 bits
+      Util::trace("CKSEG0: Translated 0x{:016X} to 0x{:08X}", vaddr, paddr);
+      return true;
+    case VREGION_CKSEG1:
+      // Identical to kseg1 in 32 bit mode.
+      // Unmapped translation. Subtract the base address of the space to get the physical address.
+      paddr = vaddr - START_VREGION_KSEG1; // Implies cutting off the high 32 bits
+      Util::trace("KSEG1: Translated 0x{:016X} to 0x{:08X}", vaddr, paddr);
+      return true;
+    case VREGION_CKSSEG:
+      Util::panic("Resolving virtual address 0x{:016X} (VREGION_CKSSEG) in 64 bit mode", vaddr);
+    case VREGION_CKSEG3:
+      return ProbeTLB(regs, accessType, vaddr, paddr, nullptr);
+    case VREGION_XBAD1:
+    case VREGION_XBAD2:
+    case VREGION_XBAD3:
+      regs.cop0.tlbError = DISALLOWED_ADDRESS;
+      return false;
+    default:
+      Util::panic("Resolving virtual address 0x{:016X} in 64 bit mode", vaddr);
+  }
+
+  return false;
 }
 }

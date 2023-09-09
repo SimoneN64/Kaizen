@@ -1,6 +1,5 @@
 #include <core/Interpreter.hpp>
 
-#define check_address_error(mask, vaddr) (((!regs.cop0.is_64bit_addressing) && (s32)(vaddr) != (vaddr)) || (((vaddr) & (mask)) != 0))
 #define check_signed_overflow(op1, op2, res) (((~((op1) ^ (op2)) & ((op1) ^ (res))) >> ((sizeof(res) * 8) - 1)) & 1)
 #define check_signed_underflow(op1, op2, res) (((((op1) ^ (op2)) & ((op1) ^ (res))) >> ((sizeof(res) * 8) - 1)) & 1)
 
@@ -663,14 +662,15 @@ void Interpreter::jal(u32 instr) {
 
 void Interpreter::jalr(u32 instr) {
   u64 addr = regs.gpr[RS(instr)];
-  if(check_address_error(0b11, addr)) {
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
-  } else {
-    branch(true, addr);
-    if (RD(instr) != 0) [[likely]] {
-      regs.gpr[RD(instr)] = regs.pc + 4;
-    }
+  branch(true, addr);
+  if (RD(instr) != 0) [[likely]] {
+    regs.gpr[RD(instr)] = regs.pc + 4;
   }
+}
+
+void Interpreter::jr(u32 instr) {
+  u64 address = regs.gpr[RS(instr)];
+  branch(true, address);
 }
 
 void Interpreter::slti(u32 instr) {
@@ -855,15 +855,6 @@ void Interpreter::dsra32(u32 instr) {
     u8 sa = ((instr >> 6) & 0x1f);
     s64 result = rt >> (sa + 32);
     regs.gpr[RD(instr)] = result;
-  }
-}
-
-void Interpreter::jr(u32 instr) {
-  s64 address = regs.gpr[RS(instr)];
-  if(check_address_error(0b11, address)) {
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, true);
-  } else {
-    branch(true, address);
   }
 }
 

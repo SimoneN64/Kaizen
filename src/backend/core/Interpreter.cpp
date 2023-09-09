@@ -7,6 +7,12 @@ int Interpreter::Step() {
   regs.prevDelaySlot = regs.delaySlot;
   regs.delaySlot = false;
 
+  if(check_address_error(0b11, u64(regs.pc))) [[unlikely]] {
+    HandleTLBException(regs, regs.pc);
+    FireException(regs, ExceptionCode::AddressErrorLoad, 0, false);
+    return 1;
+  }
+
   u32 paddr = 0;
   if(!MapVAddr(regs, LOAD, regs.pc, paddr)) {
     HandleTLBException(regs, regs.pc);

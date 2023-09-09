@@ -12,6 +12,7 @@ struct Interpreter : BaseCPU {
 private:
   u64 cop2Latch{};
   friend struct Cop1;
+#define check_address_error(mask, vaddr) (((!regs.cop0.is_64bit_addressing) && (s32)(vaddr) != (vaddr)) || (((vaddr) & (mask)) != 0))
 
   [[nodiscard]] FORCE_INLINE bool ShouldServiceInterrupt() override {
     bool interrupts_pending = (regs.cop0.status.im & regs.cop0.cause.interruptPending) != 0;

@@ -198,10 +198,10 @@ void Cop1::decodeJIT(JIT &cpu, u32 instr) {
     case 0x07: FireException(regs, ExceptionCode::ReservedInstruction, 1, true); break;
     case 0x08:
       switch(mask_branch) {
-        case 0: cpu.b(instr, !regs.cop1.fcr31.compare); break;
-        case 1: cpu.b(instr, regs.cop1.fcr31.compare); break;
-        case 2: cpu.bl(instr, !regs.cop1.fcr31.compare); break;
-        case 3: cpu.bl(instr, regs.cop1.fcr31.compare); break;
+        case 0: /*cpu.b(instr, !regs.cop1.fcr31.compare); break;*/
+        case 1: /*cpu.b(instr, regs.cop1.fcr31.compare); break;*/
+        case 2: /*cpu.bl(instr, !regs.cop1.fcr31.compare); break;*/
+        case 3: /*cpu.bl(instr, regs.cop1.fcr31.compare); break;*/
         default: Util::panic("Undefined BC COP1 {:02X}", mask_branch);
       }
       break;

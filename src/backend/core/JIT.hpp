@@ -82,22 +82,22 @@ private:
   void and_(u32);
   void emitCondition(const std::string&, BranchCond);
   template <class T>
-  void branch(const Xbyak::Operand&, const T&, s64, BranchCond);
+  void branch(const Xbyak::Reg64&, const T&, s64, BranchCond);
 
   template <class T>
-  void branch_likely(const Xbyak::Operand&, const T&, s64, BranchCond);
+  void branch_likely(const Xbyak::Reg64&, const T&, s64, BranchCond);
 
   template <class T>
-  void b(u32, const Xbyak::Operand&, const T&, BranchCond);
+  void b(u32, const Xbyak::Reg64&, const T&, BranchCond);
 
   template <class T>
-  void blink(u32, const Xbyak::Operand&, const T&, BranchCond);
+  void blink(u32, const Xbyak::Reg64&, const T&, BranchCond);
 
   template <class T>
-  void bl(u32, const Xbyak::Operand&, const T&, BranchCond);
+  void bl(u32, const Xbyak::Reg64&, const T&, BranchCond);
 
   template <class T>
-  void bllink(u32, const Xbyak::Operand&, const T&, BranchCond);
+  void bllink(u32, const Xbyak::Reg64&, const T&, BranchCond);
   void dadd(u32);
   void daddu(u32);
   void daddi(u32);

@@ -364,7 +364,7 @@ void Cop1::ctc1(Registers& regs, u32 instr) {
     case 0: break;
     case 31: {
       fcr31.write(val);
-      FireFPUException(regs);
+      CheckFPUException();
     } break;
     default: Util::panic("Undefined CTC1 with rd != 0 or 31");
   }

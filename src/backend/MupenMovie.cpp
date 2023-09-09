@@ -120,22 +120,22 @@ bool TasMovieLoaded() {
 }
 
 FORCE_INLINE void LogController(const n64::Controller& controller) {
-  Util::info("c_right: {}", controller.c_right);
-  Util::info("c_left: {}", controller.c_left);
-  Util::info("c_down: {}", controller.c_down);
-  Util::info("c_up: {}", controller.c_up);
-  Util::info("r: {}", controller.r);
-  Util::info("l: {}", controller.l);
-  Util::info("dp_right: {}", controller.dp_right);
-  Util::info("dp_left: {}", controller.dp_left);
-  Util::info("dp_down: {}", controller.dp_down);
-  Util::info("dp_up: {}", controller.dp_up);
-  Util::info("z: {}", controller.z);
-  Util::info("b: {}", controller.b);
-  Util::info("a: {}", controller.a);
-  Util::info("start: {}", controller.start);
-  Util::info("joy_x: {}", controller.joy_x);
-  Util::info("joy_y: {}", controller.joy_y);
+  Util::debug("c_right: {}", controller.c_right);
+  Util::debug("c_left: {}", controller.c_left);
+  Util::debug("c_down: {}", controller.c_down);
+  Util::debug("c_up: {}", controller.c_up);
+  Util::debug("r: {}", controller.r);
+  Util::debug("l: {}", controller.l);
+  Util::debug("dp_right: {}", controller.dp_right);
+  Util::debug("dp_left: {}", controller.dp_left);
+  Util::debug("dp_down: {}", controller.dp_down);
+  Util::debug("dp_up: {}", controller.dp_up);
+  Util::debug("z: {}", controller.z);
+  Util::debug("b: {}", controller.b);
+  Util::debug("a: {}", controller.a);
+  Util::debug("start: {}", controller.start);
+  Util::debug("joy_x: {}", controller.joy_x);
+  Util::debug("joy_y: {}", controller.joy_y);
 }
 
 n64::Controller TasNextInputs() {

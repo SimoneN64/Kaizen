@@ -16,11 +16,11 @@ Window::Window(n64::Core& core) : settings(core) {
 }
 
 void Window::handleEvents(SDL_Event event, n64::Core& core) {
-  done = event.window.event == SDL_WINDOWEVENT_CLOSE
+  done = event.window.event == (int)SDL_WINDOWEVENT_CLOSE
       && event.window.windowID == SDL_GetWindowID(window);
 
   bool minimized = SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED;
-  core.pause = event.window.event == SDL_WINDOWEVENT_FOCUS_LOST || minimized;
+  core.pause = event.window.event == (int)SDL_WINDOWEVENT_FOCUS_LOST || minimized;
   core.render = !minimized;
 }
 

@@ -1,6 +1,6 @@
 #pragma once
 #include <nlohmann/json.hpp>
-#include <common.hpp>
+#include <Language.hpp>
 
 namespace n64 { struct Core; }
 using namespace nlohmann;
@@ -19,5 +19,7 @@ private:
   float oldVolumeL, oldVolumeR;
   bool lockChannels = true;
   bool mute = false;
+  int selectedLanguage = Language::ENGLISH;
+  std::array<std::string, Language::STRING_COUNT> languageStrings{};
   json settings;
 };

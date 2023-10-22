@@ -5,6 +5,7 @@
 #include <Core.hpp>
 
 namespace fs = std::filesystem;
+#define GET_TRANSLATED_STRING(x) languageStrings[(x)].c_str()
 
 #define checknestedjsonentry(name, type, param1, param2, defaultVal) \
   do { \
@@ -100,45 +101,45 @@ Settings::~Settings() {
 
 void Settings::RenderWidget(bool& show) {
   if(show) {
-    ImGui::OpenPopup("Settings");
-    if(ImGui::BeginPopupModal(languageStrings[Language::EMULATION_ITEM_SETTINGS].c_str(), &show)) {
+    ImGui::OpenPopup(GET_TRANSLATED_STRING(Language::EMULATION_ITEM_SETTINGS));
+    if(ImGui::BeginPopupModal(GET_TRANSLATED_STRING(Language::EMULATION_ITEM_SETTINGS), &show)) {
       enum class SelectedSetting { CPU, Audio, Interface, COUNT };
       static SelectedSetting selectedSetting = SelectedSetting::CPU;
       const char *categories[(int)SelectedSetting::COUNT] = {
-        languageStrings[Language::SETTINGS_CATEGORY_CPU].c_str(),
-        languageStrings[Language::SETTINGS_CATEGORY_AUDIO].c_str(),
-        languageStrings[Language::SETTINGS_CATEGORY_INTERFACE].c_str() };
+        GET_TRANSLATED_STRING(Language::SETTINGS_CATEGORY_CPU),
+        GET_TRANSLATED_STRING(Language::SETTINGS_CATEGORY_AUDIO),
+        GET_TRANSLATED_STRING(Language::SETTINGS_CATEGORY_INTERFACE)};
 
-      CreateComboList("##", (int*)&selectedSetting, categories, (int)SelectedSetting::COUNT);
+      CreateComboList("##categories", (int*)&selectedSetting, categories, (int)SelectedSetting::COUNT);
       ImGui::Separator();
       switch (selectedSetting) {
         case SelectedSetting::Audio:
-            ImGui::Checkbox(languageStrings[Language::SETTINGS_OPTION_LOCK_CHANNELS].c_str(), &lockChannels);
-            ImGui::Checkbox(languageStrings[Language::SETTINGS_OPTION_MUTE].c_str(), &mute);
+            ImGui::Checkbox(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_LOCK_CHANNELS), &lockChannels);
+            ImGui::Checkbox(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_MUTE), &mute);
             if(mute) {
               volumeL = 0;
               volumeR = 0;
 
               ImGui::BeginDisabled();
-              ImGui::SliderFloat(languageStrings[Language::SETTINGS_OPTION_VOLUME_L].c_str(), &oldVolumeL, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+              ImGui::SliderFloat(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_VOLUME_L), &oldVolumeL, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
               if (lockChannels) {
                 oldVolumeR = oldVolumeL;
               }
-              ImGui::SliderFloat(languageStrings[Language::SETTINGS_OPTION_VOLUME_R].c_str(), &oldVolumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+              ImGui::SliderFloat(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_VOLUME_R), &oldVolumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
               ImGui::EndDisabled();
             }
             else {
               volumeL = oldVolumeL;
               volumeR = oldVolumeR;
 
-              ImGui::SliderFloat(languageStrings[Language::SETTINGS_OPTION_VOLUME_L].c_str(), &volumeL, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+              ImGui::SliderFloat(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_VOLUME_L), &volumeL, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
               if (!lockChannels) {
-                ImGui::SliderFloat(languageStrings[Language::SETTINGS_OPTION_VOLUME_R].c_str(), &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+                ImGui::SliderFloat(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_VOLUME_R), &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
               }
               else {
                 volumeR = volumeL;
                 ImGui::BeginDisabled();
-                ImGui::SliderFloat(languageStrings[Language::SETTINGS_OPTION_VOLUME_R].c_str(), &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+                ImGui::SliderFloat(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_VOLUME_R), &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
                 ImGui::EndDisabled();
               }
 
@@ -148,14 +149,16 @@ void Settings::RenderWidget(bool& show) {
 
             break;
         case SelectedSetting::CPU:
-          ImGui::Checkbox(languageStrings[Language::SETTINGS_OPTION_ENABLE_JIT].c_str(), &jit);
+          ImGui::Checkbox(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_ENABLE_JIT), &jit);
           break;
         case SelectedSetting::Interface: {
           const char* languages[Language::AVAILABLE_LANGS_COUNT] = {
-            Language::languages[0].c_str(),
-            Language::languages[1].c_str()
+            Language::languages[Language::ENGLISH].c_str(),
+            Language::languages[Language::ITALIAN].c_str()
           };
-          CreateComboList("##", &selectedLanguage, languages, Language::AVAILABLE_LANGS_COUNT);
+          ImGui::Text("%s:", GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_LANGUAGE));
+          CreateComboList("##language", (int*)&selectedLanguage, languages, (int)Language::AVAILABLE_LANGS_COUNT);
+          ImGui::Separator();
         } break;
         case SelectedSetting::COUNT:
           Util::panic("BRUH");

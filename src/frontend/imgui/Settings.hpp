@@ -13,6 +13,7 @@ struct Settings {
   [[nodiscard]] FORCE_INLINE float GetVolumeR() const { return volumeR; };
 
   void RenderWidget(bool& show);
+  std::array<std::string, Language::STRING_COUNT> languageStrings{};
 private:
   bool jit = false;
   float volumeL, volumeR;
@@ -20,6 +21,5 @@ private:
   bool lockChannels = true;
   bool mute = false;
   int selectedLanguage = Language::ENGLISH;
-  std::array<std::string, Language::STRING_COUNT> languageStrings{};
   json settings;
 };

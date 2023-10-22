@@ -23,8 +23,6 @@ enum StringID {
 	SETTINGS_OPTION_LOCK_CHANNELS,
 	SETTINGS_OPTION_ENABLE_JIT,
 	SETTINGS_OPTION_LANGUAGE,
-	LANGUAGE_ENGLISH,
-	LANGUAGE_ITALIAN,
 	STRING_COUNT
 };
 
@@ -81,5 +79,5 @@ static const std::array<std::string, AVAILABLE_LANGS_COUNT> languages = {
 	"Italiano"
 };
 
-void SetLanguage(const std::array<std::string, STRING_COUNT>& lang, int selectedLang);
+void SetLanguage(std::array<std::string, STRING_COUNT>& lang, int selectedLang);
 }

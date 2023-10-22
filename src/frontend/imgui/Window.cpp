@@ -7,6 +7,7 @@
 
 VkInstance instance{};
 namespace fs = std::filesystem;
+#define GET_TRANSLATED_STRING(x) settings.languageStrings[(x)].c_str()
 
 Window::Window(n64::Core& core) : settings(core) {
   InitSDL();
@@ -16,11 +17,11 @@ Window::Window(n64::Core& core) : settings(core) {
 }
 
 void Window::handleEvents(SDL_Event event, n64::Core& core) {
-  done = event.window.event == (int)SDL_WINDOWEVENT_CLOSE
+  done = event.window.event == SDL_WINDOWEVENT_CLOSE
       && event.window.windowID == SDL_GetWindowID(window);
 
   bool minimized = SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED;
-  core.pause = event.window.event == (int)SDL_WINDOWEVENT_FOCUS_LOST || minimized;
+  core.pause = event.window.event == SDL_WINDOWEVENT_FOCUS_LOST || minimized;
   core.render = !minimized;
 }
 
@@ -176,8 +177,8 @@ void Window::LoadROM(n64::Core& core, const std::string &path) {
 void Window::RenderMainMenuBar(n64::Core &core) {
   ImGui::BeginMainMenuBar();
 
-  if (ImGui::BeginMenu("File")) {
-    if (ImGui::MenuItem("Open", "O")) {
+  if (ImGui::BeginMenu(GET_TRANSLATED_STRING(Language::MENU_FILE))) {
+    if (ImGui::MenuItem(GET_TRANSLATED_STRING(Language::FILE_ITEM_OPEN), "O")) {
       OpenROMDialog(*this, core);
     }
     if (ImGui::MenuItem("Dump RDRAM")) {
@@ -189,23 +190,24 @@ void Window::RenderMainMenuBar(n64::Core &core) {
     if (ImGui::MenuItem("Dump DMEM")) {
       core.cpu->mem.DumpDMEM();
     }
-    if (ImGui::MenuItem("Exit")) {
+    if (ImGui::MenuItem(GET_TRANSLATED_STRING(Language::FILE_ITEM_EXIT))) {
       done = true;
     }
     ImGui::EndMenu();
   }
-  if (ImGui::BeginMenu("Emulation")) {
-    if (ImGui::MenuItem("Reset")) {
+  if (ImGui::BeginMenu(GET_TRANSLATED_STRING(Language::MENU_EMULATION))) {
+    if (ImGui::MenuItem(GET_TRANSLATED_STRING(Language::EMULATION_ITEM_RESET))) {
       LoadROM(core, core.rom);
     }
-    if (ImGui::MenuItem("Stop")) {
+    if (ImGui::MenuItem(GET_TRANSLATED_STRING(Language::EMULATION_ITEM_STOP))) {
       windowTitle = "Kaizen";
       core.rom.clear();
       Util::UpdateRPC(Util::Idling);
       SDL_SetWindowTitle(window, windowTitle.c_str());
       core.Stop();
     }
-    if (ImGui::MenuItem(core.pause ? "Resume" : "Pause", nullptr, false, core.romLoaded)) {
+    if (ImGui::MenuItem(core.pause ? GET_TRANSLATED_STRING(Language::EMULATION_ITEM_RESUME)
+                                        : GET_TRANSLATED_STRING(Language::EMULATION_ITEM_PAUSE), nullptr, false, core.romLoaded)) {
       core.TogglePause();
       if(core.pause) {
         shadowWindowTitle = windowTitle;
@@ -217,7 +219,7 @@ void Window::RenderMainMenuBar(n64::Core &core) {
       }
       SDL_SetWindowTitle(window, windowTitle.c_str());
     }
-    if (ImGui::MenuItem("Settings")) {
+    if (ImGui::MenuItem(GET_TRANSLATED_STRING(Language::EMULATION_ITEM_SETTINGS))) {
       showSettings = true;
     }
     ImGui::EndMenu();

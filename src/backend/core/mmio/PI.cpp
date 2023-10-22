@@ -45,8 +45,9 @@ auto PI::Read(MI& mi, u32 addr) const -> u32 {
 
 FORCE_INLINE u8 PIGetDomain(u32 address) {
   switch (address) {
+    case 0x00000000 ... 0x04FFFFFF:
     case CART_REGION_1_1:
-    case CART_REGION_1_2:
+    case 0x10000000 ... 0xFFFFFFFF:
       return 1;
     case CART_REGION_2_1:
     case CART_REGION_2_2:

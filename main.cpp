@@ -2,18 +2,16 @@
 #include <MupenMovie.hpp>
 
 int main(int argc, char** argv) {
-  App* app = new App;
+  App app;
 
   if(argc > 1) {
     if(argc > 2) {
       LoadTAS(argv[2]);
     }
-    app->window.LoadROM(app->core, argv[1]);
+    app.window.LoadROM(app.core, argv[1]);
   }
 
-  app->Run();
-
-  delete app;
+  app.Run();
 
   return 0;
 }

@@ -5,13 +5,13 @@
 namespace n64 {
 struct BaseCPU {
   virtual ~BaseCPU() = default;
-  virtual int Step() {return 0;}
+  virtual int Step() = 0;
   virtual void Reset() {
     regs.Reset();
     mem.Reset();
   }
-  virtual bool ShouldServiceInterrupt() {return false;}
-  virtual void CheckCompareInterrupt() {}
+  virtual bool ShouldServiceInterrupt() = 0;
+  virtual void CheckCompareInterrupt() = 0;
   Registers regs;
   Mem mem;
 };

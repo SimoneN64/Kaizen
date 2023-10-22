@@ -9,8 +9,9 @@
 namespace n64 {
 FORCE_INLINE bool FireFPUException(Registers& regs) {
   FCR31& fcr31 = regs.cop1.fcr31;
-  if(fcr31.cause & ((1 << 5) | fcr31.enable)) {
-    FireException(regs, ExceptionCode::FloatingPointError, 0, true);
+  u32 enable = fcr31.enable | (1 << 5);
+  if(fcr31.cause & enable) {
+    FireException(regs, ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return true;
   }
 
@@ -759,7 +760,7 @@ void Cop1::lwc1Interp(Registers& regs, Mem& mem, u32 instr) {
   u32 physical;
   if(!MapVAddr(regs, LOAD, addr, physical)) {
     HandleTLBException(regs, addr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
   } else {
     u32 data = mem.Read32(regs, physical);
     SetFGR_FR<u32>(regs.cop0, FT(instr), data);
@@ -772,7 +773,7 @@ void Cop1::swc1Interp(Registers& regs, Mem& mem, u32 instr) {
   u32 physical;
   if(!MapVAddr(regs, STORE, addr, physical)) {
     HandleTLBException(regs, addr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
   } else {
     mem.Write32(regs, physical, GetFGR_FR<u32>(regs.cop0, FT(instr)));
   }
@@ -790,7 +791,7 @@ void Cop1::ldc1Interp(Registers& regs, Mem& mem, u32 instr) {
   u32 physical;
   if(!MapVAddr(regs, LOAD, addr, physical)) {
     HandleTLBException(regs, addr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, true);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
   } else {
     u64 data = mem.Read64(regs, physical);
     SetFGR_FR<u64>(regs.cop0, FT(instr), data);
@@ -803,7 +804,7 @@ void Cop1::sdc1Interp(Registers& regs, Mem& mem, u32 instr) {
   u32 physical;
   if(!MapVAddr(regs, STORE, addr, physical)) {
     HandleTLBException(regs, addr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, true);
+    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
   } else {
     mem.Write64(regs, physical, GetFGR_FR<u64>(regs.cop0, FT(instr)));
   }

@@ -18,8 +18,8 @@ void JIT::special(u32 instr) {
     case 0x07: srav(instr); break;
     case 0x08: jr(instr); break;
     case 0x09: jalr(instr); break;
-    case 0x0C: FireException(regs, ExceptionCode::Syscall, 0, true); break;
-    case 0x0D: FireException(regs, ExceptionCode::Breakpoint, 0, true); break;
+    case 0x0C: FireException(regs, ExceptionCode::Syscall, 0, regs.oldPC); break;
+    case 0x0D: FireException(regs, ExceptionCode::Breakpoint, 0, regs.oldPC); break;
     case 0x0F: break; // SYNC
     case 0x10: mfhi(instr); break;
     case 0x11: mthi(instr); break;
@@ -116,7 +116,7 @@ void JIT::regimm(u32 instr) {
 
 void JIT::cop2Decode(u32 instr) {
   if(!regs.cop0.status.cu2) {
-    FireException(regs, ExceptionCode::CoprocessorUnusable, 2, true);
+    FireException(regs, ExceptionCode::CoprocessorUnusable, 2, regs.oldPC);
     return;
   }
   switch(RS(instr)) {
@@ -127,7 +127,7 @@ void JIT::cop2Decode(u32 instr) {
     case 0x05: dmtc2(instr); break;
     case 0x06: ctc2(instr); break;
     default:
-      FireException(regs, ExceptionCode::ReservedInstruction, 2, true);
+      FireException(regs, ExceptionCode::ReservedInstruction, 2, regs.oldPC);
   }
 }
 
@@ -190,7 +190,7 @@ void JIT::Emit(u32 instr) {
     case 0x19: daddiu(instr); break;
     case 0x1A: ldl(instr); break;
     case 0x1B: ldr(instr); break;
-    case 0x1F: FireException(regs, ExceptionCode::ReservedInstruction, 0, true); break;
+    case 0x1F: FireException(regs, ExceptionCode::ReservedInstruction, 0, regs.oldPC); break;
     case 0x20: lb(instr); break;
     case 0x21: lh(instr); break;
     case 0x22: lwl(instr); break;

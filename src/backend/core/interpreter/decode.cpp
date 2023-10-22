@@ -19,8 +19,8 @@ void Interpreter::special(u32 instr) {
     case SRAV: srav(instr); break;
     case JR: jr(instr); break;
     case JALR: jalr(instr); break;
-    case SYSCALL: FireException(regs, ExceptionCode::Syscall, 0, true); break;
-    case BREAK: FireException(regs, ExceptionCode::Breakpoint, 0, true); break;
+    case SYSCALL: FireException(regs, ExceptionCode::Syscall, 0, regs.oldPC); break;
+    case BREAK: FireException(regs, ExceptionCode::Breakpoint, 0, regs.oldPC); break;
     case SYNC: break; // SYNC
     case MFHI: mfhi(instr); break;
     case MTHI: mthi(instr); break;
@@ -93,7 +93,7 @@ void Interpreter::regimm(u32 instr) {
 
 void Interpreter::cop2Decode(u32 instr) {
   if(!regs.cop0.status.cu2) {
-    FireException(regs, ExceptionCode::CoprocessorUnusable, 2, true);
+    FireException(regs, ExceptionCode::CoprocessorUnusable, 2, regs.oldPC);
     return;
   }
   switch(RS(instr)) {
@@ -104,7 +104,7 @@ void Interpreter::cop2Decode(u32 instr) {
     case 0x05: dmtc2(instr); break;
     case 0x06: ctc2(instr); break;
     default:
-      FireException(regs, ExceptionCode::ReservedInstruction, 2, true);
+      FireException(regs, ExceptionCode::ReservedInstruction, 2, regs.oldPC);
   }
 }
 
@@ -142,7 +142,7 @@ void Interpreter::Exec(u32 instr) {
     case DADDIU: daddiu(instr); break;
     case LDL: ldl(instr); break;
     case LDR: ldr(instr); break;
-    case 0x1F: FireException(regs, ExceptionCode::ReservedInstruction, 0, true); break;
+    case 0x1F: FireException(regs, ExceptionCode::ReservedInstruction, 0, regs.oldPC); break;
     case LB: lb(instr); break;
     case LH: lh(instr); break;
     case LWL: lwl(instr); break;

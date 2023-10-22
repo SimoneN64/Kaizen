@@ -189,7 +189,7 @@ enum class ExceptionCode : u8 {
   Watch = 23
 };
 
-void FireException(Registers& regs, ExceptionCode code, int cop, bool useOldPC);
+void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc);
 
 union Cop0Context {
   u64 raw;

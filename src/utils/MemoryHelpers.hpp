@@ -6,7 +6,7 @@
 
 namespace Util {
 template<typename T>
-FORCE_INLINE T ReadAccess(u8 *data, u32 index) {
+static FORCE_INLINE T ReadAccess(u8 *data, u32 index) {
   if constexpr (sizeof(T) == 8) {
     u32 hi = *reinterpret_cast<u32*>(&data[index + 0]);
     u32 lo = *reinterpret_cast<u32*>(&data[index + 4]);
@@ -18,7 +18,7 @@ FORCE_INLINE T ReadAccess(u8 *data, u32 index) {
 }
 
 template<typename T>
-FORCE_INLINE void WriteAccess(u8 *data, u32 index, T val) {
+static FORCE_INLINE void WriteAccess(u8 *data, u32 index, T val) {
   if constexpr (sizeof(T) == 8) {
     u32 hi = val >> 32;
     u32 lo = val;

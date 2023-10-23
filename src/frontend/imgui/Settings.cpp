@@ -5,7 +5,7 @@
 #include <Core.hpp>
 
 namespace fs = std::filesystem;
-#define GET_TRANSLATED_STRING(x) languageStrings[(x)].c_str()
+#define GET_TRANSLATED_STRING(x) languageStrings[(x)]
 
 #define checknestedjsonentry(name, type, param1, param2, defaultVal) \
   do { \
@@ -99,70 +99,83 @@ Settings::~Settings() {
   settingsFile.close();
 }
 
-void Settings::RenderWidget(bool& show) {
+void Settings::RenderWidget(const int& mWw, const int& mWh, bool& show) {
   if(show) {
-    ImGui::OpenPopup(GET_TRANSLATED_STRING(Language::EMULATION_ITEM_SETTINGS));
-    if(ImGui::BeginPopupModal(GET_TRANSLATED_STRING(Language::EMULATION_ITEM_SETTINGS), &show)) {
-      enum class SelectedSetting { CPU, Audio, Interface, COUNT };
-      static SelectedSetting selectedSetting = SelectedSetting::CPU;
-      const char *categories[(int)SelectedSetting::COUNT] = {
-        GET_TRANSLATED_STRING(Language::SETTINGS_CATEGORY_CPU),
-        GET_TRANSLATED_STRING(Language::SETTINGS_CATEGORY_AUDIO),
-        GET_TRANSLATED_STRING(Language::SETTINGS_CATEGORY_INTERFACE)};
+    ImGui::OpenPopup("##settings");
+    const float posX = (float)mWw * (1.f / 32.f), posY = (float)mWh * (1.f / 32.f) + 20;
+    const float sizeX = (float)mWw * (30.f / 32.f), sizeY = (float)mWh * (30.f / 32.f) - 20;
+    ImGui::SetNextWindowPos({ posX, posY });
+    ImGui::SetNextWindowSize({ sizeX, sizeY });
+    if(ImGui::BeginPopupModal("##settings", &show, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove)) {
+      if (ImGui::BeginTabBar("##categories")) {
+        if (ImGui::BeginTabItem(GET_TRANSLATED_STRING(Language::SETTINGS_CATEGORY_CPU))) {
+          ImGui::Checkbox(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_ENABLE_JIT), &jit);
+          ImGui::EndTabItem();
+        }
+        
+        if (ImGui::BeginTabItem(GET_TRANSLATED_STRING(Language::SETTINGS_CATEGORY_AUDIO))) {
+          ImGui::Checkbox(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_LOCK_CHANNELS), &lockChannels);
+          ImGui::Checkbox(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_MUTE), &mute);
+          if (mute) {
+            volumeL = 0;
+            volumeR = 0;
 
-      CreateComboList("##categories", (int*)&selectedSetting, categories, (int)SelectedSetting::COUNT);
-      ImGui::Separator();
-      switch (selectedSetting) {
-        case SelectedSetting::Audio:
-            ImGui::Checkbox(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_LOCK_CHANNELS), &lockChannels);
-            ImGui::Checkbox(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_MUTE), &mute);
-            if(mute) {
-              volumeL = 0;
-              volumeR = 0;
+            ImGui::BeginDisabled();
+            ImGui::SliderFloat(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_VOLUME_L), &oldVolumeL, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+            if (lockChannels) {
+              oldVolumeR = oldVolumeL;
+            }
+            ImGui::SliderFloat(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_VOLUME_R), &oldVolumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+            ImGui::EndDisabled();
+          }
+          else {
+            volumeL = oldVolumeL;
+            volumeR = oldVolumeR;
 
-              ImGui::BeginDisabled();
-              ImGui::SliderFloat(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_VOLUME_L), &oldVolumeL, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
-              if (lockChannels) {
-                oldVolumeR = oldVolumeL;
-              }
-              ImGui::SliderFloat(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_VOLUME_R), &oldVolumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
-              ImGui::EndDisabled();
+            ImGui::SliderFloat(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_VOLUME_L), &volumeL, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+            if (!lockChannels) {
+              ImGui::SliderFloat(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_VOLUME_R), &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
             }
             else {
-              volumeL = oldVolumeL;
-              volumeR = oldVolumeR;
-
-              ImGui::SliderFloat(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_VOLUME_L), &volumeL, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
-              if (!lockChannels) {
-                ImGui::SliderFloat(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_VOLUME_R), &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
-              }
-              else {
-                volumeR = volumeL;
-                ImGui::BeginDisabled();
-                ImGui::SliderFloat(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_VOLUME_R), &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
-                ImGui::EndDisabled();
-              }
-
-              oldVolumeL = volumeL;
-              oldVolumeR = volumeR;
+              volumeR = volumeL;
+              ImGui::BeginDisabled();
+              ImGui::SliderFloat(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_VOLUME_R), &volumeR, 0, 1, "%.2f", ImGuiSliderFlags_NoInput);
+              ImGui::EndDisabled();
             }
 
-            break;
-        case SelectedSetting::CPU:
-          ImGui::Checkbox(GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_ENABLE_JIT), &jit);
-          break;
-        case SelectedSetting::Interface: {
+            oldVolumeL = volumeL;
+            oldVolumeR = volumeR;
+          }
+
+          ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem(GET_TRANSLATED_STRING(Language::SETTINGS_CATEGORY_INTERFACE))) {
+          static auto currentLang = selectedLanguage;
           const char* languages[Language::AVAILABLE_LANGS_COUNT] = {
-            Language::languages[Language::ENGLISH].c_str(),
-            Language::languages[Language::ITALIAN].c_str()
+            Language::languages[Language::ENGLISH],
+            Language::languages[Language::ITALIAN]
           };
           ImGui::Text("%s:", GET_TRANSLATED_STRING(Language::SETTINGS_OPTION_LANGUAGE));
           CreateComboList("##language", (int*)&selectedLanguage, languages, (int)Language::AVAILABLE_LANGS_COUNT);
           ImGui::Separator();
-        } break;
-        case SelectedSetting::COUNT:
-          Util::panic("BRUH");
+
+          if (currentLang != selectedLanguage) {
+            currentLang = selectedLanguage;
+            Language::SetLanguage(languageStrings, selectedLanguage);
+          }
+
+          ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
       }
+
+      const auto style = ImGui::GetStyle();
+      ImGui::SetCursorPos({
+        ImGui::GetWindowWidth() - ImGui::CalcTextSize(GET_TRANSLATED_STRING(Language::SETTINGS_CLOSE)).x - style.FramePadding.x * 5,
+        ImGui::GetWindowHeight() - ImGui::CalcTextSize(GET_TRANSLATED_STRING(Language::SETTINGS_CLOSE)).y - style.FramePadding.y * 5,
+      });
+      if (ImGui::Button(GET_TRANSLATED_STRING(Language::SETTINGS_CLOSE))) show = false;
 
       ImGui::EndPopup();
     }

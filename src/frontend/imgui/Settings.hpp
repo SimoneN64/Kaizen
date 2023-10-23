@@ -12,8 +12,8 @@ struct Settings {
   [[nodiscard]] FORCE_INLINE float GetVolumeL() const { return volumeL; };
   [[nodiscard]] FORCE_INLINE float GetVolumeR() const { return volumeR; };
 
-  void RenderWidget(bool& show);
-  std::array<std::string, Language::STRING_COUNT> languageStrings{};
+  void RenderWidget(const int& mWw, const int& mWh, bool& show);
+  std::map<Language::StringID, const char*> languageStrings{};
 private:
   bool jit = false;
   float volumeL, volumeR;

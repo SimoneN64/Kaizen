@@ -153,6 +153,24 @@ FORCE_INLINE void SetFPUCauseCVTRaised(Registers& regs, int raised) {
   SetFPUCauseRaised(regs, raised);
 }
 
+#define F_TO_U32(f) (*((u32*)(&(f))))
+#define D_TO_U64(d) (*((u64*)(&(d))))
+#define U64_TO_D(d) (*((double*)(&(d))))
+#define U32_TO_F(f) (*((float*)(&(f))))
+
+template <typename T>
+FORCE_INLINE bool isqnan(T f) {
+  if constexpr(std::is_same_v<T, float>) {
+    u32 v = F_TO_U32(f);
+    return (v & 0x7FC00000) == 0x7FC00000;
+  } else if constexpr(std::is_same_v<T, double>) {
+    u64 v = D_TO_U64(f);
+    return (v & 0x7FF8000000000000) == 0x7FF8000000000000;
+  } else {
+    Util::panic("Invalid float type in isqnan");
+  }
+}
+
 template <typename T>
 FORCE_INLINE void SetCauseByArg(Registers& regs, T f) {
   int c = std::fpclassify(f);
@@ -175,11 +193,6 @@ FORCE_INLINE void SetCauseByArg(Registers& regs, T f) {
       Util::panic("Unknown floating point classification: {}", c);
   }
 }
-
-#define F_TO_U32(f) (*((u32*)(&(f))))
-#define D_TO_U64(d) (*((u64*)(&(d))))
-#define U64_TO_D(d) (*((double*)(&(d))))
-#define U32_TO_F(f) (*((float*)(&(f))))
 
 template <typename T>
 FORCE_INLINE void SetCauseOnResult(Registers& regs, T& d) {
@@ -251,19 +264,6 @@ FORCE_INLINE bool isnan(T f) {
     return ((v & 0x7FF0000000000000) == 0x7FF0000000000000) && ((v & 0xFFFFFFFFFFFFF) != 0);
   } else {
     Util::panic("Invalid float type in isnan");
-  }
-}
-
-template <typename T>
-FORCE_INLINE bool isqnan(T f) {
-  if constexpr(std::is_same_v<T, float>) {
-    u32 v = F_TO_U32(f);
-    return (v & 0x7FC00000) == 0x7FC00000;
-  } else if constexpr(std::is_same_v<T, double>) {
-    u64 v = D_TO_U64(f);
-    return (v & 0x7FF8000000000000) == 0x7FF8000000000000;
-  } else {
-    Util::panic("Invalid float type in isqnan");
   }
 }
 

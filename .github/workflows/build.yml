@@ -24,12 +24,8 @@ jobs:
           sudo make install
       - name: Build Kaizen
         run: |
-          cmake \
-            -G Ninja \
-            -B build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -S src
-          ninja -j$(nproc) -C build
+          cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
       - name: Collect artifacts
         run: |
           mkdir upload
@@ -51,7 +47,7 @@ jobs:
           vcpkg install sdl2[vulkan]:x64-windows fmt:x64-windows nlohmann-json:x64-windows mio:x64-windows
       - name: Build Kaizen
         run: |
-          cmake -B build -T clangcl -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release -S src
+          cmake -B build -T clangcl -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release
           cmake --build build --config Release
       - name: Collect artifacts
         run: |

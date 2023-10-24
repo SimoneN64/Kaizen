@@ -213,9 +213,6 @@ void JIT::b(u32 instr, const Xbyak::Reg64& op1, const T& op2, BranchCond cond) {
 template void JIT::b<Xbyak::Reg64>(u32 instr, const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, BranchCond cond);
 template void JIT::b<int>(u32 instr, const Xbyak::Reg64& op1, const int& op2, BranchCond cond);
 
-template void JIT::b<Xbyak::Reg64>(u32, const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, BranchCond cond);
-template void JIT::b<int>(u32, const Xbyak::Reg64& op1, const int& op2, BranchCond cond);
-
 template <class T>
 void JIT::blink(u32 instr, const Xbyak::Reg64& op1, const T& op2, BranchCond cond) {
   s16 imm = instr;
@@ -227,9 +224,6 @@ void JIT::blink(u32 instr, const Xbyak::Reg64& op1, const T& op2, BranchCond con
 template void JIT::blink<Xbyak::Reg64>(u32 instr, const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, BranchCond cond);
 template void JIT::blink<int>(u32 instr, const Xbyak::Reg64& op1, const int& op2, BranchCond cond);
 
-template void JIT::blink<Xbyak::Reg64>(u32, const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, BranchCond cond);
-template void JIT::blink<int>(u32, const Xbyak::Reg64& op1, const int& op2, BranchCond cond);
-
 template <class T>
 void JIT::bl(u32 instr, const Xbyak::Reg64& op1, const T& op2, BranchCond cond) {
   s16 imm = instr;
@@ -238,9 +232,6 @@ void JIT::bl(u32 instr, const Xbyak::Reg64& op1, const T& op2, BranchCond cond) 
 }
 template void JIT::bl<Xbyak::Reg64>(u32 instr, const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, BranchCond cond);
 template void JIT::bl<int>(u32 instr, const Xbyak::Reg64& op1, const int& op2, BranchCond cond);
-
-template void JIT::bl<Xbyak::Reg64>(u32, const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, BranchCond cond);
-template void JIT::bl<int>(u32, const Xbyak::Reg64& op1, const int& op2, BranchCond cond);
 
 template <class T>
 void JIT::bllink(u32 instr, const Xbyak::Reg64& op1, const T& op2, BranchCond cond) {
@@ -252,9 +243,6 @@ void JIT::bllink(u32 instr, const Xbyak::Reg64& op1, const T& op2, BranchCond co
 }
 template void JIT::bllink<Xbyak::Reg64>(u32 instr, const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, BranchCond cond);
 template void JIT::bllink<int>(u32 instr, const Xbyak::Reg64& op1, const int& op2, BranchCond cond);
-
-template void JIT::bllink<Xbyak::Reg64>(u32, const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, BranchCond cond);
-template void JIT::bllink<int>(u32, const Xbyak::Reg64& op1, const int& op2, BranchCond cond);
 
 void JIT::lui(u32 instr) {
   u64 val = s64(s16(instr));

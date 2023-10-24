@@ -83,5 +83,11 @@ static const std::array<const char*, AVAILABLE_LANGS_COUNT> languages = {
 	"Italiano"
 };
 
-void SetLanguage(std::map<StringID, const char*>& lang, int selectedLang);
+static FORCE_INLINE void SetLanguage(std::map<StringID, const char*>& lang, int selectedLang) {
+  switch (selectedLang) {
+		case AvailableLangs::ENGLISH: lang = english; break;
+		case AvailableLangs::ITALIAN: lang = italian; break;
+		default: Util::panic("Language not supported, index {}\n", selectedLang);
+	}
+}
 }

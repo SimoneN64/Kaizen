@@ -27,33 +27,36 @@ void PIF::Reset() {
   }
 }
 
-void PIF::LoadMempak(const std::string& path) {
-  mempakPath = fs::path(path).replace_extension(".mempak").string();
-  std::error_code error;
-  if (mempak.is_mapped()) {
-    mempak.sync(error);
-    if (error) { Util::panic("Could not sync {}", mempakPath); }
-    mempak.unmap();
-  }
-  FILE* f = fopen(mempakPath.c_str(), "rb");
-  if (!f) {
-    f = fopen(mempakPath.c_str(), "wb");
-    u8* dummy = (u8*)calloc(MEMPAK_SIZE, 1);
-    fwrite(dummy, 1, MEMPAK_SIZE, f);
-    free(dummy);
-  }
+void PIF::MaybeLoadMempak() {
+  if(!mempakOpen) {
+    mempakPath = fs::path(mempakPath).replace_extension(".mempak").string();
+    std::error_code error;
+    if (mempak.is_mapped()) {
+      mempak.sync(error);
+      if (error) { Util::panic("Could not sync {}", mempakPath); }
+      mempak.unmap();
+    }
+    FILE *f = fopen(mempakPath.c_str(), "rb");
+    if (!f) {
+      f = fopen(mempakPath.c_str(), "wb");
+      u8 *dummy = (u8 *) calloc(MEMPAK_SIZE, 1);
+      fwrite(dummy, 1, MEMPAK_SIZE, f);
+      free(dummy);
+    }
 
-  fseek(f, 0, SEEK_END);
-  size_t actualSize = ftell(f);
-  fseek(f, 0, SEEK_SET);
-  if (actualSize != MEMPAK_SIZE) {
-    Util::panic("Corrupt mempak!");
-  }
-  fclose(f);
+    fseek(f, 0, SEEK_END);
+    size_t actualSize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    if (actualSize != MEMPAK_SIZE) {
+      Util::panic("Corrupt mempak!");
+    }
+    fclose(f);
 
-  mempak = mio::make_mmap_sink(
+    mempak = mio::make_mmap_sink(
     mempakPath, 0, mio::map_entire_file, error);
-  if (error) { Util::panic("Could not open {}", mempakPath); }
+    if (error) { Util::panic("Could not open {}", mempakPath); }
+    mempakOpen = true;
+  }
 }
 
 FORCE_INLINE size_t getSaveSize(SaveType saveType) {
@@ -247,7 +250,8 @@ void PIF::ProcessCommands(Mem &mem) {
   }
 }
 
-void PIF::MempakRead(const u8* cmd, u8* res) const {
+void PIF::MempakRead(const u8* cmd, u8* res) {
+  MaybeLoadMempak();
   u16 offset = cmd[3] << 8;
   offset |= cmd[4];
 
@@ -274,6 +278,7 @@ void PIF::MempakRead(const u8* cmd, u8* res) const {
 }
 
 void PIF::MempakWrite(u8* cmd, u8* res) {
+  MaybeLoadMempak();
   // First two bytes in the command are the offset
   u16 offset = cmd[3] << 8;
   offset |= cmd[4];

@@ -107,7 +107,7 @@ struct PIF {
   PIF() = default;
   ~PIF() = default;
   void Reset();
-  void LoadMempak(const std::string&);
+  void MaybeLoadMempak();
   void LoadEeprom(SaveType, const std::string&);
   void ProcessCommands(Mem&);
   void InitDevices(SaveType);
@@ -118,12 +118,12 @@ struct PIF {
   void UpdateController();
   bool ReadButtons(u8*) const;
   void ControllerID(u8*) const;
-  void MempakRead(const u8*, u8*) const;
+  void MempakRead(const u8*, u8*);
   void MempakWrite(u8*, u8*);
   void EepromRead(const u8*, u8*, const Mem&) const;
   void EepromWrite(const u8*, u8*, const Mem&);
 
-  bool gamepadConnected = false;
+  bool gamepadConnected = false, mempakOpen = false;
   SDL_GameController* gamepad{};
   JoybusDevice joybusDevices[6]{};
   u8 bootrom[PIF_BOOTROM_SIZE]{}, ram[PIF_RAM_SIZE]{};

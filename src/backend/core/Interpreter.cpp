@@ -1,6 +1,26 @@
 #include <Core.hpp>
 
 namespace n64 {
+
+bool Interpreter::ShouldServiceInterrupt() {
+  bool interrupts_pending = (regs.cop0.status.im & regs.cop0.cause.interruptPending) != 0;
+  bool interrupts_enabled = regs.cop0.status.ie == 1;
+  bool currently_handling_exception = regs.cop0.status.exl == 1;
+  bool currently_handling_error = regs.cop0.status.erl == 1;
+
+  return interrupts_pending && interrupts_enabled &&
+         !currently_handling_exception && !currently_handling_error;
+}
+
+void Interpreter::CheckCompareInterrupt() {
+  regs.cop0.count++;
+  regs.cop0.count &= 0x1FFFFFFFF;
+  if(regs.cop0.count == (u64)regs.cop0.compare << 1) {
+    regs.cop0.cause.ip7 = 1;
+    UpdateInterrupt(mem.mmio.mi, regs);
+  }
+}
+
 int Interpreter::Step() {
   CheckCompareInterrupt();
 

@@ -25,6 +25,8 @@ void PIF::Reset() {
     if (error) { Util::panic("Could not sync {}", eepromPath); }
     eeprom.unmap();
   }
+
+  mempakOpen = false;
 }
 
 void PIF::MaybeLoadMempak() {

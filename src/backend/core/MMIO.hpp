@@ -27,5 +27,7 @@ struct MMIO {
 
   u32 Read(u32);
   void Write(Mem&, Registers&, u32, u32);
+  std::vector<u8> Serialize();
+  void Deserialize(const std::vector<u8>&);
 };
 }

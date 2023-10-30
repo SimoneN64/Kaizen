@@ -14,6 +14,8 @@ struct Core {
   void Stop();
   void LoadROM(const std::string&);
   void Run(float volumeL, float volumeR);
+  void Serialize();
+  void Deserialize();
   void TogglePause() { pause = !pause; }
   [[nodiscard]] VI& GetVI() { return cpu->mem.mmio.vi; }
 
@@ -25,5 +27,8 @@ struct Core {
   bool romLoaded = false;
   std::string rom;
   std::unique_ptr<BaseCPU> cpu;
+  std::vector<u8> serialized[10]{};
+  int memSize, cpuSize, verSize;
+  int slot = 0;
 };
 }

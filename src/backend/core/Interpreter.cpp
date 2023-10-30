@@ -55,4 +55,18 @@ int Interpreter::Step() {
 
   return 1;
 }
+
+std::vector<u8> Interpreter::Serialize() {
+  std::vector<u8> res{};
+
+  res.resize(sizeof(Registers));
+
+  memcpy(res.data(), &regs, sizeof(Registers));
+
+  return res;
+}
+
+void Interpreter::Deserialize(const std::vector<u8> &data) {
+  memcpy(&regs, data.data(), sizeof(Registers));
+}
 }

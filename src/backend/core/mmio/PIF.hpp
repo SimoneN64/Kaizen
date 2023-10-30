@@ -122,6 +122,7 @@ struct PIF {
   void MempakWrite(u8*, u8*);
   void EepromRead(const u8*, u8*, const Mem&) const;
   void EepromWrite(const u8*, u8*, const Mem&);
+  std::vector<u8> Serialize();
 
   bool gamepadConnected = false, mempakOpen = false;
   SDL_GameController* gamepad{};

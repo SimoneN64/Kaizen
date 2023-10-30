@@ -41,6 +41,64 @@ void App::Run() {
             case SDLK_o: {
               OpenROMDialog(window, core);
             } break;
+            case SDLK_F1: {
+              if(core.romLoaded && event.key.keysym.mod == KMOD_SHIFT) {
+                core.slot = 0;
+              }
+            } break;
+            case SDLK_F2: {
+              if(core.romLoaded && event.key.keysym.mod == KMOD_SHIFT) {
+                core.slot = 1;
+              }
+            } break;
+            case SDLK_F3: {
+              if(core.romLoaded && event.key.keysym.mod == KMOD_SHIFT) {
+                core.slot = 2;
+              }
+            } break;
+            case SDLK_F4: {
+              if(core.romLoaded && event.key.keysym.mod == KMOD_SHIFT) {
+                core.slot = 3;
+              }
+            } break;
+            case SDLK_F5: {
+              if(core.romLoaded) {
+                if(event.key.keysym.mod == KMOD_SHIFT) {
+                  core.slot = 4;
+                } else {
+                  core.Deserialize();
+                }
+              }
+            } break;
+            case SDLK_F6: {
+              if(core.romLoaded) {
+                if(event.key.keysym.mod == KMOD_SHIFT) {
+                  core.slot = 5;
+                } else {
+                  core.Serialize();
+                }
+              }
+            } break;
+            case SDLK_F7: {
+              if(core.romLoaded && event.key.keysym.mod == KMOD_SHIFT) {
+                core.slot = 6;
+              }
+            } break;
+            case SDLK_F8: {
+              if(core.romLoaded && event.key.keysym.mod == KMOD_SHIFT) {
+                core.slot = 7;
+              }
+            } break;
+            case SDLK_F9: {
+              if(core.romLoaded && event.key.keysym.mod == KMOD_SHIFT) {
+                core.slot = 8;
+              }
+            } break;
+            case SDLK_F10: {
+              if(core.romLoaded && event.key.keysym.mod == KMOD_SHIFT) {
+                core.slot = 9;
+              }
+            } break;
           }
           break;
         case SDL_DROPFILE: {

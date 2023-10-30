@@ -15,6 +15,9 @@ private:
 #define check_address_error(mask, vaddr) (((!regs.cop0.is_64bit_addressing) && (s32)(vaddr) != (vaddr)) || (((vaddr) & (mask)) != 0))
   bool ShouldServiceInterrupt() override;
   void CheckCompareInterrupt() override;
+  std::vector<u8> Serialize() override;
+  void Deserialize(const std::vector<u8>&) override;
+
   void cop2Decode(u32);
   void special(u32);
   void regimm(u32);

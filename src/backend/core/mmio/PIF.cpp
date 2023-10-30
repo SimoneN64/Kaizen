@@ -627,4 +627,30 @@ void PIF::ExecutePIF(Mem& mem, Registers& regs) {
 
   DoPIFHLE(mem, regs, pal, cicType);
 }
+
+std::vector<u8> PIF::Serialize() {
+  std::vector<u8> res{};
+  res.resize(
+    6*sizeof(JoybusDevice) +
+    PIF_BOOTROM_SIZE +
+    PIF_RAM_SIZE +
+    mempak.size() +
+    eeprom.size() +
+    sizeof(int));
+
+  u32 index = 0;
+  memcpy(res.data() + index, joybusDevices, 6*sizeof(JoybusDevice));
+  index += 6*sizeof(JoybusDevice);
+  memcpy(res.data() + index, bootrom, PIF_BOOTROM_SIZE);
+  index += PIF_BOOTROM_SIZE;
+  memcpy(res.data() + index, ram, PIF_RAM_SIZE);
+  index += PIF_RAM_SIZE;
+  memcpy(res.data() + index, mempak.data(), mempak.size());
+  index += mempak.size();
+  memcpy(res.data() + index, eeprom.data(), eeprom.size());
+  index += eeprom.size();
+  memcpy(res.data() + index, &channel, sizeof(int));
+
+  return res;
+}
 }

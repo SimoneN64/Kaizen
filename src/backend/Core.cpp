@@ -90,4 +90,29 @@ void Core::Run(float volumeL, float volumeR) {
     scheduler.tick(frameCycles, mem, regs);
   }
 }
+
+void Core::Serialize() {
+  auto sMEM = cpu->mem.Serialize();
+  auto sCPU = cpu->Serialize();
+  auto sVER = std::vector<u8>{KAIZEN_VERSION >> 8, KAIZEN_VERSION >> 4, KAIZEN_VERSION & 0xFF};
+  memSize = sMEM.size();
+  cpuSize = sCPU.size();
+  verSize = sVER.size();
+  serialized[slot].insert(serialized[slot].begin(), sVER.begin(), sVER.end());
+  serialized[slot].insert(serialized[slot].end(), sMEM.begin(), sMEM.end());
+  serialized[slot].insert(serialized[slot].end(), sCPU.begin(), sCPU.end());
+}
+
+void Core::Deserialize() {
+  std::vector<u8> dVER(serialized[slot].begin(), serialized[slot].begin() + verSize);
+  if(dVER[0] != (KAIZEN_VERSION >> 8)
+  || dVER[1] != (KAIZEN_VERSION >> 4)
+  || dVER[2] != (KAIZEN_VERSION & 0xFF)) {
+    Util::panic("PROBLEMI!");
+  }
+
+  cpu->mem.Deserialize(std::vector<u8>(serialized[slot].begin() + verSize, serialized[slot].begin() + verSize + memSize));
+  cpu->Deserialize(std::vector<u8>(serialized[slot].begin() + verSize + memSize, serialized[slot].begin() + verSize + memSize + cpuSize));
+  serialized[slot].erase(serialized[slot].begin(), serialized[slot].end());
+}
 }

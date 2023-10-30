@@ -601,4 +601,25 @@ void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
     }
   }
 }
+
+std::vector<u8> Mem::Serialize() {
+  std::vector<u8> res{};
+
+  auto sMMIO = mmio.Serialize();
+  auto sFLASH = flash.Serialize();
+  mmioSize = sMMIO.size();
+  flashSize = sFLASH.size();
+
+  res.insert(res.begin(), sMMIO.begin(), sMMIO.end());
+  res.insert(res.end(), sFLASH.begin(), sFLASH.end());
+  res.insert(res.end(), sram.begin(), sram.end());
+
+  return res;
+}
+
+void Mem::Deserialize(const std::vector<u8>& data) {
+  mmio.Deserialize(std::vector<u8>(data.begin(), data.begin() + mmioSize));
+  flash.Deserialize(std::vector<u8>(data.begin() + mmioSize, data.begin() + mmioSize + flashSize));
+  memcpy(sram.data(), data.data() + mmioSize + flashSize, sram.size());
+}
 }

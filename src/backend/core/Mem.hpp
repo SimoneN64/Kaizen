@@ -73,6 +73,45 @@ struct Flash {
   void CommandWrite();
   void CommandRead();
 
+  FORCE_INLINE std::vector<u8> Serialize() {
+    std::vector<u8> res{};
+
+    res.resize(
+      sizeof(state) +
+      sizeof(status) +
+      sizeof(eraseOffs) +
+      sizeof(writeOffs) +
+      128);
+
+    u32 index = 0;
+    memcpy(res.data() + index, &state, sizeof(state));
+    index += sizeof(state);
+    memcpy(res.data() + index, &status, sizeof(status));
+    index += sizeof(status);
+    memcpy(res.data() + index, &eraseOffs, sizeof(eraseOffs));
+    index += sizeof(eraseOffs);
+    memcpy(res.data() + index, &writeOffs, sizeof(writeOffs));
+    index += sizeof(writeOffs);
+    memcpy(res.data() + index, writeBuf, 128);
+
+    res.insert(res.begin(), flash.begin(), flash.end());
+
+    return res;
+  }
+
+  FORCE_INLINE void Deserialize(const std::vector<u8>& data) {
+    u32 index = 0;
+    memcpy(&state, data.data() + index, sizeof(state));
+    index += sizeof(state);
+    memcpy(&status, data.data() + index, sizeof(status));
+    index += sizeof(status);
+    memcpy(&eraseOffs, data.data() + index, sizeof(eraseOffs));
+    index += sizeof(eraseOffs);
+    memcpy(&writeOffs, data.data() + index, sizeof(writeOffs));
+    index += sizeof(writeOffs);
+    memcpy(writeBuf, data.data() + index, 128);
+  }
+
   FORCE_INLINE void Write32(u32 index, u32 val) {
     if(index > 0) {
       u8 cmd = val >> 24;
@@ -141,6 +180,9 @@ struct Mem {
     return mmio.rdp.rdram;
   }
 
+  std::vector<u8> Serialize();
+  void Deserialize(const std::vector<u8>&);
+
   u8 Read8(Registers&, u32);
   u16 Read16(Registers&, u32);
   u32 Read32(Registers&, u32);
@@ -194,6 +236,7 @@ private:
   mio::mmap_sink sram;
   u8 isviewer[ISVIEWER_SIZE]{};
   std::string sramPath{};
+  int mmioSize, flashSize;
 
   FORCE_INLINE bool IsROMPAL() {
     static const char pal_codes[] = {'D', 'F', 'I', 'P', 'S', 'U', 'X', 'Y'};

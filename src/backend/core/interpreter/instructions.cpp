@@ -988,5 +988,4 @@ void Interpreter::ctc2(u32) {
 void Interpreter::cfc2(u32) {
 
 }
-
 }

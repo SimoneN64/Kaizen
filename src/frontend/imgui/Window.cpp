@@ -219,6 +219,27 @@ void Window::RenderMainMenuBar(n64::Core &core) {
       }
       SDL_SetWindowTitle(window, windowTitle.c_str());
     }
+
+    if(ImGui::BeginMenu(GET_TRANSLATED_STRING(Language::EMULATION_MENU_STATES))) {
+      if(ImGui::MenuItem(fmt::format(GET_TRANSLATED_STRING(Language::STATES_ITEM_SLOT), 0).c_str())) { core.slot = 0; }
+      if(ImGui::MenuItem(fmt::format(GET_TRANSLATED_STRING(Language::STATES_ITEM_SLOT), 1).c_str())) { core.slot = 1; }
+      if(ImGui::MenuItem(fmt::format(GET_TRANSLATED_STRING(Language::STATES_ITEM_SLOT), 2).c_str())) { core.slot = 2; }
+      if(ImGui::MenuItem(fmt::format(GET_TRANSLATED_STRING(Language::STATES_ITEM_SLOT), 3).c_str())) { core.slot = 3; }
+      if(ImGui::MenuItem(fmt::format(GET_TRANSLATED_STRING(Language::STATES_ITEM_SLOT), 4).c_str())) { core.slot = 4; }
+      if(ImGui::MenuItem(fmt::format(GET_TRANSLATED_STRING(Language::STATES_ITEM_SLOT), 5).c_str())) { core.slot = 5; }
+      if(ImGui::MenuItem(fmt::format(GET_TRANSLATED_STRING(Language::STATES_ITEM_SLOT), 6).c_str())) { core.slot = 6; }
+      if(ImGui::MenuItem(fmt::format(GET_TRANSLATED_STRING(Language::STATES_ITEM_SLOT), 7).c_str())) { core.slot = 7; }
+      if(ImGui::MenuItem(fmt::format(GET_TRANSLATED_STRING(Language::STATES_ITEM_SLOT), 8).c_str())) { core.slot = 8; }
+      if(ImGui::MenuItem(fmt::format(GET_TRANSLATED_STRING(Language::STATES_ITEM_SLOT), 9).c_str())) { core.slot = 9; }
+      ImGui::EndMenu();
+    }
+
+    if(ImGui::MenuItem(GET_TRANSLATED_STRING(Language::EMULATION_ITEM_LOAD_STATE), "F5", false, core.romLoaded)) {
+      core.Deserialize();
+    }
+    if(ImGui::MenuItem(GET_TRANSLATED_STRING(Language::EMULATION_ITEM_SAVE_STATE), "F6", false, core.romLoaded)) {
+      core.Serialize();
+    }
     if (ImGui::MenuItem(GET_TRANSLATED_STRING(Language::EMULATION_ITEM_SETTINGS))) {
       showSettings = true;
     }

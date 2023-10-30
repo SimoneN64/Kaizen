@@ -101,6 +101,9 @@ private:
     return mem.Read8(regs, addr);
   }
 
+  std::vector<u8> Serialize() override { return {}; }
+  void Deserialize(const std::vector<u8>&) override { }
+
   void cop2Decode(u32);
   void special(u32);
   void regimm(u32);

@@ -2,6 +2,7 @@
 #include <core/registers/Registers.hpp>
 #include <core/registers/Cop0.hpp>
 #include <core/Interpreter.hpp>
+#include <backend/RomHelpers.hpp>
 #include <File.hpp>
 #include <unarr.h>
 

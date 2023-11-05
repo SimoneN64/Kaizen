@@ -3,7 +3,6 @@
 #include <backend/MemoryRegions.hpp>
 #include <backend/core/MMIO.hpp>
 #include <vector>
-#include <backend/RomHelpers.hpp>
 #include <log.hpp>
 #include <Registers.hpp>
 #include <algorithm>

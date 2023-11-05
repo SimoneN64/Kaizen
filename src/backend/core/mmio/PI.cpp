@@ -16,6 +16,230 @@ void PI::Reset() {
   wrLen = 0;
 }
 
+auto PI::BusRead8(Mem& mem, u32 addr) const -> u8 {
+  // TODO: Latch with CPU stall
+  switch (addr) {
+    case REGION_PI_UNKNOWN:
+      Util::warn("Reading byte from address 0x{:08X} in unsupported region: REGION_PI_UNKNOWN - This is the N64DD, returning FF because it is not emulated", addr);
+      return 0xFF;
+    case REGION_PI_64DD_REG:
+      Util::warn("Reading byte from address 0x{:08X} in unsupported region: REGION_PI_64DD_REG - This is the N64DD, returning FF because it is not emulated", addr);
+      return 0xFF;
+    case REGION_PI_64DD_ROM:
+      Util::warn("Reading byte from address 0x{:08X} in unsupported region: REGION_PI_64DD_ROM - This is the N64DD, returning FF because it is not emulated", addr);
+      return 0xFF;
+    case REGION_PI_SRAM:
+      return mem.BackupRead8(addr - SREGION_PI_SRAM);
+    case REGION_PI_ROM: {
+      // round to nearest 4 byte boundary, keeping old LSB
+      addr = (addr + 2) & ~2;
+      u32 index = BYTE_ADDRESS(addr) - SREGION_PI_ROM;
+      if (index > mem.rom.size) {
+        Util::warn("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM! ({}/0x{:016X})", addr, index, index, mem.rom.size, mem.rom.size);
+        return 0xFF;
+      }
+      return mem.rom.cart[index];
+    }
+    default:
+      Util::panic("Should never end up here! Access to address {:08X} which did not match any PI bus regions!", addr);
+  }
+}
+
+void PI::BusWrite8(Mem& mem, u32 addr, u32 val) {
+  switch (addr) {
+    case REGION_PI_UNKNOWN:
+      Util::warn("Writing byte 0x{:02X} to address 0x{:08X} in unsupported region: REGION_PI_UNKNOWN", val, addr);
+      return;
+    case REGION_PI_64DD_REG:
+      if (addr == 0x05000020) {
+        fprintf(stderr, "%c", val);
+      } else {
+        Util::warn("Writing byte 0x{:02X} to address 0x{:08X} in region: REGION_PI_64DD_ROM, this is the 64DD, ignoring!", val, addr);
+      }
+      return;
+    case REGION_PI_64DD_ROM:
+      Util::warn("Writing byte 0x{:02X} to address 0x{:08X} in unsupported region: REGION_PI_64DD_ROM", val, addr);
+      return;
+    case REGION_PI_SRAM:
+      mem.BackupWrite8(addr - SREGION_PI_SRAM, val);
+      return;
+    case REGION_PI_ROM:
+      Util::warn("Writing byte 0x{:02X} to address 0x{:08X} in unsupported region: REGION_PI_ROM", val, addr);
+      return;
+    default:
+      Util::panic("Should never end up here! Access to address {:08X} which did not match any PI bus regions!", addr);
+  }
+}
+
+auto PI::BusRead16(Mem& mem, u32 addr) const -> u16 {
+  // TODO: Latch with CPU stall
+  switch (addr) {
+    case REGION_PI_UNKNOWN:
+      Util::warn("Reading half from address 0x{:08X} in unsupported region: REGION_PI_UNKNOWN - This is the N64DD, returning FF because it is not emulated", addr);
+      return 0xFF;
+    case REGION_PI_64DD_REG:
+      Util::warn("Reading half from address 0x{:08X} in unsupported region: REGION_PI_64DD_REG - This is the N64DD, returning FF because it is not emulated", addr);
+      return 0xFF;
+    case REGION_PI_64DD_ROM:
+      Util::warn("Reading half from address 0x{:08X} in unsupported region: REGION_PI_64DD_ROM - This is the N64DD, returning FF because it is not emulated", addr);
+      return 0xFF;
+    case REGION_PI_SRAM:
+      Util::panic("Reading half from address 0x{:08X} in unsupported region: REGION_PI_SRAM", addr);
+    case REGION_PI_ROM: {
+      // round to nearest 4 byte boundary, keeping old LSB
+      addr = (addr + 2) & ~3;
+      u32 index = HALF_ADDRESS(addr) - SREGION_PI_ROM;
+      if (index > mem.rom.size - 1) {
+        Util::warn("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM! ({}/0x{:016X})", addr, index, index, mem.rom.size, mem.rom.size);
+        return 0xFFFF;
+      }
+      return Util::ReadAccess<u16>(mem.rom.cart, index);
+    }
+    default:
+      Util::panic("Should never end up here! Access to address {:08X} which did not match any PI bus regions!", addr);
+  }
+}
+
+void PI::BusWrite16(Mem& mem, u32 addr, u16 val) {
+  switch (addr) {
+    case REGION_PI_UNKNOWN:
+      Util::warn("Writing half 0x{:04X} to address 0x{:08X} in unsupported region: REGION_PI_UNKNOWN", val, addr);
+      return;
+    case REGION_PI_64DD_REG:
+      Util::warn("Writing half 0x{:04X} to address 0x{:08X} in region: REGION_PI_64DD_ROM, this is the 64DD, ignoring!", val, addr);
+      return;
+    case REGION_PI_64DD_ROM:
+      Util::warn("Writing half 0x{:04X} to address 0x{:08X} in unsupported region: REGION_PI_64DD_ROM", val, addr);
+      return;
+    case REGION_PI_SRAM:
+      Util::warn("Writing half 0x{:04X} to address 0x{:08X} in unsupported region: REGION_PI_SRAM", val, addr);
+      return;
+    case REGION_PI_ROM:
+      Util::warn("Writing half 0x{:04X} to address 0x{:08X} in unsupported region: REGION_PI_ROM", val, addr);
+      return;
+    default:
+      Util::panic("Should never end up here! Access to address {:08X} which did not match any PI bus regions!", addr);
+  }
+}
+
+auto PI::BusRead32(Mem& mem, u32 addr) const -> u32 {
+  // TODO: Latch with CPU stall
+  switch (addr) {
+    case REGION_PI_UNKNOWN:
+      Util::warn("Reading word from address 0x{:08X} in unsupported region: REGION_PI_UNKNOWN - This is the N64DD, returning FF because it is not emulated", addr);
+      return 0xFF;
+    case REGION_PI_64DD_REG:
+      Util::warn("Reading word from address 0x{:08X} in unsupported region: REGION_PI_64DD_REG - This is the N64DD, returning FF because it is not emulated", addr);
+      return 0xFF;
+    case REGION_PI_64DD_ROM:
+      Util::warn("Reading word from address 0x{:08X} in unsupported region: REGION_PI_64DD_ROM - This is the N64DD, returning FF because it is not emulated", addr);
+      return 0xFF;
+    case REGION_PI_SRAM:
+      return mem.BackupRead32(addr - SREGION_PI_SRAM);
+    case REGION_PI_ROM: {
+      u32 index = addr - SREGION_PI_ROM;
+      if (index > mem.rom.size - 3) { // -3 because we're reading an entire word
+        switch (addr) {
+          case REGION_CART_ISVIEWER_BUFFER:
+            return htobe32(Util::ReadAccess<u32>(mem.isviewer, addr - SREGION_CART_ISVIEWER_BUFFER));
+          case CART_ISVIEWER_FLUSH:
+            Util::panic("Read from ISViewer flush!");
+        }
+        Util::warn("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM!", addr, index, index);
+        return 0;
+      } else {
+        return Util::ReadAccess<u32>(mem.rom.cart, index);
+      }
+    }
+    default:
+      Util::panic("Should never end up here! Access to address {:08X} which did not match any PI bus regions!", addr);
+  }
+}
+
+void PI::BusWrite32(Mem& mem, u32 addr, u32 val) {
+  switch (addr) {
+    case REGION_PI_UNKNOWN:
+      Util::warn("Writing word 0x{:08X} to address 0x{:08X} in unsupported region: REGION_PI_UNKNOWN", val, addr);
+      return;
+    case REGION_PI_64DD_REG:
+      Util::warn("Writing word 0x{:08X} to address 0x{:08X} in region: REGION_PI_64DD_ROM, this is the 64DD, ignoring!", val, addr);
+      return;
+    case REGION_PI_64DD_ROM:
+      Util::warn("Writing word 0x{:08X} to address 0x{:08X} in unsupported region: REGION_PI_64DD_ROM", val, addr);
+      return;
+    case REGION_PI_SRAM:
+      mem.BackupWrite32(addr - SREGION_PI_SRAM, val);
+      return;
+    case REGION_PI_ROM:
+      switch (addr) {
+        case REGION_CART_ISVIEWER_BUFFER:
+          Util::WriteAccess<u32>(mem.isviewer, addr - SREGION_CART_ISVIEWER_BUFFER, be32toh(val));
+          break;
+        case CART_ISVIEWER_FLUSH: {
+          if (val < CART_ISVIEWER_SIZE) {
+            char* message = (char*)malloc(val + 1);
+            memcpy(message, mem.isviewer, val);
+            message[val] = '\0';
+            printf("%s", message);
+            free(message);
+          } else {
+            Util::panic("ISViewer buffer size is emulated at {} bytes, but received a flush command for {} bytes!", CART_ISVIEWER_SIZE, val);
+          }
+          break;
+        }
+        default:
+          Util::warn("Writing word 0x{:08X} to address 0x{:08X} in unsupported region: REGION_PI_ROM", val, addr);
+      }
+      return;
+    default:
+      Util::panic("Should never end up here! Access to address {:08X} which did not match any PI bus regions!", addr);
+  }
+}
+
+auto PI::BusRead64(Mem& mem, u32 addr) const -> u64 {
+  switch (addr) {
+    case REGION_PI_UNKNOWN:
+      Util::warn("Reading dword from address 0x{:08X} in unsupported region: REGION_PI_UNKNOWN", addr);
+      return 0xFFFFFFFFFFFFFFFF;
+    case REGION_PI_64DD_REG:
+      Util::warn("Reading dword from address 0x{:08X} in unsupported region: REGION_PI_64DD_REG", addr);
+      return 0xFFFFFFFFFFFFFFFF;
+    case REGION_PI_64DD_ROM:
+      Util::warn("Reading dword from address 0x{:08X} in unsupported region: REGION_PI_64DD_ROM", addr);
+      return 0xFFFFFFFFFFFFFFFF;
+    case REGION_PI_SRAM:
+      Util::warn("Reading dword from address 0x{:08X} in unsupported region: REGION_PI_SRAM", addr);
+      return 0xFFFFFFFFFFFFFFFF;
+    case REGION_PI_ROM: {
+      u32 index = addr - SREGION_PI_ROM;
+      if (index > mem.rom.size - 7) { // -7 because we're reading an entire dword
+        Util::panic("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM!", addr, index, index);
+      }
+      return Util::ReadAccess<u64>(mem.rom.cart, index);
+    }
+    default:
+      Util::panic("Should never end up here! Access to address {:08X} which did not match any PI bus regions!", addr);
+  }
+}
+
+void PI::BusWrite64(Mem& mem, u32 addr, u64 val) {
+  switch (addr) {
+    case REGION_PI_UNKNOWN:
+      Util::panic("Writing dword 0x{:016X} to address 0x{:08X} in unsupported region: REGION_PI_UNKNOWN", val, addr);
+    case REGION_PI_64DD_REG:
+      Util::panic("Writing dword 0x{:016X} to address 0x{:08X} in unsupported region: REGION_PI_64DD_REG", val, addr);
+    case REGION_PI_64DD_ROM:
+      Util::panic("Writing dword 0x{:016X} to address 0x{:08X} in unsupported region: REGION_PI_64DD_ROM", val, addr);
+    case REGION_PI_SRAM:
+      Util::panic("Writing dword 0x{:016X} to address 0x{:08X} in unsupported region: REGION_PI_SRAM", val, addr);
+    case REGION_PI_ROM:
+      Util::warn("Writing dword 0x{:016X} to address 0x{:08X} in unsupported region: REGION_PI_ROM", val, addr);
+      break;
+    default:
+      Util::panic("Should never end up here! Access to address %08X which did not match any PI bus regions!", addr);
+  }
+}
+
 auto PI::Read(MI& mi, u32 addr) const -> u32 {
   switch(addr) {
     case 0x04600000: return dramAddr;
@@ -45,12 +269,12 @@ auto PI::Read(MI& mi, u32 addr) const -> u32 {
 
 FORCE_INLINE u8 PIGetDomain(u32 address) {
   switch (address) {
-    case 0x00000000 ... 0x04FFFFFF:
-    case CART_REGION_1_1:
-    case 0x10000000 ... 0xFFFFFFFF:
+    case REGION_PI_UNKNOWN:
+    case REGION_PI_64DD_ROM:
+    case REGION_PI_ROM:
       return 1;
-    case CART_REGION_2_1:
-    case CART_REGION_2_2:
+    case REGION_PI_64DD_REG:
+    case REGION_PI_SRAM:
       return 2;
     default:
       Util::panic("Unknown PI domain for address {:08X}!", address);
@@ -79,7 +303,7 @@ FORCE_INLINE u32 PIAccessTiming(PI& pi, u8 domain, u32 length) {
       page_size = std::pow(2, (pi.pi_bsd_dom2_pgs + 2));
       break;
     default:
-      Util::panic("Unknown PI domain: %d\n", domain);
+      Util::panic("Unknown PI domain: {}\n", domain);
   }
 
   pages = ceil((double)length / page_size);

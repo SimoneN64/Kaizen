@@ -192,6 +192,11 @@ struct Mem {
   void Write32(Registers&, u32, u32);
   void Write64(Registers&, u32, u64);
 
+  u32 BackupRead32(u32);
+  void BackupWrite32(u32, u32);
+  u8 BackupRead8(u32);
+  void BackupWrite8(u32, u8);
+
   MMIO mmio;
 
   FORCE_INLINE void DumpRDRAM() const {

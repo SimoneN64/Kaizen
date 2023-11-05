@@ -12,6 +12,14 @@ struct PI {
   void Reset();
   auto Read(MI&, u32) const -> u32;
   void Write(Mem&, Registers&, u32, u32);
+  auto BusRead8(Mem&, u32) const -> u8;
+  void BusWrite8(Mem&, u32, u32);
+  auto BusRead16(Mem&, u32) const -> u16;
+  void BusWrite16(Mem&, u32, u16);
+  auto BusRead32(Mem&, u32) const -> u32;
+  void BusWrite32(Mem&, u32, u32);
+  auto BusRead64(Mem&, u32) const -> u64;
+  void BusWrite64(Mem&, u32, u64);
   bool dmaBusy{}, ioBusy{};
   u32 dramAddr{}, cartAddr{}, dramAddrInternal{}, cartAddrInternal{};
   u32 rdLen{}, wrLen{};

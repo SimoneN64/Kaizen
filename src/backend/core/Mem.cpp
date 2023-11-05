@@ -195,6 +195,8 @@ u8 Mem::Read8(n64::Registers &regs, u32 paddr) {
           return mmio.rsp.dmem[BYTE_ADDRESS(mirrAddr)];
         }
       }
+      case REGION_CART:
+        return mmio.pi.BusRead8(*this, paddr);
       case 0x04040000 ... 0x040FFFFF:
       case 0x04100000 ... 0x041FFFFF:
       case 0x04600000 ... 0x048FFFFF:
@@ -205,39 +207,15 @@ u8 Mem::Read8(n64::Registers &regs, u32 paddr) {
         int offs = 3 - (paddr & 3);
         return (w >> (offs * 8)) & 0xff;
       }
-      case CART_REGION_1_2:
-        paddr = (paddr + 2) & ~2;
-        return rom.cart[BYTE_ADDRESS(paddr) & rom.mask];
       case PIF_ROM_REGION:
         return si.pif.bootrom[BYTE_ADDRESS(paddr) - PIF_ROM_REGION_START];
       case PIF_RAM_REGION:
         return si.pif.ram[paddr - PIF_RAM_REGION_START];
       case 0x00800000 ... 0x03FFFFFF: // unused
       case 0x04200000 ... 0x042FFFFF: // unused
-      case 0x04900000 ... 0x07FFFFFF: // unused
+      case 0x04900000 ... 0x04FFFFFF: // unused
       case 0x1FC00800 ... 0xFFFFFFFF: // unused
         return 0;
-      case CART_REGION_2_2:
-        switch (saveType) {
-          case SAVE_NONE:
-            Util::panic("Accessing cartridge backup with save type SAVE_NONE");
-            break;
-          case SAVE_EEPROM_4k:
-          case SAVE_EEPROM_16k:
-            Util::panic("Accessing cartridge backup with save type SAVE_EEPROM");
-            break;
-          case SAVE_FLASH_1m:
-            if(flash.flash.is_open()) {
-              return flash.Read8(paddr - CART_REGION_START_2_2);
-            } else {
-              Util::panic("Invalid backup Write8 if save data is not initialized");
-            }
-          case SAVE_SRAM_256k:
-            if(sram.is_open()) {
-              return sram[paddr - CART_REGION_START_2_2];
-            }
-        }
-        break;
       default:
         Util::panic("Unimplemented 8-bit read at address {:08X} (PC = {:016X})", paddr, (u64) regs.pc);
     }
@@ -267,16 +245,15 @@ u16 Mem::Read16(n64::Registers &regs, u32 paddr) {
       }
       case MMIO_REGION:
         return mmio.Read(paddr);
-      case CART_REGION_1_2:
-        paddr = (paddr + 2) & ~3;
-        return Util::ReadAccess<u16>(rom.cart, HALF_ADDRESS(paddr) & rom.mask);
+      case REGION_CART:
+        return mmio.pi.BusRead16(*this, paddr);
       case PIF_ROM_REGION:
         return Util::ReadAccess<u16>(si.pif.bootrom, HALF_ADDRESS(paddr) - PIF_ROM_REGION_START);
       case PIF_RAM_REGION:
         return be16toh(Util::ReadAccess<u16>(si.pif.ram, paddr - PIF_RAM_REGION_START));
       case 0x00800000 ... 0x03FFFFFF:
       case 0x04200000 ... 0x042FFFFF:
-      case 0x04900000 ... 0x0FFFFFFF:
+      case 0x04900000 ... 0x04FFFFFF:
       case 0x1FC00800 ... 0xFFFFFFFF:
         return 0;
       default:
@@ -308,24 +285,14 @@ u32 Mem::Read32(n64::Registers &regs, u32 paddr) {
       }
       case MMIO_REGION:
         return mmio.Read(paddr);
-      case CART_REGION_1_2:
-        return Util::ReadAccess<u32>(rom.cart, paddr & rom.mask);
-      case CART_REGION_2_2:
-        if(saveType == SAVE_NONE) {
-          return 0;
-        } else if (saveType == SAVE_SRAM_256k) {
-          return 0xffff'ffff;
-        } else if (saveType == SAVE_FLASH_1m) {
-          return flash.Read32(paddr - CART_REGION_START_2_2);
-        } else {
-          Util::panic("Cartridge backup Read32 with unknown save type!");
-        }
+      case REGION_CART:
+        return mmio.pi.BusRead32(*this, paddr);
       case PIF_ROM_REGION:
         return Util::ReadAccess<u32>(si.pif.bootrom, paddr - PIF_ROM_REGION_START);
       case PIF_RAM_REGION:
         return be32toh(Util::ReadAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START));
       case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
-      case 0x04900000 ... 0x07FFFFFF: case 0x1FC00800 ... 0xFFFFFFFF: return 0;
+      case 0x04900000 ... 0x04FFFFFF: case 0x1FC00800 ... 0xFFFFFFFF: return 0;
       default:
         Util::panic("Unimplemented 32-bit read at address {:08X} (PC = {:016X})", paddr, (u64) regs.pc);
     }
@@ -355,15 +322,15 @@ u64 Mem::Read64(n64::Registers &regs, u32 paddr) {
       }
       case MMIO_REGION:
         return mmio.Read(paddr);
-      case CART_REGION_1_2:
-        return Util::ReadAccess<u64>(rom.cart, paddr & rom.mask);
+      case REGION_CART:
+        return mmio.pi.BusRead64(*this, paddr);
       case PIF_ROM_REGION:
         return Util::ReadAccess<u64>(si.pif.bootrom, paddr - PIF_ROM_REGION_START);
       case PIF_RAM_REGION:
         return be64toh(Util::ReadAccess<u64>(si.pif.ram, paddr - PIF_RAM_REGION_START));
       case 0x00800000 ... 0x03FFFFFF:
       case 0x04200000 ... 0x042FFFFF:
-      case 0x04900000 ... 0x0FFFFFFF:
+      case 0x04900000 ... 0x04FFFFFF:
       case 0x1FC00800 ... 0xFFFFFFFF:
         return 0;
       default:
@@ -397,7 +364,8 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
       } break;
       case MMIO_REGION:
         Util::panic("MMIO Write8!");
-      case CART_REGION_1_2:
+      case REGION_CART:
+        mmio.pi.BusWrite8(*this, paddr, val);
         break;
       case PIF_RAM_REGION:
         val = val << (8 * (3 - (paddr & 3)));
@@ -405,32 +373,9 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
         Util::WriteAccess<u32>(si.pif.ram, paddr, htobe32(val));
         si.pif.ProcessCommands(*this);
         break;
-      case CART_REGION_2_2:
-        switch (saveType) {
-          case SAVE_NONE:
-            Util::panic("Accessing cartridge backup with save type SAVE_NONE");
-            break;
-          case SAVE_EEPROM_4k:
-          case SAVE_EEPROM_16k:
-            Util::panic("Accessing cartridge backup with save type SAVE_EEPROM");
-            break;
-          case SAVE_FLASH_1m:
-            if(flash.flash.is_open()) {
-              flash.Write8(paddr - CART_REGION_START_2_2, val);
-            } else {
-              Util::panic("Invalid backup Write8 if save data is not initialized");
-            }
-            break;
-          case SAVE_SRAM_256k:
-            if(sram.is_open()) {
-              sram[paddr - CART_REGION_START_2_2] = val;
-            }
-            break;
-        }
-        break;
       case 0x00800000 ... 0x03FFFFFF:
       case 0x04200000 ... 0x042FFFFF:
-      case 0x04900000 ... 0x07FFFFFF:
+      case 0x04900000 ... 0x04FFFFFF:
       case PIF_ROM_REGION:
       case 0x1FC00800 ... 0x7FFFFFFF:
       case 0x80000000 ... 0xFFFFFFFF:
@@ -467,19 +412,18 @@ void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
       } break;
       case MMIO_REGION:
         Util::panic("MMIO Write16!");
-      case CART_REGION_1_2:
-        break;
       case PIF_RAM_REGION:
         val = val << (16 * !(paddr & 2));
         paddr &= ~3;
         Util::WriteAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe32(val));
         si.pif.ProcessCommands(*this);
         break;
-      case CART_REGION_2_2:
-        Util::panic("Backup Write16!");
+      case REGION_CART:
+        mmio.pi.BusWrite16(*this, paddr, val);
+        break;
       case 0x00800000 ... 0x03FFFFFF:
       case 0x04200000 ... 0x042FFFFF:
-      case 0x04900000 ... 0x07FFFFFF:
+      case 0x04900000 ... 0x04FFFFFF:
       case PIF_ROM_REGION:
       case 0x1FC00800 ... 0x7FFFFFFF:
       case 0x80000000 ... 0xFFFFFFFF:
@@ -515,42 +459,18 @@ void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
       case MMIO_REGION:
         mmio.Write(*this, regs, paddr, val);
         break;
-      case 0x10000000 ... 0x13FF0013: break;
-      case 0x13FF0014: {
-        if(val < ISVIEWER_SIZE) {
-          char* message = (char*)calloc(val + 1, 1);
-          memcpy(message, isviewer, val);
-          fmt::print("{}", message);
-          free(message);
-        }
-      } break;
-      case 0x13FF0020 ... 0x13FFFFFF:
-        Util::WriteAccess<u32>(isviewer, paddr - 0x13FF0020, htobe32(val));
-        break;
-      case 0x14000000 ... 0x1FBFFFFF: break;
       case PIF_RAM_REGION:
         Util::WriteAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe32(val));
         si.pif.ProcessCommands(*this);
         break;
       case 0x00800000 ... 0x03FFFFFF:
       case 0x04200000 ... 0x042FFFFF:
-      case 0x04900000 ... 0x07FFFFFF:
+      case 0x04900000 ... 0x04FFFFFF:
       case PIF_ROM_REGION:
       case 0x1FC00800 ... 0x7FFFFFFF:
       case 0x80000000 ... 0xFFFFFFFF: break;
-      case CART_REGION_2_2:
-        if (saveType == SAVE_FLASH_1m) {
-          if(flash.flash.is_open()) {
-            flash.Write32(paddr - CART_REGION_START_2_2, val);
-          } else {
-            Util::panic("Invalid write to cartridge backup if save data is not initialized!");
-          }
-        } else if (saveType == SAVE_SRAM_256k) {
-          break;
-        } else {
-          Util::panic("Invalid cartridge backup Write32 with save type {} (addr {:08X})", static_cast<int>(saveType),
-                      paddr);
-        }
+      case REGION_CART:
+        mmio.pi.BusWrite32(*this, paddr, val);
         break;
       default: Util::panic("Unimplemented 32-bit write at address {:08X} with value {:0X} (PC = {:016X})", paddr, val, (u64)regs.pc);
     }
@@ -581,24 +501,110 @@ void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
       } break;
       case MMIO_REGION:
         Util::panic("MMIO Write64!");
-      case CART_REGION_1_2:
-        break;
       case PIF_RAM_REGION:
         Util::WriteAccess<u64>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe64(val));
         si.pif.ProcessCommands(*this);
         break;
+      case REGION_CART:
+        mmio.pi.BusWrite64(*this, paddr, val);
+        break;
       case 0x00800000 ... 0x03FFFFFF:
       case 0x04200000 ... 0x042FFFFF:
-      case 0x04900000 ... 0x07FFFFFF:
+      case 0x04900000 ... 0x04FFFFFF:
       case 0x1FC00000 ... 0x1FC007BF:
       case 0x1FC00800 ... 0x7FFFFFFF:
       case 0x80000000 ... 0xFFFFFFFF: break;
-      case CART_REGION_2_2:
-        Util::panic("Backup Write64!");
       default:
         Util::panic("Unimplemented 64-bit write at address {:08X} with value {:0X} (PC = {:016X})", paddr, val,
                     (u64) regs.pc);
     }
+  }
+}
+
+u32 Mem::BackupRead32(u32 addr) {
+  switch(saveType) {
+    case SAVE_NONE: return 0;
+    case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
+      Util::warn("Accessing cartridge backup type SAVE_EEPROM, returning 0 for word read");
+      return 0;
+    case SAVE_FLASH_1m:
+      if(flash.flash.is_open()) {
+        return flash.Read32(addr);
+      } else {
+        Util::panic("Invalid backup Read32 if save data is not initialized");
+      }
+    case SAVE_SRAM_256k:
+      return 0xFFFFFFFF;
+    default:
+      Util::panic("Backup read word with unknown save type");
+  }
+}
+
+void Mem::BackupWrite32(u32 addr, u32 val) {
+  switch(saveType) {
+    case SAVE_NONE:
+      Util::panic("Accessing cartridge with save type SAVE_NONE in write word");
+    case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
+      Util::panic("Accessing cartridge with save type SAVE_EEPROM in write word");
+    case SAVE_FLASH_1m:
+      if(flash.flash.is_open()) {
+        flash.Write32(addr, val);
+      } else {
+        Util::panic("Invalid backup Write32 if save data is not initialized");
+      }
+      break;
+    case SAVE_SRAM_256k:
+      break;
+    default:
+      Util::panic("Backup read word with unknown save type");
+  }
+}
+
+u8 Mem::BackupRead8(u32 addr) {
+  switch(saveType) {
+    case SAVE_NONE: return 0;
+    case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
+      Util::warn("Accessing cartridge backup type SAVE_EEPROM, returning 0 for word read");
+      return 0;
+    case SAVE_FLASH_1m:
+      if(flash.flash.is_open()) {
+        return flash.Read8(addr);
+      } else {
+        Util::panic("Invalid backup Read8 if save data is not initialized");
+      }
+    case SAVE_SRAM_256k:
+      if(sram.is_open()) {
+        return sram[addr & 0x8000];
+      } else {
+        Util::panic("Invalid backup Read8 if save data is not initialized");
+      }
+    default:
+      Util::panic("Backup read word with unknown save type");
+  }
+}
+
+void Mem::BackupWrite8(u32 addr, u8 val) {
+  switch(saveType) {
+    case SAVE_NONE:
+      Util::panic("Accessing cartridge with save type SAVE_NONE in write word");
+    case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
+      Util::panic("Accessing cartridge with save type SAVE_EEPROM in write word");
+    case SAVE_FLASH_1m:
+      if(flash.flash.is_open()) {
+        flash.Write8(addr, val);
+      } else {
+        Util::panic("Invalid backup Write8 if save data is not initialized");
+      }
+      break;
+    case SAVE_SRAM_256k:
+      if(sram.is_open()) {
+        sram[addr & 0x8000] = val;
+      } else {
+        Util::panic("Invalid backup Write8 if save data is not initialized");
+      }
+      break;
+    default:
+      Util::panic("Backup read word with unknown save type");
   }
 }
 

@@ -32,11 +32,10 @@ auto SI::Read(MI& mi, u32 addr) const -> u32 {
   }
 }
 
-template <bool toDram>
-FORCE_INLINE void DMA(Mem& mem, Registers& regs) {
+void SI::DMA(Mem& mem, Registers& regs) {
   SI& si = mem.mmio.si;
   si.status.dmaBusy = false;
-  if constexpr(toDram) {
+  if (toDram) {
     si.pif.ProcessCommands(mem);
     for(int i = 0; i < 64; i++) {
       mem.mmio.rdp.rdram[BYTE_ADDRESS(si.dramAddr + i)] = si.pif.Read(si.pifAddr + i);
@@ -60,12 +59,14 @@ void SI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
     case 0x04800004: {
       pifAddr = val & 0x1FFFFFFF;
       status.dmaBusy = true;
-      scheduler.enqueueRelative({SI_DMA_DELAY, DMA<true>});
+      toDram = true;
+      scheduler.enqueueRelative(SI_DMA_DELAY, SI_DMA);
     } break;
     case 0x04800010: {
       pifAddr = val & 0x1FFFFFFF;
       status.dmaBusy = true;
-      scheduler.enqueueRelative({SI_DMA_DELAY, DMA<false>});
+      toDram = false;
+      scheduler.enqueueRelative(SI_DMA_DELAY, SI_DMA);
     } break;
     case 0x04800018:
       InterruptLower(mem.mmio.mi, regs, Interrupt::SI);

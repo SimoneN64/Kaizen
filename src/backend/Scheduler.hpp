@@ -1,6 +1,7 @@
 #pragma once
 #include <queue>
 #include <array>
+#include <functional>
 #include <log.hpp>
 
 namespace n64 {
@@ -8,9 +9,17 @@ struct Mem;
 struct Registers;
 }
 
+enum EventType {
+  NONE,
+  PI_BUS_WRITE_COMPLETE,
+  PI_DMA_COMPLETE,
+  SI_DMA,
+  IMPOSSIBLE
+};
+
 struct Event {
-  u64 time = 0;
-  void(*handler)(n64::Mem&, n64::Registers&) = nullptr;
+  u64 time;
+  EventType type;
 
   friend bool operator<(const Event& rhs, const Event& lhs) {
     return rhs.time < lhs.time;
@@ -27,26 +36,14 @@ struct Event {
 
 struct Scheduler {
   Scheduler() {
-    enqueueAbsolute(Event{std::numeric_limits<u64>::max(), [](n64::Mem&, n64::Registers&) {
-      Util::panic("How the fuck did we get here?!");
-    }});
+    enqueueAbsolute(std::numeric_limits<u64>::max(), IMPOSSIBLE);
   }
 
-  FORCE_INLINE void enqueueRelative(const Event& event) {
-    enqueueAbsolute({event.time + ticks, event.handler});
-  }
-
-  FORCE_INLINE void enqueueAbsolute(const Event& e) {
-    events.push(e);
-  }
-
-  FORCE_INLINE void tick(u64 t, n64::Mem& mem, n64::Registers& regs) {
-    ticks += t;
-    while(ticks >= events.top().time) {
-      events.top().handler(mem, regs);
-      events.pop();
-    }
-  }
+  void enqueueRelative(u64, const EventType);
+  void enqueueAbsolute(u64, const EventType);
+  u64 remove(const EventType);
+  void tick(u64 t, n64::Mem&, n64::Registers&);
+  
   std::priority_queue<Event, std::vector<Event>, std::greater<>> events;
   u64 ticks = 0;
   u8 index = 0;

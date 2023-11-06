@@ -11,7 +11,7 @@ struct AI {
   void Reset();
   auto Read(u32) const -> u32;
   void Write(Mem&, Registers&, u32, u32);
-  void Step(Mem&, Registers&, int, float, float);
+  void Step(Mem&, Registers&, u32, float, float);
   bool dmaEnable{};
   u16 dacRate{};
   u8 bitrate{};
@@ -19,7 +19,7 @@ struct AI {
   u32 dmaLen[2]{};
   u32 dmaAddr[2]{};
   bool dmaAddrCarry{};
-  int cycles{};
+  u32 cycles{};
 
   struct {
     u32 freq{44100};

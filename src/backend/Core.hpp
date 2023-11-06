@@ -6,6 +6,7 @@
 #include <SDL2/SDL_timer.h>
 
 struct Window;
+struct Event;
 
 namespace n64 {
 struct Core {
@@ -17,13 +18,14 @@ struct Core {
   void Serialize();
   void Deserialize();
   void TogglePause() { pause = !pause; }
+  void HandleEvents(Event*);
   [[nodiscard]] VI& GetVI() { return cpu->mem.mmio.vi; }
 
   u32 breakpoint = 0;
 
   bool pause = true;
   bool render = true;
-  int cycles = 0;
+  u32 cycles = 0;
   bool romLoaded = false;
   std::string rom;
   std::unique_ptr<BaseCPU> cpu;
@@ -31,4 +33,8 @@ struct Core {
   int memSize, cpuSize, verSize;
   int slot = 0;
 };
+
+extern u32 extraCycles;
+void CpuStall(u32 cycles);
+u32 PopStalledCycles();
 }

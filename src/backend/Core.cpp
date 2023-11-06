@@ -2,6 +2,18 @@
 #include <Scheduler.hpp>
 
 namespace n64 {
+u32 extraCycles = 0;
+
+void CpuStall(u32 cycles) {
+  extraCycles += cycles;
+}
+
+u32 PopStalledCycles() {
+  u32 ret = extraCycles;
+  extraCycles = 0;
+  return ret;
+}
+
 Core::Core() {
   if(SDL_GameControllerAddMappingsFromFile("resources/gamecontrollerdb.txt") < 0) {
     Util::warn("Failed to load game controller DB");
@@ -46,8 +58,9 @@ void Core::Run(float volumeL, float volumeR) {
   MMIO& mmio = mem.mmio;
   Registers& regs = cpu->regs;
 
+  Event event;
   for (int field = 0; field < mmio.vi.numFields; field++) {
-    int frameCycles = 0;
+    u32 frameCycles = 0;
     for (int i = 0; i < mmio.vi.numHalflines; i++) {
       mmio.vi.current = (i << 1) + field;
 
@@ -56,8 +69,9 @@ void Core::Run(float volumeL, float volumeR) {
       }
 
       for(; cycles < mem.mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
-        int taken = cpu->Step();
-        static int cpuSteps = 0;
+        u32 taken = cpu->Step();
+        taken += PopStalledCycles();
+        static u32 cpuSteps = 0;
         cpuSteps += taken;
         if(mmio.rsp.spStatus.halt) {
           cpuSteps = 0;

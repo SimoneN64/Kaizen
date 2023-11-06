@@ -363,11 +363,12 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
           Util::WriteAccess<u32>(mmio.rsp.dmem, mirrAddr, val);
         }
       } break;
-      case MMIO_REGION:
-        Util::panic("MMIO Write8!");
       case REGION_CART:
+        Util::debug("BusWrite8 @ {:08X} = {:02X}", paddr, val);
         mmio.pi.BusWrite8(*this, paddr, val);
         break;
+      case MMIO_REGION:
+        Util::panic("MMIO Write8!");
       case PIF_RAM_REGION:
         val = val << (8 * (3 - (paddr & 3)));
         paddr = (paddr - PIF_RAM_REGION_START) & ~3;
@@ -411,6 +412,10 @@ void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
           Util::WriteAccess<u32>(mmio.rsp.dmem, mirrAddr, val);
         }
       } break;
+      case REGION_CART:
+        Util::debug("BusWrite8 @ {:08X} = {:04X}", paddr, val);
+        mmio.pi.BusWrite16(*this, paddr, val);
+        break;
       case MMIO_REGION:
         Util::panic("MMIO Write16!");
       case PIF_RAM_REGION:
@@ -418,9 +423,6 @@ void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
         paddr &= ~3;
         Util::WriteAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe32(val));
         si.pif.ProcessCommands(*this);
-        break;
-      case REGION_CART:
-        mmio.pi.BusWrite16(*this, paddr, val);
         break;
       case 0x00800000 ... 0x03FFFFFF:
       case 0x04200000 ... 0x042FFFFF:
@@ -457,6 +459,10 @@ void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
           Util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
         }
       } break;
+      case REGION_CART:
+        Util::debug("BusWrite8 @ {:08X} = {:08X}", paddr, val);
+        mmio.pi.BusWrite32(*this, paddr, val);
+        break;
       case MMIO_REGION:
         mmio.Write(*this, regs, paddr, val);
         break;
@@ -470,9 +476,6 @@ void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
       case PIF_ROM_REGION:
       case 0x1FC00800 ... 0x7FFFFFFF:
       case 0x80000000 ... 0xFFFFFFFF: break;
-      case REGION_CART:
-        mmio.pi.BusWrite32(*this, paddr, val);
-        break;
       default: Util::panic("Unimplemented 32-bit write at address {:08X} with value {:0X} (PC = {:016X})", paddr, val, (u64)regs.pc);
     }
   }
@@ -500,14 +503,15 @@ void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
           Util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
         }
       } break;
+      case REGION_CART:
+        Util::debug("BusWrite8 @ {:08X} = {:016X}", paddr, val);
+        mmio.pi.BusWrite64(*this, paddr, val);
+        break;
       case MMIO_REGION:
         Util::panic("MMIO Write64!");
       case PIF_RAM_REGION:
         Util::WriteAccess<u64>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe64(val));
         si.pif.ProcessCommands(*this);
-        break;
-      case REGION_CART:
-        mmio.pi.BusWrite64(*this, paddr, val);
         break;
       case 0x00800000 ... 0x03FFFFFF:
       case 0x04200000 ... 0x042FFFFF:

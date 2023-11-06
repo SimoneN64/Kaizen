@@ -4,6 +4,7 @@ namespace n64 {
 constexpr auto FLASH_SIZE = 1_mb;
 
 void Flash::Reset() {
+  state = Idle;
   if (flash.is_mapped()) {
     std::error_code error;
     flash.sync(error);
@@ -77,16 +78,16 @@ void Flash::CommandSetEraseOffs(u32 val) {
 
 void Flash::CommandErase() {
   state = FlashState::Erase;
-  status = 0x11118004F0000000;
+  status = 0x1111800800C20000LL;
 }
 
 void Flash::CommandSetWriteOffs(u32 val) {
   writeOffs = (val & 0xffff) << 7;
+  status = 0x1111800400C20000LL;
 }
 
 void Flash::CommandWrite() {
   state = FlashState::Write;
-  status = 0x1111800400C20000LL;
 }
 
 void Flash::CommandRead() {

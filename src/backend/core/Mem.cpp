@@ -24,7 +24,7 @@ Mem::Mem() {
 void Mem::Reset() {
   memset(rom.cart, 0, CART_SIZE);
   flash.Reset();
-  if(sram.is_open()) {
+  if(sram.is_mapped()) {
     std::error_code error;
     sram.sync(error);
     sram.unmap();
@@ -533,7 +533,7 @@ u32 Mem::BackupRead32(u32 addr) {
       Util::warn("Accessing cartridge backup type SAVE_EEPROM, returning 0 for word read");
       return 0;
     case SAVE_FLASH_1m:
-      if(flash.flash.is_open()) {
+      if(flash.flash.is_mapped()) {
         return flash.Read32(addr);
       } else {
         Util::panic("Invalid backup Read32 if save data is not initialized");
@@ -552,7 +552,7 @@ void Mem::BackupWrite32(u32 addr, u32 val) {
     case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
       Util::panic("Accessing cartridge with save type SAVE_EEPROM in write word");
     case SAVE_FLASH_1m:
-      if(flash.flash.is_open()) {
+      if(flash.flash.is_mapped()) {
         flash.Write32(addr, val);
       } else {
         Util::panic("Invalid backup Write32 if save data is not initialized");
@@ -572,13 +572,13 @@ u8 Mem::BackupRead8(u32 addr) {
       Util::warn("Accessing cartridge backup type SAVE_EEPROM, returning 0 for word read");
       return 0;
     case SAVE_FLASH_1m:
-      if(flash.flash.is_open()) {
+      if(flash.flash.is_mapped()) {
         return flash.Read8(addr);
       } else {
         Util::panic("Invalid backup Read8 if save data is not initialized");
       }
     case SAVE_SRAM_256k:
-      if(sram.is_open()) {
+      if(sram.is_mapped()) {
         return sram[addr & 0x8000];
       } else {
         Util::panic("Invalid backup Read8 if save data is not initialized");
@@ -595,14 +595,14 @@ void Mem::BackupWrite8(u32 addr, u8 val) {
     case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
       Util::panic("Accessing cartridge with save type SAVE_EEPROM in write word");
     case SAVE_FLASH_1m:
-      if(flash.flash.is_open()) {
+      if(flash.flash.is_mapped()) {
         flash.Write8(addr, val);
       } else {
         Util::panic("Invalid backup Write8 if save data is not initialized");
       }
       break;
     case SAVE_SRAM_256k:
-      if(sram.is_open()) {
+      if(sram.is_mapped()) {
         sram[addr & 0x8000] = val;
       } else {
         Util::panic("Invalid backup Write8 if save data is not initialized");

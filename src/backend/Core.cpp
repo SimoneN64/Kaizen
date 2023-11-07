@@ -58,7 +58,6 @@ void Core::Run(float volumeL, float volumeR) {
   MMIO& mmio = mem.mmio;
   Registers& regs = cpu->regs;
 
-  Event event;
   for (int field = 0; field < mmio.vi.numFields; field++) {
     u32 frameCycles = 0;
     for (int i = 0; i < mmio.vi.numHalflines; i++) {

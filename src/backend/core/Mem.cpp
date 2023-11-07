@@ -5,6 +5,7 @@
 #include <backend/RomHelpers.hpp>
 #include <File.hpp>
 #include <unarr.h>
+#include <cassert>
 
 namespace n64 {
 Mem::Mem() : flash(saveData) {
@@ -527,18 +528,14 @@ void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
   }
 }
 
-u32 Mem::BackupRead32(u32 addr) {
+u32 Mem::BackupRead32() const {
   switch(saveType) {
     case SAVE_NONE: return 0;
     case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
       Util::warn("Accessing cartridge backup type SAVE_EEPROM, returning 0 for word read");
       return 0;
     case SAVE_FLASH_1m:
-      if(flash.flash.is_mapped()) {
-        return flash.Read32(addr);
-      } else {
-        Util::panic("Invalid backup Read32 if save data is not initialized");
-      }
+      return flash.Read32();
     case SAVE_SRAM_256k:
       return 0xFFFFFFFF;
     default:
@@ -553,11 +550,7 @@ void Mem::BackupWrite32(u32 addr, u32 val) {
     case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
       Util::panic("Accessing cartridge with save type SAVE_EEPROM in write word");
     case SAVE_FLASH_1m:
-      if(flash.flash.is_mapped()) {
-        flash.Write32(addr, val);
-      } else {
-        Util::panic("Invalid backup Write32 if save data is not initialized");
-      }
+      flash.Write32(addr, val);
       break;
     case SAVE_SRAM_256k:
       break;
@@ -573,11 +566,7 @@ u8 Mem::BackupRead8(u32 addr) {
       Util::warn("Accessing cartridge backup type SAVE_EEPROM, returning 0 for word read");
       return 0;
     case SAVE_FLASH_1m:
-      if(flash.flash.is_mapped()) {
-        return flash.Read8(addr);
-      } else {
-        Util::panic("Invalid backup Read8 if save data is not initialized");
-      }
+      return flash.Read8(addr);
     case SAVE_SRAM_256k:
       if(saveData.is_mapped()) {
         assert(addr < saveData.size());
@@ -597,11 +586,7 @@ void Mem::BackupWrite8(u32 addr, u8 val) {
     case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
       Util::panic("Accessing cartridge with save type SAVE_EEPROM in write word");
     case SAVE_FLASH_1m:
-      if(flash.flash.is_mapped()) {
-        flash.Write8(addr, val);
-      } else {
-        Util::panic("Invalid backup Write8 if save data is not initialized");
-      }
+      flash.Write8(addr, val);
       break;
     case SAVE_SRAM_256k:
       if(saveData.is_mapped()) {

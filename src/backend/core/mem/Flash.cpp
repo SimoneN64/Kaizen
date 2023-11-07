@@ -98,4 +98,99 @@ void Flash::CommandRead() {
   state = FlashState::Read;
   status = 0x11118004F0000000;
 }
+
+std::vector<u8> Flash::Serialize() {
+  std::vector<u8> res{};
+
+  res.resize(
+  sizeof(state) +
+  sizeof(status) +
+  sizeof(eraseOffs) +
+  sizeof(writeOffs) +
+  128);
+
+  u32 index = 0;
+  memcpy(res.data() + index, &state, sizeof(state));
+  index += sizeof(state);
+  memcpy(res.data() + index, &status, sizeof(status));
+  index += sizeof(status);
+  memcpy(res.data() + index, &eraseOffs, sizeof(eraseOffs));
+  index += sizeof(eraseOffs);
+  memcpy(res.data() + index, &writeOffs, sizeof(writeOffs));
+  index += sizeof(writeOffs);
+  memcpy(res.data() + index, writeBuf, 128);
+
+  return res;
+}
+
+void Flash::Deserialize(const std::vector<u8>& data) {
+  u32 index = 0;
+  memcpy(&state, data.data() + index, sizeof(state));
+  index += sizeof(state);
+  memcpy(&status, data.data() + index, sizeof(status));
+  index += sizeof(status);
+  memcpy(&eraseOffs, data.data() + index, sizeof(eraseOffs));
+  index += sizeof(eraseOffs);
+  memcpy(&writeOffs, data.data() + index, sizeof(writeOffs));
+  index += sizeof(writeOffs);
+  memcpy(writeBuf, data.data() + index, 128);
+}
+
+void Flash::Write32(u32 index, u32 val) {
+  if(index > 0) {
+    u8 cmd = val >> 24;
+    switch(cmd) {
+      case FLASH_COMMAND_EXECUTE: CommandExecute(); break;
+      case FLASH_COMMAND_STATUS: CommandStatus(); break;
+      case FLASH_COMMAND_SET_ERASE_OFFSET: CommandSetEraseOffs(val); break;
+      case FLASH_COMMAND_ERASE: CommandErase(); break;
+      case FLASH_COMMAND_SET_WRITE_OFFSET: CommandSetWriteOffs(val); break;
+      case FLASH_COMMAND_WRITE: CommandWrite(); break;
+      case FLASH_COMMAND_READ: CommandRead(); break;
+      default: Util::warn("Invalid flash command: {:02X}", cmd);
+    }
+  } else {
+    Util::warn("Flash Write of {:08X} @ {:08X}", val, index);
+  }
+}
+
+void Flash::Write8(u32 index, u8 val) {
+  switch(state) {
+    case FlashState::Idle: Util::panic("Invalid FlashState::Idle with Write8");
+    case FlashState::Status: Util::panic("Invalid FlashState::Status with Write8");
+    case FlashState::Erase: Util::panic("Invalid FlashState::Erase with Write8");
+    case FlashState::Write:
+      writeBuf[index] = val;
+      break;
+    case FlashState::Read: Util::panic("Invalid FlashState::Read with Write8");
+    default: Util::warn("Invalid flash state on Write8: {:02X}", static_cast<u8>(state));
+  }
+}
+
+u32 Flash::Read8(u32 index) const {
+  switch (state) {
+    case Idle: Util::panic("Flash read byte while in state FLASH_STATE_IDLE");
+    case Write: Util::panic("Flash read byte while in state FLASH_STATE_WRITE");
+    case Read: {
+      if(saveData.is_mapped()) {
+        u8 value = saveData[index];
+        Util::debug("Flash read byte in state read: index {:08X} = {:02X}", index, value);
+        return value;
+      } else {
+        Util::panic("Accessing flash when not mapped!");
+      }
+    }
+    case Status: {
+      u32 offset = (7 - (index % 8)) * 8;
+      u8 value = (status >> offset) & 0xFF;
+      Util::debug("Flash read byte in state status: index {:08X} = {:02X}", index, value);
+      return value;
+    }
+    default: Util::panic("Flash read byte while in unknown state");
+  }
+}
+
+u32 Flash::Read32() const {
+  return status >> 32;
+}
 }

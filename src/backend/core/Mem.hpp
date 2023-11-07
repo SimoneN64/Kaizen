@@ -42,7 +42,7 @@ enum FlashState : u8 {
 };
 
 struct Flash {
-  Flash() = default;
+  Flash(mio::mmap_sink&);
   ~Flash() = default;
   void Reset();
   void Load(SaveType, const std::string&);
@@ -51,8 +51,8 @@ struct Flash {
   size_t eraseOffs{};
   size_t writeOffs{};
   u8 writeBuf[128]{};
-  mio::mmap_sink flash;
   std::string flashPath{};
+  mio::mmap_sink& saveData;
 
   enum FlashCommands : u8 {
     FLASH_COMMAND_EXECUTE = 0xD2,
@@ -237,9 +237,9 @@ private:
   friend struct AI;
   friend struct RSP;
   friend struct Core;
-  mio::mmap_sink sram;
   u8 isviewer[ISVIEWER_SIZE]{};
   std::string sramPath{};
+  mio::mmap_sink saveData;
   int mmioSize, flashSize;
 
   FORCE_INLINE bool IsROMPAL() {

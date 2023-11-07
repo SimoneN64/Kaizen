@@ -3,24 +3,20 @@
 namespace n64 {
 constexpr auto FLASH_SIZE = 1_mb;
 
+Flash::Flash(mio::mmap_sink &saveData) : saveData(saveData) {}
+
 void Flash::Reset() {
   state = Idle;
-  if (flash.is_mapped()) {
-    std::error_code error;
-    flash.sync(error);
-    if (error) { Util::panic("Could not sync {}", flashPath); }
-    flash.unmap();
-  }
 }
 
 void Flash::Load(SaveType saveType, const std::string& path) {
   if(saveType == SAVE_FLASH_1m) {
     flashPath = fs::path(path).replace_extension(".flash").string();
     std::error_code error;
-    if (flash.is_mapped()) {
-      flash.sync(error);
+    if (saveData.is_mapped()) {
+      saveData.sync(error);
       if (error) { Util::panic("Could not sync {}", flashPath); }
-      flash.unmap();
+      saveData.unmap();
     }
 
     FILE *f = fopen(flashPath.c_str(), "rb");
@@ -38,7 +34,7 @@ void Flash::Load(SaveType saveType, const std::string& path) {
     }
     fclose(f);
 
-    flash = mio::make_mmap_sink(
+    saveData = mio::make_mmap_sink(
       flashPath, 0, mio::map_entire_file, error);
     if (error) { Util::panic("Could not open {}", path); }
   }
@@ -50,13 +46,21 @@ void Flash::CommandExecute() {
     case FlashState::Idle:
       break;
     case FlashState::Erase:
-      for (int i = 0; i < 128; i++) {
-        flash[eraseOffs + i] = 0xFF;
+      if(saveData.is_mapped()) {
+        for (int i = 0; i < 128; i++) {
+          saveData[eraseOffs + i] = 0xFF;
+        }
+      } else {
+        Util::panic("Accessing flash when not mapped!");
       }
       break;
     case FlashState::Write:
-      for (int i = 0; i < 128; i++) {
-        flash[writeOffs + i] = writeBuf[i];
+      if(saveData.is_mapped()) {
+        for (int i = 0; i < 128; i++) {
+          saveData[writeOffs + i] = writeBuf[i];
+        }
+      } else {
+        Util::panic("Accessing flash when not mapped!");
       }
       break;
     case FlashState::Read:

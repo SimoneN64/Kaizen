@@ -7,7 +7,7 @@
 #include <unarr.h>
 
 namespace n64 {
-Mem::Mem() {
+Mem::Mem() : flash(saveData) {
   memset(readPages, 0, PAGE_COUNT);
   memset(writePages, 0, PAGE_COUNT);
 
@@ -24,10 +24,11 @@ Mem::Mem() {
 void Mem::Reset() {
   memset(rom.cart, 0, CART_SIZE);
   flash.Reset();
-  if(sram.is_mapped()) {
+  if (saveData.is_mapped()) {
     std::error_code error;
-    sram.sync(error);
-    sram.unmap();
+    saveData.sync(error);
+    if (error) { Util::panic("Could not sync save data"); }
+    saveData.unmap();
   }
   mmio.Reset();
 }
@@ -36,10 +37,10 @@ void Mem::LoadSRAM(SaveType save_type, fs::path path) {
   if(save_type == SAVE_SRAM_256k) {
     std::error_code error;
     sramPath = path.replace_extension(".sram").string();
-    if(sram.is_mapped()) {
-      sram.sync(error);
+    if(saveData.is_mapped()) {
+      saveData.sync(error);
       if(error) { Util::panic("Could not sync {}", sramPath); }
-      sram.unmap();
+      saveData.unmap();
     }
 
     FILE *f = fopen(sramPath.c_str(), "rb");
@@ -56,7 +57,7 @@ void Mem::LoadSRAM(SaveType save_type, fs::path path) {
       Util::panic("Corrupt SRAM!");
     }
     fclose(f);
-    sram = mio::make_mmap_sink(
+    saveData = mio::make_mmap_sink(
       sramPath, 0, mio::map_entire_file, error);
     if (error) { Util::panic("Could not open {}", sramPath); }
   }
@@ -578,8 +579,9 @@ u8 Mem::BackupRead8(u32 addr) {
         Util::panic("Invalid backup Read8 if save data is not initialized");
       }
     case SAVE_SRAM_256k:
-      if(sram.is_mapped()) {
-        return sram[addr & 0x8000];
+      if(saveData.is_mapped()) {
+        assert(addr < saveData.size());
+        return saveData[addr];
       } else {
         Util::panic("Invalid backup Read8 if save data is not initialized");
       }
@@ -602,8 +604,9 @@ void Mem::BackupWrite8(u32 addr, u8 val) {
       }
       break;
     case SAVE_SRAM_256k:
-      if(sram.is_mapped()) {
-        sram[addr & 0x8000] = val;
+      if(saveData.is_mapped()) {
+        assert(addr < saveData.size());
+        saveData[addr] = val;
       } else {
         Util::panic("Invalid backup Write8 if save data is not initialized");
       }
@@ -623,7 +626,7 @@ std::vector<u8> Mem::Serialize() {
 
   res.insert(res.begin(), sMMIO.begin(), sMMIO.end());
   res.insert(res.end(), sFLASH.begin(), sFLASH.end());
-  res.insert(res.end(), sram.begin(), sram.end());
+  res.insert(res.end(), saveData.begin(), saveData.end());
 
   return res;
 }
@@ -631,6 +634,6 @@ std::vector<u8> Mem::Serialize() {
 void Mem::Deserialize(const std::vector<u8>& data) {
   mmio.Deserialize(std::vector<u8>(data.begin(), data.begin() + mmioSize));
   flash.Deserialize(std::vector<u8>(data.begin() + mmioSize, data.begin() + mmioSize + flashSize));
-  memcpy(sram.data(), data.data() + mmioSize + flashSize, sram.size());
+  memcpy(saveData.data(), data.data() + mmioSize + flashSize, saveData.size());
 }
 }

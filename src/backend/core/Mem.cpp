@@ -197,7 +197,7 @@ u8 Mem::Read8(n64::Registers &regs, u32 paddr) {
         }
       }
       case REGION_CART:
-        return mmio.pi.BusRead8(*this, paddr);
+        return mmio.pi.BusRead8<false>(*this, paddr);
       case 0x04040000 ... 0x040FFFFF:
       case 0x04100000 ... 0x041FFFFF:
       case 0x04600000 ... 0x048FFFFF:
@@ -365,7 +365,7 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
       } break;
       case REGION_CART:
         Util::debug("BusWrite8 @ {:08X} = {:02X}", paddr, val);
-        mmio.pi.BusWrite8(*this, paddr, val);
+        mmio.pi.BusWrite8<false>(*this, paddr, val);
         break;
       case MMIO_REGION:
         Util::panic("MMIO Write8!");

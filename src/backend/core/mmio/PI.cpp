@@ -48,9 +48,12 @@ bool PI::ReadLatch() {
   return true;
 }
 
+template<bool isDma>
 auto PI::BusRead8(Mem& mem, u32 addr) -> u8 {
-  if (!ReadLatch()) [[unlikely]] {
-    return latch >> 24;
+  if constexpr (!isDma) {
+    if (!ReadLatch()) [[unlikely]] {
+      return latch >> 24;
+    }
   }
 
   switch (addr) {
@@ -67,7 +70,9 @@ auto PI::BusRead8(Mem& mem, u32 addr) -> u8 {
       return mem.BackupRead8(addr - SREGION_PI_SRAM);
     case REGION_PI_ROM: {
       // round to nearest 4 byte boundary, keeping old LSB
-      addr = (addr + 2) & ~2;
+      if constexpr (!isDma) {
+        addr = (addr + 2) & ~2;
+      }
       u32 index = BYTE_ADDRESS(addr) - SREGION_PI_ROM;
       if (index > mem.rom.size) {
         //Util::warn("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM! ({}/0x{:016X})", addr, index, index, mem.rom.size, mem.rom.size);
@@ -80,11 +85,17 @@ auto PI::BusRead8(Mem& mem, u32 addr) -> u8 {
   }
 }
 
-void PI::BusWrite8(Mem& mem, u32 addr, u32 val) {
-  int latch_shift = 24 - (addr & 1) * 8;
+template auto PI::BusRead8<true>(Mem& mem, u32 addr) -> u8;
+template auto PI::BusRead8<false>(Mem& mem, u32 addr) -> u8;
 
-  if (!WriteLatch(val << latch_shift) && addr != 0x05000020) [[unlikely]] {
-    return;
+template<bool isDma>
+void PI::BusWrite8(Mem& mem, u32 addr, u32 val) {
+  if constexpr (!isDma) {
+    int latch_shift = 24 - (addr & 1) * 8;
+
+    if (!WriteLatch(val << latch_shift) && addr != 0x05000020) [[unlikely]] {
+      return;
+    }
   }
 
   switch (addr) {
@@ -105,12 +116,15 @@ void PI::BusWrite8(Mem& mem, u32 addr, u32 val) {
       mem.BackupWrite8(addr - SREGION_PI_SRAM, val);
       return;
     case REGION_PI_ROM:
-      //Util::warn("Writing byte 0x{:02X} to address 0x{:08X} in unsupported region: REGION_PI_ROM", val, addr);
+      Util::warn("Writing byte 0x{:02X} to address 0x{:08X} in unsupported region: REGION_PI_ROM", val, addr);
       return;
     default:
       Util::panic("Should never end up here! Access to address {:08X} which did not match any PI bus regions!", addr);
   }
 }
+
+template void PI::BusWrite8<true>(Mem& mem, u32 addr, u32 val);
+template void PI::BusWrite8<false>(Mem& mem, u32 addr, u32 val);
 
 auto PI::BusRead16(Mem& mem, u32 addr) -> u16 {
   if (!ReadLatch()) [[unlikely]] {
@@ -133,8 +147,7 @@ auto PI::BusRead16(Mem& mem, u32 addr) -> u16 {
       addr = (addr + 2) & ~3;
       u32 index = HALF_ADDRESS(addr) - SREGION_PI_ROM;
       if (index > mem.rom.size - 1) {
-        //Util::warn("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM! ({}/0x{:016X})", addr, index, index, mem.rom.size, mem.rom.size);
-        return 0xFFFF;
+        Util::panic("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM!", addr, index, index);
       }
       return Util::ReadAccess<u16>(mem.rom.cart, index);
     }
@@ -185,7 +198,7 @@ auto PI::BusRead32(Mem& mem, u32 addr) -> u32 {
       //Util::warn("Reading word from address 0x{:08X} in unsupported region: REGION_PI_64DD_ROM - This is the N64DD, returning FF because it is not emulated", addr);
       return 0xFF;
     case REGION_PI_SRAM:
-      return mem.BackupRead32(addr - SREGION_PI_SRAM);
+      return mem.BackupRead32();
     case REGION_PI_ROM: {
       u32 index = addr - SREGION_PI_ROM;
       if (index > mem.rom.size - 3) { // -3 because we're reading an entire word
@@ -401,7 +414,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       }
       rdLen = len;
       for (int i = 0; i < rdLen; i++) {
-        mem.rom.cart[BYTE_ADDRESS(cartAddrInternal + i) & mem.rom.mask] = mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE];
+        BusWrite8<true>(mem, cartAddrInternal + i, mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE]);
       }
       Util::trace("PI DMA from RDRAM to CARTRIDGE (size: {} B, {:08X} to {:08X})", len, dramAddr, cartAddr);
       dmaBusy = true;
@@ -417,7 +430,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       }
       wrLen = len;
       for(int i = 0; i < wrLen; i++) {
-        mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE] = mem.rom.cart[BYTE_ADDRESS(cartAddrInternal + i) & mem.rom.mask];
+        mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE] = BusRead8<true>(mem, cartAddrInternal + i);
       }
       dmaBusy = true;
       Util::trace("PI DMA from CARTRIDGE to RDRAM (size: {} B, {:08X} to {:08X})", len, cartAddr, dramAddr);

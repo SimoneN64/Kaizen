@@ -353,7 +353,7 @@ auto PI::Read(MI& mi, u32 addr) const -> u32 {
   }
 }
 
-FORCE_INLINE u8 PIGetDomain(u32 address) {
+u8 PI::GetDomain(u32 address) {
   switch (address) {
     case REGION_PI_UNKNOWN:
     case REGION_PI_64DD_ROM:
@@ -367,7 +367,7 @@ FORCE_INLINE u8 PIGetDomain(u32 address) {
   }
 }
 
-FORCE_INLINE u32 PIAccessTiming(PI& pi, u8 domain, u32 length) {
+u32 PI::AccessTiming(u8 domain, u32 length) {
   uint32_t cycles = 0;
   uint32_t latency = 0;
   uint32_t pulse_width = 0;
@@ -377,16 +377,16 @@ FORCE_INLINE u32 PIAccessTiming(PI& pi, u8 domain, u32 length) {
 
   switch (domain) {
     case 1:
-      latency = pi.pi_bsd_dom1_lat + 1;
-      pulse_width = pi.pi_bsd_dom1_pwd + 1;
-      release = pi.pi_bsd_dom1_rls + 1;
-      page_size = std::pow(2, (pi.pi_bsd_dom1_pgs + 2));
+      latency = pi_bsd_dom1_lat + 1;
+      pulse_width = pi_bsd_dom1_pwd + 1;
+      release = pi_bsd_dom1_rls + 1;
+      page_size = std::pow(2, (pi_bsd_dom1_pgs + 2));
       break;
     case 2:
-      latency = pi.pi_bsd_dom2_lat + 1;
-      pulse_width = pi.pi_bsd_dom2_pwd + 1;
-      release = pi.pi_bsd_dom2_rls + 1;
-      page_size = std::pow(2, (pi.pi_bsd_dom2_pgs + 2));
+      latency = pi_bsd_dom2_lat + 1;
+      pulse_width = pi_bsd_dom2_pwd + 1;
+      release = pi_bsd_dom2_rls + 1;
+      page_size = std::pow(2, (pi_bsd_dom2_pgs + 2));
       break;
     default:
       Util::panic("Unknown PI domain: {}\n", domain);
@@ -413,13 +413,16 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
         len -= dramAddrInternal & 0x7;
       }
       rdLen = len;
-      for (int i = 0; i < rdLen; i++) {
+      if(dramAddrInternal >= 0x800000) {
+        Util::panic("PI DMA RDRAM->CART ADDRESS TOO HIGH");
+      }
+      for (int i = 0; i < len; i++) {
         BusWrite8<true>(mem, cartAddrInternal + i, mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE]);
       }
       Util::trace("PI DMA from RDRAM to CARTRIDGE (size: {} B, {:08X} to {:08X})", len, dramAddr, cartAddr);
       dmaBusy = true;
       toCart = true;
-      scheduler.enqueueRelative(PIAccessTiming(*this, PIGetDomain(cartAddr), len), PI_DMA_COMPLETE);
+      scheduler.enqueueRelative(AccessTiming(GetDomain(cartAddr), len), PI_DMA_COMPLETE);
     } break;
     case 0x0460000C: {
       u32 len = (val & 0x00FFFFFF) + 1;
@@ -429,13 +432,18 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
         len -= (dramAddrInternal & 0x7);
       }
       wrLen = len;
-      for(int i = 0; i < wrLen; i++) {
+
+      if(mem.saveType == SAVE_FLASH_1m && cartAddrInternal >= SREGION_PI_SRAM && cartAddrInternal < 0x08010000) {
+        cartAddrInternal = SREGION_PI_SRAM | ((cartAddrInternal & 0xFFFFF) << 1);
+      }
+
+      for(int i = 0; i < len; i++) {
         mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE] = BusRead8<true>(mem, cartAddrInternal + i);
       }
       dmaBusy = true;
       Util::trace("PI DMA from CARTRIDGE to RDRAM (size: {} B, {:08X} to {:08X})", len, cartAddr, dramAddr);
       toCart = false;
-      scheduler.enqueueRelative(PIAccessTiming(*this, PIGetDomain(cartAddr), len), PI_DMA_COMPLETE);
+      scheduler.enqueueRelative(AccessTiming(GetDomain(cartAddr), len), PI_DMA_COMPLETE);
     } break;
     case 0x04600010:
       if(val & 2) {

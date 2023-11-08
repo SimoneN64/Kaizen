@@ -17,7 +17,7 @@ struct PI {
   template<bool isDma>
   void BusWrite8(Mem&, u32, u32);
   auto BusRead16(Mem&, u32) -> u16;
-  void BusWrite16(Mem&, u32, u16);
+  void BusWrite16(u32, u16);
   auto BusRead32(Mem&, u32) -> u32;
   void BusWrite32(Mem&, u32, u32);
   auto BusRead64(Mem&, u32) -> u64;

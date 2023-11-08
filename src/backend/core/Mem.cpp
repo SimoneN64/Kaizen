@@ -416,7 +416,7 @@ void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
       } break;
       case REGION_CART:
         Util::debug("BusWrite8 @ {:08X} = {:04X}", paddr, val);
-        mmio.pi.BusWrite16(*this, paddr, val);
+        mmio.pi.BusWrite16(paddr, val);
         break;
       case MMIO_REGION:
         Util::panic("MMIO Write16!");

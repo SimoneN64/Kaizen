@@ -83,6 +83,13 @@ struct Cop1 {
   friend struct Interpreter;
   friend struct JIT;
 
+  void SetCauseUnimplemented(Registers&);
+  void SetCauseUnderflow(Registers&);
+  void SetCauseInexact(Registers&);
+  void SetCauseDivisionByZero(Registers&);
+  void SetCauseOverflow(Registers&);
+  void SetCauseInvalid(Registers&);
+
   template<typename T>
   FORCE_INLINE T GetFGR_FR(Cop0& cop0, u8 r) {
     if constexpr (std::is_same_v<T, u32> || std::is_same_v<T, s32>) {

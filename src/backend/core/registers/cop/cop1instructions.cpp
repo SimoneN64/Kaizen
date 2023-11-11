@@ -89,16 +89,7 @@ void Cop1::SetCauseInvalid(Registers& regs) {
 } while(0)
 
 template <typename T>
-FORCE_INLINE void SetCauseByArgCVT(Registers& regs, T f) {
-  T min, max;
-  if constexpr(std::is_same_v<T, float>) {
-    min = -2147483648.0f;
-    max = 2147483648.0f;
-  } else if constexpr(std::is_same_v<T, double>) {
-    min = -9007199254740992.000000;
-    max = 9007199254740992.000000;
-  }
-
+FORCE_INLINE void SetCauseByArgWCVT(Registers& regs, T f) {
   switch (std::fpclassify(f)) {
     case FP_NAN:
     case FP_INFINITE:
@@ -108,7 +99,7 @@ FORCE_INLINE void SetCauseByArgCVT(Registers& regs, T f) {
 
     case FP_NORMAL:
       // Check overflow
-      if (f >= max || f <= min) {
+      if (f >= 2147483648.0f || f < -2147483648.0f) {
         regs.cop1.SetCauseUnimplemented(regs);
       }
       break;
@@ -118,7 +109,29 @@ FORCE_INLINE void SetCauseByArgCVT(Registers& regs, T f) {
   }
 }
 
-#define CheckCVTArg(f) do { SetCauseByArgCVT(regs, f); CheckFPUException(); } while(0)
+template <typename T>
+FORCE_INLINE void SetCauseByArgLCVT(Registers& regs, T f) {
+  switch (std::fpclassify(f)) {
+    case FP_NAN:
+    case FP_INFINITE:
+    case FP_SUBNORMAL:
+      regs.cop1.SetCauseUnimplemented(regs);
+      break;
+
+    case FP_NORMAL:
+      // Check overflow
+      if (f >= 9007199254740992.000000 || f <= -9007199254740992.000000) {
+        regs.cop1.SetCauseUnimplemented(regs);
+      }
+      break;
+
+    case FP_ZERO:
+      break; // Fine
+  }
+}
+
+#define CheckWCVTArg(f) do { SetCauseByArgWCVT(regs, f); CheckFPUException(); } while(0)
+#define CheckLCVTArg(f) do { SetCauseByArgLCVT(regs, f); CheckFPUException(); } while(0)
 
 FORCE_INLINE void SetFPUCauseRaised(Registers& regs, int raised) {
   if (raised == 0) {
@@ -265,7 +278,7 @@ FORCE_INLINE void SetCauseOnResult(Registers& regs, T& d) {
 #define CheckRound(a, b) do { if ((a) != (b)) { SetCauseInexact(regs); } CheckFPUException(); } while(0)
 
 template <typename T>
-FORCE_INLINE bool isnan(T f) {
+FORCE_INLINE bool is_nan(T f) {
   if constexpr(std::is_same_v<T, float>) {
     u32 v = F_TO_U32(f);
     return ((v & 0x7F800000) == 0x7F800000) && ((v & 0x7FFFFF) != 0);
@@ -273,12 +286,12 @@ FORCE_INLINE bool isnan(T f) {
     u64 v = D_TO_U64(f);
     return ((v & 0x7FF0000000000000) == 0x7FF0000000000000) && ((v & 0xFFFFFFFFFFFFF) != 0);
   } else {
-    Util::panic("Invalid float type in isnan");
+    Util::panic("Invalid float type in is_nan");
   }
 }
 
 #define checknanregs(fs, ft) do { \
-  if(isnan(fs) || isnan(ft)) {                                       \
+  if(is_nan(fs) || is_nan(ft)) {                                       \
     regs.cop1.SetCauseInvalid(regs);                                           \
     CheckFPUException();                                             \
   }                                                                  \
@@ -310,7 +323,7 @@ void Cop1::addd(Registers& regs, u32 instr) {
 void Cop1::ceills(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<float>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckLCVTArg(fs);
   s64 result;
   CVT_OP_CheckExcept({ result = std::ceil(fs); });
   CheckRound(fs, result);
@@ -320,7 +333,7 @@ void Cop1::ceills(Registers& regs, u32 instr) {
 void Cop1::ceilws(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<float>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckWCVTArg(fs);
   s32 result;
   CVT_OP_CheckExcept({ result = std::ceil(fs); });
   CheckRound(fs, result);
@@ -330,7 +343,7 @@ void Cop1::ceilws(Registers& regs, u32 instr) {
 void Cop1::ceilld(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<double>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckLCVTArg(fs);
   s64 result;
   CVT_OP_CheckExcept({ result = std::ceil(fs); });
   CheckRound(fs, result);
@@ -340,7 +353,7 @@ void Cop1::ceilld(Registers& regs, u32 instr) {
 void Cop1::ceilwd(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<double>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckWCVTArg(fs);
   s32 result;
   CVT_OP_CheckExcept({ result = std::ceil(fs); });
   CheckRound(fs, result);
@@ -420,7 +433,7 @@ void Cop1::cvtsl(Registers& regs, u32 instr) {
 void Cop1::cvtwd(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<double>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckWCVTArg(fs);
   s32 result;
   PUSHROUNDING;
   CVT_OP_CheckExcept({ result = std::rint(fs); });
@@ -432,7 +445,7 @@ void Cop1::cvtwd(Registers& regs, u32 instr) {
 void Cop1::cvtws(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<float>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckWCVTArg(fs);
   s32 result;
   PUSHROUNDING;
   CVT_OP_CheckExcept({ result = std::rint(fs); });
@@ -444,7 +457,7 @@ void Cop1::cvtws(Registers& regs, u32 instr) {
 void Cop1::cvtls(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<float>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckLCVTArg(fs);
   s64 result;
   PUSHROUNDING;
   CVT_OP_CheckExcept({ result = std::rint(fs); });
@@ -479,7 +492,7 @@ void Cop1::cvtdl(Registers& regs, u32 instr) {
 void Cop1::cvtld(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<double>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckLCVTArg(fs);
   s64 result;
   PUSHROUNDING;
   CVT_OP_CheckExcept({ result = std::rint(fs); });
@@ -489,38 +502,181 @@ void Cop1::cvtld(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-inline bool CalculateCondition(T fs, T ft, CompConds cond) {
-  switch(cond) {
-    case F: case SF: return false;
-    case UN: case NGLE: return any_unordered(fs, ft);
-    case EQ: case SEQ: return fs == ft;
-    case UEQ: case NGL: return fs == ft || any_unordered(fs, ft);
-    case OLT: case LT: return fs < ft;
-    case ULT: case NGE: return fs < ft || any_unordered(fs, ft);
-    case OLE: case LE: return fs <= ft;
-    case ULE: case NGT: return fs <= ft || any_unordered(fs, ft);
-  }
-}
-
-template <typename T>
-inline void CheckInvalidRegs(Registers& regs, T fs, T ft, CompConds cond) {
-  switch(cond) {
-    case F ... ULE: checkqnanregs(fs, ft); break;
-    case SF ... NGT: checknanregs(fs, ft); break;
-  }
-}
-
-template <typename T>
-void Cop1::ccond(Registers& regs, u32 instr, CompConds cond) {
+void Cop1::cf(Registers& regs, u32 instr) {
   CheckFPUUsable();
   T fs = GetFGR_FS<T>(regs.cop0, FS(instr));
   T ft = GetFGR_FT<T>(FT(instr));
-  CheckInvalidRegs(regs, fs, ft, cond);
-  fcr31.compare = CalculateCondition(fs, ft, cond);
+  checkqnanregs(fs, ft);
+  fcr31.compare = false;
 }
 
-template void Cop1::ccond<float>(Registers& regs, u32 instr, CompConds cond);
-template void Cop1::ccond<double>(Registers& regs, u32 instr, CompConds cond);
+template <typename T>
+void Cop1::cun(Registers& regs, u32 instr) {
+  CheckFPUUsable();
+  T fs = GetFGR_FS<T>(regs.cop0, FS(instr));
+  T ft = GetFGR_FT<T>(FT(instr));
+  checkqnanregs(fs, ft);
+  fcr31.compare = any_unordered(fs, ft);
+}
+
+template <typename T>
+void Cop1::ceq(Registers& regs, u32 instr) {
+  CheckFPUUsable();
+  T fs = GetFGR_FS<T>(regs.cop0, FS(instr));
+  T ft = GetFGR_FT<T>(FT(instr));
+  checkqnanregs(fs, ft);
+  fcr31.compare = fs == ft;
+}
+
+template <typename T>
+void Cop1::cueq(Registers& regs, u32 instr) {
+  CheckFPUUsable();
+  T fs = GetFGR_FS<T>(regs.cop0, FS(instr));
+  T ft = GetFGR_FT<T>(FT(instr));
+  checkqnanregs(fs, ft);
+  fcr31.compare = fs == ft || any_unordered(fs, ft);
+}
+
+template <typename T>
+void Cop1::colt(Registers& regs, u32 instr) {
+  CheckFPUUsable();
+  T fs = GetFGR_FS<T>(regs.cop0, FS(instr));
+  T ft = GetFGR_FT<T>(FT(instr));
+  checkqnanregs(fs, ft);
+  fcr31.compare = fs < ft;
+}
+
+template <typename T>
+void Cop1::cult(Registers& regs, u32 instr) {
+  CheckFPUUsable();
+  T fs = GetFGR_FS<T>(regs.cop0, FS(instr));
+  T ft = GetFGR_FT<T>(FT(instr));
+  checkqnanregs(fs, ft);
+  fcr31.compare = fs < ft || any_unordered(fs, ft);
+}
+
+template <typename T>
+void Cop1::cole(Registers& regs, u32 instr) {
+  CheckFPUUsable();
+  T fs = GetFGR_FS<T>(regs.cop0, FS(instr));
+  T ft = GetFGR_FT<T>(FT(instr));
+  checkqnanregs(fs, ft);
+  fcr31.compare = fs <= ft;
+}
+
+template <typename T>
+void Cop1::cule(Registers& regs, u32 instr) {
+  CheckFPUUsable();
+  T fs = GetFGR_FS<T>(regs.cop0, FS(instr));
+  T ft = GetFGR_FT<T>(FT(instr));
+  checkqnanregs(fs, ft);
+  fcr31.compare = fs <= ft || any_unordered(fs, ft);
+}
+
+template <typename T>
+void Cop1::csf(Registers& regs, u32 instr) {
+  CheckFPUUsable();
+  T fs = GetFGR_FS<T>(regs.cop0, FS(instr));
+  T ft = GetFGR_FT<T>(FT(instr));
+  checknanregs(fs, ft);
+  fcr31.compare = false;
+}
+
+template <typename T>
+void Cop1::cngle(Registers& regs, u32 instr) {
+  CheckFPUUsable();
+  T fs = GetFGR_FS<T>(regs.cop0, FS(instr));
+  T ft = GetFGR_FT<T>(FT(instr));
+  checknanregs(fs, ft);
+  fcr31.compare = any_unordered(fs, ft);
+}
+
+template <typename T>
+void Cop1::cseq(Registers& regs, u32 instr) {
+  CheckFPUUsable();
+  T fs = GetFGR_FS<T>(regs.cop0, FS(instr));
+  T ft = GetFGR_FT<T>(FT(instr));
+  checknanregs(fs, ft);
+  fcr31.compare = fs == ft;
+}
+
+template <typename T>
+void Cop1::cngl(Registers& regs, u32 instr) {
+  CheckFPUUsable();
+  T fs = GetFGR_FS<T>(regs.cop0, FS(instr));
+  T ft = GetFGR_FT<T>(FT(instr));
+  checknanregs(fs, ft);
+  fcr31.compare = fs == ft || any_unordered(fs, ft);
+}
+
+template <typename T>
+void Cop1::clt(Registers& regs, u32 instr) {
+  CheckFPUUsable();
+  T fs = GetFGR_FS<T>(regs.cop0, FS(instr));
+  T ft = GetFGR_FT<T>(FT(instr));
+  checknanregs(fs, ft);
+  fcr31.compare = fs < ft;
+}
+
+template <typename T>
+void Cop1::cnge(Registers& regs, u32 instr) {
+  CheckFPUUsable();
+  T fs = GetFGR_FS<T>(regs.cop0, FS(instr));
+  T ft = GetFGR_FT<T>(FT(instr));
+  checknanregs(fs, ft);
+  fcr31.compare = fs < ft || any_unordered(fs, ft);
+}
+
+template <typename T>
+void Cop1::cle(Registers& regs, u32 instr) {
+  CheckFPUUsable();
+  T fs = GetFGR_FS<T>(regs.cop0, FS(instr));
+  T ft = GetFGR_FT<T>(FT(instr));
+  checknanregs(fs, ft);
+  fcr31.compare = fs <= ft;
+}
+
+template <typename T>
+void Cop1::cngt(Registers& regs, u32 instr) {
+  CheckFPUUsable();
+  T fs = GetFGR_FS<T>(regs.cop0, FS(instr));
+  T ft = GetFGR_FT<T>(FT(instr));
+  checknanregs(fs, ft);
+  fcr31.compare = fs <= ft || any_unordered(fs, ft);
+}
+
+template void Cop1::cf<float>(Registers&, u32 instr);
+template void Cop1::cun<float>(Registers&, u32 instr);
+template void Cop1::ceq<float>(Registers&, u32 instr);
+template void Cop1::cueq<float>(Registers&, u32 instr);
+template void Cop1::colt<float>(Registers&, u32 instr);
+template void Cop1::cult<float>(Registers&, u32 instr);
+template void Cop1::cole<float>(Registers&, u32 instr);
+template void Cop1::cule<float>(Registers&, u32 instr);
+template void Cop1::csf<float>(Registers&, u32 instr);
+template void Cop1::cngle<float>(Registers&, u32 instr);
+template void Cop1::cseq<float>(Registers&, u32 instr);
+template void Cop1::cngl<float>(Registers&, u32 instr);
+template void Cop1::clt<float>(Registers&, u32 instr);
+template void Cop1::cnge<float>(Registers&, u32 instr);
+template void Cop1::cle<float>(Registers&, u32 instr);
+template void Cop1::cngt<float>(Registers&, u32 instr);
+template void Cop1::cf<double>(Registers&, u32 instr);
+template void Cop1::cun<double>(Registers&, u32 instr);
+template void Cop1::ceq<double>(Registers&, u32 instr);
+template void Cop1::cueq<double>(Registers&, u32 instr);
+template void Cop1::colt<double>(Registers&, u32 instr);
+template void Cop1::cult<double>(Registers&, u32 instr);
+template void Cop1::cole<double>(Registers&, u32 instr);
+template void Cop1::cule<double>(Registers&, u32 instr);
+template void Cop1::csf<double>(Registers&, u32 instr);
+template void Cop1::cngle<double>(Registers&, u32 instr);
+template void Cop1::cseq<double>(Registers&, u32 instr);
+template void Cop1::cngl<double>(Registers&, u32 instr);
+template void Cop1::clt<double>(Registers&, u32 instr);
+template void Cop1::cnge<double>(Registers&, u32 instr);
+template void Cop1::cle<double>(Registers&, u32 instr);
+template void Cop1::cngt<double>(Registers&, u32 instr);
 
 void Cop1::divs(Registers &regs, u32 instr) {
   OP(float, fs / ft);
@@ -577,7 +733,7 @@ void Cop1::sqrtd(Registers &regs, u32 instr) {
 void Cop1::roundls(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<float>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckLCVTArg(fs);
   s64 result;
   CVT_OP_CheckExcept({ result = std::nearbyint(fs); });
   CheckRound(fs, result);
@@ -587,7 +743,7 @@ void Cop1::roundls(Registers& regs, u32 instr) {
 void Cop1::roundld(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<double>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckLCVTArg(fs);
   s64 result;
   CVT_OP_CheckExcept({ result = std::nearbyint(fs); });
   CheckRound(fs, result);
@@ -597,7 +753,7 @@ void Cop1::roundld(Registers& regs, u32 instr) {
 void Cop1::roundws(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<float>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckWCVTArg(fs);
   s32 result;
   CVT_OP_CheckExcept({ result = std::nearbyint(fs); });
   CheckRound(fs, result);
@@ -607,7 +763,7 @@ void Cop1::roundws(Registers& regs, u32 instr) {
 void Cop1::roundwd(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<double>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckWCVTArg(fs);
   s32 result;
   CVT_OP_CheckExcept({ result = std::nearbyint(fs); });
   CheckRound(fs, result);
@@ -617,7 +773,7 @@ void Cop1::roundwd(Registers& regs, u32 instr) {
 void Cop1::floorls(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<float>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckLCVTArg(fs);
   s64 result;
   CVT_OP_CheckExcept({ result = std::floor(fs); });
   CheckRound(fs, result);
@@ -627,7 +783,7 @@ void Cop1::floorls(Registers& regs, u32 instr) {
 void Cop1::floorld(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<double>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckLCVTArg(fs);
   s64 result;
   CVT_OP_CheckExcept({ result = std::floor(fs); });
   CheckRound(fs, result);
@@ -637,7 +793,7 @@ void Cop1::floorld(Registers& regs, u32 instr) {
 void Cop1::floorws(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<float>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckWCVTArg(fs);
   s32 result;
   CVT_OP_CheckExcept({ result = std::floor(fs); });
   CheckRound(fs, result);
@@ -647,7 +803,7 @@ void Cop1::floorws(Registers& regs, u32 instr) {
 void Cop1::floorwd(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<double>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckWCVTArg(fs);
   s32 result;
   CVT_OP_CheckExcept({ result = std::floor(fs); });
   CheckRound(fs, result);
@@ -657,7 +813,7 @@ void Cop1::floorwd(Registers& regs, u32 instr) {
 void Cop1::truncws(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<float>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckWCVTArg(fs);
   s32 result;
   CVT_OP_CheckExcept({ result = std::trunc(fs); });
   CheckRound(fs, result);
@@ -667,7 +823,7 @@ void Cop1::truncws(Registers& regs, u32 instr) {
 void Cop1::truncwd(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<double>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckWCVTArg(fs);
   s32 result;
   CVT_OP_CheckExcept({ result = std::trunc(fs); });
   CheckRound(fs, result);
@@ -677,7 +833,7 @@ void Cop1::truncwd(Registers& regs, u32 instr) {
 void Cop1::truncls(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<float>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckLCVTArg(fs);
   s64 result;
   CVT_OP_CheckExcept({ result = std::trunc(fs); });
   CheckRound(fs, result);
@@ -687,7 +843,7 @@ void Cop1::truncls(Registers& regs, u32 instr) {
 void Cop1::truncld(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = GetFGR_FS<double>(regs.cop0, FS(instr));
-  CheckCVTArg(fs);
+  CheckLCVTArg(fs);
   s64 result;
   CVT_OP_CheckExcept({ result = std::trunc(fs); });
   CheckRound(fs, result);

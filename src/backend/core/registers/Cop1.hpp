@@ -236,7 +236,37 @@ private:
   void cvtdl(Registers&, u32 instr);
   void cvtsl(Registers&, u32 instr);
   template <typename T>
-  void ccond(Registers&, u32 instr, CompConds);
+  void cf(Registers&, u32 instr);
+  template <typename T>
+  void cun(Registers&, u32 instr);
+  template <typename T>
+  void ceq(Registers&, u32 instr);
+  template <typename T>
+  void cueq(Registers&, u32 instr);
+  template <typename T>
+  void colt(Registers&, u32 instr);
+  template <typename T>
+  void cult(Registers&, u32 instr);
+  template <typename T>
+  void cole(Registers&, u32 instr);
+  template <typename T>
+  void cule(Registers&, u32 instr);
+  template <typename T>
+  void csf(Registers&, u32 instr);
+  template <typename T>
+  void cngle(Registers&, u32 instr);
+  template <typename T>
+  void cseq(Registers&, u32 instr);
+  template <typename T>
+  void cngl(Registers&, u32 instr);
+  template <typename T>
+  void clt(Registers&, u32 instr);
+  template <typename T>
+  void cnge(Registers&, u32 instr);
+  template <typename T>
+  void cle(Registers&, u32 instr);
+  template <typename T>
+  void cngt(Registers&, u32 instr);
   void divs(Registers&, u32 instr);
   void divd(Registers&, u32 instr);
   void muls(Registers&, u32 instr);

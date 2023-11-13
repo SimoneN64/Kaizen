@@ -13,7 +13,7 @@ Cop1::Cop1() {
 void Cop1::Reset() {
   fcr0 = 0xa00;
   fcr31.write(0x01000800);
-  memset(fgr, 0, 32 * sizeof(FGR));
+  memset(fgr, 0, 32 * sizeof(FloatingPointReg));
 }
 
 template <class T>

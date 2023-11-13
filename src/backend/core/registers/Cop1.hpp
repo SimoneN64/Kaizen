@@ -3,7 +3,10 @@
 #include <cstring>
 
 namespace n64 {
+struct Cop1;
+
 union FCR31 {
+  FCR31() = default;
   struct {
     unsigned rounding_mode:2;
     unsigned flag_inexact_operation:1;
@@ -57,13 +60,28 @@ enum CompConds {
   LT, NGE, LE, NGT
 };
 
-union FGR {
+union FloatingPointReg {
   struct {
-    s32 lo:32;
-    s32 hi:32;
+    s32 int32;
+    s32 int32h;
   } __attribute__((__packed__));
-
-  s64 raw;
+  struct {
+    u32 uint32;
+    u32 uint32h;
+  } __attribute__((__packed__));
+  struct {
+    s64 int64;
+  } __attribute__((__packed__));
+  struct {
+    u64 uint64;
+  } __attribute__((__packed__));
+  struct {
+    float float32;
+    float float32h;
+  } __attribute__((__packed__));
+  struct {
+    double float64;
+  } __attribute__((__packed__));
 };
 
 struct Interpreter;
@@ -76,7 +94,7 @@ struct Cop1 {
   Cop1();
   u32 fcr0{};
   FCR31 fcr31{};
-  FGR fgr[32]{};
+  FloatingPointReg fgr[32]{};
   void Reset();
   template <class T> // either JIT or Interpreter
   void decode(T&, u32);
@@ -89,119 +107,8 @@ struct Cop1 {
   void SetCauseDivisionByZero(Registers&);
   void SetCauseOverflow(Registers&);
   void SetCauseInvalid(Registers&);
-
-  template<typename T>
-  FORCE_INLINE T GetFGR_FR(Cop0& cop0, u8 r) {
-    if constexpr (std::is_same_v<T, u32> || std::is_same_v<T, s32>) {
-      if (cop0.status.fr) {
-        return fgr[r].lo;
-      } else {
-        if (r & 1) {
-          return fgr[r & ~1].hi;
-        } else {
-          return fgr[r].lo;
-        }
-      }
-    } else if constexpr (std::is_same_v<T, u64> || std::is_same_v<T, s64>) {
-      if (!cop0.status.fr) {
-        // When this bit is not set, accessing odd registers is not allowed.
-        r &= ~1;
-      }
-
-      return fgr[r].raw;
-    }
-  }
-
-  template<typename T>
-  FORCE_INLINE void SetFGR_FR(Cop0& cop0, u8 r, T value) {
-    if constexpr (std::is_same_v<T, u32> || std::is_same_v<T, s32>) {
-      if (cop0.status.fr) {
-        fgr[r].lo = value;
-      } else {
-        if (r & 1) {
-          fgr[r & ~1].hi = value;
-        } else {
-          fgr[r].lo = value;
-        }
-      }
-    } else if constexpr (std::is_same_v<T, u64> || std::is_same_v<T, s64>) {
-      if (!cop0.status.fr) {
-        // When this bit is not set, accessing odd registers is not allowed.
-        r &= ~1;
-      }
-
-      fgr[r].raw = value;
-    }
-  }
-
-  template<typename T>
-  FORCE_INLINE void SetFGR(u8 r, T value) {
-    fgr[r].raw = value;
-  }
-
-  template<typename T>
-  FORCE_INLINE u64 GetFGR(u8 r) {
-    if constexpr (std::is_same_v<T, u32> || std::is_same_v<T, s32>) {
-      return fgr[r].lo;
-    } else if constexpr (std::is_same_v<T, u64> || std::is_same_v<T, s64>) {
-      return fgr[r].raw;
-    }
-  }
-
-  template <typename T>
-  FORCE_INLINE T GetFGR_FS(Cop0& cop0, u8 fs) {
-    if constexpr (std::is_same_v<T, u32> || std::is_same_v<T, s32>) {
-      if (!cop0.status.fr) {
-        fs &= ~1;
-      }
-      return fgr[fs].lo;
-    } else if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      if (!cop0.status.fr) {
-        fs &= ~1;
-      }
-      return GetFGR_Raw<T>(fs);
-    }
-  }
-
-  template <typename T>
-  FORCE_INLINE T GetFGR_Raw(u8 r) {
-    if constexpr (std::is_same_v<T, float>) {
-      static_assert(sizeof(float) == sizeof(u32), "float and u32 need to both be 32 bits for this to work.");
-      auto rawvalue = GetFGR<u32>(r);
-      float floatvalue;
-      memcpy(&floatvalue, &rawvalue, sizeof(float));
-      return floatvalue;
-    } else if constexpr (std::is_same_v<T, double>) {
-      static_assert(sizeof(double) == sizeof(u64), "double and u64 need to both be 64 bits for this to work.");
-      double doublevalue;
-      auto rawvalue = GetFGR<u64>(r);
-      memcpy(&doublevalue, &rawvalue, sizeof(double));
-      return doublevalue;
-    }
-  }
-
-  template <typename T>
-  FORCE_INLINE void SetFGR_Raw(u8 r, T val) {
-    if constexpr (std::is_same_v<T, float>) {
-      static_assert(sizeof(float) == sizeof(u32), "float and u32 need to both be 32 bits for this to work.");
-
-      u32 rawvalue;
-      memcpy(&rawvalue, &val, sizeof(float));
-      SetFGR<u32>(r, rawvalue);
-    } else if constexpr (std::is_same_v<T, double>) {
-      static_assert(sizeof(double) == sizeof(u64), "double and u64 need to both be 64 bits for this to work.");
-
-      u64 rawvalue;
-      memcpy(&rawvalue, &val, sizeof(double));
-      SetFGR<u64>(r, rawvalue);
-    }
-  }
-
-  template <typename T>
-  FORCE_INLINE T GetFGR_FT(u8 ft) {
-    return GetFGR_Raw<T>(ft);
-  }
 private:
+  template <typename T> auto FGR(Cop0Status&, u32) -> T&;
   void decodeInterp(Interpreter&, u32);
   void decodeJIT(JIT&, u32);
   void absd(Registers&, u32 instr);

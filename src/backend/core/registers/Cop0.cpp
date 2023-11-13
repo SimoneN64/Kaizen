@@ -254,11 +254,8 @@ void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc) {
   bool old_exl = regs.cop0.status.exl;
 
   if(!regs.cop0.status.exl) {
-    if(regs.prevDelaySlot) {
-      regs.cop0.cause.branchDelay = true;
+    if(regs.cop0.cause.branchDelay = regs.prevDelaySlot) {
       pc -= 4;
-    } else {
-      regs.cop0.cause.branchDelay = false;
     }
 
     regs.cop0.status.exl = true;

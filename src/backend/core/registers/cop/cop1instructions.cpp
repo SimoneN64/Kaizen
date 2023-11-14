@@ -15,7 +15,7 @@ template<> auto Cop1::FGR<s32>(Cop0Status& status, u32 index) -> s32& {
     return fgr[index & ~1].int32h;
   }
   else {
-    return fgr[index & ~1].int32;
+    return fgr[index].int32;
   }
 }
 
@@ -989,7 +989,7 @@ void Cop1::lwc1Interp(Registers& regs, Mem& mem, u32 instr) {
     HandleTLBException(regs, addr);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
   } else {
-    u32 data = mem.Read32(regs, physical);
+    u32 data = mem.Read<u32>(regs, physical);
     FGR<u32>(regs.cop0.status, FT(instr)) = data;
   }
 }
@@ -1002,7 +1002,7 @@ void Cop1::swc1Interp(Registers& regs, Mem& mem, u32 instr) {
     HandleTLBException(regs, addr);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
   } else {
-    mem.Write32(regs, physical, FGR<u32>(regs.cop0.status, FT(instr)));
+    mem.Write<u32>(regs, physical, FGR<u32>(regs.cop0.status, FT(instr)));
   }
 }
 
@@ -1020,7 +1020,7 @@ void Cop1::ldc1Interp(Registers& regs, Mem& mem, u32 instr) {
     HandleTLBException(regs, addr);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
   } else {
-    u64 data = mem.Read64(regs, physical);
+    u64 data = mem.Read<u64>(regs, physical);
     FGR<u64>(regs.cop0.status, FT(instr)) = data;
   }
 }
@@ -1033,7 +1033,7 @@ void Cop1::sdc1Interp(Registers& regs, Mem& mem, u32 instr) {
     HandleTLBException(regs, addr);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
   } else {
-    mem.Write64(regs, physical, FGR<u64>(regs.cop0.status, FT(instr)));
+    mem.Write(regs, physical, FGR<u64>(regs.cop0.status, FT(instr)));
   }
 }
 

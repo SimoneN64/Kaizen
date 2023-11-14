@@ -177,7 +177,7 @@ void Mem::LoadROM(bool isArchive, const std::string& filename) {
   rom.pal = IsROMPAL();
 }
 
-u8 Mem::Read8(n64::Registers &regs, u32 paddr) {
+template<> u8 Mem::Read(n64::Registers &regs, u32 paddr) {
   const auto page = paddr >> 12;
   const auto offset = paddr & 0xFFF;
   const auto pointer = readPages[page];
@@ -199,12 +199,12 @@ u8 Mem::Read8(n64::Registers &regs, u32 paddr) {
         }
       }
       case REGION_CART:
-        return mmio.pi.BusRead8<false>(*this, paddr);
+        return mmio.pi.BusRead<u8, false>(*this, paddr);
       case 0x04040000 ... 0x040FFFFF:
       case 0x04100000 ... 0x041FFFFF:
       case 0x04600000 ... 0x048FFFFF:
       case 0x04300000 ... 0x044FFFFF:
-        Util::panic("MMIO Read8!\n");
+        Util::panic("MMIO Read<u8>!\n");
       case AI_REGION: {
         u32 w = mmio.ai.Read(paddr & ~3);
         int offs = 3 - (paddr & 3);
@@ -225,7 +225,7 @@ u8 Mem::Read8(n64::Registers &regs, u32 paddr) {
   }
 }
 
-u16 Mem::Read16(n64::Registers &regs, u32 paddr) {
+template<> u16 Mem::Read(n64::Registers &regs, u32 paddr) {
   const auto page = paddr >> 12;
   const auto offset = paddr & 0xFFF;
   const auto pointer = readPages[page];
@@ -249,7 +249,7 @@ u16 Mem::Read16(n64::Registers &regs, u32 paddr) {
       case MMIO_REGION:
         return mmio.Read(paddr);
       case REGION_CART:
-        return mmio.pi.BusRead16(*this, paddr);
+        return mmio.pi.BusRead<u16, false>(*this, paddr);
       case PIF_ROM_REGION:
         return Util::ReadAccess<u16>(si.pif.bootrom, HALF_ADDRESS(paddr) - PIF_ROM_REGION_START);
       case PIF_RAM_REGION:
@@ -265,7 +265,7 @@ u16 Mem::Read16(n64::Registers &regs, u32 paddr) {
   }
 }
 
-u32 Mem::Read32(n64::Registers &regs, u32 paddr) {
+template<> u32 Mem::Read(n64::Registers &regs, u32 paddr) {
   const auto page = paddr >> 12;
   const auto offset = paddr & 0xFFF;
   const auto pointer = readPages[page];
@@ -289,7 +289,7 @@ u32 Mem::Read32(n64::Registers &regs, u32 paddr) {
       case MMIO_REGION:
         return mmio.Read(paddr);
       case REGION_CART:
-        return mmio.pi.BusRead32(*this, paddr);
+        return mmio.pi.BusRead<u32, false>(*this, paddr);
       case PIF_ROM_REGION:
         return Util::ReadAccess<u32>(si.pif.bootrom, paddr - PIF_ROM_REGION_START);
       case PIF_RAM_REGION:
@@ -302,7 +302,7 @@ u32 Mem::Read32(n64::Registers &regs, u32 paddr) {
   }
 }
 
-u64 Mem::Read64(n64::Registers &regs, u32 paddr) {
+template<> u64 Mem::Read(n64::Registers &regs, u32 paddr) {
   const auto page = paddr >> 12;
   const auto offset = paddr & 0xFFF;
   const auto pointer = readPages[page];
@@ -326,7 +326,7 @@ u64 Mem::Read64(n64::Registers &regs, u32 paddr) {
       case MMIO_REGION:
         return mmio.Read(paddr);
       case REGION_CART:
-        return mmio.pi.BusRead64(*this, paddr);
+        return mmio.pi.BusRead<u64, false>(*this, paddr);
       case PIF_ROM_REGION:
         return Util::ReadAccess<u64>(si.pif.bootrom, paddr - PIF_ROM_REGION_START);
       case PIF_RAM_REGION:
@@ -342,7 +342,7 @@ u64 Mem::Read64(n64::Registers &regs, u32 paddr) {
   }
 }
 
-void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
+template<> void Mem::Write<u8>(Registers& regs, u32 paddr, u32 val) {
   const auto page = paddr >> 12;
   const auto offset = paddr & 0xFFF;
   const auto pointer = writePages[page];
@@ -366,11 +366,11 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
         }
       } break;
       case REGION_CART:
-        Util::debug("BusWrite8 @ {:08X} = {:02X}", paddr, val);
-        mmio.pi.BusWrite8<false>(*this, paddr, val);
+        Util::debug("BusWrite<u8> @ {:08X} = {:02X}", paddr, val);
+        mmio.pi.BusWrite<u8, false>(*this, paddr, val);
         break;
       case MMIO_REGION:
-        Util::panic("MMIO Write8!");
+        Util::panic("MMIO Write<u8>!");
       case PIF_RAM_REGION:
         val = val << (8 * (3 - (paddr & 3)));
         paddr = (paddr - PIF_RAM_REGION_START) & ~3;
@@ -391,7 +391,7 @@ void Mem::Write8(Registers& regs, u32 paddr, u32 val) {
   }
 }
 
-void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
+template<> void Mem::Write<u16>(Registers& regs, u32 paddr, u32 val) {
   const auto page = paddr >> 12;
   const auto offset = paddr & 0xFFF;
   const auto pointer = writePages[page];
@@ -415,11 +415,11 @@ void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
         }
       } break;
       case REGION_CART:
-        Util::debug("BusWrite8 @ {:08X} = {:04X}", paddr, val);
-        mmio.pi.BusWrite16(paddr, val);
+        Util::debug("BusWrite<u8> @ {:08X} = {:04X}", paddr, val);
+        mmio.pi.BusWrite<u16, false>(*this, paddr, val);
         break;
       case MMIO_REGION:
-        Util::panic("MMIO Write16!");
+        Util::panic("MMIO Write<u16>!");
       case PIF_RAM_REGION:
         val = val << (16 * !(paddr & 2));
         paddr &= ~3;
@@ -440,7 +440,7 @@ void Mem::Write16(Registers& regs, u32 paddr, u32 val) {
   }
 }
 
-void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
+template<> void Mem::Write<u32>(Registers& regs, u32 paddr, u32 val) {
   const auto page = paddr >> 12;
   const auto offset = paddr & 0xFFF;
   const auto pointer = writePages[page];
@@ -462,8 +462,8 @@ void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
         }
       } break;
       case REGION_CART:
-        Util::debug("BusWrite8 @ {:08X} = {:08X}", paddr, val);
-        mmio.pi.BusWrite32(*this, paddr, val);
+        Util::debug("BusWrite<u8> @ {:08X} = {:08X}", paddr, val);
+        mmio.pi.BusWrite<u32, false>(*this, paddr, val);
         break;
       case MMIO_REGION:
         mmio.Write(*this, regs, paddr, val);
@@ -483,7 +483,7 @@ void Mem::Write32(Registers& regs, u32 paddr, u32 val) {
   }
 }
 
-void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
+void Mem::Write(Registers& regs, u32 paddr, u64 val) {
   const auto page = paddr >> 12;
   const auto offset = paddr & 0xFFF;
   const auto pointer = writePages[page];
@@ -506,11 +506,11 @@ void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
         }
       } break;
       case REGION_CART:
-        Util::debug("BusWrite8 @ {:08X} = {:016X}", paddr, val);
-        mmio.pi.BusWrite64(*this, paddr, val);
+        Util::debug("BusWrite<u8> @ {:08X} = {:016X}", paddr, val);
+        mmio.pi.BusWrite<u64, false>(*this, paddr, val);
         break;
       case MMIO_REGION:
-        Util::panic("MMIO Write64!");
+        Util::panic("MMIO Write!");
       case PIF_RAM_REGION:
         Util::WriteAccess<u64>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe64(val));
         si.pif.ProcessCommands(*this);
@@ -528,14 +528,14 @@ void Mem::Write64(Registers& regs, u32 paddr, u64 val) {
   }
 }
 
-u32 Mem::BackupRead32() const {
+template <> u32 Mem::BackupRead(u32 addr) {
   switch(saveType) {
     case SAVE_NONE: return 0;
     case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
       Util::warn("Accessing cartridge backup type SAVE_EEPROM, returning 0 for word read");
       return 0;
     case SAVE_FLASH_1m:
-      return flash.Read32();
+      return flash.Read<u32>(addr);
     case SAVE_SRAM_256k:
       return 0xFFFFFFFF;
     default:
@@ -543,14 +543,35 @@ u32 Mem::BackupRead32() const {
   }
 }
 
-void Mem::BackupWrite32(u32 addr, u32 val) {
+template <> u8 Mem::BackupRead(u32 addr) {
+  switch (saveType) {
+  case SAVE_NONE: return 0;
+  case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
+    Util::warn("Accessing cartridge backup type SAVE_EEPROM, returning 0 for word read");
+    return 0;
+  case SAVE_FLASH_1m:
+    return flash.Read<u8>(addr);
+  case SAVE_SRAM_256k:
+    if (saveData.is_mapped()) {
+      assert(addr < saveData.size());
+      return saveData[addr];
+    }
+    else {
+      Util::panic("Invalid backup Read<u8> if save data is not initialized");
+    }
+  default:
+    Util::panic("Backup read word with unknown save type");
+  }
+}
+
+template <> void Mem::BackupWrite(u32 addr, u32 val) {
   switch(saveType) {
     case SAVE_NONE:
       Util::panic("Accessing cartridge with save type SAVE_NONE in write word");
     case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
       Util::panic("Accessing cartridge with save type SAVE_EEPROM in write word");
     case SAVE_FLASH_1m:
-      flash.Write32(addr, val);
+      flash.Write<u32>(addr, val);
       break;
     case SAVE_SRAM_256k:
       break;
@@ -559,41 +580,21 @@ void Mem::BackupWrite32(u32 addr, u32 val) {
   }
 }
 
-u8 Mem::BackupRead8(u32 addr) {
-  switch(saveType) {
-    case SAVE_NONE: return 0;
-    case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
-      Util::warn("Accessing cartridge backup type SAVE_EEPROM, returning 0 for word read");
-      return 0;
-    case SAVE_FLASH_1m:
-      return flash.Read8(addr);
-    case SAVE_SRAM_256k:
-      if(saveData.is_mapped()) {
-        assert(addr < saveData.size());
-        return saveData[addr];
-      } else {
-        Util::panic("Invalid backup Read8 if save data is not initialized");
-      }
-    default:
-      Util::panic("Backup read word with unknown save type");
-  }
-}
-
-void Mem::BackupWrite8(u32 addr, u8 val) {
+template <> void Mem::BackupWrite(u32 addr, u8 val) {
   switch(saveType) {
     case SAVE_NONE:
       Util::panic("Accessing cartridge with save type SAVE_NONE in write word");
     case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
       Util::panic("Accessing cartridge with save type SAVE_EEPROM in write word");
     case SAVE_FLASH_1m:
-      flash.Write8(addr, val);
+      flash.Write<u8>(addr, val);
       break;
     case SAVE_SRAM_256k:
       if(saveData.is_mapped()) {
         assert(addr < saveData.size());
         saveData[addr] = val;
       } else {
-        Util::panic("Invalid backup Write8 if save data is not initialized");
+        Util::panic("Invalid backup Write<u8> if save data is not initialized");
       }
       break;
     default:

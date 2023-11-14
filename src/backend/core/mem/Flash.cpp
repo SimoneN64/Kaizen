@@ -6,7 +6,7 @@ constexpr auto FLASH_SIZE = 1_mb;
 Flash::Flash(mio::mmap_sink &saveData) : saveData(saveData) {}
 
 void Flash::Reset() {
-  state = Idle;
+  state = FlashState::Idle;
 }
 
 void Flash::Load(SaveType saveType, const std::string& path) {
@@ -136,7 +136,7 @@ void Flash::Deserialize(const std::vector<u8>& data) {
   memcpy(writeBuf, data.data() + index, 128);
 }
 
-void Flash::Write32(u32 index, u32 val) {
+template <> void Flash::Write(u32 index, u32 val) {
   if(index > 0) {
     u8 cmd = val >> 24;
     switch(cmd) {
@@ -154,24 +154,24 @@ void Flash::Write32(u32 index, u32 val) {
   }
 }
 
-void Flash::Write8(u32 index, u8 val) {
+template <> void Flash::Write(u32 index, u8 val) {
   switch(state) {
-    case FlashState::Idle: Util::panic("Invalid FlashState::Idle with Write8");
-    case FlashState::Status: Util::panic("Invalid FlashState::Status with Write8");
-    case FlashState::Erase: Util::panic("Invalid FlashState::Erase with Write8");
+    case FlashState::Idle: Util::panic("Invalid FlashState::Idle with Write<u8>");
+    case FlashState::Status: Util::panic("Invalid FlashState::Status with Write<u8>");
+    case FlashState::Erase: Util::panic("Invalid FlashState::Erase with Write<u8>");
     case FlashState::Write:
       writeBuf[index] = val;
       break;
-    case FlashState::Read: Util::panic("Invalid FlashState::Read with Write8");
-    default: Util::warn("Invalid flash state on Write8: {:02X}", static_cast<u8>(state));
+    case FlashState::Read: Util::panic("Invalid FlashState::Read with Write<u8>");
+    default: Util::warn("Invalid flash state on Write<u8>: {:02X}", static_cast<u8>(state));
   }
 }
 
-u32 Flash::Read8(u32 index) const {
+template <> u8 Flash::Read(u32 index) const {
   switch (state) {
-    case Idle: Util::panic("Flash read byte while in state FLASH_STATE_IDLE");
-    case Write: Util::panic("Flash read byte while in state FLASH_STATE_WRITE");
-    case Read: {
+    case FlashState::Idle: Util::panic("Flash read byte while in state FLASH_STATE_IDLE");
+    case FlashState::Write: Util::panic("Flash read byte while in state FLASH_STATE_WRITE");
+    case FlashState::Read: {
       if(saveData.is_mapped()) {
         u8 value = saveData[index];
         Util::debug("Flash read byte in state read: index {:08X} = {:02X}", index, value);
@@ -180,7 +180,7 @@ u32 Flash::Read8(u32 index) const {
         Util::panic("Accessing flash when not mapped!");
       }
     }
-    case Status: {
+    case FlashState::Status: {
       u32 offset = (7 - (index % 8)) * 8;
       u8 value = (status >> offset) & 0xFF;
       Util::debug("Flash read byte in state status: index {:08X} = {:02X}", index, value);
@@ -190,7 +190,7 @@ u32 Flash::Read8(u32 index) const {
   }
 }
 
-u32 Flash::Read32() const {
+template <> u32 Flash::Read(u32 index) const {
   return status >> 32;
 }
 }

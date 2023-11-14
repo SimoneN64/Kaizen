@@ -12,16 +12,10 @@ struct PI {
   void Reset();
   auto Read(MI&, u32) const -> u32;
   void Write(Mem&, Registers&, u32, u32);
-  template<bool isDma>
-  auto BusRead8(Mem&, u32) -> u8;
-  template<bool isDma>
-  void BusWrite8(Mem&, u32, u32);
-  auto BusRead16(Mem&, u32) -> u16;
-  void BusWrite16(u32, u16);
-  auto BusRead32(Mem&, u32) -> u32;
-  void BusWrite32(Mem&, u32, u32);
-  auto BusRead64(Mem&, u32) -> u64;
-  void BusWrite64(Mem&, u32, u64);
+  template<typename T, bool isDma>
+  auto BusRead(Mem&, u32) -> T;
+  template<typename T, bool isDma>
+  void BusWrite(Mem&, u32, T);
   bool ReadLatch();
   bool WriteLatch(u32 val);
 

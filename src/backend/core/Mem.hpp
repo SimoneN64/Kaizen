@@ -37,7 +37,7 @@ struct ROM {
   bool pal;
 };
 
-enum FlashState : u8 {
+enum class FlashState : u8 {
   Idle, Erase, Write, Read, Status
 };
 
@@ -73,10 +73,10 @@ struct Flash {
   void CommandRead();
   std::vector<u8> Serialize();
   void Deserialize(const std::vector<u8>& data);
-  void Write32(u32 index, u32 val);
-  void Write8(u32 index, u8 val);
-  u32 Read8(u32 index) const;
-  u32 Read32() const;
+  template <typename T>
+  void Write(u32 index, T val);
+  template <typename T>
+  T Read(u32 index) const;
 };
 
 struct Mem {
@@ -94,19 +94,16 @@ struct Mem {
   std::vector<u8> Serialize();
   void Deserialize(const std::vector<u8>&);
 
-  u8 Read8(Registers&, u32);
-  u16 Read16(Registers&, u32);
-  u32 Read32(Registers&, u32);
-  u64 Read64(Registers&, u32);
-  void Write8(Registers&, u32, u32);
-  void Write16(Registers&, u32, u32);
-  void Write32(Registers&, u32, u32);
-  void Write64(Registers&, u32, u64);
+  template <typename T>
+  T Read(Registers&, u32);
+  template <typename T>
+  void Write(Registers&, u32, u32);
+  void Write(Registers&, u32, u64);
 
-  u32 BackupRead32() const;
-  void BackupWrite32(u32, u32);
-  u8 BackupRead8(u32);
-  void BackupWrite8(u32, u8);
+  template <typename T>
+  T BackupRead(u32);
+  template <typename T>
+  void BackupWrite(u32, T);
 
   MMIO mmio;
 

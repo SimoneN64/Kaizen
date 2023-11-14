@@ -296,7 +296,7 @@ void JIT::lh(u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
   } else {
-    regs.gpr[RT(instr)] = (s16)mem.Read16(regs, paddr);
+    regs.gpr[RT(instr)] = (s16)mem.Read<u16>(regs, paddr);
   }
 }
 
@@ -314,7 +314,7 @@ void JIT::lw(u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
   } else {
-    regs.gpr[RT(instr)] = (s32)mem.Read32(regs, physical);
+    regs.gpr[RT(instr)] = (s32)mem.Read<u32>(regs, physical);
   }
 }
 
@@ -329,7 +329,7 @@ void JIT::ll(u32 instr) {
       FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
       return;
     } else {
-      regs.gpr[RT(instr)] = (s32)mem.Read32(regs, physical);
+      regs.gpr[RT(instr)] = (s32)mem.Read<u32>(regs, physical);
     }
   }
 
@@ -346,7 +346,7 @@ void JIT::lwl(u32 instr) {
   } else {
     u32 shift = 8 * ((address ^ 0) & 3);
     u32 mask = 0xFFFFFFFF << shift;
-    u32 data = mem.Read32(regs, paddr & ~3);
+    u32 data = mem.Read<u32>(regs, paddr & ~3);
     s32 result = s32((regs.gpr[RT(instr)] & ~mask) | (data << shift));
     regs.gpr[RT(instr)] = result;
   }
@@ -361,7 +361,7 @@ void JIT::lwr(u32 instr) {
   } else {
     u32 shift = 8 * ((address ^ 3) & 3);
     u32 mask = 0xFFFFFFFF >> shift;
-    u32 data = mem.Read32(regs, paddr & ~3);
+    u32 data = mem.Read<u32>(regs, paddr & ~3);
     s32 result = s32((regs.gpr[RT(instr)] & ~mask) | (data >> shift));
     regs.gpr[RT(instr)] = result;
   }
@@ -380,7 +380,7 @@ void JIT::ld(u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
   } else {
-    s64 value = mem.Read64(regs, paddr);
+    s64 value = mem.Read<u64>(regs, paddr);
     regs.gpr[RT(instr)] = value;
   }
 }
@@ -400,7 +400,7 @@ void JIT::lld(u32 instr) {
     if ((address & 0b111) > 0) {
       FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
     } else {
-      regs.gpr[RT(instr)] = mem.Read64(regs, paddr);
+      regs.gpr[RT(instr)] = mem.Read<u64>(regs, paddr);
       regs.cop0.llbit = true;
       regs.cop0.LLAddr = paddr >> 4;
     }
@@ -416,7 +416,7 @@ void JIT::ldl(u32 instr) {
   } else {
     s32 shift = 8 * ((address ^ 0) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
-    u64 data = mem.Read64(regs, paddr & ~7);
+    u64 data = mem.Read<u64>(regs, paddr & ~7);
     s64 result = (s64) ((regs.gpr[RT(instr)] & ~mask) | (data << shift));
     regs.gpr[RT(instr)] = result;
   }
@@ -431,7 +431,7 @@ void JIT::ldr(u32 instr) {
   } else {
     s32 shift = 8 * ((address ^ 7) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
-    u64 data = mem.Read64(regs, paddr & ~7);
+    u64 data = mem.Read<u64>(regs, paddr & ~7);
     s64 result = (s64) ((regs.gpr[RT(instr)] & ~mask) | (data >> shift));
     regs.gpr[RT(instr)] = result;
   }
@@ -444,7 +444,7 @@ void JIT::lbu(u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
   } else {
-    u8 value = mem.Read8(regs, paddr);
+    u8 value = mem.Read<u8>(regs, paddr);
     regs.gpr[RT(instr)] = value;
   }
 }
@@ -461,7 +461,7 @@ void JIT::lhu(u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
   } else {
-    u16 value = mem.Read16(regs, paddr);
+    u16 value = mem.Read<u16>(regs, paddr);
     regs.gpr[RT(instr)] = value;
   }
 }
@@ -479,7 +479,7 @@ void JIT::lwu(u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
   } else {
-    u32 value = mem.Read32(regs, paddr);
+    u32 value = mem.Read<u32>(regs, paddr);
     regs.gpr[RT(instr)] = value;
   }
 }
@@ -491,7 +491,7 @@ void JIT::sb(u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
   } else {
-    mem.Write8(regs, paddr, regs.gpr[RT(instr)]);
+    mem.Write<u8>(regs, paddr, regs.gpr[RT(instr)]);
   }
 }
 
@@ -510,7 +510,7 @@ void JIT::sc(u32 instr) {
       HandleTLBException(regs, address);
       FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
     } else {
-      mem.Write32(regs, paddr, regs.gpr[RT(instr)]);
+      mem.Write<u32>(regs, paddr, regs.gpr[RT(instr)]);
       regs.gpr[RT(instr)] = 1;
     }
   } else {
@@ -538,7 +538,7 @@ void JIT::scd(u32 instr) {
       HandleTLBException(regs, address);
       FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
     } else {
-      mem.Write32(regs, paddr, regs.gpr[RT(instr)]);
+      mem.Write<u32>(regs, paddr, regs.gpr[RT(instr)]);
       regs.gpr[RT(instr)] = 1;
     }
   } else {
@@ -554,7 +554,7 @@ void JIT::sh(u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
   } else {
-    mem.Write16(regs, physical, regs.gpr[RT(instr)]);
+    mem.Write<u16>(regs, physical, regs.gpr[RT(instr)]);
   }
 }
 
@@ -572,7 +572,7 @@ void JIT::sw(u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
   } else {
-    mem.Write32(regs, physical, regs.gpr[RT(instr)]);
+    mem.Write<u32>(regs, physical, regs.gpr[RT(instr)]);
   }
 }
 
@@ -589,7 +589,7 @@ void JIT::sd(u32 instr) {
     HandleTLBException(regs, address);
     FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
   } else {
-    mem.Write64(regs, physical, regs.gpr[RT(instr)]);
+    mem.Write(regs, physical, regs.gpr[RT(instr)]);
   }
 }
 
@@ -602,9 +602,9 @@ void JIT::sdl(u32 instr) {
   } else {
     s32 shift = 8 * ((address ^ 0) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
-    u64 data = mem.Read64(regs, paddr & ~7);
+    u64 data = mem.Read<u64>(regs, paddr & ~7);
     u64 rt = regs.gpr[RT(instr)];
-    mem.Write64(regs, paddr & ~7, (data & ~mask) | (rt >> shift));
+    mem.Write(regs, paddr & ~7, (data & ~mask) | (rt >> shift));
   }
 }
 
@@ -617,9 +617,9 @@ void JIT::sdr(u32 instr) {
   } else {
     s32 shift = 8 * ((address ^ 7) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
-    u64 data = mem.Read64(regs, paddr & ~7);
+    u64 data = mem.Read<u64>(regs, paddr & ~7);
     u64 rt = regs.gpr[RT(instr)];
-    mem.Write64(regs, paddr & ~7, (data & ~mask) | (rt << shift));
+    mem.Write(regs, paddr & ~7, (data & ~mask) | (rt << shift));
   }
 }
 
@@ -632,9 +632,9 @@ void JIT::swl(u32 instr) {
   } else {
     u32 shift = 8 * ((address ^ 0) & 3);
     u32 mask = 0xFFFFFFFF >> shift;
-    u32 data = mem.Read32(regs, paddr & ~3);
+    u32 data = mem.Read<u32>(regs, paddr & ~3);
     u32 rt = regs.gpr[RT(instr)];
-    mem.Write32(regs, paddr & ~3, (data & ~mask) | (rt >> shift));
+    mem.Write<u32>(regs, paddr & ~3, (data & ~mask) | (rt >> shift));
   }
 }
 
@@ -647,9 +647,9 @@ void JIT::swr(u32 instr) {
   } else {
     u32 shift = 8 * ((address ^ 3) & 3);
     u32 mask = 0xFFFFFFFF << shift;
-    u32 data = mem.Read32(regs, paddr & ~3);
+    u32 data = mem.Read<u32>(regs, paddr & ~3);
     u32 rt = regs.gpr[RT(instr)];
-    mem.Write32(regs, paddr & ~3, (data & ~mask) | (rt << shift));
+    mem.Write<u32>(regs, paddr & ~3, (data & ~mask) | (rt << shift));
   }
 }
 

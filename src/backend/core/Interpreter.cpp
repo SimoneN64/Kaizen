@@ -40,7 +40,7 @@ int Interpreter::Step() {
     return 1;
   }
 
-  u32 instruction = mem.Read32(regs, paddr);
+  u32 instruction = mem.Read<u32>(regs, paddr);
 
   if(ShouldServiceInterrupt()) {
     FireException(regs, ExceptionCode::Interrupt, 0, regs.pc);

@@ -98,7 +98,7 @@ private:
   };
 
   u8 Read8(u64 addr) {
-    return mem.Read8(regs, addr);
+    return mem.Read<u8>(regs, addr);
   }
 
   std::vector<u8> Serialize() override { return {}; }

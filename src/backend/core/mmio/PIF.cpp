@@ -343,7 +343,7 @@ void PIF::UpdateController() {
 }
 
 void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
-  mem.Write32(regs, PIF_RAM_REGION_START + 0x24, cicSeeds[cicType]);
+  mem.Write<u32>(regs, PIF_RAM_REGION_START + 0x24, cicSeeds[cicType]);
 
   switch(cicType) {
     case UNKNOWN_CIC_TYPE:
@@ -548,14 +548,14 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
         regs.gpr[31] = 0xFFFFFFFFA4001554ll;
       }
 
-      mem.Write32(regs, IMEM_REGION_START + 0x00, 0x3C0DBFC0);
-      mem.Write32(regs, IMEM_REGION_START + 0x04, 0x8DA807FC);
-      mem.Write32(regs, IMEM_REGION_START + 0x08, 0x25AD07C0);
-      mem.Write32(regs, IMEM_REGION_START + 0x0C, 0x31080080);
-      mem.Write32(regs, IMEM_REGION_START + 0x10, 0x5500FFFC);
-      mem.Write32(regs, IMEM_REGION_START + 0x14, 0x3C0DBFC0);
-      mem.Write32(regs, IMEM_REGION_START + 0x18, 0x8DA80024);
-      mem.Write32(regs, IMEM_REGION_START + 0x1C, 0x3C0BB000);
+      mem.Write<u32>(regs, IMEM_REGION_START + 0x00, 0x3C0DBFC0);
+      mem.Write<u32>(regs, IMEM_REGION_START + 0x04, 0x8DA807FC);
+      mem.Write<u32>(regs, IMEM_REGION_START + 0x08, 0x25AD07C0);
+      mem.Write<u32>(regs, IMEM_REGION_START + 0x0C, 0x31080080);
+      mem.Write<u32>(regs, IMEM_REGION_START + 0x10, 0x5500FFFC);
+      mem.Write<u32>(regs, IMEM_REGION_START + 0x14, 0x3C0DBFC0);
+      mem.Write<u32>(regs, IMEM_REGION_START + 0x18, 0x8DA80024);
+      mem.Write<u32>(regs, IMEM_REGION_START + 0x1C, 0x3C0BB000);
       break;
     case CIC_NUS_6106_7106:
       regs.gpr[0] = 0x0000000000000000;
@@ -602,7 +602,7 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
 
   regs.gpr[22] = (cicSeeds[cicType] >> 8) & 0xFF;
   regs.cop0.Reset();
-  mem.Write32(regs, 0x04300004, 0x01010101);
+  mem.Write<u32>(regs, 0x04300004, 0x01010101);
   memcpy(mem.mmio.rsp.dmem, mem.rom.cart, 0x1000);
   regs.SetPC32(s32(0xA4000040));
 }
@@ -610,16 +610,16 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
 void PIF::ExecutePIF(Mem& mem, Registers& regs) {
   CICType cicType = mem.rom.cicType;
   bool pal = mem.rom.pal;
-  mem.Write32(regs, PIF_RAM_REGION_START + 0x24, cicSeeds[cicType]);
+  mem.Write<u32>(regs, PIF_RAM_REGION_START + 0x24, cicSeeds[cicType]);
   switch(cicType) {
     case UNKNOWN_CIC_TYPE:
       Util::warn("Unknown CIC type!");
       break;
     case CIC_NUS_6101 ... CIC_NUS_6103_7103:
-      mem.Write32(regs, 0x318, RDRAM_SIZE);
+      mem.Write<u32>(regs, 0x318, RDRAM_SIZE);
       break;
     case CIC_NUS_6105_7105:
-      mem.Write32(regs, 0x3F0, RDRAM_SIZE);
+      mem.Write<u32>(regs, 0x3F0, RDRAM_SIZE);
       break;
     case CIC_NUS_6106_7106:
       break;

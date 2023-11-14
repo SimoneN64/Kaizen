@@ -57,7 +57,7 @@ Fn JIT::Recompile() {
       goto _epilogue;
     }
 
-    u32 instr = mem.Read32(regs, paddr);
+    u32 instr = mem.Read<u32>(regs, paddr);
     stable = isStable(instr);
     Emit(instr);
 

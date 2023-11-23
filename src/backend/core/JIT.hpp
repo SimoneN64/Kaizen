@@ -9,6 +9,14 @@ namespace n64 {
 using Fn = int(*)();
 #define GPR(x) qword[rdi + offsetof(Registers, gpr[(x)])]
 #define REG(ptr, member) ptr[rdi + offsetof(Registers, member)]
+// 4KiB aligned pages
+#define BLOCKCACHE_OUTER_SHIFT 12
+#define BLOCKCACHE_PAGE_SIZE (1 << BLOCKCACHE_OUTER_SHIFT)
+#define BLOCKCACHE_OUTER_SIZE (0x80000000 >> BLOCKCACHE_OUTER_SHIFT)
+// word aligned instructions
+#define BLOCKCACHE_INNER_SIZE (BLOCKCACHE_PAGE_SIZE >> 2)
+#define BLOCKCACHE_INNER_INDEX(physical) (((physical) & (BLOCKCACHE_PAGE_SIZE - 1)) >> 2)
+#define BLOCKCACHE_OUTER_INDEX(physical) ((physical) >> BLOCKCACHE_OUTER_SHIFT)
 
 struct JIT : BaseCPU, Xbyak::CodeGenerator {
   JIT();
@@ -27,7 +35,7 @@ private:
   void emitMemberCall(T func, void* thisObj) {
     void* funcPtr;
     auto thisPtr = reinterpret_cast<uintptr_t>(thisObj);
-/*#ifdef ABI_WINDOWS
+#ifdef ABI_WINDOWS
     static_assert(sizeof(T) == 8, "[JIT]: Invalid size for member function pointer");
     std::memcpy(&funcPtr, &func, sizeof(T));
 #elif defined(ABI_UNIX)
@@ -38,7 +46,7 @@ private:
     thisPtr += tmpArr[1];
 #else
     Util::panic("Huh?!");
-#endif*/
+#endif
 
     push(rdi);
     if(thisPtr == reinterpret_cast<uintptr_t>(this)) {
@@ -91,11 +99,8 @@ private:
     ret();
   }
 
-  Fn* blocks[0x80000]{};
-
-  enum BranchCond {
-    LT, GT, GE, LE, EQ, NE
-  };
+  static u8 codecache[1 << 25] __attribute__((aligned(4096)));
+  Fn* blocks[BLOCKCACHE_OUTER_SIZE]{};
 
   u8 Read8(u64 addr) {
     return mem.Read<u8>(regs, addr);
@@ -114,24 +119,22 @@ private:
   void addiu(u32);
   void andi(u32);
   void and_(u32);
-  void emitCondition(const std::string&, BranchCond);
-  template <class T>
-  void branch(const Xbyak::Reg64&, const T&, s64, BranchCond);
-
-  template <class T>
-  void branch_likely(const Xbyak::Reg64&, const T&, s64, BranchCond);
-
-  template <class T>
-  void b(u32, const Xbyak::Reg64&, const T&, BranchCond);
-
-  template <class T>
-  void blink(u32, const Xbyak::Reg64&, const T&, BranchCond);
-
-  template <class T>
-  void bl(u32, const Xbyak::Reg64&, const T&, BranchCond);
-
-  template <class T>
-  void bllink(u32, const Xbyak::Reg64&, const T&, BranchCond);
+  void bltz(u32);
+  void bgez(u32);
+  void bltzl(u32);
+  void bgezl(u32);
+  void bltzal(u32);
+  void bgezal(u32);
+  void bltzall(u32);
+  void bgezall(u32);
+  void beq(u32);
+  void bne(u32);
+  void blez(u32);
+  void bgtz(u32);
+  void beql(u32);
+  void bnel(u32);
+  void blezl(u32);
+  void bgtzl(u32);
   void dadd(u32);
   void daddu(u32);
   void daddi(u32);
@@ -200,7 +203,18 @@ private:
   void srav(u32);
   void srl(u32);
   void srlv(u32);
-  void trap(bool);
+  void tgei(u32);
+  void tgeiu(u32);
+  void tlti(u32);
+  void tltiu(u32);
+  void teqi(u32);
+  void tnei(u32);
+  void tge(u32);
+  void tgeu(u32);
+  void tlt(u32);
+  void tltu(u32);
+  void teq(u32);
+  void tne(u32);
   void or_(u32);
   void ori(u32);
   void xor_(u32);

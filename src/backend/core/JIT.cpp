@@ -83,15 +83,15 @@ _epilogue:
 }
 
 int JIT::Step() {
-  if(!blocks[regs.pc >> 20]) {
-    blocks[regs.pc >> 20] = (Fn*)calloc(4096, sizeof(Fn));
-    blocks[regs.pc >> 20][regs.pc & 0xfff] = Recompile();
+  if(!blocks[BLOCKCACHE_OUTER_INDEX(regs.pc)]) {
+    blocks[BLOCKCACHE_OUTER_INDEX(regs.pc)] = (Fn*)calloc(BLOCKCACHE_INNER_SIZE, 1);
+    blocks[BLOCKCACHE_OUTER_INDEX(regs.pc)][BLOCKCACHE_INNER_INDEX(regs.pc)] = Recompile();
   }
 
-  if (!blocks[regs.pc >> 20][regs.pc & 0xfff]) {
-    blocks[regs.pc >> 20][regs.pc & 0xfff] = Recompile();
+  if (!blocks[BLOCKCACHE_OUTER_INDEX(regs.pc)][BLOCKCACHE_INNER_INDEX(regs.pc)]) {
+    blocks[BLOCKCACHE_OUTER_INDEX(regs.pc)][BLOCKCACHE_INNER_INDEX(regs.pc)] = Recompile();
   }
 
-  return blocks[regs.pc >> 20][regs.pc & 0xfff]();
+  return blocks[BLOCKCACHE_OUTER_INDEX(regs.pc)][BLOCKCACHE_INNER_INDEX(regs.pc)]();
 }
 }

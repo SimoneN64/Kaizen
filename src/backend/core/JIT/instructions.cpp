@@ -143,107 +143,6 @@ void JIT::ddivu(u32 instr) {
   L("ddivu_exit");
 }
 
-void JIT::emitCondition(const std::string& name, BranchCond cond) {
-  switch(cond) {
-    case LT:
-      jnl(name);
-      break;
-    case GT:
-      jng(name);
-      break;
-    case GE:
-      jnge(name);
-      break;
-    case LE:
-      jnle(name);
-      break;
-    case EQ:
-      jne(name);
-      break;
-    case NE:
-      je(name);
-      break;
-  }
-}
-
-template <class T>
-void JIT::branch(const Xbyak::Reg64& op1, const T& op2, s64 offset, BranchCond cond) {
-  cmp(op1, op2);
-  emitCondition("branch_false", cond);
-
-  mov(byte[rdi + offsetof(Registers, delaySlot)], 1);
-  mov(rax, qword[rdi + offsetof(Registers, pc)]);
-  CodeGenerator::add(rax, offset);
-  mov(qword[rdi + offsetof(Registers, nextPC)], rax);
-  L("branch_false");
-}
-
-template void JIT::branch<Xbyak::Reg64>(const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, s64 offset, BranchCond cond);
-template void JIT::branch<int>(const Xbyak::Reg64& op1, const int& op2, s64 offset, BranchCond cond);
-
-template <class T>
-void JIT::branch_likely(const Xbyak::Reg64& op1, const T& op2, s64 offset, BranchCond cond) {
-  mov(rax, qword[rdi + offsetof(Registers, pc)]);
-  cmp(op1, op2);
-  emitCondition("branch_likely_false", cond);
-
-  mov(byte[rdi + offsetof(Registers, delaySlot)], 1);
-  CodeGenerator::add(rax, offset);
-  mov(qword[rdi + offsetof(Registers, nextPC)], rax);
-  jmp("branch_likely_exit");
-
-  L("branch_likely_false");
-  mov(qword[rdi + offsetof(Registers, oldPC)], rax);
-  mov(rcx, qword[rdi + offsetof(Registers, nextPC)]);
-  mov(qword[rdi + offsetof(Registers, pc)], rcx);
-  CodeGenerator::add(rcx, 4);
-  mov(qword[rdi + offsetof(Registers, nextPC)], rcx);
-  L("branch_likely_exit");
-}
-
-template void JIT::branch_likely<Xbyak::Reg64>(const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, s64 offset, BranchCond cond);
-template void JIT::branch_likely<int>(const Xbyak::Reg64& op1, const int& op2, s64 offset, BranchCond cond);
-
-template <class T>
-void JIT::b(u32 instr, const Xbyak::Reg64& op1, const T& op2, BranchCond cond) {
-  s16 imm = instr;
-  s64 offset = u64((s64)imm) << 2;
-  branch(op1, op2, offset, cond);
-}
-template void JIT::b<Xbyak::Reg64>(u32 instr, const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, BranchCond cond);
-template void JIT::b<int>(u32 instr, const Xbyak::Reg64& op1, const int& op2, BranchCond cond);
-
-template <class T>
-void JIT::blink(u32 instr, const Xbyak::Reg64& op1, const T& op2, BranchCond cond) {
-  s16 imm = instr;
-  s64 offset = u64((s64)imm) << 2;
-  mov(rcx, qword[rdi + offsetof(Registers, nextPC)]);
-  mov(GPR(31), rcx);
-  branch(op1, op2, offset, cond);
-}
-template void JIT::blink<Xbyak::Reg64>(u32 instr, const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, BranchCond cond);
-template void JIT::blink<int>(u32 instr, const Xbyak::Reg64& op1, const int& op2, BranchCond cond);
-
-template <class T>
-void JIT::bl(u32 instr, const Xbyak::Reg64& op1, const T& op2, BranchCond cond) {
-  s16 imm = instr;
-  s64 offset = u64((s64)imm) << 2;
-  branch_likely(op1, op2, offset, cond);
-}
-template void JIT::bl<Xbyak::Reg64>(u32 instr, const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, BranchCond cond);
-template void JIT::bl<int>(u32 instr, const Xbyak::Reg64& op1, const int& op2, BranchCond cond);
-
-template <class T>
-void JIT::bllink(u32 instr, const Xbyak::Reg64& op1, const T& op2, BranchCond cond) {
-  mov(rcx, qword[rdi + offsetof(Registers, nextPC)]);
-  mov(GPR(31), rcx);
-  s16 imm = instr;
-  s64 offset = u64((s64)imm) << 2;
-  branch_likely(op1, op2, offset, cond);
-}
-template void JIT::bllink<Xbyak::Reg64>(u32 instr, const Xbyak::Reg64& op1, const Xbyak::Reg64& op2, BranchCond cond);
-template void JIT::bllink<int>(u32 instr, const Xbyak::Reg64& op1, const int& op2, BranchCond cond);
-
 void JIT::lui(u32 instr) {
   u64 val = s64(s16(instr));
   val <<= 16;
@@ -1001,12 +900,6 @@ void JIT::mtlo(u32 instr) {
 
 void JIT::mthi(u32 instr) {
   regs.hi = regs.gpr[RS(instr)];
-}
-
-void JIT::trap(bool cond) {
-  if(cond) {
-    FireException(regs, ExceptionCode::Trap, 0, regs.oldPC);
-  }
 }
 
 void JIT::mtc2(u32 instr) {

@@ -136,7 +136,7 @@ void Flash::Deserialize(const std::vector<u8>& data) {
   memcpy(writeBuf, data.data() + index, 128);
 }
 
-template <> void Flash::Write(u32 index, u32 val) {
+template <> void Flash::Write<u32>(u32 index, u32 val) {
   if(index > 0) {
     u8 cmd = val >> 24;
     switch(cmd) {
@@ -154,7 +154,7 @@ template <> void Flash::Write(u32 index, u32 val) {
   }
 }
 
-template <> void Flash::Write(u32 index, u8 val) {
+template <> void Flash::Write<u8>(u32 index, u8 val) {
   switch(state) {
     case FlashState::Idle: Util::panic("Invalid FlashState::Idle with Write<u8>");
     case FlashState::Status: Util::panic("Invalid FlashState::Status with Write<u8>");
@@ -167,7 +167,7 @@ template <> void Flash::Write(u32 index, u8 val) {
   }
 }
 
-template <> u8 Flash::Read(u32 index) const {
+template <> u8 Flash::Read<u8>(u32 index) const {
   switch (state) {
     case FlashState::Idle: Util::panic("Flash read byte while in state FLASH_STATE_IDLE");
     case FlashState::Write: Util::panic("Flash read byte while in state FLASH_STATE_WRITE");
@@ -190,7 +190,7 @@ template <> u8 Flash::Read(u32 index) const {
   }
 }
 
-template <> u32 Flash::Read(u32 index) const {
+template <> u32 Flash::Read<u32>(u32) const {
   return status >> 32;
 }
 }

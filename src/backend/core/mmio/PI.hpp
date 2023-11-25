@@ -20,7 +20,7 @@ struct PI {
   bool WriteLatch(u32 val);
 
   static u8 GetDomain(u32 address);
-  u32 AccessTiming(u8 domain, u32 length);
+  u32 AccessTiming(u8 domain, u32 length) const;
   bool dmaBusy{}, ioBusy{}, toCart{};
   u32 latch;
   u32 dramAddr{}, cartAddr{}, dramAddrInternal{}, cartAddrInternal{};

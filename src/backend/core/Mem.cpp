@@ -528,7 +528,7 @@ void Mem::Write(Registers& regs, u32 paddr, u64 val) {
   }
 }
 
-template <> u32 Mem::BackupRead(u32 addr) {
+template <> u32 Mem::BackupRead<u32>(u32 addr) {
   switch(saveType) {
     case SAVE_NONE: return 0;
     case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
@@ -543,7 +543,7 @@ template <> u32 Mem::BackupRead(u32 addr) {
   }
 }
 
-template <> u8 Mem::BackupRead(u32 addr) {
+template <> u8 Mem::BackupRead<u8>(u32 addr) {
   switch (saveType) {
   case SAVE_NONE: return 0;
   case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
@@ -564,7 +564,7 @@ template <> u8 Mem::BackupRead(u32 addr) {
   }
 }
 
-template <> void Mem::BackupWrite(u32 addr, u32 val) {
+template <> void Mem::BackupWrite<u32>(u32 addr, u32 val) {
   switch(saveType) {
     case SAVE_NONE:
       Util::panic("Accessing cartridge with save type SAVE_NONE in write word");
@@ -580,7 +580,7 @@ template <> void Mem::BackupWrite(u32 addr, u32 val) {
   }
 }
 
-template <> void Mem::BackupWrite(u32 addr, u8 val) {
+template <> void Mem::BackupWrite<u8>(u32 addr, u8 val) {
   switch(saveType) {
     case SAVE_NONE:
       Util::panic("Accessing cartridge with save type SAVE_NONE in write word");

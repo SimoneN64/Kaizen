@@ -99,7 +99,6 @@ private:
     ret();
   }
 
-  static u8 codecache[1 << 25] __attribute__((aligned(4096)));
   Fn* blocks[BLOCKCACHE_OUTER_SIZE]{};
 
   u8 Read8(u64 addr) {

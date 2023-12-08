@@ -7,10 +7,10 @@
 namespace n64 {
 void JIT::add(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
-    movsx(eax, dword[rdi + offsetof(Registers, gpr[RS(instr)])]); // rs
-    movsx(ecx, dword[rdi + offsetof(Registers, gpr[RT(instr)])]); // rt
+    movsx(eax, GPR(dword, RS(instr))); // rs
+    movsx(ecx, GPR(dword, RT(instr))); // rt
     CodeGenerator::add(eax, ecx);
-    mov(dword[rdi + offsetof(Registers, gpr[RD(instr)])], eax); // rd
+    mov(GPR(dword, RD(instr)), eax); // rd
   }
 }
 
@@ -20,10 +20,10 @@ void JIT::addu(u32 instr) {
 
 void JIT::addi(u32 instr) {
   if (RT(instr) != 0) [[likely]] {
-    movsx(eax, dword[rdi + offsetof(Registers, gpr[RS(instr)])]);
+    movsx(eax, GPR(dword, RS(instr)));
     mov(ecx, s32(s16(instr)));
     CodeGenerator::add(eax, ecx);
-    mov(dword[rdi + offsetof(Registers, gpr[RT(instr)])], eax);
+    mov(GPR(dword, RT(instr)), eax);
   }
 }
 
@@ -33,11 +33,75 @@ void JIT::addiu(u32 instr) {
 
 void JIT::dadd(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
-    mov(rax, GPR(RS(instr))); // rs
-    mov(rcx, GPR(RT(instr))); // rt
+    mov(rax, GPR(qword, RS(instr))); // rs
+    mov(rcx, GPR(qword, RT(instr))); // rt
     CodeGenerator::add(rax, rcx);
-    mov(GPR(RD(instr)), rax); // rd
+    mov(GPR(qword, RD(instr)), rax); // rd
   }
+}
+
+void JIT::bltz(u32) {
+
+}
+
+void JIT::bgez(u32) {
+
+}
+
+void JIT::bltzl(u32) {
+
+}
+
+void JIT::bgezl(u32) {
+
+}
+
+void JIT::bltzal(u32) {
+
+}
+
+void JIT::bgezal(u32) {
+
+}
+
+void JIT::bltzall(u32) {
+
+}
+
+void JIT::bgezall(u32) {
+
+}
+
+void JIT::beq(u32) {
+
+}
+
+void JIT::bne(u32) {
+
+}
+
+void JIT::blez(u32) {
+
+}
+
+void JIT::bgtz(u32) {
+
+}
+
+void JIT::beql(u32) {
+
+}
+
+void JIT::bnel(u32) {
+
+}
+
+void JIT::blezl(u32) {
+
+}
+
+void JIT::bgtzl(u32) {
+
 }
 
 void JIT::daddu(u32 instr) {
@@ -46,10 +110,10 @@ void JIT::daddu(u32 instr) {
 
 void JIT::daddi(u32 instr) {
   if (RT(instr) != 0) [[likely]] {
-    mov(rax, GPR(RS(instr)));
+    mov(rax, GPR(qword, RS(instr)));
     mov(rcx, s64(s16(instr)));
     CodeGenerator::add(rax, rcx);
-    mov(GPR(RT(instr)), rax);
+    mov(GPR(qword, RT(instr)), rax);
   }
 }
 
@@ -58,8 +122,8 @@ void JIT::daddiu(u32 instr) {
 }
 
 void JIT::div(u32 instr) {
-  movsxd(rax, dword[rdi + offsetof(Registers, gpr[RS(instr)])]); // dividend
-  movsxd(rcx, dword[rdi + offsetof(Registers, gpr[RT(instr)])]); // divisor
+  movsxd(rax, GPR(dword, RS(instr))); // dividend
+  movsxd(rcx, GPR(dword, RT(instr))); // divisor
   cmp(rcx, 0);
   je("div_divisor==0");
 
@@ -80,8 +144,8 @@ void JIT::div(u32 instr) {
 }
 
 void JIT::divu(u32 instr) {
-  movsxd(rax, dword[rdi + offsetof(Registers, gpr[RS(instr)])]); // dividend
-  movsxd(rcx, dword[rdi + offsetof(Registers, gpr[RT(instr)])]); // divisor
+  movsxd(rax, GPR(dword, RS(instr))); // dividend
+  movsxd(rcx, GPR(dword, RT(instr))); // divisor
   cmp(rcx, 0);
   je("divu_divisor==0");
 
@@ -98,8 +162,8 @@ void JIT::divu(u32 instr) {
 }
 
 void JIT::ddiv(u32 instr) {
-  mov(rax, GPR(RS(instr)));
-  mov(rcx, GPR(RT(instr)));
+  mov(rax, GPR(qword, RS(instr)));
+  mov(rcx, GPR(qword, RT(instr)));
   mov(r8, 0x8000000000000000);
   mov(r9, rax);
   CodeGenerator::xor_(r9, r8);
@@ -129,8 +193,8 @@ void JIT::ddiv(u32 instr) {
 }
 
 void JIT::ddivu(u32 instr) {
-  mov(rax, GPR(RS(instr)));
-  mov(rcx, GPR(RT(instr)));
+  mov(rax, GPR(qword, RS(instr)));
+  mov(rcx, GPR(qword, RT(instr)));
   cmp(rcx, 0);
   je("ddivu_divisor==0");
   CodeGenerator::div(rcx);
@@ -146,40 +210,36 @@ void JIT::ddivu(u32 instr) {
 void JIT::lui(u32 instr) {
   u64 val = s64(s16(instr));
   val <<= 16;
-  mov(GPR(RT(instr)), val);
+  mov(GPR(qword, RT(instr)), val);
 }
 
 void JIT::lb(u32 instr) {
-  mov(rdx, GPR(RS(instr)));
+  mov(rdx, GPR(qword, RS(instr)));
   CodeGenerator::add(rdx, s64(s16(instr)));
   mov(rsi, LOAD);
   push(rcx);
   lea(rcx, dword[rbp-4]);
-  call(MapVAddr);
+  emitCall(MapVAddr);
   pop(rcx);
   cmp(rax, 0);
   je("lb_exception");
   mov(rsi, dword[rbp-4]);
   push(rcx);
-  emitMemberCall(&JIT::Read8, this);
+  emitMemberCall(&Mem::Read<u8>, &mem);
   pop(rcx);
-  mov(GPR(RT(instr)), rax.cvt8());
+  mov(GPR(qword, RT(instr)), rax.cvt8());
   L("lb_exception");
   mov(rsi, rdx);
-  push(rax);
-  call(HandleTLBException);
-  pop(rax);
+  emitCall(HandleTLBException);
   push(rsi);
   mov(rdi, REG(byte, cop0.tlbError));
   mov(rsi, LOAD);
-  call(GetTLBExceptionCode);
+  emitCall(GetTLBExceptionCode);
   pop(rsi);
   mov(rsi, rax);
   mov(rdx, 0);
   mov(rcx, 1);
-  push(rax);
-  call(FireException);
-  pop(rax);
+  emitCall(FireException);
 }
 
 void JIT::lh(u32 instr) {
@@ -554,27 +614,27 @@ void JIT::swr(u32 instr) {
 
 void JIT::ori(u32 instr) {
   s64 imm = (u16)instr;
-  mov(rax, GPR(RS(instr)));
+  mov(rax, GPR(qword, RS(instr)));
   CodeGenerator::or_(rax, imm);
-  mov(GPR(RT(instr)), rax);
+  mov(GPR(qword, RT(instr)), rax);
 }
 
 void JIT::or_(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
-    mov(rax, GPR(RS(instr)));
-    mov(rcx, GPR(RT(instr)));
+    mov(rax, GPR(qword, RS(instr)));
+    mov(rcx, GPR(qword, RT(instr)));
     CodeGenerator::or_(rax, rcx);
-    mov(GPR(RD(instr)), rax);
+    mov(GPR(qword, RD(instr)), rax);
   }
 }
 
 void JIT::nor(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
-    mov(rax, GPR(RS(instr)));
-    mov(rcx, GPR(RT(instr)));
+    mov(rax, GPR(qword, RS(instr)));
+    mov(rcx, GPR(qword, RT(instr)));
     CodeGenerator::or_(rax, rcx);
     not_(rax);
-    mov(GPR(RD(instr)), rax);
+    mov(GPR(qword, RD(instr)), rax);
   }
 }
 
@@ -588,247 +648,295 @@ void JIT::j(u32 instr) {
 
 void JIT::jal(u32 instr) {
   mov(rax, qword[rdi + offsetof(Registers, nextPC)]);
-  mov(GPR(31), rax);
+  mov(GPR(qword, 31), rax);
   j(instr);
 }
 
 void JIT::jalr(u32 instr) {
   mov(byte[rdi + offsetof(Registers, delaySlot)], 1);
-  mov(rax, GPR(RS(instr)));
+  mov(rax, GPR(qword, RS(instr)));
   mov(qword[rdi + offsetof(Registers, nextPC)], rax);
 
   if (RD(instr) != 0) [[likely]] {
     mov(rax, qword[rdi + offsetof(Registers, pc)]);
     CodeGenerator::add(rax, 4);
-    mov(GPR(RD(instr)), rax);
+    mov(GPR(qword, RD(instr)), rax);
   }
 }
 
 void JIT::slti(u32 instr) {
   mov(rax, s64(s16(instr)));
-  mov(rcx, GPR(RS(instr)));
+  mov(rcx, GPR(qword, RS(instr)));
   cmp(rcx, rax);
-  setl(GPR(RT(instr)));
+  setl(GPR(qword, RT(instr)));
 }
 
 void JIT::sltiu(u32 instr) {
   mov(rax, s64(s16(instr)));
-  mov(rcx, GPR(RS(instr)));
+  mov(rcx, GPR(qword, RS(instr)));
   cmp(rcx, rax);
-  setb(GPR(RT(instr)));
+  setb(GPR(qword, RT(instr)));
 }
 
 void JIT::slt(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
-    mov(rax, GPR(RS(instr)));
-    mov(rcx, GPR(RT(instr)));
+    mov(rax, GPR(qword, RS(instr)));
+    mov(rcx, GPR(qword, RT(instr)));
     cmp(rax, rcx);
-    setl(GPR(RD(instr)));
+    setl(GPR(qword, RD(instr)));
   }
 }
 
 void JIT::sltu(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
-    mov(rax, GPR(RS(instr)));
-    mov(rcx, GPR(RT(instr)));
+    mov(rax, GPR(qword, RS(instr)));
+    mov(rcx, GPR(qword, RT(instr)));
     cmp(rax, rcx);
-    setb(GPR(RD(instr)));
+    setb(GPR(qword, RD(instr)));
   }
 }
 
 void JIT::xori(u32 instr) {
   s64 imm = (u16)instr;
-  mov(rax, (u16)instr);
-  mov(rcx, GPR(RS(instr)));
+  mov(rax, imm);
+  mov(rcx, GPR(qword, RS(instr)));
   CodeGenerator::xor_(rcx, rax);
-  mov(GPR(RT(instr)), rcx);
+  mov(GPR(qword, RT(instr)), rcx);
 }
 
 void JIT::xor_(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
-    mov(rax, GPR(RT(instr)));
-    mov(rcx, GPR(RS(instr)));
+    mov(rax, GPR(qword, RT(instr)));
+    mov(rcx, GPR(qword, RS(instr)));
     CodeGenerator::xor_(rax, rcx);
-    mov(GPR(RD(instr)), rax);
+    mov(GPR(qword, RD(instr)), rax);
   }
 }
 
 void JIT::andi(u32 instr) {
   s64 imm = (u16)instr;
   mov(rax, (u16)instr);
-  mov(rcx, GPR(RS(instr)));
+  mov(rcx, GPR(qword, RS(instr)));
   CodeGenerator::and_(rcx, rax);
-  mov(GPR(RT(instr)), rcx);
+  mov(GPR(qword, RT(instr)), rcx);
 }
 
 void JIT::and_(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
-    mov(rax, GPR(RT(instr)));
-    mov(rcx, GPR(RS(instr)));
+    mov(rax, GPR(qword, RT(instr)));
+    mov(rcx, GPR(qword, RS(instr)));
     CodeGenerator::and_(rax, rcx);
-    mov(GPR(RD(instr)), rax);
+    mov(GPR(qword, RD(instr)), rax);
   }
 }
 
 void JIT::sll(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f);
-    mov(rax, GPR(RT(instr)));
+    mov(rax, GPR(qword, RT(instr)));
     sal(rax, sa);
     movsxd(rcx, eax);
-    mov(GPR(RD(instr)), rcx);
+    mov(GPR(qword, RD(instr)), rcx);
   }
 }
 
 void JIT::sllv(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
-    mov(rcx, GPR(RS(instr)));
+    mov(rcx, GPR(qword, RS(instr)));
     CodeGenerator::and_(cl, 0x1F);
-    mov(rax, GPR(RT(instr)));
+    mov(rax, GPR(qword, RT(instr)));
     sal(rax, cl);
     movsxd(rcx, eax);
-    mov(GPR(RD(instr)), rcx);
+    mov(GPR(qword, RD(instr)), rcx);
   }
 }
 
 void JIT::dsll32(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f) + 32;
-    mov(rax, GPR(RT(instr)));
+    mov(rax, GPR(qword, RT(instr)));
     sal(rax, sa);
-    mov(GPR(RT(instr)), rax);
+    mov(GPR(qword, RT(instr)), rax);
   }
 }
 
 void JIT::dsll(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f);
-    mov(rax, GPR(RT(instr)));
+    mov(rax, GPR(qword, RT(instr)));
     sal(rax, sa);
-    mov(GPR(RT(instr)), rax);
+    mov(GPR(qword, RT(instr)), rax);
   }
 }
 
 void JIT::dsllv(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
-    mov(rcx, GPR(RS(instr)));
+    mov(rcx, GPR(qword, RS(instr)));
     CodeGenerator::and_(cl, 63);
-    mov(rax, GPR(RT(instr)));
+    mov(rax, GPR(qword, RT(instr)));
     sal(rax, cl);
-    mov(GPR(RD(instr)), rax);
+    mov(GPR(qword, RD(instr)), rax);
   }
 }
 
 void JIT::srl(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f);
-    mov(rax, GPR(RT(instr)));
+    mov(rax, GPR(qword, RT(instr)));
     CodeGenerator::shr(rax, sa);
     movsxd(rcx, eax);
-    mov(GPR(RD(instr)), rcx);
+    mov(GPR(qword, RD(instr)), rcx);
   }
 }
 
 void JIT::srlv(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
-    mov(rcx, GPR(RS(instr)));
+    mov(rcx, GPR(qword, RS(instr)));
     CodeGenerator::and_(cl, 0x1F);
-    mov(rax, GPR(RT(instr)));
+    mov(rax, GPR(qword, RT(instr)));
     shr(rax, cl);
     movsxd(rcx, eax);
-    mov(GPR(RD(instr)), rcx);
+    mov(GPR(qword, RD(instr)), rcx);
   }
+}
+
+void JIT::tgei(u32) {
+
+}
+
+void JIT::tgeiu(u32) {
+
+}
+
+void JIT::tlti(u32) {
+
+}
+
+void JIT::tltiu(u32) {
+
+}
+
+void JIT::teqi(u32) {
+
+}
+
+void JIT::tnei(u32) {
+
+}
+
+void JIT::tge(u32) {
+
+}
+
+void JIT::tgeu(u32) {
+
+}
+
+void JIT::tlt(u32) {
+
+}
+
+void JIT::tltu(u32) {
+
+}
+
+void JIT::teq(u32) {
+
+}
+
+void JIT::tne(u32) {
+
 }
 
 void JIT::dsrl(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f);
-    mov(rax, GPR(RT(instr)));
+    mov(rax, GPR(qword, RT(instr)));
     CodeGenerator::shr(rax, sa);
-    mov(GPR(RD(instr)), rax);
+    mov(GPR(qword, RD(instr)), rax);
   }
 }
 
 void JIT::dsrlv(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
-    mov(rcx, GPR(RS(instr)));
+    mov(rcx, GPR(qword, RS(instr)));
     CodeGenerator::and_(cl, 63);
-    mov(rax, GPR(RT(instr)));
+    mov(rax, GPR(qword, RT(instr)));
     shr(rax, cl);
-    mov(GPR(RD(instr)), rax);
+    mov(GPR(qword, RD(instr)), rax);
   }
 }
 
 void JIT::dsrl32(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f) + 32;
-    mov(rax, GPR(RT(instr)));
+    mov(rax, GPR(qword, RT(instr)));
     CodeGenerator::shr(rax, sa);
-    mov(GPR(RD(instr)), rax);
+    mov(GPR(qword, RD(instr)), rax);
   }
 }
 
 void JIT::sra(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f);
-    mov(rax, GPR(RT(instr)));
+    mov(rax, GPR(qword, RT(instr)));
     sar(rax, sa);
     movsxd(rcx, eax);
-    mov(GPR(RD(instr)), rcx);
+    mov(GPR(qword, RD(instr)), rcx);
   }
 }
 
 void JIT::srav(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
-    mov(rcx, GPR(RS(instr)));
+    mov(rcx, GPR(qword, RS(instr)));
     CodeGenerator::and_(cl, 0x1F);
-    mov(rax, GPR(RT(instr)));
+    mov(rax, GPR(qword, RT(instr)));
     sar(rax, cl);
     movsxd(rcx, eax);
-    mov(GPR(RD(instr)), rcx);
+    mov(GPR(qword, RD(instr)), rcx);
   }
 }
 
 void JIT::dsra(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f);
-    mov(rax, GPR(RT(instr)));
+    mov(rax, GPR(qword, RT(instr)));
     sar(rax, sa);
-    mov(GPR(RD(instr)), rax);
+    mov(GPR(qword, RD(instr)), rax);
   }
 }
 
 void JIT::dsrav(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
-    mov(rcx, GPR(RS(instr)));
+    mov(rcx, GPR(qword, RS(instr)));
     CodeGenerator::and_(cl, 63);
-    mov(rax, GPR(RT(instr)));
+    mov(rax, GPR(qword, RT(instr)));
     sar(rax, cl);
-    mov(GPR(RD(instr)), rax);
+    mov(GPR(qword, RD(instr)), rax);
   }
 }
 
 void JIT::dsra32(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
     u8 sa = ((instr >> 6) & 0x1f) + 32;
-    mov(rax, GPR(RT(instr)));
+    mov(rax, GPR(qword, RT(instr)));
     sar(rax, sa);
-    mov(GPR(RD(instr)), rax);
+    mov(GPR(qword, RD(instr)), rax);
   }
 }
 
 void JIT::jr(u32 instr) {
-  mov(rax, GPR(RS(instr)));
+  mov(rax, GPR(qword, RS(instr)));
   mov(REG(byte, delaySlot), 1);
   mov(REG(qword, nextPC), rax);
 }
 
 void JIT::dsub(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
-    mov(rax, GPR(RT(instr)));
-    mov(rcx, GPR(RS(instr)));
+    mov(rax, GPR(qword, RT(instr)));
+    mov(rcx, GPR(qword, RS(instr)));
     CodeGenerator::sub(rcx, rax);
-    mov(GPR(RD(instr)), rcx);
+    mov(GPR(qword, RD(instr)), rcx);
   }
 }
 
@@ -838,11 +946,11 @@ void JIT::dsubu(u32 instr) {
 
 void JIT::sub(u32 instr) {
   if (RD(instr) != 0) [[likely]] {
-    mov(eax, GPR(RT(instr)));
-    mov(ecx, GPR(RS(instr)));
+    mov(eax, GPR(qword, RT(instr)));
+    mov(ecx, GPR(qword, RS(instr)));
     CodeGenerator::sub(ecx, eax);
     movsxd(rax, ecx);
-    mov(GPR(RD(instr)), rax);
+    mov(GPR(qword, RD(instr)), rax);
   }
 }
 

@@ -7,8 +7,11 @@
 
 namespace n64 {
 using Fn = int(*)();
-#define GPR(x) qword[rdi + offsetof(Registers, gpr[(x)])]
-#define REG(ptr, member) ptr[rdi + offsetof(Registers, member)]
+#define THIS_OFFSET(x) ((uintptr_t)(&x) - (uintptr_t)this)
+#define GPR_OFFSET(x) ((uintptr_t)&regs.gpr[(x)] - (uintptr_t)this)
+#define REG_OFFSET(member) ((uintptr_t)&regs.member - (uintptr_t)this)
+#define GPR(ptr, x) ptr[rdi + GPR_OFFSET(x)]
+#define REG(ptr, member) ptr[rdi + REG_OFFSET(member)]
 // 4KiB aligned pages
 #define BLOCKCACHE_OUTER_SHIFT 12
 #define BLOCKCACHE_PAGE_SIZE (1 << BLOCKCACHE_OUTER_SHIFT)
@@ -33,7 +36,7 @@ private:
 
   template<class T>
   void emitMemberCall(T func, void* thisObj) {
-    void* funcPtr;
+    T* funcPtr;
     auto thisPtr = reinterpret_cast<uintptr_t>(thisObj);
 #ifdef ABI_WINDOWS
     static_assert(sizeof(T) == 8, "[JIT]: Invalid size for member function pointer");
@@ -54,6 +57,24 @@ private:
     } else {
       mov(rdi, (uintptr_t)thisPtr);
     }
+    call(funcPtr);
+    pop(rdi);
+  }
+
+  template<class T>
+  void emitCall(T func) {
+    T* funcPtr;
+#ifdef ABI_WINDOWS
+    std::memcpy(&funcPtr, &func, sizeof(T));
+#elif defined(ABI_UNIX)
+    uintptr_t tmpArr[2];
+    std::memcpy(tmpArr, &func, sizeof(T));
+    funcPtr = reinterpret_cast<void*>(tmpArr[0]);
+#else
+    Util::panic("Huh?!");
+#endif
+
+    push(rdi);
     call(funcPtr);
     pop(rdi);
   }
@@ -99,12 +120,7 @@ private:
     ret();
   }
 
-  static u8 codecache[1 << 25] __attribute__((aligned(4096)));
   Fn* blocks[BLOCKCACHE_OUTER_SIZE]{};
-
-  u8 Read8(u64 addr) {
-    return mem.Read<u8>(regs, addr);
-  }
 
   std::vector<u8> Serialize() override { return {}; }
   void Deserialize(const std::vector<u8>&) override { }

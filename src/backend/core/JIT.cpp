@@ -35,25 +35,23 @@ Fn JIT::Recompile() {
   cycles = 0;
   prologue();
   mov(rbp, u64(this));
-  mov(rdi, u64(this) + offsetof(JIT, regs));
+  mov(rdi, u64(this) + THIS_OFFSET(regs));
   while(stable) {
     cycles++;
     CheckCompareInterrupt();
 
-    mov(rax, byte[rdi + offsetof(Registers, delaySlot)]);
-    mov(byte[rdi + offsetof(Registers, prevDelaySlot)], rax);
-    mov(byte[rdi + offsetof(Registers, delaySlot)], 0);
+    mov(rax, REG(byte, delaySlot));
+    mov(REG(byte, prevDelaySlot), rax);
+    mov(REG(byte, delaySlot), 0);
 
     u32 paddr = 0;
     if (!MapVAddr(regs, LOAD, regs.pc, paddr)) {
       mov(rsi, regs.pc);
-      push(rax);
-      call(HandleTLBException);
+      emitCall(HandleTLBException);
       mov(rsi, u64(GetTLBExceptionCode(regs.cop0.tlbError, LOAD)));
       CodeGenerator::xor_(rdx, rdx);
       CodeGenerator::xor_(rcx, rcx);
-      push(rax);
-      call(FireException);
+      emitCall(FireException);
       goto _epilogue;
     }
 
@@ -70,11 +68,11 @@ Fn JIT::Recompile() {
       goto _epilogue;
     }
 
-    mov(rax, qword[rdi + offsetof(Registers, pc)]);
-    mov(qword[rdi + offsetof(Registers, oldPC)], rax);
-    mov(rax, qword[rdi + offsetof(Registers, nextPC)]);
-    mov(qword[rdi + offsetof(Registers, pc)], rax);
-    CodeGenerator::add(qword[rdi + offsetof(Registers, nextPC)], 4);
+    mov(rax, REG(qword, pc));
+    mov(REG(qword, oldPC), rax);
+    mov(rax, REG(qword, nextPC));
+    mov(REG(qword, pc), rax);
+    CodeGenerator::add(REG(qword, nextPC), 4);
   }
 _epilogue:
   epilogue();

@@ -20,6 +20,7 @@ include_directories(
   src/frontend/imgui
   src/backend
   src/backend/core
+  src/backend/core/JIT
   src/backend/core/mmio
   src/backend/core/registers
   src/backend/core/rsp

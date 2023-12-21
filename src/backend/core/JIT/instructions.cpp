@@ -176,502 +176,250 @@ void JIT::daddiu(u32 instr) {
 }
 
 void JIT::div(u32 instr) {
-  
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S32, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S32, u8(RT(instr)) };
+  Entry e(Entry::DIV, op1, op2);
+  ir.push(e);
 }
 
 void JIT::divu(u32 instr) {
-  movsxd(rax, GPR(dword, RS(instr))); // dividend
-  movsxd(rcx, GPR(dword, RT(instr))); // divisor
-  cmp(rcx, 0);
-  je("divu_divisor==0");
-
-  CodeGenerator::div(rcx);
-  mov(qword[rdi + offsetof(Registers, lo)], eax);
-  mov(qword[rdi + offsetof(Registers, hi)], edx);
-  jmp("divu_exit");
-
-  L("divu_divisor==0");
-    mov(qword[rdi + offsetof(Registers, hi)], rax);
-    mov(qword[rdi + offsetof(Registers, lo)], -1);
-
-  L("divu_exit");
+  auto op1 = Entry::Operand{ Entry::Operand::REG_U32, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_U32, u8(RT(instr)) };
+  Entry e(Entry::DIV, op1, op2);
+  ir.push(e);
 }
 
 void JIT::ddiv(u32 instr) {
-  mov(rax, GPR(qword, RS(instr)));
-  mov(rcx, GPR(qword, RT(instr)));
-  mov(r8, 0x8000000000000000);
-  mov(r9, rax);
-  CodeGenerator::xor_(r9, r8);
-  mov(r8, 0xFFFFFFFFFFFFFFFF);
-  mov(r10, rcx);
-  CodeGenerator::xor_(r10, r8);
-  CodeGenerator::xor_(r9, r10);
-  cmp(rcx, 0);
-  je("ddiv_else_if");
-  cmp(r9, 1);
-  jne("ddiv_else");
-  mov(qword[rdi + offsetof(Registers, lo)], rax);
-  mov(qword[rdi + offsetof(Registers, hi)], 0);
-  jmp("ddiv_exit");
-  L("ddiv_else_if");
-    mov(qword[rdi + offsetof(Registers, hi)], rax);
-    cmp(rax, 0);
-    jge("ddiv_dividend>=0");
-    mov(qword[rdi + offsetof(Registers, lo)], 1);
-    L("ddiv_dividend>=0");
-      mov(qword[rdi + offsetof(Registers, lo)], -1);
-  L("ddiv_else");
-    CodeGenerator::div(rcx);
-    mov(qword[rdi + offsetof(Registers, lo)], rax);
-    mov(qword[rdi + offsetof(Registers, hi)], rdx);
-  L("ddiv_exit");
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  Entry e(Entry::DIV, op1, op2);
+  ir.push(e);
 }
 
 void JIT::ddivu(u32 instr) {
-  mov(rax, GPR(qword, RS(instr)));
-  mov(rcx, GPR(qword, RT(instr)));
-  cmp(rcx, 0);
-  je("ddivu_divisor==0");
-  CodeGenerator::div(rcx);
-  mov(qword[rdi + offsetof(Registers, lo)], rax);
-  mov(qword[rdi + offsetof(Registers, hi)], rdx);
-  jmp("ddivu_exit");
-  L("ddivu_divisor==0");
-    mov(qword[rdi + offsetof(Registers, lo)], -1);
-    mov(qword[rdi + offsetof(Registers, hi)], rax);
-  L("ddivu_exit");
+  auto op1 = Entry::Operand{ Entry::Operand::REG_U64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_U64, u8(RT(instr)) };
+  Entry e(Entry::DIV, op1, op2);
+  ir.push(e);
 }
 
 void JIT::lui(u32 instr) {
-  u64 val = s64(s16(instr));
-  val <<= 16;
-  mov(GPR(qword, RT(instr)), val);
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::IMM_S16, u64(s16(instr)) << 16 };
+  Entry e(Entry::LOADS64, dst, op1);
+  ir.push(e);
 }
 
 void JIT::lb(u32 instr) {
-  mov(rdx, GPR(qword, RS(instr)));
-  CodeGenerator::add(rdx, s64(s16(instr)));
-  mov(rsi, LOAD);
-  push(rcx);
-  lea(rcx, dword[rbp-4]);
-  emitCall(MapVAddr);
-  pop(rcx);
-  cmp(rax, 0);
-  je("lb_exception");
-  mov(rsi, dword[rbp-4]);
-  push(rcx);
-  emitMemberCall(&Mem::Read<u8>, &mem);
-  pop(rcx);
-  mov(GPR(qword, RT(instr)), rax.cvt8());
-  L("lb_exception");
-  mov(rsi, rdx);
-  emitCall(HandleTLBException);
-  push(rsi);
-  mov(rdi, REG(byte, cop0.tlbError));
-  mov(rsi, LOAD);
-  emitCall(GetTLBExceptionCode);
-  pop(rsi);
-  mov(rsi, rax);
-  mov(rdx, 0);
-  mov(rcx, 1);
-  emitCall(FireException);
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U8, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr))};
+  Entry e(Entry::LOADS8, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::lh(u32 instr) {
-  u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 0b1) > 0) {
-    HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
-    return;
-  }
-
-  u32 paddr = 0;
-  if(!MapVAddr(regs, LOAD, address, paddr)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
-  } else {
-    regs.gpr[RT(instr)] = (s16)mem.Read<u16>(regs, paddr);
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U16, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::LOADS16, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::lw(u32 instr) {
-  s16 offset = instr;
-  u64 address = regs.gpr[RS(instr)] + offset;
-  if (check_address_error(0b11, address)) {
-    HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
-    return;
-  }
-
-  u32 physical = 0;
-  if (!MapVAddr(regs, LOAD, address, physical)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
-  } else {
-    regs.gpr[RT(instr)] = (s32)mem.Read<u32>(regs, physical);
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U32, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::LOADS32, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::ll(u32 instr) {
-  u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 physical;
-  if (!MapVAddr(regs, LOAD, address, physical)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
-  } else {
-    if ((address & 0b11) > 0) {
-      FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
-      return;
-    } else {
-      regs.gpr[RT(instr)] = (s32)mem.Read<u32>(regs, physical);
-    }
-  }
-
-  regs.cop0.llbit = true;
-  regs.cop0.LLAddr = physical >> 4;
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U32, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto opc = Entry::Opcode(u16(Entry::LOADS64) | Entry::SET_LLBIT);
+  Entry e(opc, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::lwl(u32 instr) {
-  u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 paddr = 0;
-  if(!MapVAddr(regs, LOAD, address, paddr)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
-  } else {
-    u32 shift = 8 * ((address ^ 0) & 3);
-    u32 mask = 0xFFFFFFFF << shift;
-    u32 data = mem.Read<u32>(regs, paddr & ~3);
-    s32 result = s32((regs.gpr[RT(instr)] & ~mask) | (data << shift));
-    regs.gpr[RT(instr)] = result;
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U32, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::LOADS32_SHIFT, dst, op1, op2, Entry::LEFT);
+  ir.push(e);
 }
 
 void JIT::lwr(u32 instr) {
-  u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 paddr = 0;
-  if(!MapVAddr(regs, LOAD, address, paddr)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
-  } else {
-    u32 shift = 8 * ((address ^ 3) & 3);
-    u32 mask = 0xFFFFFFFF >> shift;
-    u32 data = mem.Read<u32>(regs, paddr & ~3);
-    s32 result = s32((regs.gpr[RT(instr)] & ~mask) | (data >> shift));
-    regs.gpr[RT(instr)] = result;
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U32, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::LOADS32_SHIFT, dst, op1, op2, Entry::RIGHT);
+  ir.push(e);
 }
 
 void JIT::ld(u32 instr) {
-  s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(0b111, address)) {
-    HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
-    return;
-  }
-
-  u32 paddr = 0;
-  if(!MapVAddr(regs, LOAD, address, paddr)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
-  } else {
-    s64 value = mem.Read<u64>(regs, paddr);
-    regs.gpr[RT(instr)] = value;
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U64, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::LOADS64, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::lld(u32 instr) {
-  if (!regs.cop0.is_64bit_addressing && !regs.cop0.kernel_mode) {
-    FireException(regs, ExceptionCode::ReservedInstruction, 0, regs.oldPC);
-    return;
-  }
-
-  u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 paddr;
-  if (!MapVAddr(regs, LOAD, address, paddr)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
-  } else {
-    if ((address & 0b111) > 0) {
-      FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
-    } else {
-      regs.gpr[RT(instr)] = mem.Read<u64>(regs, paddr);
-      regs.cop0.llbit = true;
-      regs.cop0.LLAddr = paddr >> 4;
-    }
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U32, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto opc = Entry::Opcode(u16(Entry::Opcode::LOADS64) | Entry::SET_LLBIT);
+  Entry e(opc, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::ldl(u32 instr) {
-  u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 paddr = 0;
-  if (!MapVAddr(regs, LOAD, address, paddr)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
-  } else {
-    s32 shift = 8 * ((address ^ 0) & 7);
-    u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
-    u64 data = mem.Read<u64>(regs, paddr & ~7);
-    s64 result = (s64) ((regs.gpr[RT(instr)] & ~mask) | (data << shift));
-    regs.gpr[RT(instr)] = result;
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U32, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::LOADS64_SHIFT, dst, op1, op2, Entry::LEFT);
+  ir.push(e);
 }
 
 void JIT::ldr(u32 instr) {
-  u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 paddr;
-  if (!MapVAddr(regs, LOAD, address, paddr)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
-  } else {
-    s32 shift = 8 * ((address ^ 7) & 7);
-    u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
-    u64 data = mem.Read<u64>(regs, paddr & ~7);
-    s64 result = (s64) ((regs.gpr[RT(instr)] & ~mask) | (data >> shift));
-    regs.gpr[RT(instr)] = result;
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U32, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::LOADS64_SHIFT, dst, op1, op2, Entry::RIGHT);
+  ir.push(e);
 }
 
 void JIT::lbu(u32 instr) {
-  u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 paddr;
-  if (!MapVAddr(regs, LOAD, address, paddr)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
-  } else {
-    u8 value = mem.Read<u8>(regs, paddr);
-    regs.gpr[RT(instr)] = value;
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U8, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::LOADU8, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::lhu(u32 instr) {
-  s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 0b1) > 0) {
-    HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
-    return;
-  }
-  u32 paddr;
-  if (!MapVAddr(regs, LOAD, address, paddr)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
-  } else {
-    u16 value = mem.Read<u16>(regs, paddr);
-    regs.gpr[RT(instr)] = value;
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U16, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::LOADU16, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::lwu(u32 instr) {
-  s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 0b11) > 0) {
-    HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
-    return;
-  }
-
-  u32 paddr;
-  if (!MapVAddr(regs, LOAD, address, paddr)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
-  } else {
-    u32 value = mem.Read<u32>(regs, paddr);
-    regs.gpr[RT(instr)] = value;
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U32, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::LOADU16, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::sb(u32 instr) {
-  u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 paddr;
-  if (!MapVAddr(regs, STORE, address, paddr)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
-  } else {
-    mem.Write<u8>(regs, paddr, regs.gpr[RT(instr)]);
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U8, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::STORE8, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::sc(u32 instr) {
-  u64 address = regs.gpr[RS(instr)] + (s16)instr;
-
-  if ((address & 0b11) > 0) {
-    FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
-    return;
-  }
-
-  if(regs.cop0.llbit) {
-    regs.cop0.llbit = false;
-    u32 paddr = 0;
-    if(!MapVAddr(regs, STORE, address, paddr)) {
-      HandleTLBException(regs, address);
-      FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
-    } else {
-      mem.Write<u32>(regs, paddr, regs.gpr[RT(instr)]);
-      regs.gpr[RT(instr)] = 1;
-    }
-  } else {
-    regs.gpr[RT(instr)] = 0;
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U32, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto opc = Entry::Opcode(u16(Entry::STORE32) | Entry::SET_LLBIT);
+  Entry e(opc, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::scd(u32 instr) {
-  if (!regs.cop0.is_64bit_addressing && !regs.cop0.kernel_mode) {
-    FireException(regs, ExceptionCode::ReservedInstruction, 0, regs.oldPC);
-    return;
-  }
-
-  s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if ((address & 0b111) > 0) {
-    HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
-    return;
-  }
-
-  if(regs.cop0.llbit) {
-    regs.cop0.llbit = false;
-    u32 paddr = 0;
-    if(!MapVAddr(regs, STORE, address, paddr)) {
-      HandleTLBException(regs, address);
-      FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
-    } else {
-      mem.Write<u32>(regs, paddr, regs.gpr[RT(instr)]);
-      regs.gpr[RT(instr)] = 1;
-    }
-  } else {
-    regs.gpr[RT(instr)] = 0;
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U32, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto opc = Entry::Opcode(u16(Entry::STORE64) | Entry::SET_LLBIT);
+  Entry e(opc, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::sh(u32 instr) {
-  s64 address = regs.gpr[RS(instr)] + (s16)instr;
-
-  u32 physical;
-  if(!MapVAddr(regs, STORE, address, physical)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
-  } else {
-    mem.Write<u16>(regs, physical, regs.gpr[RT(instr)]);
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U16, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::STORE16, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::sw(u32 instr) {
-  s16 offset = instr;
-  u64 address = regs.gpr[RS(instr)] + offset;
-  if (check_address_error(0b11, address)) {
-    HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
-    return;
-  }
-
-  u32 physical;
-  if(!MapVAddr(regs, STORE, address, physical)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
-  } else {
-    mem.Write<u32>(regs, physical, regs.gpr[RT(instr)]);
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U32, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::STORE32, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::sd(u32 instr) {
-  s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(0b111, address)) {
-    HandleTLBException(regs, address);
-    FireException(regs, ExceptionCode::AddressErrorStore, 0, regs.oldPC);
-    return;
-  }
-
-  u32 physical;
-  if(!MapVAddr(regs, STORE, address, physical)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
-  } else {
-    mem.Write(regs, physical, regs.gpr[RT(instr)]);
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U64, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::STORE64, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::sdl(u32 instr) {
-  u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 paddr;
-  if (!MapVAddr(regs, STORE, address, paddr)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
-  } else {
-    s32 shift = 8 * ((address ^ 0) & 7);
-    u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
-    u64 data = mem.Read<u64>(regs, paddr & ~7);
-    u64 rt = regs.gpr[RT(instr)];
-    mem.Write(regs, paddr & ~7, (data & ~mask) | (rt >> shift));
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U64, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::STORE64, dst, op1, op2, Entry::LEFT);
+  ir.push(e);
 }
 
 void JIT::sdr(u32 instr) {
-  u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 paddr;
-  if (!MapVAddr(regs, STORE, address, paddr)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
-  } else {
-    s32 shift = 8 * ((address ^ 7) & 7);
-    u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
-    u64 data = mem.Read<u64>(regs, paddr & ~7);
-    u64 rt = regs.gpr[RT(instr)];
-    mem.Write(regs, paddr & ~7, (data & ~mask) | (rt << shift));
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U64, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::STORE64, dst, op1, op2, Entry::RIGHT);
+  ir.push(e);
 }
 
 void JIT::swl(u32 instr) {
-  u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 paddr;
-  if (!MapVAddr(regs, STORE, address, paddr)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
-  } else {
-    u32 shift = 8 * ((address ^ 0) & 3);
-    u32 mask = 0xFFFFFFFF >> shift;
-    u32 data = mem.Read<u32>(regs, paddr & ~3);
-    u32 rt = regs.gpr[RT(instr)];
-    mem.Write<u32>(regs, paddr & ~3, (data & ~mask) | (rt >> shift));
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U32, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::STORE32, dst, op1, op2, Entry::LEFT);
+  ir.push(e);
 }
 
 void JIT::swr(u32 instr) {
-  u64 address = regs.gpr[RS(instr)] + (s16)instr;
-  u32 paddr;
-  if (!MapVAddr(regs, STORE, address, paddr)) {
-    HandleTLBException(regs, address);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
-  } else {
-    u32 shift = 8 * ((address ^ 3) & 3);
-    u32 mask = 0xFFFFFFFF << shift;
-    u32 data = mem.Read<u32>(regs, paddr & ~3);
-    u32 rt = regs.gpr[RT(instr)];
-    mem.Write<u32>(regs, paddr & ~3, (data & ~mask) | (rt << shift));
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::MEM_U32, s16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::STORE32, dst, op1, op2, Entry::RIGHT);
+  ir.push(e);
 }
 
 void JIT::ori(u32 instr) {
-  s64 imm = (u16)instr;
-  mov(rax, GPR(qword, RS(instr)));
-  CodeGenerator::or_(rax, imm);
-  mov(GPR(qword, RT(instr)), rax);
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::IMM_U16, u16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::OR, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::or_(u32 instr) {
-  if (RD(instr) != 0) [[likely]] {
-    mov(rax, GPR(qword, RS(instr)));
-    mov(rcx, GPR(qword, RT(instr)));
-    CodeGenerator::or_(rax, rcx);
-    mov(GPR(qword, RD(instr)), rax);
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RD(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::OR, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::nor(u32 instr) {
-  if (RD(instr) != 0) [[likely]] {
-    mov(rax, GPR(qword, RS(instr)));
-    mov(rcx, GPR(qword, RT(instr)));
-    CodeGenerator::or_(rax, rcx);
-    not_(rax);
-    mov(GPR(qword, RD(instr)), rax);
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RD(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::NOR, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::j(u32 instr) {
@@ -733,37 +481,35 @@ void JIT::sltu(u32 instr) {
 }
 
 void JIT::xori(u32 instr) {
-  s64 imm = (u16)instr;
-  mov(rax, imm);
-  mov(rcx, GPR(qword, RS(instr)));
-  CodeGenerator::xor_(rcx, rax);
-  mov(GPR(qword, RT(instr)), rcx);
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::IMM_U16, u16(instr)};
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::XOR, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::xor_(u32 instr) {
-  if (RD(instr) != 0) [[likely]] {
-    mov(rax, GPR(qword, RT(instr)));
-    mov(rcx, GPR(qword, RS(instr)));
-    CodeGenerator::xor_(rax, rcx);
-    mov(GPR(qword, RD(instr)), rax);
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RD(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::XOR, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::andi(u32 instr) {
-  s64 imm = (u16)instr;
-  mov(rax, (u16)instr);
-  mov(rcx, GPR(qword, RS(instr)));
-  CodeGenerator::and_(rcx, rax);
-  mov(GPR(qword, RT(instr)), rcx);
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::IMM_U16, u16(instr) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::AND, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::and_(u32 instr) {
-  if (RD(instr) != 0) [[likely]] {
-    mov(rax, GPR(qword, RT(instr)));
-    mov(rcx, GPR(qword, RS(instr)));
-    CodeGenerator::and_(rax, rcx);
-    mov(GPR(qword, RD(instr)), rax);
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RD(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  Entry e(Entry::AND, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::sll(u32 instr) {
@@ -966,12 +712,11 @@ void JIT::jr(u32 instr) {
 }
 
 void JIT::dsub(u32 instr) {
-  if (RD(instr) != 0) [[likely]] {
-    mov(rax, GPR(qword, RT(instr)));
-    mov(rcx, GPR(qword, RS(instr)));
-    CodeGenerator::sub(rcx, rax);
-    mov(GPR(qword, RD(instr)), rcx);
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RD(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  Entry e(Entry::SUB, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::dsubu(u32 instr) {
@@ -979,13 +724,11 @@ void JIT::dsubu(u32 instr) {
 }
 
 void JIT::sub(u32 instr) {
-  if (RD(instr) != 0) [[likely]] {
-    mov(eax, GPR(qword, RT(instr)));
-    mov(ecx, GPR(qword, RS(instr)));
-    CodeGenerator::sub(ecx, eax);
-    movsxd(rax, ecx);
-    mov(GPR(qword, RD(instr)), rax);
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RD(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S32, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S32, u8(RT(instr)) };
+  Entry e(Entry::SUB, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::subu(u32 instr) {
@@ -993,35 +736,31 @@ void JIT::subu(u32 instr) {
 }
 
 void JIT::dmultu(u32 instr) {
-  u64 rt = regs.gpr[RT(instr)];
-  u64 rs = regs.gpr[RS(instr)];
-  u128 result = (u128)rt * (u128)rs;
-  regs.lo = (s64)(result & 0xFFFFFFFFFFFFFFFF);
-  regs.hi = (s64)(result >> 64);
+  auto op1 = Entry::Operand{ Entry::Operand::REG_U64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_U64, u8(RT(instr)) };
+  Entry e(Entry::UMUL, op1, op2);
+  ir.push(e);
 }
 
 void JIT::dmult(u32 instr) {
-  s64 rt = regs.gpr[RT(instr)];
-  s64 rs = regs.gpr[RS(instr)];
-  s128 result = (s128)rt * (s128)rs;
-  regs.lo = result & 0xFFFFFFFFFFFFFFFF;
-  regs.hi = result >> 64;
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  Entry e(Entry::SMUL, op1, op2);
+  ir.push(e);
 }
 
 void JIT::multu(u32 instr) {
-  u32 rt = regs.gpr[RT(instr)];
-  u32 rs = regs.gpr[RS(instr)];
-  u64 result = (u64)rt * (u64)rs;
-  regs.lo = (s64)((s32)result);
-  regs.hi = (s64)((s32)(result >> 32));
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S32, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S32, u8(RT(instr)) };
+  Entry e(Entry::UMUL, op1, op2);
+  ir.push(e);
 }
 
 void JIT::mult(u32 instr) {
-  s32 rt = regs.gpr[RT(instr)];
-  s32 rs = regs.gpr[RS(instr)];
-  s64 result = (s64)rt * (s64)rs;
-  regs.lo = (s64)((s32)result);
-  regs.hi = (s64)((s32)(result >> 32));
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S32, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S32, u8(RT(instr)) };
+  Entry e(Entry::SMUL, op1, op2);
+  ir.push(e);
 }
 
 void JIT::mflo(u32 instr) {

@@ -5,15 +5,28 @@
 
 namespace n64 {
 struct Entry {
-	enum : u8 {
-		LINK = 0x10,
-		LIKELY = 0x20,
-		REGISTER = 0x40
+	enum : u16 {
+		LINK = 0x100,
+		LIKELY = 0x200,
+		REGISTER = 0x400,
+		SET_LLBIT = 0x800
+	};
+
+	enum Shift {
+		LEFT, RIGHT
 	};
 
 	enum Opcode : u16 {
-		MOV, ADD, SUB, MUL, DIV, AND, NOR, XOR, OR, SRL, SLL, SRA,
-		LOAD, STORE, BRANCH, JUMP
+		MOV, ADD, SUB, UMUL, SMUL, DIV, AND, NOR, XOR, OR, SRL, SLL, SRA,
+		LOADS8,  LOADS8_SHIFT,  STORE8,  STORE8_SHIFT,
+		LOADS16, LOADS16_SHIFT, STORE16, STORE16_SHIFT,
+		LOADS32, LOADS32_SHIFT, STORE32, STORE32_SHIFT, 
+		LOADS64, LOADS64_SHIFT, STORE64, STORE64_SHIFT,
+		LOADU8,  LOADU8_SHIFT,
+		LOADU16, LOADU16_SHIFT,
+		LOADU32, LOADU32_SHIFT,
+		LOADU64, LOADU64_SHIFT,
+		BRANCH, JUMP,
 	} op;
 
 	struct Operand {
@@ -21,27 +34,26 @@ struct Entry {
 			NONE, REG_F64, REG_F32, IMM_F64, IMM_F32,
 			REG_S64, REG_S32, REG_U64, REG_U32, REG_U5, IMM_S16,
 			IMM_S32, IMM_S64, IMM_U16, IMM_U32, IMM_U64, IMM_U5,
+			MEM_U8, MEM_U16, MEM_U32, MEM_U64
 		} type;
-		std::optional<u64> index_or_imm;
 
-		Operand(Type t, std::optional<u64> i = std::nullopt)
-			: type(t), index_or_imm(i) {}
-	} dst = Operand::NONE, op1, op2;
+		std::optional<u64> index_or_imm = std::nullopt;
+
+		Operand(Type t, std::optional <u64> imm = std::nullopt)
+			: type(t), index_or_imm(imm) {}
+	} dst = Operand::NONE, op1 = Operand::NONE, op2 = Operand::NONE;
 
 	enum BranchCond {
 		EQ, NE, LT, GT, LE, GE
 	};
 
 	std::optional<BranchCond> branchCond = std::nullopt;
+	std::optional<Shift> shift = std::nullopt;
 
-	Entry(Opcode op, Operand dst, Operand op1, Operand op2) 
-		: op(op), dst(dst), op1(op1), op2(op2) {}
-
-	Entry(Opcode op, Operand op1, Operand op2)
-		: op(op), op1(op1), op2(op2) {}
-
-	Entry(Opcode op, Operand op1, std::optional<BranchCond> bc, Operand op2)
-		: op(op), op1(op1), branchCond(bc), op2(op2) {}
+	Entry(Opcode op, Operand dst, Operand op1, Operand op2);
+	Entry(Opcode op, Operand op1, Operand op2);
+	Entry(Opcode op, Operand op1, std::optional<BranchCond> bc, Operand op2);
+	Entry(Opcode op, Operand dst, Operand op1, Operand op2, Shift s);
 };
 
 struct IR {

@@ -3,7 +3,8 @@
 #include <vector>
 #include <BaseCPU.hpp>
 #include <xbyak.h>
-#include "CpuDefinitions.hpp"
+#include <CpuDefinitions.hpp>
+#include <IR.hpp>
 
 namespace n64 {
 using Fn = int(*)();
@@ -29,6 +30,7 @@ struct JIT : BaseCPU, Xbyak::CodeGenerator {
   friend struct Cop1;
   friend struct Cop0;
 private:
+  IR ir{};
   int cycles = 0;
   bool ShouldServiceInterrupt() override;
   void CheckCompareInterrupt() override;

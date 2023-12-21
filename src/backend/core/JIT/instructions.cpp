@@ -6,12 +6,11 @@
 
 namespace n64 {
 void JIT::add(u32 instr) {
-  if (RD(instr) != 0) [[likely]] {
-    movsx(eax, GPR(dword, RS(instr))); // rs
-    movsx(ecx, GPR(dword, RT(instr))); // rt
-    CodeGenerator::add(eax, ecx);
-    mov(GPR(dword, RD(instr)), eax); // rd
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RD(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::REG_U32, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_U32, u8(RT(instr)) };
+  Entry e(Entry::ADD, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::addu(u32 instr) {
@@ -19,12 +18,11 @@ void JIT::addu(u32 instr) {
 }
 
 void JIT::addi(u32 instr) {
-  if (RT(instr) != 0) [[likely]] {
-    movsx(eax, GPR(dword, RS(instr)));
-    mov(ecx, s32(s16(instr)));
-    CodeGenerator::add(eax, ecx);
-    mov(GPR(dword, RT(instr)), eax);
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::REG_U32, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::IMM_S16, s16(instr) };
+  Entry e(Entry::ADD, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::addiu(u32 instr) {
@@ -32,76 +30,133 @@ void JIT::addiu(u32 instr) {
 }
 
 void JIT::dadd(u32 instr) {
-  if (RD(instr) != 0) [[likely]] {
-    mov(rax, GPR(qword, RS(instr))); // rs
-    mov(rcx, GPR(qword, RT(instr))); // rt
-    CodeGenerator::add(rax, rcx);
-    mov(GPR(qword, RD(instr)), rax); // rd
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RD(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::REG_U64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_U64, u8(RT(instr)) };
+  Entry e(Entry::ADD, dst, op1, op2);
+  ir.push(e);
 }
 
-void JIT::bltz(u32) {
-
+void JIT::bltz(u32 instr) {
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
+  Entry e(Entry::BRANCH, op1, Entry::BranchCond::LT, op2);
+  ir.push(e);
 }
 
-void JIT::bgez(u32) {
-
+void JIT::bgez(u32 instr) {
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
+  Entry e(Entry::BRANCH, op1, Entry::BranchCond::GE, op2);
+  ir.push(e);
 }
 
-void JIT::bltzl(u32) {
-
+void JIT::bltzl(u32 instr) {
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
+  auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LIKELY);
+  Entry e(opc, op1, Entry::BranchCond::LT, op2);
+  ir.push(e);
 }
 
-void JIT::bgezl(u32) {
-
+void JIT::bgezl(u32 instr) {
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
+  auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LIKELY);
+  Entry e(opc, op1, Entry::BranchCond::GE, op2);
+  ir.push(e);
 }
 
-void JIT::bltzal(u32) {
-
+void JIT::bltzal(u32 instr) {
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
+  auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LINK);
+  Entry e(opc, op1, Entry::BranchCond::LT, op2);
+  ir.push(e);
 }
 
-void JIT::bgezal(u32) {
-
+void JIT::bgezal(u32 instr) {
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
+  auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LINK);
+  Entry e(opc, op1, Entry::BranchCond::GE, op2);
+  ir.push(e);
 }
 
-void JIT::bltzall(u32) {
-
+void JIT::bltzall(u32 instr) {
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
+  auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LINK | Entry::LIKELY);
+  Entry e(opc, op1, Entry::BranchCond::LT, op2);
+  ir.push(e);
 }
 
-void JIT::bgezall(u32) {
-
+void JIT::bgezall(u32 instr) {
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
+  auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LINK | Entry::LIKELY);
+  Entry e(opc, op1, Entry::BranchCond::GE, op2);
+  ir.push(e);
 }
 
-void JIT::beq(u32) {
-
+void JIT::beq(u32 instr) {
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  Entry e(Entry::BRANCH, op1, Entry::BranchCond::EQ, op2);
+  ir.push(e);
 }
 
-void JIT::bne(u32) {
-
+void JIT::bne(u32 instr) {
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  Entry e(Entry::BRANCH, op1, Entry::BranchCond::NE, op2);
+  ir.push(e);
 }
 
-void JIT::blez(u32) {
-
+void JIT::blez(u32 instr) {
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::IMM_S64, 0 };
+  Entry e(Entry::BRANCH, op1, Entry::BranchCond::LE, op2);
+  ir.push(e);
 }
 
-void JIT::bgtz(u32) {
-
+void JIT::bgtz(u32 instr) {
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::IMM_S64, 0 };
+  Entry e(Entry::BRANCH, op1, Entry::BranchCond::GT, op2);
+  ir.push(e);
 }
 
-void JIT::beql(u32) {
-
+void JIT::beql(u32 instr) {
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LIKELY);
+  Entry e(opc, op1, Entry::BranchCond::EQ, op2);
+  ir.push(e);
 }
 
-void JIT::bnel(u32) {
-
+void JIT::bnel(u32 instr) {
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LIKELY);
+  Entry e(opc, op1, Entry::BranchCond::NE, op2);
+  ir.push(e);
 }
 
-void JIT::blezl(u32) {
-
+void JIT::blezl(u32 instr) {
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::IMM_S64, 0 };
+  auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LIKELY);
+  Entry e(opc, op1, Entry::BranchCond::LE, op2);
+  ir.push(e);
 }
 
-void JIT::bgtzl(u32) {
-
+void JIT::bgtzl(u32 instr) {
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::IMM_S64, 0 };
+  auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LIKELY);
+  Entry e(opc, op1, Entry::BranchCond::GT, op2);
+  ir.push(e);
 }
 
 void JIT::daddu(u32 instr) {
@@ -109,12 +164,11 @@ void JIT::daddu(u32 instr) {
 }
 
 void JIT::daddi(u32 instr) {
-  if (RT(instr) != 0) [[likely]] {
-    mov(rax, GPR(qword, RS(instr)));
-    mov(rcx, s64(s16(instr)));
-    CodeGenerator::add(rax, rcx);
-    mov(GPR(qword, RT(instr)), rax);
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::IMM_S16, s16(instr) };
+  Entry e(Entry::ADD, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::daddiu(u32 instr) {
@@ -122,25 +176,7 @@ void JIT::daddiu(u32 instr) {
 }
 
 void JIT::div(u32 instr) {
-  movsxd(rax, GPR(dword, RS(instr))); // dividend
-  movsxd(rcx, GPR(dword, RT(instr))); // divisor
-  cmp(rcx, 0);
-  je("div_divisor==0");
-
-  CodeGenerator::div(rcx);
-  mov(qword[rdi + offsetof(Registers, lo)], eax);
-  mov(qword[rdi + offsetof(Registers, hi)], edx);
-  jmp("div_exit");
-
-  L("div_divisor==0");
-    mov(qword[rdi + offsetof(Registers, hi)], rax);
-    cmp(rax, 0);
-    jge("div_dividend>=0");
-    mov(qword[rdi + offsetof(Registers, lo)], s64(1));
-    L("div_dividend>=0");
-      mov(qword[rdi + offsetof(Registers, lo)], s64(-1));
-
-  L("div_exit");
+  
 }
 
 void JIT::divu(u32 instr) {
@@ -731,13 +767,11 @@ void JIT::and_(u32 instr) {
 }
 
 void JIT::sll(u32 instr) {
-  if (RD(instr) != 0) [[likely]] {
-    u8 sa = ((instr >> 6) & 0x1f);
-    mov(rax, GPR(qword, RT(instr)));
-    sal(rax, sa);
-    movsxd(rcx, eax);
-    mov(GPR(qword, RD(instr)), rcx);
-  }
+  auto dst = Entry::Operand{ Entry::Operand::REG_S64, u8(RD(instr)) };
+  auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
+  auto op2 = Entry::Operand{ Entry::Operand::IMM_U5, std::nullopt };
+  Entry e(Entry::SLL, dst, op1, op2);
+  ir.push(e);
 }
 
 void JIT::sllv(u32 instr) {

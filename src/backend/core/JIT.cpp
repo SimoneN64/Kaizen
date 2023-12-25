@@ -33,51 +33,56 @@ void JIT::CheckCompareInterrupt() {
 Fn JIT::Recompile() {
   bool stable = true;
   cycles = 0;
-  prologue();
-  mov(rbp, u64(this));
-  mov(rdi, u64(this) + THIS_OFFSET(regs));
+  //prologue();
+  //mov(rbp, u64(this));
+  //mov(rdi, u64(this) + THIS_OFFSET(regs));
+  u64 pc = regs.pc;
   while(stable) {
     cycles++;
     CheckCompareInterrupt();
 
-    mov(rax, REG(byte, delaySlot));
-    mov(REG(byte, prevDelaySlot), rax);
-    mov(REG(byte, delaySlot), 0);
+    // mov(rax, REG(byte, delaySlot));
+    // mov(REG(byte, prevDelaySlot), rax);
+    // mov(REG(byte, delaySlot), 0);
 
     u32 paddr = 0;
-    if (!MapVAddr(regs, LOAD, regs.pc, paddr)) {
-      mov(rsi, regs.pc);
-      emitCall(HandleTLBException);
-      mov(rsi, u64(GetTLBExceptionCode(regs.cop0.tlbError, LOAD)));
-      CodeGenerator::xor_(rdx, rdx);
-      CodeGenerator::xor_(rcx, rcx);
-      emitCall(FireException);
-      goto _epilogue;
+    if (!MapVAddr(regs, LOAD, pc, paddr)) {
+      //mov(rsi, regs.pc);
+      //emitCall(HandleTLBException);
+      //mov(rsi, u64(GetTLBExceptionCode(regs.cop0.tlbError, LOAD)));
+      //CodeGenerator::xor_(rdx, rdx);
+      //CodeGenerator::xor_(rcx, rcx);
+      //emitCall(FireException);
+      //goto _epilogue;
     }
 
+    pc += 4;
     u32 instr = mem.Read<u32>(regs, paddr);
     stable = isStable(instr);
     Emit(instr);
 
     if (ShouldServiceInterrupt()) {
-      mov(rsi, u64(ExceptionCode::Interrupt));
-      CodeGenerator::xor_(rdx, rdx);
-      CodeGenerator::xor_(rcx, rcx);
-      push(rax);
-      call(FireException);
-      goto _epilogue;
+      //mov(rsi, u64(ExceptionCode::Interrupt));
+      //CodeGenerator::xor_(rdx, rdx);
+      //CodeGenerator::xor_(rcx, rcx);
+      //push(rax);
+      //call(FireException);
+      //goto _epilogue;
     }
 
-    mov(rax, REG(qword, pc));
-    mov(REG(qword, oldPC), rax);
-    mov(rax, REG(qword, nextPC));
-    mov(REG(qword, pc), rax);
-    CodeGenerator::add(REG(qword, nextPC), 4);
+    //mov(rax, REG(qword, pc));
+    //mov(REG(qword, oldPC), rax);
+    //mov(rax, REG(qword, nextPC));
+    //mov(REG(qword, pc), rax);
+    //CodeGenerator::add(REG(qword, nextPC), 4);
   }
 _epilogue:
-  epilogue();
-  ready();
-  return getCode<Fn>();
+  //epilogue();
+  //ready();
+  //return getCode<Fn>();
+  ir.optimize();
+  exit(1);
+  return nullptr;
 }
 
 int JIT::Step() {
@@ -90,6 +95,7 @@ int JIT::Step() {
     blocks[BLOCKCACHE_OUTER_INDEX(regs.pc)][BLOCKCACHE_INNER_INDEX(regs.pc)] = Recompile();
   }
 
-  return blocks[BLOCKCACHE_OUTER_INDEX(regs.pc)][BLOCKCACHE_INNER_INDEX(regs.pc)]();
+  //return blocks[BLOCKCACHE_OUTER_INDEX(regs.pc)][BLOCKCACHE_INNER_INDEX(regs.pc)]();
+  return 1;
 }
 }

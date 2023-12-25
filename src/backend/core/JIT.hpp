@@ -137,6 +137,7 @@ private:
   void addiu(u32);
   void andi(u32);
   void and_(u32);
+  Entry branch(u32);
   void bltz(u32);
   void bgez(u32);
   void bltzl(u32);

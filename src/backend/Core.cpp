@@ -67,7 +67,7 @@ void Core::Run(float volumeL, float volumeR) {
         InterruptRaise(mmio.mi, regs, Interrupt::VI);
       }
 
-      for(; cycles < mem.mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
+      for(; cycles < mem.mmio.vi.cyclesPerHalfline;) {
         u32 taken = cpu->Step();
         taken += PopStalledCycles();
         static u32 cpuSteps = 0;

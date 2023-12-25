@@ -37,125 +37,149 @@ void JIT::dadd(u32 instr) {
   ir.push(e);
 }
 
+Entry JIT::branch(u32 instr) {
+  auto dst = Entry::Operand{ Entry::Operand::IMM_S64, u64(s64(s16(instr))) << 2 };
+  auto pc = Entry::Operand{Entry::Operand::PC64};
+  Entry add_(Entry::ADD, dst, dst, pc);
+  ir.push(add_);
+  return add_;
+}
+
 void JIT::bltz(u32 instr) {
+  auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
-  Entry e(Entry::BRANCH, op1, Entry::BranchCond::LT, op2);
+  Entry e(Entry::BRANCH, dst.GetDst(), op1, Entry::BranchCond::LT, op2);
   ir.push(e);
 }
 
 void JIT::bgez(u32 instr) {
+  auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
-  Entry e(Entry::BRANCH, op1, Entry::BranchCond::GE, op2);
+  Entry e(Entry::BRANCH, dst.GetDst(), op1, Entry::BranchCond::GE, op2);
   ir.push(e);
 }
 
 void JIT::bltzl(u32 instr) {
+  auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LIKELY);
-  Entry e(opc, op1, Entry::BranchCond::LT, op2);
+  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::LT, op2);
   ir.push(e);
 }
 
 void JIT::bgezl(u32 instr) {
+  auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LIKELY);
-  Entry e(opc, op1, Entry::BranchCond::GE, op2);
+  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::GE, op2);
   ir.push(e);
 }
 
 void JIT::bltzal(u32 instr) {
+  auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LINK);
-  Entry e(opc, op1, Entry::BranchCond::LT, op2);
+  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::LT, op2);
   ir.push(e);
 }
 
 void JIT::bgezal(u32 instr) {
+  auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LINK);
-  Entry e(opc, op1, Entry::BranchCond::GE, op2);
+  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::GE, op2);
   ir.push(e);
 }
 
 void JIT::bltzall(u32 instr) {
+  auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LINK | Entry::LIKELY);
-  Entry e(opc, op1, Entry::BranchCond::LT, op2);
+  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::LT, op2);
   ir.push(e);
 }
 
 void JIT::bgezall(u32 instr) {
+  auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LINK | Entry::LIKELY);
-  Entry e(opc, op1, Entry::BranchCond::GE, op2);
+  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::GE, op2);
   ir.push(e);
 }
 
 void JIT::beq(u32 instr) {
+  auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
-  Entry e(Entry::BRANCH, op1, Entry::BranchCond::EQ, op2);
+  Entry e(Entry::BRANCH, dst.GetDst(), op1, Entry::BranchCond::EQ, op2);
   ir.push(e);
 }
 
 void JIT::bne(u32 instr) {
+  auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
-  Entry e(Entry::BRANCH, op1, Entry::BranchCond::NE, op2);
+  Entry e(Entry::BRANCH, dst.GetDst(), op1, Entry::BranchCond::NE, op2);
   ir.push(e);
 }
 
 void JIT::blez(u32 instr) {
+  auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_S64, 0 };
-  Entry e(Entry::BRANCH, op1, Entry::BranchCond::LE, op2);
+  Entry e(Entry::BRANCH, dst.GetDst(), op1, Entry::BranchCond::LE, op2);
   ir.push(e);
 }
 
 void JIT::bgtz(u32 instr) {
+  auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_S64, 0 };
-  Entry e(Entry::BRANCH, op1, Entry::BranchCond::GT, op2);
+  Entry e(Entry::BRANCH, dst.GetDst(), op1, Entry::BranchCond::GT, op2);
   ir.push(e);
 }
 
 void JIT::beql(u32 instr) {
+  auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LIKELY);
-  Entry e(opc, op1, Entry::BranchCond::EQ, op2);
+  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::EQ, op2);
   ir.push(e);
 }
 
 void JIT::bnel(u32 instr) {
+  auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LIKELY);
-  Entry e(opc, op1, Entry::BranchCond::NE, op2);
+  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::NE, op2);
   ir.push(e);
 }
 
 void JIT::blezl(u32 instr) {
+  auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_S64, 0 };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LIKELY);
-  Entry e(opc, op1, Entry::BranchCond::LE, op2);
+  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::LE, op2);
   ir.push(e);
 }
 
 void JIT::bgtzl(u32 instr) {
+  auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_S64, 0 };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LIKELY);
-  Entry e(opc, op1, Entry::BranchCond::GT, op2);
+  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::GT, op2);
   ir.push(e);
 }
 
@@ -423,29 +447,32 @@ void JIT::nor(u32 instr) {
 }
 
 void JIT::j(u32 instr) {
-  s32 target = (instr & 0x3ffffff) << 2;
-  s64 address = (regs.oldPC & ~0xfffffff) | target;
-
-  mov(byte[rdi + offsetof(Registers, delaySlot)], 1);
-  mov(qword[rdi + offsetof(Registers, nextPC)], address);
+  auto dst = Entry::Operand{Entry::Operand::IMM_S64};
+  auto op1 = Entry::Operand{Entry::Operand::PC64};
+  auto op2 = Entry::Operand{Entry::Operand::IMM_S64, ~0xfffffff};
+  Entry and_(Entry::AND, dst, op1, op2);
+  ir.push(and_);
+  op2 = Entry::Operand{Entry::Operand::IMM_S64, (instr & 0x3ffffff) << 2};
+  Entry or_(Entry::OR, dst, dst, op2);
+  ir.push(or_);
+  Entry e(Entry::BRANCH, or_.GetDst());
 }
 
 void JIT::jal(u32 instr) {
-  mov(rax, qword[rdi + offsetof(Registers, nextPC)]);
-  mov(GPR(qword, 31), rax);
+  Entry link(Entry::MOV,
+             Entry::Operand{Entry::Operand::REG_S64, 31},
+             Entry::Operand{Entry::Operand::NEXTPC64});
+  ir.push(link);
   j(instr);
 }
 
 void JIT::jalr(u32 instr) {
-  mov(byte[rdi + offsetof(Registers, delaySlot)], 1);
-  mov(rax, GPR(qword, RS(instr)));
-  mov(qword[rdi + offsetof(Registers, nextPC)], rax);
-
-  if (RD(instr) != 0) [[likely]] {
-    mov(rax, qword[rdi + offsetof(Registers, pc)]);
-    CodeGenerator::add(rax, 4);
-    mov(GPR(qword, RD(instr)), rax);
-  }
+  auto addr = Entry::Operand{Entry::Operand::REG_U64, RS(instr)};
+  Entry e(Entry::BRANCH, addr);
+  Entry link(Entry::MOV,
+             Entry::Operand{Entry::Operand::REG_S64, RD(instr)},
+             Entry::Operand{Entry::Operand::PC64});
+  ir.push(link);
 }
 
 void JIT::slti(u32 instr) {
@@ -706,9 +733,8 @@ void JIT::dsra32(u32 instr) {
 }
 
 void JIT::jr(u32 instr) {
-  mov(rax, GPR(qword, RS(instr)));
-  mov(REG(byte, delaySlot), 1);
-  mov(REG(qword, nextPC), rax);
+  auto addr = Entry::Operand{Entry::Operand::REG_U64, RS(instr)};
+  Entry e(Entry::BRANCH, addr);
 }
 
 void JIT::dsub(u32 instr) {
@@ -764,23 +790,27 @@ void JIT::mult(u32 instr) {
 }
 
 void JIT::mflo(u32 instr) {
-  if (RD(instr) != 0) [[likely]] {
-    regs.gpr[RD(instr)] = regs.lo;
-  }
+  auto dst = Entry::Operand{Entry::Operand::REG_S64, RD(instr)};
+  auto src = Entry::Operand{Entry::Operand::LO};
+  ir.push({Entry::MOV, dst, src});
 }
 
 void JIT::mfhi(u32 instr) {
-  if (RD(instr) != 0) [[likely]] {
-    regs.gpr[RD(instr)] = regs.hi;
-  }
+  auto dst = Entry::Operand{Entry::Operand::REG_S64, RD(instr)};
+  auto src = Entry::Operand{Entry::Operand::HI};
+  ir.push({Entry::MOV, dst, src});
 }
 
 void JIT::mtlo(u32 instr) {
-  regs.lo = regs.gpr[RS(instr)];
+  auto dst = Entry::Operand{Entry::Operand::LO};
+  auto src = Entry::Operand{Entry::Operand::REG_S64, RS(instr)};
+  ir.push({Entry::MOV, dst, src});
 }
 
 void JIT::mthi(u32 instr) {
-  regs.hi = regs.gpr[RS(instr)];
+  auto dst = Entry::Operand{Entry::Operand::HI};
+  auto src = Entry::Operand{Entry::Operand::REG_S64, RS(instr)};
+  ir.push({Entry::MOV, dst, src});
 }
 
 void JIT::mtc2(u32 instr) {

@@ -34,25 +34,36 @@ struct Entry {
 			NONE, REG_F64, REG_F32, IMM_F64, IMM_F32,
 			REG_S64, REG_S32, REG_U64, REG_U32, REG_U5, IMM_S16,
 			IMM_S32, IMM_S64, IMM_U16, IMM_U32, IMM_U64, IMM_U5,
-			MEM_U8, MEM_U16, MEM_U32, MEM_U64
-		} type;
+			MEM_U8, MEM_U16, MEM_U32, MEM_U64, PC64, NEXTPC64,
+      LO, HI
+		} type = NONE;
+
+    bool isReg() {
+      return type == REG_S64 || type == REG_F32 || type == REG_F64 || type == REG_S32
+              || type == REG_U64 || type == REG_U32 || type == REG_U5;
+    }
 
 		std::optional<u64> index_or_imm = std::nullopt;
 
+    Operand() = default;
 		Operand(Type t, std::optional <u64> imm = std::nullopt)
 			: type(t), index_or_imm(imm) {}
-	} dst = Operand::NONE, op1 = Operand::NONE, op2 = Operand::NONE;
+	} dst, op1, op2;
+
+  [[nodiscard]] const Operand& GetDst() const { return dst; }
 
 	enum BranchCond {
-		EQ, NE, LT, GT, LE, GE
+		AL, EQ, NE, LT, GT, LE, GE
 	};
 
 	std::optional<BranchCond> branchCond = std::nullopt;
 	std::optional<Shift> shift = std::nullopt;
+  Operand bDest = Operand::NONE;
 
 	Entry(Opcode op, Operand dst, Operand op1, Operand op2);
 	Entry(Opcode op, Operand op1, Operand op2);
-	Entry(Opcode op, Operand op1, std::optional<BranchCond> bc, Operand op2);
+	Entry(Opcode op, Operand bDest, Operand op1, std::optional<BranchCond> bc, Operand op2);
+  Entry(Opcode op, Operand bDest);
 	Entry(Opcode op, Operand dst, Operand op1, Operand op2, Shift s);
 };
 
@@ -60,6 +71,7 @@ struct IR {
 	void push(const Entry&);
 	auto begin();
 	auto end();
+  void optimize();
 private:
 	std::vector<Entry> code{};
 };

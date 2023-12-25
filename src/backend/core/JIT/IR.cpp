@@ -151,18 +151,20 @@ template <> struct fmt::formatter<Entry> : formatter<string_view> {
         std::string op1 = fmt::format("R{}", e.op1.index_or_imm.value());
         if(put_comma) {
           op += ", ";
+        } else {
+          put_comma = true;
         }
         op += op1;
-        put_comma = true;
       }
     } else {
       if (e.op1.index_or_imm.has_value()) {
         std::string op1 = fmt::format("0x{:0X}", e.op1.index_or_imm.value());
         if(put_comma) {
           op += ", ";
+        } else {
+          put_comma = true;
         }
         op += op1;
-        put_comma = true;
       }
     }
 
@@ -171,18 +173,20 @@ template <> struct fmt::formatter<Entry> : formatter<string_view> {
         std::string op2 = fmt::format("R{}", e.op2.index_or_imm.value());
         if(put_comma) {
           op += ", ";
+        } else {
+          put_comma = true;
         }
         op += op2;
-        put_comma = true;
       }
     } else {
       if (e.op2.index_or_imm.has_value()) {
         std::string op2 = fmt::format("0x{:0X}", e.op2.index_or_imm.value());
         if(put_comma) {
           op += ", ";
+        } else {
+          put_comma = true;
         }
         op += op2;
-        put_comma = true;
       }
     }
 
@@ -211,6 +215,37 @@ void IR::push(const Entry& e) {
 }
 
 void IR::optimize() {
+  std::vector<Entry> optimized{};
+
+  for(const auto& i : code) {
+    bool isOp1Reg = i.op1.isReg();
+    bool isOp2Reg = i.op2.isReg();
+    bool isDstReg = i.dst.isReg();
+
+    if(isDstReg) {
+      if(isOp1Reg) {
+        if(i.op1.index_or_imm == i.dst.index_or_imm
+          && i.zeroRendersItUseless()) continue;
+      }
+
+      if(isOp2Reg) {
+        if(i.op2.index_or_imm == i.dst.index_or_imm
+           && i.zeroRendersItUseless()) continue;
+      }
+    }
+
+    optimized.push_back(i);
+  }
+
+  if(optimized.size() == code.size()) {
+    return;
+  }
+
+  code = optimized;
+  optimize();
+}
+
+void IR::print() {
   for(auto e : code) {
     fmt::print("{}", e);
   }

@@ -81,6 +81,7 @@ _epilogue:
   //ready();
   //return getCode<Fn>();
   ir.optimize();
+  ir.print();
   exit(1);
   return nullptr;
 }

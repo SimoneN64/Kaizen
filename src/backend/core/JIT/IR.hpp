@@ -38,9 +38,14 @@ struct Entry {
       LO, HI
 		} type = NONE;
 
-    bool isReg() {
+    bool isReg() const {
       return type == REG_S64 || type == REG_F32 || type == REG_F64 || type == REG_S32
               || type == REG_U64 || type == REG_U32 || type == REG_U5;
+    }
+
+    bool isImm() const {
+      return type == IMM_S64 || type == IMM_F32 || type == IMM_F64 || type == IMM_S32
+             || type == IMM_U64 || type == IMM_U32 || type == IMM_U5;
     }
 
 		std::optional<u64> index_or_imm = std::nullopt;
@@ -49,6 +54,10 @@ struct Entry {
 		Operand(Type t, std::optional <u64> imm = std::nullopt)
 			: type(t), index_or_imm(imm) {}
 	} dst, op1, op2;
+
+  bool zeroRendersItUseless() const {
+    return op == ADD || op == OR || op == SRL || op == SLL || op == SRA;
+  }
 
   [[nodiscard]] const Operand& GetDst() const { return dst; }
 
@@ -71,6 +80,7 @@ struct IR {
 	void push(const Entry&);
 	auto begin();
 	auto end();
+  void print();
   void optimize();
 private:
 	std::vector<Entry> code{};

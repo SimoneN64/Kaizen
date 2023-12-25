@@ -813,6 +813,91 @@ void JIT::mthi(u32 instr) {
   ir.push({Entry::MOV, dst, src});
 }
 
+void JIT::mtc0(u32 instr) {
+  ir.push({Entry::MTC0,
+           {Entry::Operand::IMM_U5, RD(instr)},
+           {Entry::Operand::REG_S32, RT(instr)}});
+}
+
+void JIT::dmtc0(u32 instr) {
+  ir.push({Entry::MTC0,
+           {Entry::Operand::IMM_U5, RD(instr)},
+           {Entry::Operand::REG_S64, RT(instr)}});
+}
+
+void JIT::mfc0(u32 instr) {
+  ir.push({Entry::MFC0,
+           {Entry::Operand::REG_S32, RT(instr)},
+           {Entry::Operand::IMM_U5, RD(instr)}});
+}
+
+void JIT::dmfc0(u32 instr) {
+  ir.push({Entry::MFC0,
+           {Entry::Operand::REG_S64, RT(instr)},
+           {Entry::Operand::IMM_U5, RD(instr)}});
+}
+
+void JIT::eret() {
+  /*if(status.erl) {
+    regs.SetPC64(ErrorEPC);
+    status.erl = false;
+  } else {
+    regs.SetPC64(EPC);
+    status.exl = false;
+  }
+  regs.cop0.Update();
+  llbit = false;*/
+}
+
+
+void JIT::tlbr() {
+  /*if (index.i >= 32) {
+    Util::panic("TLBR with TLB index {}", index.i);
+  }
+
+  TLBEntry entry = tlb[index.i];
+
+  entryHi.raw = entry.entryHi.raw;
+  entryLo0.raw = entry.entryLo0.raw & 0x3FFFFFFF;
+  entryLo1.raw = entry.entryLo1.raw & 0x3FFFFFFF;
+
+  entryLo0.g = entry.global;
+  entryLo1.g = entry.global;
+  pageMask.raw = entry.pageMask.raw;*/
+}
+
+void JIT::tlbw(int index_) {
+  /*PageMask page_mask{};
+  page_mask = pageMask;
+  u32 top = page_mask.mask & 0xAAA;
+  page_mask.mask = top | (top >> 1);
+
+  if(index_ >= 32) {
+    Util::panic("TLBWI with TLB index {}", index_);
+  }
+
+  tlb[index_].entryHi.raw  = entryHi.raw;
+  tlb[index_].entryHi.vpn2 &= ~page_mask.mask;
+
+  tlb[index_].entryLo0.raw = entryLo0.raw & 0x03FFFFFE;
+  tlb[index_].entryLo1.raw = entryLo1.raw & 0x03FFFFFE;
+  tlb[index_].pageMask.raw = page_mask.raw;
+
+  tlb[index_].global = entryLo0.g && entryLo1.g;
+  tlb[index_].initialized = true;*/
+}
+
+void JIT::tlbp() {
+  /*int match = -1;
+  TLBEntry* entry = TLBTryMatch(regs, entryHi.raw, &match);
+  if(entry && match >= 0) {
+    index.raw = match;
+  } else {
+    index.raw = 0;
+    index.p = 1;
+  }*/
+}
+
 void JIT::mtc2(u32 instr) {
 
 }

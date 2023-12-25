@@ -239,6 +239,16 @@ private:
   void xor_(u32);
   void xori(u32);
 
+  void mtc0(u32);
+  void dmtc0(u32);
+  void mfc0(u32);
+  void dmfc0(u32);
+  void eret();
+
+  void tlbr();
+  void tlbw(int);
+  void tlbp();
+
   void mtc2(u32);
   void mfc2(u32);
   void dmtc2(u32);

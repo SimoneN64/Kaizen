@@ -9,7 +9,8 @@ struct Entry {
 		LINK = 0x100,
 		LIKELY = 0x200,
 		REGISTER = 0x400,
-		SET_LLBIT = 0x800
+		SET_LLBIT = 0x800,
+    UNSET_LLBIT = 0x1000,
 	};
 
 	enum Shift {
@@ -26,8 +27,8 @@ struct Entry {
 		LOADU16, LOADU16_SHIFT,
 		LOADU32, LOADU32_SHIFT,
 		LOADU64, LOADU64_SHIFT,
-		BRANCH, JUMP,
-	} op;
+		BRANCH, JUMP, MTC0, MFC0
+  } op;
 
 	struct Operand {
 		enum Type {
@@ -83,6 +84,7 @@ struct IR {
   void print();
   void optimize();
 private:
+  void dead_code_elimination(std::vector<Entry>&);
 	std::vector<Entry> code{};
 };
 }

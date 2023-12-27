@@ -90,7 +90,8 @@ struct IR {
   void print();
   void optimize();
 private:
-  void dead_code_elimination(std::vector<Entry>&);
+	std::vector<Entry> constant_propagation(std::vector<Entry>&);
+	std::vector<Entry> dead_code_elimination(std::vector<Entry>&);
 	std::vector<Entry> code{};
 };
 }

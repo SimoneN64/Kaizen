@@ -1,5 +1,7 @@
 #include <IR.hpp>
 #include <fmt/format.h>
+#include <set>
+#include <algorithm>
 
 namespace n64 {
 template <> struct fmt::formatter<Entry> : formatter<string_view> {
@@ -177,8 +179,15 @@ void IR::push(const Entry& e) {
 	code.push_back(e);
 }
 
-void IR::dead_code_elimination(std::vector<Entry>& code_) {
-  for(const auto& i : code) {
+std::vector<Entry> IR::constant_propagation(std::vector<Entry>& code_) {
+  std::vector<Entry> optimized{};
+
+  return optimized;
+}
+
+std::vector<Entry> IR::dead_code_elimination(std::vector<Entry>& code_) {
+  std::vector<Entry> optimized{};
+  for(const auto& i : code_) {
     bool isOp1Reg = i.op1.isReg();
     bool isOp2Reg = i.op2.isReg();
     bool isDstReg = i.dst.isReg();
@@ -200,21 +209,20 @@ void IR::dead_code_elimination(std::vector<Entry>& code_) {
       }
     }
 
-    code_.push_back(i);
+    optimized.push_back(i);
   }
+
+  return optimized;
 }
 
 void IR::optimize() {
   std::vector<Entry> optimized{};
 
-  dead_code_elimination(optimized);
-
-  if(optimized.size() == code.size()) {
-    return;
+  while (optimized.size() < code.size()) {
+    optimized = dead_code_elimination(code);
+    //optimized = constant_propagation(optimized);
+    code = optimized;
   }
-
-  code = optimized;
-  optimize();
 }
 
 void IR::print() {

@@ -18,7 +18,8 @@ struct Entry {
 	};
 
 	enum Opcode : u16 {
-		MOV, ADD, SUB, UMUL, SMUL, DIV, AND, NOR, XOR, OR, SRL, SLL, SRA,
+		MOV, SLT, ADD, SUB, UMUL, SMUL, DIV, AND, NOR,
+		XOR, OR, SRL, SLL, SRA,
 		LOADS8,  LOADS8_SHIFT,  STORE8,  STORE8_SHIFT,
 		LOADS16, LOADS16_SHIFT, STORE16, STORE16_SHIFT,
 		LOADS32, LOADS32_SHIFT, STORE32, STORE32_SHIFT, 
@@ -45,8 +46,9 @@ struct Entry {
     }
 
     bool isImm() const {
-      return type == IMM_S64 || type == IMM_F32 || type == IMM_F64 || type == IMM_S32
-             || type == IMM_U64 || type == IMM_U32 || type == IMM_U5;
+      return type == IMM_S64 || type == IMM_U16 || type == IMM_S16 ||
+						 type == IMM_F32 || type == IMM_F64 || type == IMM_S32 ||
+             type == IMM_U64 || type == IMM_U32 || type == IMM_U5;
     }
 
 		std::optional<u64> index_or_imm = std::nullopt;
@@ -56,7 +58,7 @@ struct Entry {
 			: type(t), index_or_imm(imm) {}
 	} dst, op1, op2;
 
-  bool zeroRendersItUseless() const {
+  bool canDoDCE() const {
     return op == ADD || op == OR || op == SRL || op == SLL || op == SRA;
   }
 

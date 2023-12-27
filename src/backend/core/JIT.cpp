@@ -32,12 +32,15 @@ void JIT::CheckCompareInterrupt() {
 
 Fn JIT::Recompile() {
   bool stable = true;
+  bool old_stable = stable;
   cycles = 0;
   //prologue();
   //mov(rbp, u64(this));
   //mov(rdi, u64(this) + THIS_OFFSET(regs));
-  u64 pc = regs.pc;
-  while(stable) {
+  u64 pc = regs.pc + 0x3D0;
+  while(old_stable) {
+    old_stable = stable;
+
     cycles++;
     CheckCompareInterrupt();
 

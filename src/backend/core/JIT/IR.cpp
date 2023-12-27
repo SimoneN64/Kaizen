@@ -47,6 +47,7 @@ template <> struct fmt::formatter<Entry> : formatter<string_view> {
       case Entry::JUMP: op = "JUMP"; break;
       case Entry::MTC0: op = "MTC0"; break;
       case Entry::MFC0: op = "MFC0"; break;
+      case Entry::SLT: op = "SLT"; break;
     }
 
     bool put_comma = false;
@@ -148,17 +149,20 @@ void IR::dead_code_elimination(std::vector<Entry>& code_) {
     bool isOp2Reg = i.op2.isReg();
     bool isDstReg = i.dst.isReg();
 
+    // check for operations like "add rx, rx, 0" or "add r0, anything"
     if(isDstReg) {
-      if(i.zeroRendersItUseless() && i.dst.index_or_imm == 0) continue;
+      bool isDstR0 = i.dst.isReg() && i.dst.index_or_imm.has_value()  && i.dst.index_or_imm.value() == 0;
+      bool areDstAndOp1Same = i.dst.isReg() && i.op1.isReg() && i.dst.index_or_imm.has_value() && i.op1.index_or_imm.has_value() && i.op1.index_or_imm.value() == i.dst.index_or_imm.value();
+      bool areDstAndOp2Same = i.dst.isReg() && i.op2.isReg() && i.dst.index_or_imm.has_value() && i.op2.index_or_imm.has_value() && i.op2.index_or_imm.value() == i.dst.index_or_imm.value();
+      if (isDstR0) continue;
+      if (i.canDoDCE()) {
+        if (areDstAndOp1Same) {
+          if (i.op2.isImm() && i.op2.index_or_imm.value() == 0) continue;
+        }
 
-      if(isOp1Reg) {
-        if(i.op1.index_or_imm == i.dst.index_or_imm
-           && i.zeroRendersItUseless()) continue;
-      }
-
-      if(isOp2Reg) {
-        if(i.op2.index_or_imm == i.dst.index_or_imm
-           && i.zeroRendersItUseless()) continue;
+        if (areDstAndOp2Same) {
+          if (i.op1.isImm() && i.op1.index_or_imm.value() == 0) continue;
+        }
       }
     }
 

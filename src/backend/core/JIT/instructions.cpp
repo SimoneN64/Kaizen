@@ -476,35 +476,35 @@ void JIT::jalr(u32 instr) {
 }
 
 void JIT::slti(u32 instr) {
-  mov(rax, s64(s16(instr)));
-  mov(rcx, GPR(qword, RS(instr)));
-  cmp(rcx, rax);
-  setl(GPR(qword, RT(instr)));
+  Entry e(Entry::SLT,
+    { Entry::Operand::REG_U5, RT(instr) },
+    { Entry::Operand::REG_S64, RS(instr) },
+    { Entry::Operand::IMM_S64, s64(s16(instr)) });
+  ir.push(e);
 }
 
 void JIT::sltiu(u32 instr) {
-  mov(rax, s64(s16(instr)));
-  mov(rcx, GPR(qword, RS(instr)));
-  cmp(rcx, rax);
-  setb(GPR(qword, RT(instr)));
+  Entry e(Entry::SLT,
+    { Entry::Operand::REG_U5, RT(instr) },
+    { Entry::Operand::REG_U64, RS(instr) },
+    { Entry::Operand::IMM_U64, u64(s64(s16(instr))) });
+  ir.push(e);
 }
 
 void JIT::slt(u32 instr) {
-  if (RD(instr) != 0) [[likely]] {
-    mov(rax, GPR(qword, RS(instr)));
-    mov(rcx, GPR(qword, RT(instr)));
-    cmp(rax, rcx);
-    setl(GPR(qword, RD(instr)));
-  }
+  Entry e(Entry::SLT,
+    { Entry::Operand::REG_U5, RD(instr) },
+    { Entry::Operand::REG_S64, RS(instr) },
+    { Entry::Operand::REG_S64, RT(instr) });
+  ir.push(e);
 }
 
 void JIT::sltu(u32 instr) {
-  if (RD(instr) != 0) [[likely]] {
-    mov(rax, GPR(qword, RS(instr)));
-    mov(rcx, GPR(qword, RT(instr)));
-    cmp(rax, rcx);
-    setb(GPR(qword, RD(instr)));
-  }
+  Entry e(Entry::SLT,
+    { Entry::Operand::REG_U5, RD(instr) },
+    { Entry::Operand::REG_U64, RS(instr) },
+    { Entry::Operand::REG_U64, RT(instr) });
+  ir.push(e);
 }
 
 void JIT::xori(u32 instr) {

@@ -75,7 +75,12 @@ template <> struct fmt::formatter<Entry> : formatter<string_view> {
     }
 
     if (e.bOffs.index_or_imm.has_value()) {
-      std::string dst = fmt::format("0x{:0X}", e.bOffs.index_or_imm.value());
+      std::string dst;
+      if (e.bOffs.isReg()) {
+        dst = fmt::format("R{}", e.bOffs.index_or_imm.value());
+      } else if (e.bOffs.isImm()) {
+        dst = fmt::format("0x{:0X}", e.bOffs.index_or_imm.value());
+      }
       op += dst;
       put_comma = true;
     }

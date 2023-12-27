@@ -453,6 +453,7 @@ void JIT::j(u32 instr) {
   Entry or_(Entry::OR, dst, dst, op2);
   ir.push(or_);
   Entry e(Entry::BRANCH, or_.GetDst());
+  ir.push(e);
 }
 
 void JIT::jal(u32 instr) {
@@ -470,6 +471,7 @@ void JIT::jalr(u32 instr) {
              Entry::Operand{Entry::Operand::REG_S64, RD(instr)},
              Entry::Operand{Entry::Operand::PC64});
   ir.push(link);
+  j(instr);
 }
 
 void JIT::slti(u32 instr) {
@@ -732,6 +734,7 @@ void JIT::dsra32(u32 instr) {
 void JIT::jr(u32 instr) {
   auto addr = Entry::Operand{Entry::Operand::REG_U64, RS(instr)};
   Entry e(Entry::BRANCH, addr);
+  ir.push(e);
 }
 
 void JIT::dsub(u32 instr) {

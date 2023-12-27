@@ -51,6 +51,10 @@ struct Entry {
              type == IMM_U64 || type == IMM_U32 || type == IMM_U5;
     }
 
+		bool isMem() const {
+			return type == MEM_U8 || type == MEM_U16 || type == MEM_U32 || type == MEM_U64;
+		}
+
 		std::optional<u64> index_or_imm = std::nullopt;
 
     Operand() = default;
@@ -70,12 +74,12 @@ struct Entry {
 
 	std::optional<BranchCond> branchCond = std::nullopt;
 	std::optional<Shift> shift = std::nullopt;
-  Operand bDest = Operand::NONE;
+  Operand bOffs = Operand::NONE;
 
 	Entry(Opcode op, Operand dst, Operand op1, Operand op2);
 	Entry(Opcode op, Operand op1, Operand op2);
-	Entry(Opcode op, Operand bDest, Operand op1, std::optional<BranchCond> bc, Operand op2);
-  Entry(Opcode op, Operand bDest);
+	Entry(Opcode op, Operand bOffs, Operand op1, std::optional<BranchCond> bc, Operand op2);
+  Entry(Opcode op, Operand bOffs);
 	Entry(Opcode op, Operand dst, Operand op1, Operand op2, Shift s);
 };
 

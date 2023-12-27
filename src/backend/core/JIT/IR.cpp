@@ -59,17 +59,25 @@ template <> struct fmt::formatter<Entry> : formatter<string_view> {
         put_comma = true;
       }
     } else if(e.dst.isImm()) {
-      if(e.dst.type != Entry::Operand::NONE) {
-        std::string dst = fmt::format("0x{:0X}", e.dst.index_or_imm.value());
-        op += dst;
-        put_comma = true;
-      }
+      std::string dst = fmt::format("0x{:0X}", e.dst.index_or_imm.value());
+      op += dst;
+      put_comma = true;
+    } else if(e.dst.type == Entry::Operand::PC64) {
+      std::string dst = fmt::format("PC");
+      op += dst;
+      put_comma = true;
     } else {
       if(e.dst.type != Entry::Operand::NONE) {
         std::string dst = fmt::format("(0x{:0X})", e.dst.index_or_imm.value());
         op += dst;
         put_comma = true;
       }
+    }
+
+    if (e.bOffs.index_or_imm.has_value()) {
+      std::string dst = fmt::format("0x{:0X}", e.bOffs.index_or_imm.value());
+      op += dst;
+      put_comma = true;
     }
 
     if (e.op1.isReg()) {
@@ -90,6 +98,13 @@ template <> struct fmt::formatter<Entry> : formatter<string_view> {
         op += op1;
         put_comma = true;
       }
+    } else if (e.dst.type == Entry::Operand::PC64) {
+      std::string dst = fmt::format("PC");
+      if (put_comma) {
+        op += ", ";
+      }
+      op += dst;
+      put_comma = true;
     } else {
       if (e.op1.index_or_imm.has_value()) {
         std::string op1 = fmt::format("(0x{:0X})", e.op1.index_or_imm.value());
@@ -98,6 +113,20 @@ template <> struct fmt::formatter<Entry> : formatter<string_view> {
         }
         op += op1;
         put_comma = false;
+      }
+    }
+
+    if (e.branchCond.has_value()) {
+      put_comma = false;
+      op += " ";
+      switch (e.branchCond.value()) {
+      case Entry::AL: op += "   "; break;
+      case Entry::EQ: op += "== "; break;
+      case Entry::NE: op += "!= "; break;
+      case Entry::LT: op += "<  "; break;
+      case Entry::GT: op += ">  "; break;
+      case Entry::LE: op += "<= "; break;
+      case Entry::GE: op += ">= "; break;
       }
     }
 
@@ -130,11 +159,11 @@ Entry::Entry(Opcode op, Operand dst, Operand op1, Operand op2)
 Entry::Entry(Opcode op, Operand op1, Operand op2)
 	: op(op), op1(op1), op2(op2) {}
 
-Entry::Entry(Opcode op, Operand bDest, Operand op1, std::optional<BranchCond> bc, Operand op2)
-	: op(op), bDest(bDest), op1(op1), branchCond(bc), op2(op2) {}
+Entry::Entry(Opcode op, Operand bOffs, Operand op1, std::optional<BranchCond> bc, Operand op2)
+	: op(op), bOffs(bOffs), op1(op1), branchCond(bc), op2(op2) {}
 
-Entry::Entry(Opcode op, Operand bDest)
-: op(op), bDest(bDest) {}
+Entry::Entry(Opcode op, Operand bOffs)
+: op(op), bOffs(bOffs) {}
 
 Entry::Entry(Opcode op, Operand dst, Operand op1, Operand op2, Shift s)
 	: op(op), dst(dst), op1(op1), op2(op2), shift(s) {}

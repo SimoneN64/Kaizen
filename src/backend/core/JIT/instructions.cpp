@@ -37,19 +37,16 @@ void JIT::dadd(u32 instr) {
   ir.push(e);
 }
 
-Entry JIT::branch(u32 instr) {
-  auto dst = Entry::Operand{ Entry::Operand::IMM_S64, u64(s64(s16(instr))) << 2 };
-  auto pc = Entry::Operand{Entry::Operand::PC64};
-  Entry add_(Entry::ADD, dst, dst, pc);
-  ir.push(add_);
-  return add_;
+Entry::Operand JIT::branch(u32 instr) {
+  auto addr = Entry::Operand{ Entry::Operand::IMM_S64, u64(s64(s16(instr))) << 2 };
+  return addr;
 }
 
 void JIT::bltz(u32 instr) {
   auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
-  Entry e(Entry::BRANCH, dst.GetDst(), op1, Entry::BranchCond::LT, op2);
+  Entry e(Entry::BRANCH, dst, op1, Entry::BranchCond::LT, op2);
   ir.push(e);
 }
 
@@ -57,7 +54,7 @@ void JIT::bgez(u32 instr) {
   auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
-  Entry e(Entry::BRANCH, dst.GetDst(), op1, Entry::BranchCond::GE, op2);
+  Entry e(Entry::BRANCH, dst, op1, Entry::BranchCond::GE, op2);
   ir.push(e);
 }
 
@@ -66,7 +63,7 @@ void JIT::bltzl(u32 instr) {
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LIKELY);
-  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::LT, op2);
+  Entry e(opc, dst, op1, Entry::BranchCond::LT, op2);
   ir.push(e);
 }
 
@@ -75,7 +72,7 @@ void JIT::bgezl(u32 instr) {
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LIKELY);
-  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::GE, op2);
+  Entry e(opc, dst, op1, Entry::BranchCond::GE, op2);
   ir.push(e);
 }
 
@@ -84,7 +81,7 @@ void JIT::bltzal(u32 instr) {
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LINK);
-  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::LT, op2);
+  Entry e(opc, dst, op1, Entry::BranchCond::LT, op2);
   ir.push(e);
 }
 
@@ -93,7 +90,7 @@ void JIT::bgezal(u32 instr) {
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LINK);
-  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::GE, op2);
+  Entry e(opc, dst, op1, Entry::BranchCond::GE, op2);
   ir.push(e);
 }
 
@@ -102,7 +99,7 @@ void JIT::bltzall(u32 instr) {
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LINK | Entry::LIKELY);
-  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::LT, op2);
+  Entry e(opc, dst, op1, Entry::BranchCond::LT, op2);
   ir.push(e);
 }
 
@@ -111,7 +108,7 @@ void JIT::bgezall(u32 instr) {
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_U64, 0 };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LINK | Entry::LIKELY);
-  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::GE, op2);
+  Entry e(opc, dst, op1, Entry::BranchCond::GE, op2);
   ir.push(e);
 }
 
@@ -119,7 +116,7 @@ void JIT::beq(u32 instr) {
   auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
-  Entry e(Entry::BRANCH, dst.GetDst(), op1, Entry::BranchCond::EQ, op2);
+  Entry e(Entry::BRANCH, dst, op1, Entry::BranchCond::EQ, op2);
   ir.push(e);
 }
 
@@ -127,7 +124,7 @@ void JIT::bne(u32 instr) {
   auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
-  Entry e(Entry::BRANCH, dst.GetDst(), op1, Entry::BranchCond::NE, op2);
+  Entry e(Entry::BRANCH, dst, op1, Entry::BranchCond::NE, op2);
   ir.push(e);
 }
 
@@ -135,7 +132,7 @@ void JIT::blez(u32 instr) {
   auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_S64, 0 };
-  Entry e(Entry::BRANCH, dst.GetDst(), op1, Entry::BranchCond::LE, op2);
+  Entry e(Entry::BRANCH, dst, op1, Entry::BranchCond::LE, op2);
   ir.push(e);
 }
 
@@ -143,7 +140,7 @@ void JIT::bgtz(u32 instr) {
   auto dst = branch(instr);
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_S64, 0 };
-  Entry e(Entry::BRANCH, dst.GetDst(), op1, Entry::BranchCond::GT, op2);
+  Entry e(Entry::BRANCH, dst, op1, Entry::BranchCond::GT, op2);
   ir.push(e);
 }
 
@@ -152,7 +149,7 @@ void JIT::beql(u32 instr) {
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LIKELY);
-  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::EQ, op2);
+  Entry e(opc, dst, op1, Entry::BranchCond::EQ, op2);
   ir.push(e);
 }
 
@@ -161,7 +158,7 @@ void JIT::bnel(u32 instr) {
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::REG_S64, u8(RT(instr)) };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LIKELY);
-  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::NE, op2);
+  Entry e(opc, dst, op1, Entry::BranchCond::NE, op2);
   ir.push(e);
 }
 
@@ -170,7 +167,7 @@ void JIT::blezl(u32 instr) {
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_S64, 0 };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LIKELY);
-  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::LE, op2);
+  Entry e(opc, dst, op1, Entry::BranchCond::LE, op2);
   ir.push(e);
 }
 
@@ -179,7 +176,7 @@ void JIT::bgtzl(u32 instr) {
   auto op1 = Entry::Operand{ Entry::Operand::REG_S64, u8(RS(instr)) };
   auto op2 = Entry::Operand{ Entry::Operand::IMM_S64, 0 };
   auto opc = Entry::Opcode(u16(Entry::BRANCH) | Entry::LIKELY);
-  Entry e(opc, dst.GetDst(), op1, Entry::BranchCond::GT, op2);
+  Entry e(opc, dst, op1, Entry::BranchCond::GT, op2);
   ir.push(e);
 }
 

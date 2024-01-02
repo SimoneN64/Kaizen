@@ -2,6 +2,7 @@
 #include <common.hpp>
 #include <vector>
 #include <optional>
+#include <IR/Opcode.hpp>
 
 namespace n64 {
 struct Entry {

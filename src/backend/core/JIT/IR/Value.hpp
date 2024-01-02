@@ -3,23 +3,27 @@
 
 namespace n64 {
 enum IRPrimitive {
-  Uint32, Sint32, Uint64, Sint32, Uint128, Sint128
+  Uint32, Sint32, Uint64, Sint64
 };
 
 struct IRVariable {
-  IRVariable(IRPrimitive type, const u32 id, char const* const label) : type(type), id(id), label(label) {}
-private:
+  IRVariable(IRPrimitive type, const u32 id, char const* const label) : type(type), id(id), label(label), assigned(false) {}
   IRPrimitive type;
-  const u32 id;
-  char const* const label;
+  u32 id;
+  char const* label;
+  bool assigned;
+
+  bool HasValue() const { return assigned; }
+  bool IsNull() const { return !assigned; }
 };
 
 struct IRConstant {
   IRConstant() {}
-  IRConstant(IRPrimitive type, u128 value) : type(type), value(value) {}
+  IRConstant(IRPrimitive type, u64 value) : type(type), value(value) {}
+
+  u64 value = 0;
 private:
-  IRPrimitive type = Uint128;
-  u128 value = 0;
+  IRPrimitive type = Uint64;
 };
 
 struct IRAnyRef {
@@ -95,4 +99,47 @@ struct IRVarRef {
 private:
   IRVariable const* p_var;
 };
+}
+
+
+namespace std {
+inline auto to_string(n64::IRPrimitive data_type) -> std::string {
+  switch (data_type) {
+    case n64::IRPrimitive::Uint32:
+      return "u32";
+    case n64::IRPrimitive::Sint32:
+      return "s32";
+    case n64::IRPrimitive::Uint64:
+      return "u64";
+    case n64::IRPrimitive::Sint64:
+      return "s64";
+    default:
+      return "???";
+  }
+}
+
+inline auto to_string(n64::IRVariable const &variable) -> std::string {
+  if (variable.label) {
+    return fmt::format("var{}_{}", variable.id, variable.label);
+  }
+  return fmt::format("var{}", variable.id);
+}
+
+inline auto to_string(n64::IRConstant const &constant) -> std::string {
+  return fmt::format("0x{:0X}", constant.value);
+}
+
+inline auto to_string(n64::IRAnyRef const &value) -> std::string {
+  if (value.IsNull()) {
+    return "(null)";
+  }
+  if (value.IsConstant()) {
+    return std::to_string(value.GetConst());
+  }
+  return std::to_string(value.GetVar());
+}
+
+inline auto to_string(n64::IRVarRef const &variable) -> std::string {
+  return std::to_string(variable.Get());
+}
 }

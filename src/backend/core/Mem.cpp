@@ -99,11 +99,13 @@ std::vector<u8> Mem::OpenArchive(const std::string &path, size_t& sizeAdjusted) 
 
   std::vector<u8> buf{};
 
+  std::string rom_exts[] = {".n64",".z64",".v64",".N64",".Z64",".V64"};
+
   while(ar_parse_entry(archive)) {
     auto filename = ar_entry_get_name(archive);
     auto extension = fs::path(filename).extension();
 
-    if(std::any_of(std::begin(ROM_EXTENSIONS), std::end(ROM_EXTENSIONS), [&](auto x) {
+    if(std::any_of(std::begin(rom_exts), std::end(rom_exts), [&](auto x) {
       return extension == x;
     })) {
       auto size = ar_entry_get_size(archive);

@@ -13,16 +13,13 @@ void Scheduler::enqueueAbsolute(u64 t, const EventType type) {
 }
 
 u64 Scheduler::remove(EventType type) {
-  auto copy = events;
-  while(!copy.empty()) {
-    if(copy.top().type == type) {
-      u64 ret = copy.top().time - ticks;
-      copy.pop();
-      events.swap(copy);
+  for (auto& e : events) {
+    if(e.type == type) {
+      u64 ret = e.time - ticks;
+      e.type = NONE;
+      e.time = ticks;
       return ret;
     }
-
-    copy.pop();
   }
 
   return 0;
@@ -35,7 +32,7 @@ void Scheduler::tick(u64 t, n64::Mem& mem, n64::Registers& regs) {
   n64::PI& pi = mem.mmio.pi;
 
   while(ticks >= events.top().time) {
-    switch(events.top().type) {
+    switch(auto type = events.top().type) {
       case SI_DMA:
         si.status.dmaBusy = false;
         si.DMA(mem, regs);
@@ -53,7 +50,7 @@ void Scheduler::tick(u64 t, n64::Mem& mem, n64::Registers& regs) {
       case IMPOSSIBLE:
         Util::panic("Congratulations on keeping the emulator on for about 5 billion years, I guess, nerd.");
       default:
-        Util::panic("Unknown scheduler event type");
+        Util::panic("Unknown scheduler event type {}", static_cast<int>(type));
     }
     events.pop();
   }

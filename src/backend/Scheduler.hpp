@@ -34,17 +34,28 @@ struct Event {
   }
 };
 
+struct IterableEvents {
+  std::priority_queue<Event, std::vector<Event>, std::greater<>> events;
+public:
+  explicit IterableEvents() = default;
+  auto top() { return events.top(); }
+  auto pop() { events.pop(); }
+  auto begin() { return (Event*)(&events.top()); }
+  auto end() { return begin() + events.size(); }
+  auto push(Event e) { events.push(e); }
+};
+
 struct Scheduler {
   Scheduler() {
     enqueueAbsolute(std::numeric_limits<u64>::max(), IMPOSSIBLE);
   }
 
-  void enqueueRelative(u64, const EventType);
-  void enqueueAbsolute(u64, const EventType);
-  u64 remove(const EventType);
+  void enqueueRelative(u64, EventType);
+  void enqueueAbsolute(u64, EventType);
+  u64 remove(EventType);
   void tick(u64 t, n64::Mem&, n64::Registers&);
-  
-  std::priority_queue<Event, std::vector<Event>, std::greater<>> events;
+
+  IterableEvents events;
   u64 ticks = 0;
   u8 index = 0;
 };

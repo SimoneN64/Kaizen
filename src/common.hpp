@@ -39,9 +39,6 @@ static FORCE_INLINE constexpr u32 GetVideoFrequency(bool pal) {
 #define HALF_ADDRESS(addr) ((addr) ^ 2)
 #define BYTE_ADDRESS(addr) ((addr) ^ 3)
 
-#define ARCHIVE_TYPES {".zip",".7z",".rar",".tar"}
-#define ROM_EXTENSIONS {".n64",".z64",".v64",".N64",".Z64",".V64"}
-
 #define RD(x) (((x) >> 11) & 0x1F)
 #define RT(x) (((x) >> 16) & 0x1F)
 #define RS(x) (((x) >> 21) & 0x1F)

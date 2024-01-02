@@ -33,14 +33,12 @@ void Core::LoadROM(const std::string& rom_) {
   pause = false;
   romLoaded = true;
 
+  std::string archive_types[] = {".zip",".7z",".rar",".tar"};
+
   auto extension = fs::path(rom).extension().string();
-  bool isArchive = false;
-  for(const auto i : ARCHIVE_TYPES) {
-    if(extension == i) {
-      isArchive = true;
-      break;
-    }
-  }
+  bool isArchive = std::any_of(std::begin(archive_types), std::end(archive_types), [&extension](const auto& e) {
+    return e == extension;
+  });
 
   cpu->mem.LoadROM(isArchive, rom);
   GameDB::match(cpu->mem);

@@ -39,7 +39,7 @@ union FCR31 {
     unsigned:14;
   } __attribute__((__packed__));
 
-  u32 read() const {
+  [[nodiscard]] u32 read() const {
     return (fs << 24) | (compare << 23) | (cause << 12) | (enable << 7) | (flag << 2) | rounding_mode;
   }
 
@@ -101,12 +101,12 @@ struct Cop1 {
   friend struct Interpreter;
   friend struct JIT;
 
-  void SetCauseUnimplemented(Registers&);
-  void SetCauseUnderflow(Registers&);
-  void SetCauseInexact(Registers&);
-  void SetCauseDivisionByZero(Registers&);
-  void SetCauseOverflow(Registers&);
-  void SetCauseInvalid(Registers&);
+  void SetCauseUnimplemented();
+  void SetCauseUnderflow();
+  void SetCauseInexact();
+  void SetCauseDivisionByZero();
+  void SetCauseOverflow();
+  void SetCauseInvalid();
 private:
   template <typename T> auto FGR(Cop0Status&, u32) -> T&;
   void decodeInterp(Interpreter&, u32);

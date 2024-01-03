@@ -12,7 +12,7 @@ Mem::Mem() : flash(saveData) {
   memset(readPages, 0, PAGE_COUNT);
   memset(writePages, 0, PAGE_COUNT);
 
-  for(int i = 0; i < RDRAM_SIZE / PAGE_SIZE; i++) {
+  for(u64 i = 0; i < RDRAM_SIZE / PAGE_SIZE; i++) {
     const auto addr = (i * PAGE_SIZE) & RDRAM_DSIZE;
     const auto pointer = (uintptr_t) &mmio.rdp.rdram[addr];
     readPages[i] = pointer;

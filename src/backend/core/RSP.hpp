@@ -374,8 +374,8 @@ struct RSP {
     u32 mem_address = rsp.spDMASPAddr.address & 0xFF8;
     u32 dram_address = rsp.spDMADRAMAddr.address & 0xFFFFF8;
 
-    for (int i = 0; i < len.count + 1; i++) {
-      for(int j = 0; j < length; j++) {
+    for (u32 i = 0; i < len.count + 1; i++) {
+      for(u32 j = 0; j < length; j++) {
         if constexpr (isDRAMdest) {
           dst[dram_address + j] = src[(mem_address + j) & 0xFFF];
         } else {

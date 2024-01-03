@@ -15,7 +15,7 @@ void Cop0::mfc0(Registers& regs, u32 instr) {
   regs.gpr[RT(instr)] = s32(GetReg32(RD(instr)));
 }
 
-void Cop0::dmfc0(Registers& regs, u32 instr) {
+void Cop0::dmfc0(Registers& regs, u32 instr) const {
   regs.gpr[RT(instr)] = s64(GetReg64(RD(instr)));
 }
 

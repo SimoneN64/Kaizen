@@ -32,7 +32,7 @@ auto SI::Read(MI& mi, u32 addr) const -> u32 {
   }
 }
 
-void SI::DMA(Mem& mem, Registers& regs) {
+void SI::DMA(Mem& mem, Registers& regs) const {
   SI& si = mem.mmio.si;
   si.status.dmaBusy = false;
   if (toDram) {

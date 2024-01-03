@@ -464,7 +464,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
         cartAddrInternal = SREGION_PI_SRAM | ((cartAddrInternal & 0xFFFFF) << 1);
       }
 
-      for(int i = 0; i < len; i++) {
+      for(u32 i = 0; i < len; i++) {
         mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE] = BusRead<u8, true>(mem, cartAddrInternal + i);
       }
       dmaBusy = true;

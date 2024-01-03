@@ -6,7 +6,7 @@ namespace n64 { struct Core; }
 using namespace nlohmann;
 
 struct Settings {
-  Settings(n64::Core& core);
+  explicit Settings(n64::Core& core);
   ~Settings();
 
   [[nodiscard]] FORCE_INLINE float GetVolumeL() const { return volumeL; };

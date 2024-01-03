@@ -42,7 +42,7 @@ enum class FlashState : u8 {
 };
 
 struct Flash {
-  Flash(mio::mmap_sink&);
+  explicit Flash(mio::mmap_sink&);
   ~Flash() = default;
   void Reset();
   void Load(SaveType, const std::string&);
@@ -148,8 +148,8 @@ private:
   friend struct Core;
   u8 isviewer[ISVIEWER_SIZE]{};
   std::string sramPath{};
-  mio::mmap_sink saveData;
-  int mmioSize, flashSize;
+  mio::mmap_sink saveData{};
+  int mmioSize{}, flashSize{};
 
   FORCE_INLINE bool IsROMPAL() {
     static const char pal_codes[] = {'D', 'F', 'I', 'P', 'S', 'U', 'X', 'Y'};

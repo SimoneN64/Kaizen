@@ -103,7 +103,7 @@ void PIF::PollController() {
     joybusDevices[channel].controller.c_left = state[SDL_SCANCODE_J];
     joybusDevices[channel].controller.c_right = state[SDL_SCANCODE_L];
 
-    s16 xaxis = 0, yaxis = 0;
+    s8 xaxis = 0, yaxis = 0;
     if (state[SDL_SCANCODE_LEFT]) {
       xaxis = -86;
     } else if (state[SDL_SCANCODE_RIGHT]) {

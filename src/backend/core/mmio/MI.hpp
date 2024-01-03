@@ -24,7 +24,7 @@ struct MI {
   [[nodiscard]] auto Read(u32) const -> u32;
   void Write(Registers& regs, u32, u32);
 
-  u32 miMode;
+  u32 miMode{};
   MIIntr miIntr{}, miIntrMask{};
 };
 }

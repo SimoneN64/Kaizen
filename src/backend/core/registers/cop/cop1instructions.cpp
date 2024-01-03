@@ -10,12 +10,12 @@ namespace n64 {
 template<> auto Cop1::FGR<s32>(Cop0Status& status, u32 index) -> s32& {
   if (status.fr) {
     return fgr[index].int32;
-  }
-  else if (index & 1) {
-    return fgr[index & ~1].int32h;
-  }
-  else {
-    return fgr[index].int32;
+  } else {
+    if (index & 1) {
+      return fgr[index & ~1].int32h;
+    } else {
+      return fgr[index].int32;
+    }
   }
 }
 
@@ -26,20 +26,19 @@ template<> auto Cop1::FGR<u32>(Cop0Status& status, u32 index) -> u32& {
 template<> auto Cop1::FGR<float>(Cop0Status& status, u32 index) -> float& {
   if (status.fr) {
     return fgr[index].float32;
-  }
-  else if (index & 1) {
-    return fgr[index & ~1].float32h;
-  }
-  else {
-    return fgr[index & ~1].float32;
+  } else {
+    if (index & 1) {
+      return fgr[index & ~1].float32h;
+    } else {
+      return fgr[index].float32;
+    }
   }
 }
 
 template<> auto Cop1::FGR<s64>(Cop0Status& status, u32 index) -> s64& {
   if (status.fr) {
     return fgr[index].int64;
-  }
-  else {
+  } else {
     return fgr[index & ~1].int64;
   }
 }
@@ -51,8 +50,7 @@ template<> auto Cop1::FGR<u64>(Cop0Status& status, u32 index) -> u64& {
 template<> auto Cop1::FGR<double>(Cop0Status& status, u32 index) -> double& {
   if (status.fr) {
     return fgr[index].float64;
-  }
-  else {
+  } else {
     return fgr[index & ~1].float64;
   }
 }
@@ -82,42 +80,42 @@ FORCE_INLINE int PushRoundingMode(const FCR31& fcr31) {
   return og;
 }
 
-void Cop1::SetCauseUnimplemented(Registers& regs) {
-  regs.cop1.fcr31.cause_unimplemented_operation = true;
+void Cop1::SetCauseUnimplemented() {
+  fcr31.cause_unimplemented_operation = true;
 }
 
-void Cop1::SetCauseUnderflow(Registers& regs) {
-  regs.cop1.fcr31.cause_underflow = true;
-  if(!regs.cop1.fcr31.enable_underflow) {
-    regs.cop1.fcr31.flag_underflow = true;
+void Cop1::SetCauseUnderflow() {
+  fcr31.cause_underflow = true;
+  if(!fcr31.enable_underflow) {
+    fcr31.flag_underflow = true;
   }
 }
 
-void Cop1::SetCauseInexact(Registers& regs) {
-  regs.cop1.fcr31.cause_inexact_operation = true;
-  if(!regs.cop1.fcr31.enable_inexact_operation) {
-    regs.cop1.fcr31.flag_inexact_operation = true;
+void Cop1::SetCauseInexact() {
+  fcr31.cause_inexact_operation = true;
+  if(!fcr31.enable_inexact_operation) {
+    fcr31.flag_inexact_operation = true;
   }
 }
 
-void Cop1::SetCauseDivisionByZero(Registers& regs) {
-  regs.cop1.fcr31.cause_division_by_zero = true;
-  if(!regs.cop1.fcr31.enable_division_by_zero) {
-    regs.cop1.fcr31.flag_division_by_zero = true;
+void Cop1::SetCauseDivisionByZero() {
+  fcr31.cause_division_by_zero = true;
+  if(!fcr31.enable_division_by_zero) {
+    fcr31.flag_division_by_zero = true;
   }
 }
 
-void Cop1::SetCauseOverflow(Registers& regs) {
-  regs.cop1.fcr31.cause_overflow = true;
-  if(!regs.cop1.fcr31.enable_overflow) {
-    regs.cop1.fcr31.flag_overflow = true;
+void Cop1::SetCauseOverflow() {
+  fcr31.cause_overflow = true;
+  if(!fcr31.enable_overflow) {
+    fcr31.flag_overflow = true;
   }
 }
 
-void Cop1::SetCauseInvalid(Registers& regs) {
-  regs.cop1.fcr31.cause_invalid_operation = true;
-  if(!regs.cop1.fcr31.enable_invalid_operation) {
-    regs.cop1.fcr31.flag_invalid_operation = true;
+void Cop1::SetCauseInvalid() {
+  fcr31.cause_invalid_operation = true;
+  if(!fcr31.enable_invalid_operation) {
+    fcr31.flag_invalid_operation = true;
   }
 }
 
@@ -144,14 +142,14 @@ FORCE_INLINE void SetCauseByArgWCVT(Registers& regs, T f) {
     case FP_NAN:
     case FP_INFINITE:
     case FP_SUBNORMAL:
-      regs.cop1.SetCauseUnimplemented(regs);
+      regs.cop1.SetCauseUnimplemented();
       CheckFPUException();
       break;
 
     case FP_NORMAL:
       // Check overflow
       if (f >= 2147483648.0f || f < -2147483648.0f) {
-        regs.cop1.SetCauseUnimplemented(regs);
+        regs.cop1.SetCauseUnimplemented();
         CheckFPUException();
       }
       break;
@@ -167,14 +165,14 @@ FORCE_INLINE void SetCauseByArgLCVT(Registers& regs, T f) {
     case FP_NAN:
     case FP_INFINITE:
     case FP_SUBNORMAL:
-      regs.cop1.SetCauseUnimplemented(regs);
+      regs.cop1.SetCauseUnimplemented();
       CheckFPUException();
       break;
 
     case FP_NORMAL:
       // Check overflow
       if (f >= 9007199254740992.000000 || f <= -9007199254740992.000000) {
-        regs.cop1.SetCauseUnimplemented(regs);
+        regs.cop1.SetCauseUnimplemented();
         CheckFPUException();
       }
       break;
@@ -194,33 +192,33 @@ FORCE_INLINE void SetFPUCauseRaised(Registers& regs, int raised) {
 
   if (raised & FE_UNDERFLOW) {
     if (!regs.cop1.fcr31.fs || regs.cop1.fcr31.enable_underflow || regs.cop1.fcr31.enable_inexact_operation) {
-      regs.cop1.SetCauseUnimplemented(regs);
+      regs.cop1.SetCauseUnimplemented();
       return;
     } else {
-      regs.cop1.SetCauseUnderflow(regs);
+      regs.cop1.SetCauseUnderflow();
     }
   }
 
   if (raised & FE_INEXACT) {
-    regs.cop1.SetCauseInexact(regs);
+    regs.cop1.SetCauseInexact();
   }
 
   if (raised & FE_DIVBYZERO) {
-    regs.cop1.SetCauseDivisionByZero(regs);
+    regs.cop1.SetCauseDivisionByZero();
   }
 
   if (raised & FE_OVERFLOW) {
-    regs.cop1.SetCauseOverflow(regs);
+    regs.cop1.SetCauseOverflow();
   }
 
   if (raised & FE_INVALID) {
-    regs.cop1.SetCauseInvalid(regs);
+    regs.cop1.SetCauseInvalid();
   }
 }
 
 FORCE_INLINE void SetFPUCauseCVTRaised(Registers& regs, int raised) {
   if(raised & FE_INVALID) {
-    regs.cop1.SetCauseUnimplemented(regs);
+    regs.cop1.SetCauseUnimplemented();
     return;
   }
 
@@ -251,15 +249,15 @@ FORCE_INLINE void SetCauseByArg(Registers& regs, T f) {
   switch(c) {
     case FP_NAN:
       if(isqnan(f)) {
-        regs.cop1.SetCauseInvalid(regs);
+        regs.cop1.SetCauseInvalid();
         CheckFPUException();
       } else {
-        regs.cop1.SetCauseUnimplemented(regs);
+        regs.cop1.SetCauseUnimplemented();
         CheckFPUException();
       }
       break;
     case FP_SUBNORMAL:
-      regs.cop1.SetCauseUnimplemented(regs);
+      regs.cop1.SetCauseUnimplemented();
       CheckFPUException();
       break;
     case FP_INFINITE:
@@ -293,12 +291,12 @@ FORCE_INLINE void SetCauseOnResult(Registers& regs, T& d) {
       break;
     case FP_SUBNORMAL:
       if (!cop1.fcr31.fs || cop1.fcr31.enable_underflow || cop1.fcr31.enable_inexact_operation) {
-        regs.cop1.SetCauseUnimplemented(regs);
+        regs.cop1.SetCauseUnimplemented();
         CheckFPUException();
       } else {
         // Since the if statement checks for the corresponding enable bits, it's safe to turn these cause bits on here.
-        regs.cop1.SetCauseUnderflow(regs);
-        regs.cop1.SetCauseInexact(regs);
+        regs.cop1.SetCauseUnderflow();
+        regs.cop1.SetCauseInexact();
         switch (cop1.fcr31.rounding_mode) {
           case 0:
           case 1:
@@ -333,7 +331,7 @@ FORCE_INLINE void SetCauseOnResult(Registers& regs, T& d) {
 #define CheckResult(f) do { SetCauseOnResult(regs, (f)); CheckFPUException(); } while(0)
 
 #define any_unordered(fs, ft) (std::isnan(fs) || std::isnan(ft))
-#define CheckRound(a, b) do { if ((a) != (b)) { SetCauseInexact(regs); } CheckFPUException(); } while(0)
+#define CheckRound(a, b) do { if ((a) != (b)) { SetCauseInexact(); } CheckFPUException(); } while(0)
 
 template <typename T>
 FORCE_INLINE bool is_nan(T f) {
@@ -350,14 +348,14 @@ FORCE_INLINE bool is_nan(T f) {
 
 #define checknanregs(fs, ft) do { \
   if(is_nan(fs) || is_nan(ft)) {                                       \
-    regs.cop1.SetCauseInvalid(regs);                                           \
+    regs.cop1.SetCauseInvalid();                                           \
     CheckFPUException();                                             \
   }                                                                  \
 } while(0)
 
 #define checkqnanregs(fs, ft) do { \
   if(isqnan(fs) || isqnan(ft)) {                                     \
-    regs.cop1.SetCauseInvalid(regs);                                           \
+    regs.cop1.SetCauseInvalid();                                           \
     CheckFPUException();                                             \
   }                                                                  \
 } while(0)
@@ -488,7 +486,7 @@ void Cop1::cvtsl(Registers& regs, u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<s64>(regs.cop0.status, FS(instr));
   if (fs >= s64(0x0080000000000000) || fs < s64(0xff80000000000000)) {
-    SetCauseUnimplemented(regs);
+    SetCauseUnimplemented();
     CheckFPUException();
   }
   float result;
@@ -547,7 +545,7 @@ void Cop1::cvtdl(Registers& regs, u32 instr) {
   auto fs = FGR<s64>(regs.cop0.status, FS(instr));
 
   if (fs >= s64(0x0080000000000000) || fs < s64(0xff80000000000000)) {
-    SetCauseUnimplemented(regs);
+    SetCauseUnimplemented();
     CheckFPUException();
   }
   double result;

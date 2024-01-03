@@ -6,14 +6,14 @@
 
 namespace Util {
 template<typename T>
-static FORCE_INLINE T ReadAccess(u8 *data, u32 index) {
+static FORCE_INLINE T ReadAccess(const u8 *data, u32 index) {
   if constexpr (sizeof(T) == 8) {
-    u32 hi = *reinterpret_cast<u32*>(&data[index + 0]);
-    u32 lo = *reinterpret_cast<u32*>(&data[index + 4]);
+    u32 hi = *reinterpret_cast<const u32*>(&data[index + 0]);
+    u32 lo = *reinterpret_cast<const u32*>(&data[index + 4]);
     T result = ((T)hi << 32) | (T)lo;
     return result;
   } else {
-    return *reinterpret_cast<T*>(&data[index]);
+    return *reinterpret_cast<const T*>(&data[index]);
   }
 }
 
@@ -31,14 +31,14 @@ static FORCE_INLINE void WriteAccess(u8 *data, u32 index, T val) {
 }
 
 FORCE_INLINE void SwapBuffer32(size_t size, u8 *data) {
-  for (int i = 0; i < size; i += 4) {
+  for (size_t i = 0; i < size; i += 4) {
     u32 original = *(u32 *) &data[i];
     *(u32 *) &data[i] = bswap_32(original);
   }
 }
 
 FORCE_INLINE void SwapBuffer16(size_t size, u8 *data) {
-  for (int i = 0; i < size; i += 2) {
+  for (size_t i = 0; i < size; i += 2) {
     u16 original = *(u16 *) &data[i];
     *(u16 *) &data[i] = bswap_16(original);
   }

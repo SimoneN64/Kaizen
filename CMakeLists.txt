@@ -82,3 +82,4 @@ file(REMOVE
 
 target_link_libraries(kaizen PUBLIC frontend frontend-imgui
   discord-rpc imgui nfd parallel-rdp backend fmt::fmt mio::mio nlohmann_json::nlohmann_json core registers jit interpreter mem unarr mmio rsp SDL2::SDL2main SDL2::SDL2)
+target_compile_options(kaizen PUBLIC -Wextra)

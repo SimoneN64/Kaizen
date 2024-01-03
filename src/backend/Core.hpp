@@ -18,8 +18,7 @@ struct Core {
   void Serialize();
   void Deserialize();
   void TogglePause() { pause = !pause; }
-  void HandleEvents(Event*);
-  [[nodiscard]] VI& GetVI() { return cpu->mem.mmio.vi; }
+  [[nodiscard]] VI& GetVI() const { return cpu->mem.mmio.vi; }
 
   u32 breakpoint = 0;
 
@@ -30,7 +29,7 @@ struct Core {
   std::string rom;
   std::unique_ptr<BaseCPU> cpu;
   std::vector<u8> serialized[10]{};
-  int memSize, cpuSize, verSize;
+  size_t memSize{}, cpuSize{}, verSize{};
   int slot = 0;
 };
 

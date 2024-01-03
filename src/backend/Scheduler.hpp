@@ -38,10 +38,10 @@ struct IterableEvents {
   std::priority_queue<Event, std::vector<Event>, std::greater<>> events;
 public:
   explicit IterableEvents() = default;
-  auto top() { return events.top(); }
+  [[nodiscard]] auto top() const { return events.top(); }
   auto pop() { events.pop(); }
-  auto begin() { return (Event*)(&events.top()); }
-  auto end() { return begin() + events.size(); }
+  [[nodiscard]] auto begin() const { return (Event*)(&events.top()); }
+  [[nodiscard]] auto end() const { return begin() + events.size(); }
   auto push(Event e) { events.push(e); }
 };
 

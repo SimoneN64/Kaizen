@@ -214,7 +214,7 @@ struct Cop0 {
   Cop0();
 
   u32 GetReg32(u8);
-  u64 GetReg64(u8) const;
+  [[nodiscard]] u64 GetReg64(u8) const;
 
   void SetReg32(u8, u32);
   void SetReg64(u8, u64);
@@ -249,15 +249,15 @@ struct Cop0 {
   template <class T>
   void decode(T&, u32);
   FORCE_INLINE u32 GetRandom() {
-    int val = rand();
-    int wired = GetWired();
-    int lower, upper;
-    if(wired > 31) {
+    u32 val = rand();
+    auto wired_ = GetWired();
+    u32 lower, upper;
+    if(wired_ > 31) {
       lower = 0;
       upper = 64;
     } else {
-      lower = wired;
-      upper = 32 - wired;
+      lower = wired_;
+      upper = 32 - wired_;
     }
 
     val = (val % upper) + lower;
@@ -276,15 +276,15 @@ struct Cop0 {
       || (user_mode && status.ux);
   }
 private:
-  FORCE_INLINE u32 GetWired() { return wired & 0x3F; }
-  FORCE_INLINE u32 GetCount() { return u32(u64(count >> 1)); }
+  [[nodiscard]] FORCE_INLINE u32 GetWired() const { return wired & 0x3F; }
+  [[nodiscard]] FORCE_INLINE u32 GetCount() const { return u32(u64(count >> 1)); }
 
   void decodeInterp(Registers&, u32);
   void decodeJIT(JIT&, u32);
   void mtc0(Registers&, u32);
   void dmtc0(Registers&, u32);
   void mfc0(Registers&, u32);
-  void dmfc0(Registers&, u32);
+  void dmfc0(Registers&, u32) const;
   void eret(Registers&);
 
   void tlbr();

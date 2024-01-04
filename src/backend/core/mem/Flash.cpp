@@ -42,7 +42,7 @@ void Flash::Load(SaveType saveType, const std::string& path) {
 }
 
 void Flash::CommandExecute() {
-  Util::debug("Flash::CommandExecute");
+  Util::trace("Flash::CommandExecute");
   switch (state) {
     case FlashState::Idle:
       break;
@@ -176,7 +176,7 @@ template <> u8 Flash::Read<u8>(u32 index) const {
     case FlashState::Read: {
       if(saveData.is_mapped()) {
         u8 value = saveData[index];
-        Util::debug("Flash read byte in state read: index {:08X} = {:02X}", index, value);
+        Util::trace("Flash read byte in state read: index {:08X} = {:02X}", index, value);
         return value;
       } else {
         Util::panic("Accessing flash when not mapped!");
@@ -185,7 +185,7 @@ template <> u8 Flash::Read<u8>(u32 index) const {
     case FlashState::Status: {
       u32 offset = (7 - (index % 8)) * 8;
       u8 value = (status >> offset) & 0xFF;
-      Util::debug("Flash read byte in state status: index {:08X} = {:02X}", index, value);
+      Util::trace("Flash read byte in state status: index {:08X} = {:02X}", index, value);
       return value;
     }
     default: Util::panic("Flash read byte while in unknown state");

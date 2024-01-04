@@ -62,7 +62,7 @@ template<> auto PI::BusRead<u8, true>(Mem& mem, u32 addr) -> u8 {
     case REGION_PI_ROM: {
       // round to nearest 4 byte boundary, keeping old LSB
       u32 index = BYTE_ADDRESS(addr) - SREGION_PI_ROM;
-      if (index > mem.rom.size) {
+      if (index >= mem.rom.size) {
         Util::warn("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM! ({}/0x{:016X})", addr, index, index, mem.rom.size, mem.rom.size);
         return 0xFF;
       }
@@ -92,7 +92,7 @@ template<> auto PI::BusRead<u8, false>(Mem& mem, u32 addr) -> u8 {
       addr = (addr + 2) & ~2;
       // round to nearest 4 byte boundary, keeping old LSB
       u32 index = BYTE_ADDRESS(addr) - SREGION_PI_ROM;
-      if (index > mem.rom.size) {
+      if (index >= mem.rom.size) {
         Util::warn("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM! ({}/0x{:016X})", addr, index, index, mem.rom.size, mem.rom.size);
         return 0xFF;
       }
@@ -103,33 +103,32 @@ template<> auto PI::BusRead<u8, false>(Mem& mem, u32 addr) -> u8 {
   }
 }
 
-template<> void PI::BusWrite<u8, true>(Mem& mem, u32 addr, u8 val) {
+template<> void PI::BusWrite<u8, true>(Mem& mem, u32 addr, u32 val) {
   switch (addr) {
-  case REGION_PI_UNKNOWN:
-    Util::panic("Writing byte 0x{:02X} to address 0x{:08X} in unsupported region: REGION_PI_UNKNOWN", val, addr);
-  case REGION_PI_64DD_REG:
-    if (addr == 0x05000020) {
-      fprintf(stderr, "%c", val);
-    }
-    else {
-      Util::warn("Writing byte 0x{:02X} to address 0x{:08X} in region: REGION_PI_64DD_ROM, this is the 64DD, ignoring!", val, addr);
-    }
-    return;
-  case REGION_PI_64DD_ROM:
-    Util::panic("Writing byte 0x{:02X} to address 0x{:08X} in unsupported region: REGION_PI_64DD_ROM", val, addr);
-  case REGION_PI_SRAM:
-    mem.BackupWrite<u8>(addr - SREGION_PI_SRAM, val);
-    return;
-  case REGION_PI_ROM:
-    Util::warn("Writing byte 0x{:02X} to address 0x{:08X} in unsupported region: REGION_PI_ROM", val, addr);
-    return;
-  default:
-    Util::panic("Should never end up here! Access to address {:08X} which did not match any PI bus regions!", addr);
+    case REGION_PI_UNKNOWN:
+      Util::panic("Writing byte 0x{:02X} to address 0x{:08X} in unsupported region: REGION_PI_UNKNOWN", val, addr);
+    case REGION_PI_64DD_REG:
+      if (addr == 0x05000020) {
+        fprintf(stderr, "%c", val);
+      } else {
+        Util::warn("Writing byte 0x{:02X} to address 0x{:08X} in region: REGION_PI_64DD_ROM, this is the 64DD, ignoring!", val, addr);
+      }
+      break;
+    case REGION_PI_64DD_ROM:
+      Util::panic("Writing byte 0x{:02X} to address 0x{:08X} in unsupported region: REGION_PI_64DD_ROM", val, addr);
+    case REGION_PI_SRAM:
+      mem.BackupWrite<u8>(addr - SREGION_PI_SRAM, val);
+      break;
+    case REGION_PI_ROM:
+      Util::warn("Writing byte 0x{:02X} to address 0x{:08X} in unsupported region: REGION_PI_ROM", val, addr);
+      break;
+    default:
+      Util::panic("Should never end up here! Access to address {:08X} which did not match any PI bus regions!", addr);
   }
 }
 
-template<> void PI::BusWrite<u8, false>(Mem& mem, u32 addr, u8 val) {
-  int latch_shift = 24 - (addr & 1) * 8;
+template<> void PI::BusWrite<u8, false>(Mem& mem, u32 addr, u32 val) {
+  u8 latch_shift = 24 - (addr & 1) * 8;
 
   if (!WriteLatch(val << latch_shift) && addr != 0x05000020) [[unlikely]] {
     return;
@@ -169,7 +168,7 @@ template <> auto PI::BusRead<u16, true>(Mem& mem, u32 addr) -> u16 {
   return BusRead<u16, false>(mem, addr);
 }
 
-template <> void PI::BusWrite<u16, false>(Mem&, u32 addr, u16 val) {
+template <> void PI::BusWrite<u16, false>(Mem&, u32 addr, u32 val) {
   if (!WriteLatch(val << 16)) [[unlikely]] {
     return;
   }
@@ -191,7 +190,7 @@ template <> void PI::BusWrite<u16, false>(Mem&, u32 addr, u16 val) {
   }
 }
 
-template <> void PI::BusWrite<u16, true>(Mem& mem, u32 addr, u16 val) {
+template <> void PI::BusWrite<u16, true>(Mem& mem, u32 addr, u32 val) {
   BusWrite<u16, false>(mem, addr, val);
 }
 
@@ -220,8 +219,7 @@ template <> auto PI::BusRead<u32, false>(Mem& mem, u32 addr) -> u32 {
             return htobe32(Util::ReadAccess<u32>(mem.isviewer, addr - SREGION_CART_ISVIEWER_BUFFER));
           case CART_ISVIEWER_FLUSH:
             Util::panic("Read from ISViewer flush!");
-          default:
-            Util::panic("Read from unknown address {:08X} in REGION_PI_ROM!", addr);
+          default: break;
         }
         Util::warn("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM!", addr, index, index);
         return 0;
@@ -283,6 +281,7 @@ template <> void PI::BusWrite<u32, false>(Mem& mem, u32 addr, u32 val) {
         }
         default:
           if (!WriteLatch(val)) [[unlikely]] {
+            Util::warn("Couldn't latch PI bus, ignoring write to REGION_PI_ROM");
             return;
           }
           Util::warn("Writing word 0x{:08X} to address 0x{:08X} in unsupported region: REGION_PI_ROM", val, addr);
@@ -293,7 +292,8 @@ template <> void PI::BusWrite<u32, false>(Mem& mem, u32 addr, u32 val) {
   }
 }
 
-template <> void PI::BusWrite<u32, true>(Mem& mem, u32 addr, u32 val) {
+template <>
+void PI::BusWrite<u32, true>(Mem& mem, u32 addr, u32 val) {
   BusWrite<u32, false>(mem, addr, val);
 }
 
@@ -327,7 +327,7 @@ template <> auto PI::BusRead<u64, true>(Mem& mem, u32 addr) -> u64 {
   return BusRead<u64, false>(mem, addr);
 }
 
-template <> void PI::BusWrite<u64, false>(Mem&, u32 addr, u64 val) {
+template <> void PI::BusWrite<false>(Mem&, u32 addr, u64 val) {
   if (!WriteLatch(val >> 32)) [[unlikely]] {
     return;
   }
@@ -349,8 +349,8 @@ template <> void PI::BusWrite<u64, false>(Mem&, u32 addr, u64 val) {
   }
 }
 
-template <> void PI::BusWrite<u64, true>(Mem& mem, u32 addr, u64 val) {
-  BusWrite<u64, false>(mem, addr, val);
+template <> void PI::BusWrite<true>(Mem& mem, u32 addr, u64 val) {
+  BusWrite<false>(mem, addr, val);
 }
 
 auto PI::Read(MI& mi, u32 addr) const -> u32 {

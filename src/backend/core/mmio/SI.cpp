@@ -40,12 +40,12 @@ void SI::DMA(Mem& mem, Registers& regs) const {
     for(int i = 0; i < 64; i++) {
       mem.mmio.rdp.rdram[BYTE_ADDRESS(si.dramAddr + i)] = si.pif.Read(si.pifAddr + i);
     }
-    //Util::debug("SI DMA from PIF RAM to RDRAM ({:08X} to {:08X})", si.pifAddr, si.dramAddr);
+    Util::trace("SI DMA from PIF RAM to RDRAM ({:08X} to {:08X})", si.pifAddr, si.dramAddr);
   } else {
     for(int i = 0; i < 64; i++) {
       si.pif.Write(si.pifAddr + i, mem.mmio.rdp.rdram[BYTE_ADDRESS(si.dramAddr + i)]);
     }
-    //Util::debug("SI DMA from RDRAM to PIF RAM ({:08X} to {:08X})", si.dramAddr, si.pifAddr);
+    Util::trace("SI DMA from RDRAM to PIF RAM ({:08X} to {:08X})", si.dramAddr, si.pifAddr);
     si.pif.ProcessCommands(mem);
   }
   InterruptRaise(mem.mmio.mi, regs, Interrupt::SI);

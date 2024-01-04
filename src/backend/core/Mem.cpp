@@ -368,7 +368,7 @@ template<> void Mem::Write<u8>(Registers& regs, u32 paddr, u32 val) {
         }
       } break;
       case REGION_CART:
-        Util::debug("BusWrite<u8> @ {:08X} = {:02X}", paddr, val);
+        Util::trace("BusWrite<u8> @ {:08X} = {:02X}", paddr, val);
         mmio.pi.BusWrite<u8, false>(*this, paddr, val);
         break;
       case MMIO_REGION:
@@ -417,7 +417,7 @@ template<> void Mem::Write<u16>(Registers& regs, u32 paddr, u32 val) {
         }
       } break;
       case REGION_CART:
-        Util::debug("BusWrite<u8> @ {:08X} = {:04X}", paddr, val);
+        Util::trace("BusWrite<u8> @ {:08X} = {:04X}", paddr, val);
         mmio.pi.BusWrite<u16, false>(*this, paddr, val);
         break;
       case MMIO_REGION:
@@ -464,7 +464,7 @@ template<> void Mem::Write<u32>(Registers& regs, u32 paddr, u32 val) {
         }
       } break;
       case REGION_CART:
-        Util::debug("BusWrite<u8> @ {:08X} = {:08X}", paddr, val);
+        Util::trace("BusWrite<u8> @ {:08X} = {:08X}", paddr, val);
         mmio.pi.BusWrite<u32, false>(*this, paddr, val);
         break;
       case MMIO_REGION:
@@ -508,8 +508,8 @@ void Mem::Write(Registers& regs, u32 paddr, u64 val) {
         }
       } break;
       case REGION_CART:
-        Util::debug("BusWrite<u8> @ {:08X} = {:016X}", paddr, val);
-        mmio.pi.BusWrite<u64, false>(*this, paddr, val);
+        Util::trace("BusWrite<u8> @ {:08X} = {:016X}", paddr, val);
+        mmio.pi.BusWrite<false>(*this, paddr, val);
         break;
       case MMIO_REGION:
         Util::panic("MMIO Write!");
@@ -569,7 +569,8 @@ template <> u8 Mem::BackupRead<u8>(u32 addr) {
 template <> void Mem::BackupWrite<u32>(u32 addr, u32 val) {
   switch(saveType) {
     case SAVE_NONE:
-      Util::panic("Accessing cartridge with save type SAVE_NONE in write word");
+      Util::warn("Accessing cartridge with save type SAVE_NONE in write word");
+      break;
     case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
       Util::panic("Accessing cartridge with save type SAVE_EEPROM in write word");
     case SAVE_FLASH_1m:
@@ -585,7 +586,8 @@ template <> void Mem::BackupWrite<u32>(u32 addr, u32 val) {
 template <> void Mem::BackupWrite<u8>(u32 addr, u8 val) {
   switch(saveType) {
     case SAVE_NONE:
-      Util::panic("Accessing cartridge with save type SAVE_NONE in write word");
+      Util::warn("Accessing cartridge with save type SAVE_NONE in write word");
+      break;
     case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
       Util::panic("Accessing cartridge with save type SAVE_EEPROM in write word");
     case SAVE_FLASH_1m:

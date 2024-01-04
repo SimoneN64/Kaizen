@@ -14,7 +14,9 @@ struct PI {
   void Write(Mem&, Registers&, u32, u32);
 
   template<typename T, bool isDma>
-  void BusWrite(Mem&, u32, T);
+  void BusWrite(Mem&, u32, u32);
+  template<bool isDma>
+  void BusWrite(Mem&, u32, u64);
 
   template<typename T, bool isDma>
   auto BusRead(Mem&, u32) -> T;

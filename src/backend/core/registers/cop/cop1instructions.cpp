@@ -121,7 +121,7 @@ void Cop1::SetCauseInvalid() {
 
 #define PUSHROUNDING int orig_round = PushRoundingMode(fcr31)
 #define POPROUNDING fesetround(orig_round)
-#define OP_CheckExcept(op) do { PUSHROUNDING; feclearexcept(FE_ALL_EXCEPT); op; SetFPUCauseRaised(regs, fetestexcept(FE_ALL_EXCEPT)); POPROUNDING; } while(0)
+#define OP_CheckExcept(op) do { feclearexcept(FE_ALL_EXCEPT); PUSHROUNDING; op; SetFPUCauseRaised(regs, fetestexcept(FE_ALL_EXCEPT)); POPROUNDING; } while(0)
 #define CVT_OP_CheckExcept(op) do { feclearexcept(FE_ALL_EXCEPT); op; SetFPUCauseCVTRaised(regs, fetestexcept(FE_ALL_EXCEPT)); CheckFPUException(); } while(0)
 
 #define OP(T, op) do { \
@@ -138,7 +138,8 @@ void Cop1::SetCauseInvalid() {
 
 template <typename T>
 FORCE_INLINE void SetCauseByArgWCVT(Registers& regs, T f) {
-  switch (std::fpclassify(f)) {
+  regs.cop1.fp_class = std::fpclassify(f);
+  switch (regs.cop1.fp_class) {
     case FP_NAN:
     case FP_INFINITE:
     case FP_SUBNORMAL:
@@ -161,7 +162,8 @@ FORCE_INLINE void SetCauseByArgWCVT(Registers& regs, T f) {
 
 template <typename T>
 FORCE_INLINE void SetCauseByArgLCVT(Registers& regs, T f) {
-  switch (std::fpclassify(f)) {
+  regs.cop1.fp_class = std::fpclassify(f);
+  switch (regs.cop1.fp_class) {
     case FP_NAN:
     case FP_INFINITE:
     case FP_SUBNORMAL:
@@ -190,7 +192,7 @@ FORCE_INLINE void SetFPUCauseRaised(Registers& regs, int raised) {
     return;
   }
 
-  if (raised & FE_UNDERFLOW) {
+  if (((raised & FE_UNDERFLOW) != 0) || regs.cop1.fp_class == FP_SUBNORMAL) {
     if (!regs.cop1.fcr31.fs || regs.cop1.fcr31.enable_underflow || regs.cop1.fcr31.enable_inexact_operation) {
       regs.cop1.SetCauseUnimplemented();
       return;
@@ -245,8 +247,8 @@ FORCE_INLINE bool isqnan(T f) {
 
 template <typename T>
 FORCE_INLINE void SetCauseByArg(Registers& regs, T f) {
-  int c = std::fpclassify(f);
-  switch(c) {
+  regs.cop1.fp_class = std::fpclassify(f);
+  switch(regs.cop1.fp_class) {
     case FP_NAN:
       if(isqnan(f)) {
         regs.cop1.SetCauseInvalid();
@@ -265,7 +267,7 @@ FORCE_INLINE void SetCauseByArg(Registers& regs, T f) {
     case FP_NORMAL:
       break; // No-op, these are fine.
     default:
-      Util::panic("Unknown floating point classification: {}", c);
+      Util::panic("Unknown floating point classification: {}", regs.cop1.fp_class);
   }
 }
 
@@ -274,7 +276,7 @@ FORCE_INLINE void SetCauseByArg(Registers& regs, T f) {
 template <typename T>
 FORCE_INLINE void SetCauseOnResult(Registers& regs, T& d) {
   Cop1& cop1 = regs.cop1;
-  int classification = std::fpclassify(d);
+  regs.cop1.fp_class = std::fpclassify(d);
   T magic, min;
   if constexpr(std::is_same_v<T, float>) {
     u32 c = 0x7FBFFFFF;
@@ -285,7 +287,7 @@ FORCE_INLINE void SetCauseOnResult(Registers& regs, T& d) {
     magic = U64_TO_D(c);
     min = DBL_MIN;
   }
-  switch (classification) {
+  switch (regs.cop1.fp_class) {
     case FP_NAN:
       d = magic; // set result to sNAN
       break;
@@ -324,7 +326,7 @@ FORCE_INLINE void SetCauseOnResult(Registers& regs, T& d) {
     case FP_NORMAL:
       break; // No-op, these are fine.
     default:
-      Util::panic("Unknown FP classification: {}", classification);
+      Util::panic("Unknown FP classification: {}", regs.cop1.fp_class);
   }
 }
 

@@ -34,9 +34,7 @@ void Scheduler::tick(u64 t, n64::Mem& mem, n64::Registers& regs) {
   while(ticks >= events.top().time) {
     switch(auto type = events.top().type) {
       case SI_DMA:
-        si.status.dmaBusy = false;
         si.DMA(mem, regs);
-        InterruptRaise(mi, regs, n64::Interrupt::SI);
         break;
       case PI_DMA_COMPLETE:
         InterruptRaise(mi, regs, n64::Interrupt::PI);

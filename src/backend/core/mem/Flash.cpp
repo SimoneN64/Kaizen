@@ -1,4 +1,5 @@
 #include <Mem.hpp>
+#include <cassert>
 
 namespace n64 {
 constexpr auto FLASH_SIZE = 1_mb;
@@ -159,10 +160,11 @@ template <> void Flash::Write<u8>(u32 index, u8 val) {
     case FlashState::Idle: Util::panic("Invalid FlashState::Idle with Write<u8>");
     case FlashState::Status: Util::panic("Invalid FlashState::Status with Write<u8>");
     case FlashState::Erase: Util::panic("Invalid FlashState::Erase with Write<u8>");
+    case FlashState::Read: Util::panic("Invalid FlashState::Read with Write<u8>");
     case FlashState::Write:
+      assert(index <= 0x7F && "Out of range flash Write8");
       writeBuf[index] = val;
       break;
-    case FlashState::Read: Util::panic("Invalid FlashState::Read with Write<u8>");
     default: Util::warn("Invalid flash state on Write<u8>: {:02X}", static_cast<u8>(state));
   }
 }

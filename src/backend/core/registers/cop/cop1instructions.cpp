@@ -138,8 +138,7 @@ void Cop1::SetCauseInvalid() {
 
 template <typename T>
 FORCE_INLINE void SetCauseByArgWCVT(Registers& regs, T f) {
-  regs.cop1.fp_class = std::fpclassify(f);
-  switch (regs.cop1.fp_class) {
+  switch (std::fpclassify(f)) {
     case FP_NAN:
     case FP_INFINITE:
     case FP_SUBNORMAL:
@@ -162,8 +161,7 @@ FORCE_INLINE void SetCauseByArgWCVT(Registers& regs, T f) {
 
 template <typename T>
 FORCE_INLINE void SetCauseByArgLCVT(Registers& regs, T f) {
-  regs.cop1.fp_class = std::fpclassify(f);
-  switch (regs.cop1.fp_class) {
+  switch (std::fpclassify(f)) {
     case FP_NAN:
     case FP_INFINITE:
     case FP_SUBNORMAL:
@@ -192,7 +190,7 @@ FORCE_INLINE void SetFPUCauseRaised(Registers& regs, int raised) {
     return;
   }
 
-  if (((raised & FE_UNDERFLOW) != 0) || regs.cop1.fp_class == FP_SUBNORMAL) {
+  if (raised & FE_UNDERFLOW) {
     if (!regs.cop1.fcr31.fs || regs.cop1.fcr31.enable_underflow || regs.cop1.fcr31.enable_inexact_operation) {
       regs.cop1.SetCauseUnimplemented();
       return;
@@ -247,8 +245,8 @@ FORCE_INLINE bool isqnan(T f) {
 
 template <typename T>
 FORCE_INLINE void SetCauseByArg(Registers& regs, T f) {
-  regs.cop1.fp_class = std::fpclassify(f);
-  switch(regs.cop1.fp_class) {
+  auto fp_class = std::fpclassify(f);
+  switch(fp_class) {
     case FP_NAN:
       if(isqnan(f)) {
         regs.cop1.SetCauseInvalid();
@@ -267,7 +265,7 @@ FORCE_INLINE void SetCauseByArg(Registers& regs, T f) {
     case FP_NORMAL:
       break; // No-op, these are fine.
     default:
-      Util::panic("Unknown floating point classification: {}", regs.cop1.fp_class);
+      Util::panic("Unknown floating point classification: {}", fp_class);
   }
 }
 
@@ -276,7 +274,7 @@ FORCE_INLINE void SetCauseByArg(Registers& regs, T f) {
 template <typename T>
 FORCE_INLINE void SetCauseOnResult(Registers& regs, T& d) {
   Cop1& cop1 = regs.cop1;
-  regs.cop1.fp_class = std::fpclassify(d);
+  auto fp_class = std::fpclassify(d);
   T magic, min;
   if constexpr(std::is_same_v<T, float>) {
     u32 c = 0x7FBFFFFF;
@@ -287,7 +285,7 @@ FORCE_INLINE void SetCauseOnResult(Registers& regs, T& d) {
     magic = U64_TO_D(c);
     min = DBL_MIN;
   }
-  switch (regs.cop1.fp_class) {
+  switch (fp_class) {
     case FP_NAN:
       d = magic; // set result to sNAN
       break;
@@ -326,7 +324,7 @@ FORCE_INLINE void SetCauseOnResult(Registers& regs, T& d) {
     case FP_NORMAL:
       break; // No-op, these are fine.
     default:
-      Util::panic("Unknown FP classification: {}", regs.cop1.fp_class);
+      Util::panic("Unknown FP classification: {}", fp_class);
   }
 }
 

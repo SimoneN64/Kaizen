@@ -107,9 +107,9 @@ struct Cop1 {
   void SetCauseDivisionByZero();
   void SetCauseOverflow();
   void SetCauseInvalid();
-  int fp_class=0;
 private:
-  template <typename T> auto FGR(Cop0Status&, u32) -> T&;
+  template <typename T>
+  auto FGR(Cop0Status&, u32) -> T&;
   void decodeInterp(Interpreter&, u32);
   void decodeJIT(JIT&, u32);
   void absd(Registers&, u32 instr);

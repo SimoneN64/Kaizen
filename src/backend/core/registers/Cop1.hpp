@@ -99,7 +99,6 @@ struct Cop1 {
   template <class T> // either JIT or Interpreter
   void decode(T&, u32);
   friend struct Interpreter;
-  friend struct JIT;
 
   void SetCauseUnimplemented();
   void SetCauseUnderflow();

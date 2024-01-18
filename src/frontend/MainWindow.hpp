@@ -1,6 +1,7 @@
 #pragma once
-#include <QMainWindow>
 #include "ui_mainwindow.h"
+#include <QMainWindow>
+#include <QApplication>
 
 class MainWindowController : public QMainWindow
 {
@@ -15,7 +16,7 @@ private:
   Ui::MainWindow view;
   bool textPauseToggle = false;
 
-signals:
+Q_SIGNALS:
   void OpenROM(const QString& rom_file);
   void Exit();
   void Reset();

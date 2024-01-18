@@ -1,7 +1,7 @@
+#include <KaizenQt.hpp>
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QCommandLineOption>
-#include <KaizenQt.hpp>
 
 int main(int argc, char** argv) {
   QApplication app(argc, argv);

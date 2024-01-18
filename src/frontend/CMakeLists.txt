@@ -53,6 +53,8 @@ add_executable(kaizen-qt
   main.cpp
   KaizenQt.hpp
   KaizenQt.cpp
+  RenderWidget.cpp
+  RenderWidget.hpp
   EmuThread.hpp
   EmuThread.cpp
   mainwindow.ui

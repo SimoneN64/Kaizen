@@ -1,5 +1,6 @@
 #pragma once
 #include "ui_mainwindow.h"
+#include <RenderWidget.hpp>
 #include <QMainWindow>
 #include <QApplication>
 
@@ -14,6 +15,7 @@ private:
   void ConnectSignalsToSlots() noexcept;
 
   Ui::MainWindow view;
+  RenderWidget *vulkanWidget;
   bool textPauseToggle = false;
 
 Q_SIGNALS:

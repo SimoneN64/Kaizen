@@ -2,7 +2,7 @@
 #include <QMessageBox>
 #include <MainWindow.hpp>
 
-MainWindowController::MainWindowController() noexcept {
+MainWindowController::MainWindowController() noexcept : vulkanWidget(new RenderWidget(this)) {
   view.setupUi(this);
   ConnectSignalsToSlots();
 }
@@ -17,7 +17,7 @@ void MainWindowController::ConnectSignalsToSlots() noexcept {
       view.actionStop->setEnabled(true);
       emit OpenROM(file_name);
     }
-    });
+  });
 
   connect(view.actionExit, &QAction::triggered, this, [this]() {
     emit Exit();

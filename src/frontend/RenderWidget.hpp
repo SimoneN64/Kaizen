@@ -54,6 +54,7 @@ public:
   }
 
   VkSurfaceKHR create_surface(VkInstance instance, VkPhysicalDevice) override {
+    window->show();
     return QVulkanInstance::surfaceForWindow(window);
   }
 

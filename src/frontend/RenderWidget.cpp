@@ -8,8 +8,6 @@ RenderWidget::RenderWidget(QWidget* parent) : QWidget(parent) {
     setAttribute(Qt::WA_DontCreateNativeAncestors);
   }
 
-  create();
-
   if (GetOSCompositorCategory() == CompositorCategory::MacOS) {
     windowHandle()->setSurfaceType(QWindow::MetalSurface);
   }
@@ -22,6 +20,7 @@ RenderWidget::RenderWidget(QWidget* parent) : QWidget(parent) {
   }
 
   windowHandle()->setVulkanInstance(&instance.get_qvkinstance());
+  windowHandle()->create();
 
   wsiPlatform = new QtWSIPlatform(windowHandle());
   windowInfo = std::make_unique<QtParallelRdpWindowInfo>(windowHandle());

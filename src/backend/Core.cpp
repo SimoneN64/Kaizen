@@ -1,5 +1,6 @@
 #include <Core.hpp>
 #include <Scheduler.hpp>
+#include <ParallelRDPWrapper.hpp>
 
 namespace n64 {
 u32 extraCycles = 0;

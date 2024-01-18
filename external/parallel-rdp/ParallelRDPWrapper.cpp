@@ -184,11 +184,6 @@ void LoadParallelRDP(const u8* rdram) {
   }
 }
 
-void InitParallelRDP(const u8* rdram, SDL_Window* window) {
-  LoadWSIPlatform(new SDLWSIPlatform(window), std::make_unique<SDLParallelRdpWindowInfo>(window));
-  LoadParallelRDP(rdram);
-}
-
 void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image, Util::IntrusivePtr<CommandBuffer> cmd) {
   cmd->set_texture(0, 0, image->get_view(), Vulkan::StockSampler::LinearClamp);
   cmd->set_program(fullscreen_quad_program);

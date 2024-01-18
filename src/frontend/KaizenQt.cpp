@@ -25,4 +25,5 @@ void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept
 void KaizenQt::LoadROM(const QString& file_name) noexcept
 {
   emuThread->core.LoadROM(file_name.toStdString());
+  emuThread->start();
 }

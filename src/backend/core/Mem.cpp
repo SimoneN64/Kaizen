@@ -153,6 +153,8 @@ void Mem::LoadROM(bool isArchive, const std::string& filename) {
   memcpy(&rom.header, buf, sizeof(ROMHeader));
   memcpy(rom.gameNameCart, rom.header.imageName, sizeof(rom.header.imageName));
 
+  free(buf);
+
   rom.header.clockRate = be32toh(rom.header.clockRate);
   rom.header.programCounter = be32toh(rom.header.programCounter);
   rom.header.release = be32toh(rom.header.release);

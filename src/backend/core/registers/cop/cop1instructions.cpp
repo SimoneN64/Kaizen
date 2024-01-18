@@ -1,7 +1,6 @@
 #include <core/registers/Cop1.hpp>
 #include <core/registers/Registers.hpp>
 #include <core/Interpreter.hpp>
-#include <core/JIT.hpp>
 #include <core/Mem.hpp>
 #include <cmath>
 #include <cfenv>

@@ -23,6 +23,8 @@ public:
   }
 };
 
+static Vulkan::WSI* wsi;
+
 VkRenderPass GetVkRenderPass();
 VkQueue GetGraphicsQueue();
 VkInstance GetVkInstance();
@@ -33,7 +35,7 @@ VkFormat GetVkFormat();
 VkCommandBuffer GetVkCommandBuffer();
 void SubmitRequestedVkCommandBuffer();
 void LoadParallelRDP(const u8* rdram);
-Vulkan::WSI* LoadWSIPlatform(Vulkan::WSIPlatform* wsi_platform, std::unique_ptr<ParallelRdpWindowInfo>&& newWindowInfo);
+Vulkan::WSI* LoadWSIPlatform(Vulkan::InstanceFactory*, Vulkan::WSIPlatform* wsi_platform, std::unique_ptr<ParallelRdpWindowInfo>&& newWindowInfo);
 void UpdateScreenParallelRdp(n64::Core& core, n64::VI& vi);
 void ParallelRdpEnqueueCommand(int command_length, u32* buffer);
 void ParallelRdpOnFullSync();

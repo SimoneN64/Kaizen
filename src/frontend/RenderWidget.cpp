@@ -2,10 +2,6 @@
 #include <KaizenQt.hpp>
 
 RenderWidget::RenderWidget(QWidget* parent) : QWidget(parent) {
-  if (volkInitialize() != VK_SUCCESS) {
-    Util::panic("Could not initialize Vulkan loader!");
-  }
-
   create();
 
   setAttribute(Qt::WA_NativeWindow);
@@ -21,11 +17,14 @@ RenderWidget::RenderWidget(QWidget* parent) : QWidget(parent) {
     windowHandle()->setSurfaceType(QWindow::VulkanSurface);
   }
 
-  instance.create();
-  windowHandle()->setVulkanInstance(&instance);
+  if(!Vulkan::Context::init_loader(nullptr)) {
+    Util::panic("Could not initialize Vulkan ICD");
+  }
+
+  windowHandle()->setVulkanInstance(&instance.get_qvkinstance());
 
   wsiPlatform = new QtWSIPlatform(windowHandle());
   windowInfo = std::make_unique<QtParallelRdpWindowInfo>(windowHandle());
 
-  LoadWSIPlatform(wsiPlatform, std::move(windowInfo));
+  LoadWSIPlatform(&instance, wsiPlatform, std::move(windowInfo));
 }

@@ -4,6 +4,7 @@
 #include <GameDB.hpp>
 #include <filesystem>
 #include <mio/mmap.hpp>
+#include <vector>
 
 namespace fs = std::filesystem;
 

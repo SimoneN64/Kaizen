@@ -11,7 +11,6 @@ using namespace Vulkan;
 using namespace RDP;
 
 static CommandProcessor* command_processor;
-static WSI* wsi;
 static std::unique_ptr<ParallelRdpWindowInfo> windowInfo;
 
 VkQueue GetGraphicsQueue() {
@@ -125,13 +124,13 @@ private:
 
 Program* fullscreen_quad_program;
 
-WSI* LoadWSIPlatform(Vulkan::WSIPlatform* wsi_platform, std::unique_ptr<ParallelRdpWindowInfo>&& newWindowInfo) {
+WSI* LoadWSIPlatform(Vulkan::InstanceFactory* instanceFactory, Vulkan::WSIPlatform* wsi_platform, std::unique_ptr<ParallelRdpWindowInfo>&& newWindowInfo) {
   wsi = new WSI();
   wsi->set_backbuffer_srgb(false);
   wsi->set_platform(wsi_platform);
   wsi->set_present_mode(PresentMode::SyncToVBlank);
   Context::SystemHandles handles;
-  if (!wsi->init_simple(1, handles)) {
+  if (!wsi->init_simple(instanceFactory, 1, handles)) {
     Util::panic("Failed to initialize WSI!");
   }
 

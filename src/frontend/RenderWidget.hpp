@@ -5,11 +5,35 @@
 #include <QWindow>
 #include <QVulkanInstance>
 
+struct QtInstanceFactory : Vulkan::InstanceFactory {
+  VkInstance create_instance(const VkInstanceCreateInfo *info) override {
+    instance.setApiVersion({1,3,0});
+    QByteArrayList exts;
+    for(int i = 0; i < info->enabledExtensionCount; i++) {
+      exts.push_back(QByteArray::fromStdString(info->ppEnabledExtensionNames[i]));
+    }
+    QByteArrayList layers;
+    for(int i = 0; i < info->enabledLayerCount; i++) {
+      layers.push_back(QByteArray::fromStdString(info->ppEnabledLayerNames[i]));
+    }
+    instance.setExtensions(exts);
+    instance.setLayers(layers);
+    instance.setApiVersion({1,3,0});
+    instance.create();
+
+    return instance.vkInstance();
+  }
+
+  QVulkanInstance& get_qvkinstance() { return instance; }
+private:
+  QVulkanInstance instance;
+};
+
 class QtParallelRdpWindowInfo : public ParallelRdpWindowInfo {
 public:
-  QtParallelRdpWindowInfo(QWindow* window) : window(window) {}
-  CoordinatePair get_window_size() {
-    CoordinatePair{ static_cast<float>(window->width()), static_cast<float>(window->height()) };
+  explicit QtParallelRdpWindowInfo(QWindow* window) : window(window) {}
+  CoordinatePair get_window_size() override {
+    return CoordinatePair{ static_cast<float>(window->width()), static_cast<float>(window->height()) };
   }
 private:
   QWindow* window;
@@ -17,7 +41,7 @@ private:
 
 class QtWSIPlatform final : public Vulkan::WSIPlatform {
 public:
-  QtWSIPlatform(QWindow* window) : window(window) {}
+  explicit QtWSIPlatform(QWindow* window) : window(window) {}
 
   std::vector<const char*> get_instance_extensions() override {
     auto vec = std::vector<const char*>();
@@ -29,7 +53,7 @@ public:
     return vec;
   }
 
-  VkSurfaceKHR create_surface(VkInstance, VkPhysicalDevice) override {
+  VkSurfaceKHR create_surface(VkInstance instance, VkPhysicalDevice) override {
     return QVulkanInstance::surfaceForWindow(window);
   }
 
@@ -65,11 +89,11 @@ class RenderWidget : public QWidget {
 public:
   explicit RenderWidget(QWidget* parent);
 
-  QPaintEngine* paintEngine() const override {
+  [[nodiscard]] QPaintEngine* paintEngine() const override {
     return nullptr;
   }
 private:
   std::unique_ptr<ParallelRdpWindowInfo> windowInfo;
   QtWSIPlatform* wsiPlatform;
-  QVulkanInstance instance;
+  QtInstanceFactory instance;
 };

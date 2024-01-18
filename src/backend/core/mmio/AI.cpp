@@ -2,7 +2,7 @@
 #include <log.hpp>
 #include <core/Mem.hpp>
 #include <core/registers/Registers.hpp>
-#include <core/Audio.hpp>
+#include <Audio.hpp>
 
 namespace n64 {
 void AI::Reset() {

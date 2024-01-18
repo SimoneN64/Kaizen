@@ -6,7 +6,6 @@
 #include <File.hpp>
 #include <SDL2/SDL_vulkan.h>
 #include <imgui_impl_vulkan.h>
-#include <imgui/Window.hpp>
 
 using namespace Vulkan;
 using namespace RDP;
@@ -70,13 +69,13 @@ void SetFramerateUnlocked(bool unlocked) {
 
 class SDLWSIPlatform final : public Vulkan::WSIPlatform {
 public:
-  SDLWSIPlatform() = default;
+  SDLWSIPlatform(SDL_Window* window) : window(window) {}
 
   std::vector<const char *> get_instance_extensions() override {
     const char* extensions[64];
     unsigned int num_extensions = 64;
 
-    if (!SDL_Vulkan_GetInstanceExtensions(g_Window, &num_extensions, extensions)) {
+    if (!SDL_Vulkan_GetInstanceExtensions(window, &num_extensions, extensions)) {
       Util::panic("SDL_Vulkan_GetInstanceExtensions failed: {}", SDL_GetError());
     }
     auto vec = std::vector<const char*>();
@@ -90,7 +89,7 @@ public:
 
   VkSurfaceKHR create_surface(VkInstance instance, VkPhysicalDevice gpu) override {
     VkSurfaceKHR vk_surface;
-    if (!SDL_Vulkan_CreateSurface(g_Window, instance, &vk_surface)) {
+    if (!SDL_Vulkan_CreateSurface(window, instance, &vk_surface)) {
       Util::panic("Failed to create Vulkan window surface: {}", SDL_GetError());
     }
     return vk_surface;
@@ -120,6 +119,8 @@ public:
     .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
     .apiVersion = VK_API_VERSION_1_1
   };
+private:
+  SDL_Window* window;
 };
 
 Program* fullscreen_quad_program;
@@ -184,8 +185,7 @@ void LoadParallelRDP(const u8* rdram) {
 }
 
 void InitParallelRDP(const u8* rdram, SDL_Window* window) {
-  g_Window = window;
-  LoadWSIPlatform(new SDLWSIPlatform(), std::make_unique<SDLParallelRdpWindowInfo>());
+  LoadWSIPlatform(new SDLWSIPlatform(window), std::make_unique<SDLParallelRdpWindowInfo>(window));
   LoadParallelRDP(rdram);
 }
 
@@ -225,7 +225,7 @@ void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image, Util::Intrusive
   cmd->draw(3, 1);
 }
 
-void UpdateScreen(n64::Core& core, Window& imguiWindow, Util::IntrusivePtr<Image> image) {
+void UpdateScreen(n64::Core& core, Util::IntrusivePtr<Image> image) {
   wsi->begin_frame();
 
   if (!image) {
@@ -253,18 +253,14 @@ void UpdateScreen(n64::Core& core, Window& imguiWindow, Util::IntrusivePtr<Image
   Util::IntrusivePtr<CommandBuffer> cmd = wsi->get_device().request_command_buffer();
 
   cmd->begin_render_pass(wsi->get_device().get_swapchain_render_pass(SwapchainRenderPass::ColorOnly));
-  ImDrawData* drawData = imguiWindow.Present(core);
-
   DrawFullscreenTexturedQuad(image, cmd);
-
-  ImGui_ImplVulkan_RenderDrawData(drawData, cmd->get_command_buffer());
 
   cmd->end_render_pass();
   wsi->get_device().submit(cmd);
   wsi->end_frame();
 }
 
-void UpdateScreenParallelRdp(n64::Core& core, Window& imguiWindow, n64::VI& vi) {
+void UpdateScreenParallelRdp(n64::Core& core, n64::VI& vi) {
   command_processor->set_vi_register(VIRegister::Control,      vi.status.raw);
   command_processor->set_vi_register(VIRegister::Origin,       vi.origin);
   command_processor->set_vi_register(VIRegister::Width,        vi.width);
@@ -290,12 +286,12 @@ void UpdateScreenParallelRdp(n64::Core& core, Window& imguiWindow, n64::VI& vi) 
   opts.downscale_steps = true;
   opts.crop_overscan_pixels = true;
   Util::IntrusivePtr<Image> image = command_processor->scanout(opts);
-  UpdateScreen(core, imguiWindow, image);
+  UpdateScreen(core, image);
   command_processor->begin_frame_context();
 }
 
-void UpdateScreenParallelRdpNoGame(n64::Core& core, Window& imguiWindow) {
-  UpdateScreen(core, imguiWindow, static_cast<Util::IntrusivePtr<Image>>(nullptr));
+void UpdateScreenParallelRdpNoGame(n64::Core& core) {
+  UpdateScreen(core, static_cast<Util::IntrusivePtr<Image>>(nullptr));
 }
 
 void ParallelRdpEnqueueCommand(int command_length, u32* buffer) {

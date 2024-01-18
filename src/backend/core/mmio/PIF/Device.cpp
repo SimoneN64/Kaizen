@@ -1,5 +1,5 @@
 #include <PIF.hpp>
-#include <MupenMovie.hpp>
+#include <PIF/MupenMovie.hpp>
 #include <Netplay.hpp>
 #include <log.hpp>
 #include <SDL2/SDL_keyboard.h>

@@ -2,9 +2,6 @@
 #include <backend/Core.hpp>
 #include <wsi.hpp>
 
-struct Window;
-static SDL_Window* g_Window;
-
 class ParallelRdpWindowInfo {
 public:
   struct CoordinatePair {
@@ -16,9 +13,12 @@ public:
 };
 
 class SDLParallelRdpWindowInfo : public ParallelRdpWindowInfo {
+  SDL_Window* window;
+public:
+  SDLParallelRdpWindowInfo(SDL_Window* window) : window(window) {}
   CoordinatePair get_window_size() {
     int width, height;
-    SDL_GetWindowSize(g_Window, &width, &height);
+    SDL_GetWindowSize(window, &width, &height);
     return CoordinatePair{ static_cast<float>(width), static_cast<float>(height) };
   }
 };
@@ -33,9 +33,9 @@ VkFormat GetVkFormat();
 VkCommandBuffer GetVkCommandBuffer();
 void SubmitRequestedVkCommandBuffer();
 void InitParallelRDP(const u8* rdram, SDL_Window* window);
-void UpdateScreenParallelRdp(n64::Core& core, Window& imguiWindow, n64::VI& vi);
+void UpdateScreenParallelRdp(n64::Core& core, n64::VI& vi);
 void ParallelRdpEnqueueCommand(int command_length, u32* buffer);
 void ParallelRdpOnFullSync();
-void UpdateScreenParallelRdpNoGame(n64::Core& core, Window& imguiWindow);
+void UpdateScreenParallelRdpNoGame(n64::Core& core);
 bool IsFramerateUnlocked();
 void SetFramerateUnlocked(bool unlocked);

@@ -124,10 +124,10 @@ private:
 
 Program* fullscreen_quad_program;
 
-WSI* LoadWSIPlatform(Vulkan::InstanceFactory* instanceFactory, Vulkan::WSIPlatform* wsi_platform, std::unique_ptr<ParallelRdpWindowInfo>&& newWindowInfo) {
+WSI* LoadWSIPlatform(Vulkan::InstanceFactory* instanceFactory, std::unique_ptr<Vulkan::WSIPlatform>&& wsi_platform, std::unique_ptr<ParallelRdpWindowInfo>&& newWindowInfo) {
   wsi = new WSI();
   wsi->set_backbuffer_srgb(false);
-  wsi->set_platform(wsi_platform);
+  wsi->set_platform(wsi_platform.get());
   wsi->set_present_mode(PresentMode::SyncToVBlank);
   Context::SystemHandles handles;
   if (!wsi->init_simple(instanceFactory, 1, handles)) {

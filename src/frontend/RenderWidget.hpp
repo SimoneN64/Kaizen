@@ -46,8 +46,8 @@ public:
   std::vector<const char*> get_instance_extensions() override {
     auto vec = std::vector<const char*>();
 
-    for (const auto& ext : window->vulkanInstance()->extensions()) {
-      vec.push_back(ext);
+    for (const auto& ext : window->vulkanInstance()->supportedExtensions()) {
+      vec.push_back(ext.name);
     }
 
     return vec;
@@ -95,6 +95,6 @@ public:
   }
 private:
   std::unique_ptr<ParallelRdpWindowInfo> windowInfo;
-  QtWSIPlatform* wsiPlatform;
+  std::unique_ptr<Vulkan::WSIPlatform> wsiPlatform;
   QtInstanceFactory instance;
 };

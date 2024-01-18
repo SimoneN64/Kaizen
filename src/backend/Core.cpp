@@ -21,6 +21,7 @@ Core::Core() {
   }
 
   cpu = std::make_unique<Interpreter>();
+  LoadParallelRDP(cpu->mem.GetRDRAM());
 }
 
 void Core::Stop() {

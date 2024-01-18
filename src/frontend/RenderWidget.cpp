@@ -22,8 +22,8 @@ RenderWidget::RenderWidget(QWidget* parent) : QWidget(parent) {
   windowHandle()->setVulkanInstance(&instance.get_qvkinstance());
   windowHandle()->create();
 
-  wsiPlatform = new QtWSIPlatform(windowHandle());
+  wsiPlatform = std::make_unique<QtWSIPlatform>(windowHandle());
   windowInfo = std::make_unique<QtParallelRdpWindowInfo>(windowHandle());
 
-  LoadWSIPlatform(&instance, wsiPlatform, std::move(windowInfo));
+  LoadWSIPlatform(&instance, std::move(wsiPlatform), std::move(windowInfo));
 }

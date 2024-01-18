@@ -11,11 +11,10 @@ class MainWindowController : public QMainWindow
 public:
   MainWindowController() noexcept;
 
+  Ui::MainWindow view;
 private:
   void ConnectSignalsToSlots() noexcept;
 
-  Ui::MainWindow view;
-  RenderWidget *vulkanWidget;
   bool textPauseToggle = false;
 
 Q_SIGNALS:

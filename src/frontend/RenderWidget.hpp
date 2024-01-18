@@ -4,10 +4,11 @@
 #include <QWidget>
 #include <QWindow>
 #include <QVulkanInstance>
+#include <QVulkanWindow>
 
 struct QtInstanceFactory : Vulkan::InstanceFactory {
   VkInstance create_instance(const VkInstanceCreateInfo *info) override {
-    instance.setApiVersion({1,3,0});
+    qVkInstance.setApiVersion({1,3,0});
     QByteArrayList exts;
     for(int i = 0; i < info->enabledExtensionCount; i++) {
       exts.push_back(QByteArray::fromStdString(info->ppEnabledExtensionNames[i]));
@@ -16,17 +17,15 @@ struct QtInstanceFactory : Vulkan::InstanceFactory {
     for(int i = 0; i < info->enabledLayerCount; i++) {
       layers.push_back(QByteArray::fromStdString(info->ppEnabledLayerNames[i]));
     }
-    instance.setExtensions(exts);
-    instance.setLayers(layers);
-    instance.setApiVersion({1,3,0});
-    instance.create();
+    qVkInstance.setExtensions(exts);
+    qVkInstance.setLayers(layers);
+    qVkInstance.setApiVersion({1,3,0});
+    qVkInstance.create();
 
-    return instance.vkInstance();
+    return qVkInstance.vkInstance();
   }
 
-  QVulkanInstance& get_qvkinstance() { return instance; }
-private:
-  QVulkanInstance instance;
+  QVulkanInstance qVkInstance;
 };
 
 class QtParallelRdpWindowInfo : public ParallelRdpWindowInfo {
@@ -58,6 +57,8 @@ public:
     return QVulkanInstance::surfaceForWindow(window);
   }
 
+  void destroy_surface(VkInstance instance, VkSurfaceKHR surface) override { }
+
   uint32_t get_surface_width() override {
     return 640;
   }
@@ -70,7 +71,9 @@ public:
     return true;
   }
 
-  void poll_input() override { }
+  void poll_input() override {
+    SDL_PumpEvents();
+  }
 
   void event_frame_tick(double frame, double elapsed) override { }
 
@@ -93,8 +96,8 @@ public:
   [[nodiscard]] QPaintEngine* paintEngine() const override {
     return nullptr;
   }
-private:
+
   std::unique_ptr<ParallelRdpWindowInfo> windowInfo;
   std::unique_ptr<Vulkan::WSIPlatform> wsiPlatform;
-  QtInstanceFactory instance;
+  std::unique_ptr<QtInstanceFactory> instance;
 };

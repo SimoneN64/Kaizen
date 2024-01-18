@@ -1,8 +1,16 @@
 #include <KaizenQt.hpp>
 #include <QMessageBox>
 #include <QApplication>
+#include <SDL2/SDL.h>
 
-KaizenQt::KaizenQt() noexcept : mainWindow(new MainWindowController), emuThread(new EmuThread(mainWindow)) {
+KaizenQt::KaizenQt() noexcept {
+  mainWindow = new MainWindowController();
+  emuThread = new EmuThread(
+    std::move(mainWindow->view.vulkanWidget->instance),
+    std::move(mainWindow->view.vulkanWidget->wsiPlatform),
+    std::move(mainWindow->view.vulkanWidget->windowInfo),
+    mainWindow);
+
   ConnectMainWindowSignalsToSlots();
 
   mainWindow->show();
@@ -19,6 +27,6 @@ void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept {
 }
 
 void KaizenQt::LoadROM(const QString& file_name) noexcept {
-  emuThread->core.LoadROM(file_name.toStdString());
   emuThread->start();
+  emuThread->core.LoadROM(file_name.toStdString());
 }

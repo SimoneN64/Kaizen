@@ -2,7 +2,7 @@
 #include <QMessageBox>
 #include <MainWindow.hpp>
 
-MainWindowController::MainWindowController() noexcept : vulkanWidget(new RenderWidget(this)) {
+MainWindowController::MainWindowController() noexcept {
   view.setupUi(this);
   ConnectSignalsToSlots();
 }

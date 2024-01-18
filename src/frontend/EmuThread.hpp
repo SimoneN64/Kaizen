@@ -2,12 +2,20 @@
 #include <QThread>
 #include <Core.hpp>
 
+struct QtInstanceFactory;
+struct ParallelRdpWindowInfo;
+namespace Vulkan {
+struct WSIPlatform;
+}
+
 class EmuThread : public QThread
 {
   Q_OBJECT
-
+  std::unique_ptr<QtInstanceFactory> instance;
+  std::unique_ptr<Vulkan::WSIPlatform> wsiPlatform;
+  std::unique_ptr<ParallelRdpWindowInfo> windowInfo;
 public:
-  explicit EmuThread(QObject* parent_object) noexcept;
+  explicit EmuThread(std::unique_ptr<QtInstanceFactory>&& instance, std::unique_ptr<Vulkan::WSIPlatform>&& wsiPlatform, std::unique_ptr<ParallelRdpWindowInfo>&& windowInfo, QObject* parent_object) noexcept;
 
   [[noreturn]] void run() noexcept override;
 

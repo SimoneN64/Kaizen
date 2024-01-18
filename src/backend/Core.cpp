@@ -1,6 +1,7 @@
 #include <Core.hpp>
 #include <Scheduler.hpp>
 #include <ParallelRDPWrapper.hpp>
+#include <SDL2/SDL.h>
 
 namespace n64 {
 u32 extraCycles = 0;
@@ -16,15 +17,16 @@ u32 PopStalledCycles() {
 }
 
 Core::Core() {
+  SDL_Init(SDL_INIT_EVERYTHING);
   if(SDL_GameControllerAddMappingsFromFile("resources/gamecontrollerdb.txt") < 0) {
     Util::warn("Failed to load game controller DB");
   }
 
   cpu = std::make_unique<Interpreter>();
-  LoadParallelRDP(cpu->mem.GetRDRAM());
 }
 
 void Core::Stop() {
+  render = false;
   pause = true;
   romLoaded = false;
   cpu->Reset();
@@ -54,6 +56,7 @@ void Core::LoadROM(const std::string& rom_) {
   cpu->mem.LoadSRAM(cpu->mem.saveType, rom);
   PIF::ExecutePIF(cpu->mem, cpu->regs);
   pause = false;
+  render = true;
 }
 
 void Core::Run(float volumeL, float volumeR) {

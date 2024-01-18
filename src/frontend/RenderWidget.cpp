@@ -19,11 +19,10 @@ RenderWidget::RenderWidget(QWidget* parent) : QWidget(parent) {
     Util::panic("Could not initialize Vulkan ICD");
   }
 
-  windowHandle()->setVulkanInstance(&instance.get_qvkinstance());
+  instance = std::make_unique<QtInstanceFactory>();
+  windowHandle()->setVulkanInstance(&instance->qVkInstance);
   windowHandle()->create();
 
   wsiPlatform = std::make_unique<QtWSIPlatform>(windowHandle());
   windowInfo = std::make_unique<QtParallelRdpWindowInfo>(windowHandle());
-
-  LoadWSIPlatform(&instance, std::move(wsiPlatform), std::move(windowInfo));
 }

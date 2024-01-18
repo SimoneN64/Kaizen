@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QCommandLineOption>
+#include <KaizenQt.hpp>
 
 int main(int argc, char** argv) {
   QApplication app(argc, argv);
@@ -12,5 +13,10 @@ int main(int argc, char** argv) {
   parser.addHelpOption();
   parser.addPositionalArgument("rom", "Rom to launch from command-line");
   parser.process(app);
+  
+  KaizenQt kaizenQt;
+  if (!parser.positionalArguments().isEmpty())
+    kaizenQt.LoadROM(parser.positionalArguments().first());
+
   return app.exec();
 }

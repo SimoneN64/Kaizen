@@ -18,19 +18,21 @@ Core::Core() {
   if(SDL_GameControllerAddMappingsFromFile("resources/gamecontrollerdb.txt") < 0) {
     Util::warn("Failed to load game controller DB");
   }
+
+  cpu = std::make_unique<Interpreter>();
 }
 
 void Core::Stop() {
-  cpu->Reset();
-  cpu->mem.Reset();
   pause = true;
   romLoaded = false;
+  cpu->Reset();
+  cpu->mem.Reset();
 }
 
 void Core::LoadROM(const std::string& rom_) {
+  pause = true;
   rom = rom_;
   cpu->Reset();
-  pause = false;
   romLoaded = true;
 
   std::string archive_types[] = {".zip",".7z",".rar",".tar"};
@@ -49,6 +51,7 @@ void Core::LoadROM(const std::string& rom_) {
   cpu->mem.flash.Load(cpu->mem.saveType, rom);
   cpu->mem.LoadSRAM(cpu->mem.saveType, rom);
   PIF::ExecutePIF(cpu->mem, cpu->regs);
+  pause = false;
 }
 
 void Core::Run(float volumeL, float volumeR) {

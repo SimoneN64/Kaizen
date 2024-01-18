@@ -50,7 +50,14 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 add_executable(kaizen-qt
-  main.cpp)
+  main.cpp
+  KaizenQt.hpp
+  KaizenQt.cpp
+  EmuThread.hpp
+  EmuThread.cpp
+  mainwindow.ui
+  MainWindow.hpp
+  MainWindow.cpp)
 
 target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets SDL2::SDL2 fmt::fmt mio::mio nlohmann_json::nlohmann_json
   discord-rpc nfd parallel-rdp backend)

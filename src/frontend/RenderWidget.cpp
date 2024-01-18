@@ -2,13 +2,13 @@
 #include <KaizenQt.hpp>
 
 RenderWidget::RenderWidget(QWidget* parent) : QWidget(parent) {
-  create();
-
   setAttribute(Qt::WA_NativeWindow);
   setAttribute(Qt::WA_PaintOnScreen);
   if (GetOSCompositorCategory() == CompositorCategory::Wayland) {
     setAttribute(Qt::WA_DontCreateNativeAncestors);
   }
+
+  create();
 
   if (GetOSCompositorCategory() == CompositorCategory::MacOS) {
     windowHandle()->setSurfaceType(QWindow::MetalSurface);

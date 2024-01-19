@@ -4,6 +4,10 @@
 
 MainWindowController::MainWindowController() noexcept {
   view.setupUi(this);
+  view.actionPause->setDisabled(true);
+  view.actionReset->setDisabled(true);
+  view.actionStop->setDisabled(true);
+  view.vulkanWidget->hide();
   ConnectSignalsToSlots();
 }
 
@@ -16,6 +20,7 @@ void MainWindowController::ConnectSignalsToSlots() noexcept {
       view.actionReset->setEnabled(true);
       view.actionStop->setEnabled(true);
       emit OpenROM(file_name);
+      view.vulkanWidget->show();
     }
   });
 
@@ -28,6 +33,7 @@ void MainWindowController::ConnectSignalsToSlots() noexcept {
   });
 
   connect(view.actionStop, &QAction::triggered, this, [this]() {
+    view.vulkanWidget->hide();
     view.actionPause->setDisabled(true);
     view.actionReset->setDisabled(true);
     view.actionStop->setDisabled(true);
@@ -45,7 +51,7 @@ void MainWindowController::ConnectSignalsToSlots() noexcept {
       this, tr("About Kaizen"),
       tr("Kaizen is a Nintendo 64 emulator that strives to offer a friendly user "
         "experience and great compatibility.\n"
-        "sliice is licensed under the BSD 3-clause license.\n"
+        "Kaizen is licensed under the BSD 3-clause license.\n"
         "Nintendo 64 is a registered trademarks of Nintendo Co., Ltd."));
   });
 }

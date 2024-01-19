@@ -20,7 +20,7 @@ void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept {
   connect(mainWindow, &MainWindowController::OpenROM, this, &KaizenQt::LoadROM);
   connect(mainWindow, &MainWindowController::Exit, this, []() {
     QApplication::quit();
-    });
+  });
   connect(mainWindow, &MainWindowController::Reset, emuThread, &EmuThread::Reset);
   connect(mainWindow, &MainWindowController::Stop, emuThread, &EmuThread::Stop);
   connect(mainWindow, &MainWindowController::Pause, emuThread, &EmuThread::TogglePause);

@@ -66,62 +66,6 @@ void SetFramerateUnlocked(bool unlocked) {
   }
 }
 
-class SDLWSIPlatform final : public Vulkan::WSIPlatform {
-public:
-  SDLWSIPlatform(SDL_Window* window) : window(window) {}
-
-  std::vector<const char *> get_instance_extensions() override {
-    const char* extensions[64];
-    unsigned int num_extensions = 64;
-
-    if (!SDL_Vulkan_GetInstanceExtensions(window, &num_extensions, extensions)) {
-      Util::panic("SDL_Vulkan_GetInstanceExtensions failed: {}", SDL_GetError());
-    }
-    auto vec = std::vector<const char*>();
-
-    for (unsigned int i = 0; i < num_extensions; i++) {
-      vec.push_back(extensions[i]);
-    }
-
-    return vec;
-  }
-
-  VkSurfaceKHR create_surface(VkInstance instance, VkPhysicalDevice gpu) override {
-    VkSurfaceKHR vk_surface;
-    if (!SDL_Vulkan_CreateSurface(window, instance, &vk_surface)) {
-      Util::panic("Failed to create Vulkan window surface: {}", SDL_GetError());
-    }
-    return vk_surface;
-  }
-
-  uint32_t get_surface_width() override {
-    return 640;
-  }
-
-  uint32_t get_surface_height() override {
-    return 480;
-  }
-
-  bool alive(Vulkan::WSI &wsi_) override {
-    return true;
-  }
-
-  void poll_input() override { }
-
-  void event_frame_tick(double frame, double elapsed) override { }
-
-  const VkApplicationInfo *get_application_info() override {
-      return &appInfo;
-  }
-
-  VkApplicationInfo appInfo {
-    .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-    .apiVersion = VK_API_VERSION_1_1
-  };
-private:
-  SDL_Window* window;
-};
-
 Program* fullscreen_quad_program;
 
 WSI* LoadWSIPlatform(Vulkan::InstanceFactory* instanceFactory, std::unique_ptr<Vulkan::WSIPlatform>&& wsi_platform, std::unique_ptr<ParallelRdpWindowInfo>&& newWindowInfo) {

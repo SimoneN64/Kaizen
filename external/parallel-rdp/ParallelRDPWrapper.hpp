@@ -12,17 +12,6 @@ public:
   virtual ~ParallelRdpWindowInfo() = default;
 };
 
-class SDLParallelRdpWindowInfo : public ParallelRdpWindowInfo {
-  SDL_Window* window;
-public:
-  SDLParallelRdpWindowInfo(SDL_Window* window) : window(window) {}
-  CoordinatePair get_window_size() {
-    int width, height;
-    SDL_GetWindowSize(window, &width, &height);
-    return CoordinatePair{ static_cast<float>(width), static_cast<float>(height) };
-  }
-};
-
 static Vulkan::WSI* wsi;
 
 VkRenderPass GetVkRenderPass();

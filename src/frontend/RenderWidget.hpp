@@ -5,6 +5,7 @@
 #include <QWindow>
 #include <QVulkanInstance>
 #include <QVulkanWindow>
+#include <EmuThread.hpp>
 
 struct QtInstanceFactory : Vulkan::InstanceFactory {
   VkInstance create_instance(const VkInstanceCreateInfo *info) override {
@@ -71,9 +72,7 @@ public:
     return true;
   }
 
-  void poll_input() override {
-    SDL_PumpEvents();
-  }
+  void poll_input() override {}
 
   void event_frame_tick(double frame, double elapsed) override { }
 

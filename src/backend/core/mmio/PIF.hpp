@@ -115,8 +115,7 @@ struct PIF {
   void CICChallenge();
   static void ExecutePIF(Mem& mem, Registers& regs);
   static void DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType);
-  void PollController();
-  void UpdateController();
+  void UpdateController(u32);
   bool ReadButtons(u8*) const;
   void ControllerID(u8*) const;
   void MempakRead(const u8*, u8*);

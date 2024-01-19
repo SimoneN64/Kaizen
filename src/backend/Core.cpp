@@ -17,7 +17,6 @@ u32 PopStalledCycles() {
 }
 
 Core::Core() {
-  SDL_Init(SDL_INIT_EVERYTHING);
   if(SDL_GameControllerAddMappingsFromFile("resources/gamecontrollerdb.txt") < 0) {
     Util::warn("Failed to load game controller DB");
   }

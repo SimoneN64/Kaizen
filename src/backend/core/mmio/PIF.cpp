@@ -333,41 +333,8 @@ void PIF::EepromWrite(const u8* cmd, u8* res, const Mem& mem) {
   }
 }
 
-void PIF::UpdateController(u32 value) {
-  bool A = (value >> 31) & 1;
-  bool B = (value >> 30) & 1;
-  bool Z = (value >> 29) & 1;
-  bool START = (value >> 28) & 1;
-  bool DUP = (value >> 27) & 1;
-  bool DDOWN = (value >> 26) & 1;
-  bool DLEFT = (value >> 25) & 1;
-  bool DRIGHT = (value >> 24) & 1;
-  bool L = (value >> 21) & 1;
-  bool R = (value >> 20) & 1;
-  bool CUP = (value >> 19) & 1;
-  bool CDOWN = (value >> 18) & 1;
-  bool CLEFT = (value >> 17) & 1;
-  bool CRIGHT = (value >> 16) & 1;
-  s8 x = (s8(value >> 8)) & 0xFF;
-  s8 y = (s8(value)) & 0xFF;
-
-  joybusDevices[channel].controller.a = A;
-  joybusDevices[channel].controller.b = B;
-  joybusDevices[channel].controller.z = Z;
-  joybusDevices[channel].controller.start = START;
-  joybusDevices[channel].controller.dp_up = DUP;
-  joybusDevices[channel].controller.dp_down = DDOWN;
-  joybusDevices[channel].controller.dp_left = DLEFT;
-  joybusDevices[channel].controller.dp_right = DRIGHT;
-  joybusDevices[channel].controller.joy_reset = L && R && START;
-  joybusDevices[channel].controller.l = L;
-  joybusDevices[channel].controller.r = R;
-  joybusDevices[channel].controller.c_up = CUP;
-  joybusDevices[channel].controller.c_down = CDOWN;
-  joybusDevices[channel].controller.c_left = CLEFT;
-  joybusDevices[channel].controller.c_right = CRIGHT;
-  joybusDevices[channel].controller.joy_x = x;
-  joybusDevices[channel].controller.joy_y = -y;
+void PIF::UpdateController(Controller value) {
+  joybusDevices[channel].controller = value;
 
   if (joybusDevices[channel].controller.joy_reset) {
     joybusDevices[channel].controller.start = false;

@@ -53,12 +53,12 @@ public:
     return vec;
   }
 
-  VkSurfaceKHR create_surface(VkInstance instance, VkPhysicalDevice) override {
+  VkSurfaceKHR create_surface(VkInstance, VkPhysicalDevice) override {
     window->show();
     return QVulkanInstance::surfaceForWindow(window);
   }
 
-  void destroy_surface(VkInstance instance, VkSurfaceKHR surface) override { }
+  void destroy_surface(VkInstance, VkSurfaceKHR) override { }
 
   uint32_t get_surface_width() override {
     return 640;

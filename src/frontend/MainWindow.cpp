@@ -2,6 +2,7 @@
 #include <QMessageBox>
 #include <QKeyEvent>
 #include <MainWindow.hpp>
+#include <SDL2/SDL.h>
 
 MainWindowController::MainWindowController() noexcept {
   view.setupUi(this);

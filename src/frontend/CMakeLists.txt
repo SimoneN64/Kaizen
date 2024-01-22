@@ -4,7 +4,6 @@ project(kaizen-qt)
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
-find_package(SDL2 REQUIRED)
 find_package(fmt REQUIRED)
 find_package(mio REQUIRED)
 find_package(nlohmann_json REQUIRED)
@@ -33,7 +32,6 @@ include_directories(
   ../../external/imgui/imgui/backends
   ../../external/discord-rpc/include
   ../../external/unarr
-  ${SDL2_INCLUDE_DIRS}
 )
 
 add_subdirectory(../backend backend)
@@ -62,7 +60,7 @@ add_executable(kaizen-qt
   MainWindow.hpp
   MainWindow.cpp)
 
-target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets SDL2::SDL2 fmt::fmt mio::mio nlohmann_json::nlohmann_json
+target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets fmt::fmt mio::mio nlohmann_json::nlohmann_json
   discord-rpc nfd parallel-rdp backend)
 
 file(COPY ../../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)

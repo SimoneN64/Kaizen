@@ -27,28 +27,6 @@ void PIF::Reset() {
   }
 
   mempakOpen = false;
-
-  inputManager.SetDisplaySize(640, 480);
-  keyboardId = inputManager.CreateDevice<gainput::InputDeviceKeyboard>();
-
-  inputMap.MapBool(BtnZ, keyboardId, gainput::KeyZ);
-  inputMap.MapBool(BtnA, keyboardId, gainput::KeyX);
-  inputMap.MapBool(BtnB, keyboardId, gainput::KeyC);
-  inputMap.MapBool(BtnL, keyboardId, gainput::KeyA);
-  inputMap.MapBool(BtnR, keyboardId, gainput::KeyS);
-  inputMap.MapBool(BtnStart, keyboardId, gainput::KeyReturn);
-  inputMap.MapBool(BtnDUp, keyboardId, gainput::KeyI);
-  inputMap.MapBool(BtnDDown, keyboardId, gainput::KeyK);
-  inputMap.MapBool(BtnDLeft, keyboardId, gainput::KeyJ);
-  inputMap.MapBool(BtnDRight, keyboardId, gainput::KeyL);
-  inputMap.MapBool(BtnCUp, keyboardId, gainput::KeyKpUp);
-  inputMap.MapBool(BtnCDown, keyboardId, gainput::KeyKpDown);
-  inputMap.MapBool(BtnCLeft, keyboardId, gainput::KeyKpLeft);
-  inputMap.MapBool(BtnCRight, keyboardId, gainput::KeyKpRight);
-  inputMap.MapBool(AxisUp, keyboardId, gainput::KeyUp);
-  inputMap.MapBool(AxisDown, keyboardId, gainput::KeyDown);
-  inputMap.MapBool(AxisLeft, keyboardId, gainput::KeyLeft);
-  inputMap.MapBool(AxisRight, keyboardId, gainput::KeyRight);
 }
 
 void PIF::MaybeLoadMempak() {
@@ -357,22 +335,40 @@ void PIF::EepromWrite(const u8* cmd, u8* res, const Mem& mem) {
 }
 
 void PIF::UpdateController() {
-  inputManager.Update();
-  joybusDevices[channel].controller.a = inputMap.GetBool(BtnA);
-  joybusDevices[channel].controller.b = inputMap.GetBool(BtnB);
-  joybusDevices[channel].controller.z = inputMap.GetBool(BtnZ);
-  joybusDevices[channel].controller.l = inputMap.GetBool(BtnL);
-  joybusDevices[channel].controller.r = inputMap.GetBool(BtnR);
-  joybusDevices[channel].controller.dp_up = inputMap.GetBool(BtnDUp);
-  joybusDevices[channel].controller.dp_down = inputMap.GetBool(BtnDDown);
-  joybusDevices[channel].controller.dp_left = inputMap.GetBool(BtnDLeft);
-  joybusDevices[channel].controller.dp_right = inputMap.GetBool(BtnDRight);
-  joybusDevices[channel].controller.c_up = inputMap.GetBool(BtnCUp);
-  joybusDevices[channel].controller.c_down = inputMap.GetBool(BtnCDown);
-  joybusDevices[channel].controller.c_left = inputMap.GetBool(BtnCLeft);
-  joybusDevices[channel].controller.c_right = inputMap.GetBool(BtnCRight);
-  joybusDevices[channel].controller.joy_x = inputMap.GetBool(AxisLeft) ? -127 : inputMap.GetBool(AxisRight) ? 127 : 0;
-  joybusDevices[channel].controller.joy_y = inputMap.GetBool(AxisUp) ? -127 : inputMap.GetBool(AxisDown) ? 127 : 0;
+  const uint8_t* state = SDL_GetKeyboardState(nullptr);
+  joybusDevices[channel].controller.a = state[SDL_SCANCODE_X];
+  joybusDevices[channel].controller.b = state[SDL_SCANCODE_C];
+  joybusDevices[channel].controller.z = state[SDL_SCANCODE_Z];
+  joybusDevices[channel].controller.start = state[SDL_SCANCODE_RETURN];
+  joybusDevices[channel].controller.dp_up = state[SDL_SCANCODE_PAGEUP];
+  joybusDevices[channel].controller.dp_down = state[SDL_SCANCODE_PAGEDOWN];
+  joybusDevices[channel].controller.dp_left = state[SDL_SCANCODE_HOME];
+  joybusDevices[channel].controller.dp_right = state[SDL_SCANCODE_END];
+  joybusDevices[channel].controller.joy_reset = state[SDL_SCANCODE_RETURN] && state[SDL_SCANCODE_A] && state[SDL_SCANCODE_S];
+  joybusDevices[channel].controller.l = state[SDL_SCANCODE_A];
+  joybusDevices[channel].controller.r = state[SDL_SCANCODE_S];
+  joybusDevices[channel].controller.c_up = state[SDL_SCANCODE_I];
+  joybusDevices[channel].controller.c_down = state[SDL_SCANCODE_K];
+  joybusDevices[channel].controller.c_left = state[SDL_SCANCODE_J];
+  joybusDevices[channel].controller.c_right = state[SDL_SCANCODE_L];
+
+  s8 xaxis = 0, yaxis = 0;
+  if (state[SDL_SCANCODE_LEFT]) {
+    xaxis = -86;
+  }
+  else if (state[SDL_SCANCODE_RIGHT]) {
+    xaxis = 86;
+  }
+
+  if (state[SDL_SCANCODE_DOWN]) {
+    yaxis = -86;
+  }
+  else if (state[SDL_SCANCODE_UP]) {
+    yaxis = 86;
+  }
+
+  joybusDevices[channel].controller.joy_x = xaxis;
+  joybusDevices[channel].controller.joy_y = yaxis;
 
   if (joybusDevices[channel].controller.joy_reset) {
     joybusDevices[channel].controller.start = false;

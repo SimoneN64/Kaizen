@@ -1,6 +1,5 @@
 #pragma once
 #include <MemoryRegions.hpp>
-#include <gainput/gainput.h>
 #include <GameDB.hpp>
 #include <filesystem>
 #include <mio/mmap.hpp>
@@ -102,16 +101,6 @@ enum CICType {
   CIC_NUS_6103_7103,
   CIC_NUS_6105_7105,
   CIC_NUS_6106_7106
-};
-
-enum Button {
-  BtnA, BtnB, BtnZ, BtnL, BtnR, BtnStart,
-  BtnCUp, BtnCDown, BtnCLeft, BtnCRight,
-  BtnDUp, BtnDDown, BtnDLeft, BtnDRight,
-};
-
-enum Axis {
-  AxisLeft, AxisRight, AxisUp, AxisDown
 };
 
 struct PIF {

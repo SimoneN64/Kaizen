@@ -18,6 +18,7 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   setAcceptDrops(true);
 
   mainWindow->show();
+  emuThread->core = new n64::Core();
 }
 
 void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept {
@@ -43,5 +44,5 @@ void KaizenQt::dropEvent(QDropEvent* event) {
 
 void KaizenQt::LoadROM(const QString& file_name) noexcept {
   emuThread->start();
-  emuThread->core.LoadROM(file_name.toStdString());
+  emuThread->core->LoadROM(file_name.toStdString());
 }

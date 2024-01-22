@@ -208,6 +208,7 @@ void PIF::ProcessCommands(Mem &mem) {
             channel++;
             break;
           case 1:
+            UpdateController();
             if(!ReadButtons(res)) {
               cmd[1] |= 0x80;
             }

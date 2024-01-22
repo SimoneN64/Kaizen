@@ -115,7 +115,7 @@ enum Axis {
 };
 
 struct PIF {
-  PIF() = default;
+  PIF() : inputMap(inputManager) {}
   ~PIF() = default;
   void Reset();
   void MaybeLoadMempak();
@@ -136,7 +136,7 @@ struct PIF {
 
   bool gamepadConnected = false, mempakOpen = false;
   gainput::InputManager inputManager;
-  gainput::InputMap inputMap{ inputManager };
+  gainput::InputMap inputMap;
   gainput::DeviceId keyboardId, padId;
   JoybusDevice joybusDevices[6]{};
   u8 bootrom[PIF_BOOTROM_SIZE]{}, ram[PIF_RAM_SIZE]{};

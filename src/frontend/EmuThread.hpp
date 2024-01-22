@@ -19,7 +19,7 @@ public:
 
   [[noreturn]] void run() noexcept override;
 
-  n64::Core core;
+  n64::Core* core;
   bool running = false;
 
   void TogglePause()
@@ -30,15 +30,15 @@ public:
   void Reset()
   {
     running = false;
-    core.Stop();
-    core.LoadROM(core.rom);
+    core->Stop();
+    core->LoadROM(core->rom);
     running = true;
   }
 
   void Stop()
   {
-    core.rom = {};
+    core->rom = {};
     running = false;
-    core.Stop();
+    core->Stop();
   }
 };

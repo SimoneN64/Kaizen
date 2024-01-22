@@ -7,17 +7,16 @@ EmuThread::EmuThread(std::unique_ptr<QtInstanceFactory>&& instance, std::unique_
 
 [[noreturn]] void EmuThread::run() noexcept {
   LoadWSIPlatform(instance.get(), std::move(wsiPlatform), std::move(windowInfo));
-  LoadParallelRDP(core.cpu->mem.GetRDRAM());
+  LoadParallelRDP(core->cpu->mem.GetRDRAM());
   while (true) {
-    if (!core.pause) {
-      core.cpu->mem.mmio.si.pif.UpdateController();
-      core.Run(0.5, 0.5);
-      if(core.render) {
-        UpdateScreenParallelRdp(core, core.cpu->mem.mmio.vi);
+    if (!core->pause) {
+      core->Run(0.5, 0.5);
+      if(core->render) {
+        UpdateScreenParallelRdp(*core, core->cpu->mem.mmio.vi);
       }
     } else {
-      if(core.render) {
-        UpdateScreenParallelRdpNoGame(core);
+      if(core->render) {
+        UpdateScreenParallelRdpNoGame(*core);
       }
     }
   }

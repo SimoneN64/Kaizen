@@ -186,6 +186,7 @@ void PIF::ProcessCommands(Mem &mem) {
             channel++;
             break;
           case 1:
+            UpdateController();
             if(!ReadButtons(res)) {
               cmd[1] |= 0x80;
             }
@@ -333,8 +334,8 @@ void PIF::EepromWrite(const u8* cmd, u8* res, const Mem& mem) {
   }
 }
 
-void PIF::UpdateController(Controller value) {
-  joybusDevices[channel].controller = value;
+void PIF::UpdateController() {
+  //joybusDevices[channel].controller = value;
 
   if (joybusDevices[channel].controller.joy_reset) {
     joybusDevices[channel].controller.start = false;

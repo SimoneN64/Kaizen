@@ -15,7 +15,6 @@ public:
   EmuThread* emuThread = nullptr;
 private:
   void ConnectSignalsToSlots() noexcept;
-  void keyPressEvent(QKeyEvent* event) override;
 
   bool textPauseToggle = false;
 

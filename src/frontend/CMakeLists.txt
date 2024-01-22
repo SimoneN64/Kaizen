@@ -16,6 +16,7 @@ include_directories(
   ../backend
   ../backend/core
   ../backend/core/mmio
+  ../backend/core/mmio/PIF
   ../backend/core/registers
   ../backend/core/rsp
   ../../external/

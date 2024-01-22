@@ -1,6 +1,6 @@
 #pragma once
 #include <MemoryRegions.hpp>
-#include <SDL_gamecontroller.h>
+#include <gainput/gainput.h>
 #include <GameDB.hpp>
 #include <filesystem>
 #include <mio/mmap.hpp>
@@ -104,6 +104,16 @@ enum CICType {
   CIC_NUS_6106_7106
 };
 
+enum Button {
+  BtnA, BtnB, BtnZ, BtnL, BtnR, BtnStart,
+  BtnCUp, BtnCDown, BtnCLeft, BtnCRight,
+  BtnDUp, BtnDDown, BtnDLeft, BtnDRight,
+};
+
+enum Axis {
+  AxisLeft, AxisRight, AxisUp, AxisDown
+};
+
 struct PIF {
   PIF() = default;
   ~PIF() = default;
@@ -125,7 +135,9 @@ struct PIF {
   std::vector<u8> Serialize();
 
   bool gamepadConnected = false, mempakOpen = false;
-  SDL_GameController* gamepad{};
+  gainput::InputManager inputManager;
+  gainput::InputMap inputMap{ inputManager };
+  gainput::DeviceId keyboardId, padId;
   JoybusDevice joybusDevices[6]{};
   u8 bootrom[PIF_BOOTROM_SIZE]{}, ram[PIF_RAM_SIZE]{};
   mio::mmap_sink mempak, eeprom;

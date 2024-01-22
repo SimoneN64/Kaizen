@@ -10,6 +10,7 @@ EmuThread::EmuThread(std::unique_ptr<QtInstanceFactory>&& instance, std::unique_
   LoadParallelRDP(core.cpu->mem.GetRDRAM());
   while (true) {
     if (!core.pause) {
+      core.cpu->mem.mmio.si.pif.UpdateController();
       core.Run(0.5, 0.5);
       if(core.render) {
         UpdateScreenParallelRdp(core, core.cpu->mem.mmio.vi);

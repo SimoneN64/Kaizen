@@ -13,8 +13,6 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
     std::move(mainWindow->view.vulkanWidget->windowInfo),
     mainWindow);
 
-  mainWindow->emuThread = emuThread;
-
   ConnectMainWindowSignalsToSlots();
 
   setAcceptDrops(true);

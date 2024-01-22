@@ -12,7 +12,6 @@ public:
   MainWindowController() noexcept;
 
   Ui::MainWindow view;
-  EmuThread* emuThread = nullptr;
 private:
   void ConnectSignalsToSlots() noexcept;
 

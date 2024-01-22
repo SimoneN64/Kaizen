@@ -31,7 +31,7 @@
      <number>0</number>
     </property>
     <item>
-     <widget class="RenderWidget" name="vulkanWidget"/>
+     <widget class="RenderWidget" name="vulkanWidget" native="true"/>
     </item>
    </layout>
   </widget>
@@ -41,7 +41,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -55,6 +55,7 @@
     <property name="title">
      <string>Emulation</string>
     </property>
+    <addaction name="actionSettings"/>
     <addaction name="actionPause"/>
     <addaction name="actionReset"/>
     <addaction name="actionStop"/>
@@ -119,6 +120,17 @@
    </property>
    <property name="statusTip">
     <string>Stop the emulation</string>
+   </property>
+  </action>
+  <action name="actionSettings">
+   <property name="text">
+    <string>Settings</string>
+   </property>
+   <property name="toolTip">
+    <string>Settings</string>
+   </property>
+   <property name="statusTip">
+    <string>Open the settings window</string>
    </property>
   </action>
  </widget>

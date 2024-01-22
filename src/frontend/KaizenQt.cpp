@@ -49,16 +49,6 @@ void KaizenQt::LoadROM(const QString& file_name) noexcept {
   emuThread->core->LoadROM(file_name.toStdString());
 }
 
-static inline u32 QtKeyToN64Controller(Qt::Key k) {
-  u32 ret{};
-  printf("Valore prima: %08X\n", ret);
-
-
-  printf("Valore dopo: %08X\n", ret);
-
-  return ret;
-}
-
 void KaizenQt::keyPressEvent(QKeyEvent *e) {
   emuThread->core->pause = true;
   auto k = static_cast<Qt::Key>(e->key());

@@ -2,6 +2,7 @@
 #include <QMessageBox>
 #include <QKeyEvent>
 #include <MainWindow.hpp>
+#include <QSlider>
 
 MainWindowController::MainWindowController() noexcept {
   view.setupUi(this);
@@ -54,5 +55,13 @@ void MainWindowController::ConnectSignalsToSlots() noexcept {
         "experience and great compatibility.\n"
         "Kaizen is licensed under the BSD 3-clause license.\n"
         "Nintendo 64 is a registered trademarks of Nintendo Co., Ltd."));
+  });
+
+  connect(view.actionSettings, &QAction::triggered, this, [this]() {
+    auto layout = new QVBoxLayout(this);
+    layout->addWidget(new QSlider(Qt::Horizontal));
+    auto settings = new QWidget;
+    settings->setLayout(layout);
+    settings->show();
   });
 }

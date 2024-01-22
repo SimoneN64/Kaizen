@@ -185,7 +185,6 @@ void PIF::ProcessCommands(Mem &mem) {
             channel++;
             break;
           case 1:
-            UpdateController();
             if(!ReadButtons(res)) {
               cmd[1] |= 0x80;
             }
@@ -331,10 +330,6 @@ void PIF::EepromWrite(const u8* cmd, u8* res, const Mem& mem) {
   } else {
     Util::panic("EEPROM write on bad channel {}", channel);
   }
-}
-
-void PIF::UpdateController() {
-
 }
 
 void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {

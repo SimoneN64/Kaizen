@@ -29,6 +29,8 @@ public:
   void LoadROM(const QString& path) noexcept;
   void dropEvent(QDropEvent*) override;
   void dragEnterEvent(QDragEnterEvent*) override;
+  void keyPressEvent(QKeyEvent*) override;
+  void keyReleaseEvent(QKeyEvent*) override;
 private:
   void ConnectMainWindowSignalsToSlots() noexcept;
   MainWindowController* mainWindow;

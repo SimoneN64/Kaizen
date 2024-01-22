@@ -17,35 +17,82 @@ enum AccessoryType : u8 {
 
 struct Controller {
   union {
-    u8 byte1{};
     struct {
-      bool dp_right:1;
-      bool dp_left:1;
-      bool dp_down:1;
-      bool dp_up:1;
-      bool start:1;
-      bool z:1;
-      bool b:1;
-      bool a:1;
+      union {
+        u8 byte1;
+        struct {
+          bool dp_right: 1;
+          bool dp_left: 1;
+          bool dp_down: 1;
+          bool dp_up: 1;
+          bool start: 1;
+          bool z: 1;
+          bool b: 1;
+          bool a: 1;
+        };
+      };
+      union {
+        u8 byte2;
+        struct {
+          bool c_right: 1;
+          bool c_left: 1;
+          bool c_down: 1;
+          bool c_up: 1;
+          bool r: 1;
+          bool l: 1;
+          bool zero: 1;
+          bool joy_reset: 1;
+        };
+      };
+
+      s8 joy_x;
+      s8 joy_y;
     };
+
+    u32 raw;
   };
-  union {
-    u8 byte2{};
-    struct {
-      bool c_right:1;
-      bool c_left:1;
-      bool c_down:1;
-      bool c_up:1;
-      bool r:1;
-      bool l:1;
-      bool zero:1;
-      bool joy_reset:1;
-    };
+  Controller& operator=(const Controller& other) {
+    byte1 = other.byte1;
+    byte2 = other.byte2;
+    joy_x = other.joy_x;
+    joy_y = other.joy_y;
+
+    return *this;
+  }
+
+  enum Key {
+    A, B, Z, Start, DUp, DDown, DLeft, DRight, CUp, CDown, CLeft, CRight, LT, RT
   };
-  s8 joy_x{};
-  s8 joy_y{};
+
+  enum Axis { X, Y };
 
   Controller() = default;
+  void UpdateButton(Key k, bool state) {
+    switch(k) {
+      case A: a = state; break;
+      case B: b = state; break;
+      case Z: z = state; break;
+      case Start: start = state; break;
+      case DUp: dp_up = state; break;
+      case DDown: dp_down = state; break;
+      case DLeft: dp_left = state; break;
+      case DRight: dp_right = state; break;
+      case CUp: c_up = state; break;
+      case CDown: c_down = state; break;
+      case CLeft: c_left = state; break;
+      case CRight: c_right = state; break;
+      case LT: l = state; break;
+      case RT: r = state; break;
+    }
+  }
+
+  void UpdateAxis(Axis a, s8 state) {
+    switch(a) {
+      case X: joy_x = state; break;
+      case Y: joy_y = state; break;
+    }
+  }
+
   Controller& operator=(u32 v) {
     joy_y = v & 0xff;
     joy_x = v >> 8;
@@ -114,7 +161,6 @@ struct PIF {
   void CICChallenge();
   static void ExecutePIF(Mem& mem, Registers& regs);
   static void DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType);
-  void UpdateController();
   bool ReadButtons(u8*) const;
   void ControllerID(u8*) const;
   void MempakRead(const u8*, u8*);
@@ -123,7 +169,7 @@ struct PIF {
   void EepromWrite(const u8*, u8*, const Mem&);
   std::vector<u8> Serialize();
 
-  bool gamepadConnected = false, mempakOpen = false;
+  bool mempakOpen = false;
   JoybusDevice joybusDevices[6]{};
   u8 bootrom[PIF_BOOTROM_SIZE]{}, ram[PIF_RAM_SIZE]{};
   mio::mmap_sink mempak, eeprom;

@@ -1,57 +1,13 @@
 #include <ParallelRDPWrapper.hpp>
-#include <core/RDP.hpp>
 #include <memory>
 #include <rdp_device.hpp>
-#include <log.hpp>
 #include <File.hpp>
-#include <imgui_impl_vulkan.h>
 
 using namespace Vulkan;
 using namespace RDP;
 
 static CommandProcessor* command_processor;
 static std::unique_ptr<ParallelRdpWindowInfo> windowInfo;
-
-VkQueue GetGraphicsQueue() {
-  return wsi->get_context().get_queue_info().queues[QUEUE_INDEX_GRAPHICS];
-}
-
-VkInstance GetVkInstance() {
-  return wsi->get_context().get_instance();
-}
-
-VkPhysicalDevice GetVkPhysicalDevice() {
-  return wsi->get_device().get_physical_device();
-}
-
-VkDevice GetVkDevice() {
-  return wsi->get_device().get_device();
-}
-
-uint32_t GetVkGraphicsQueueFamily() {
-  return wsi->get_context().get_queue_info().family_indices[QUEUE_INDEX_GRAPHICS];
-}
-
-VkFormat GetVkFormat() {
-  return wsi->get_device().get_swapchain_view().get_format();
-}
-
-CommandBufferHandle requested_command_buffer;
-
-VkRenderPass GetVkRenderPass() {
-  return wsi->get_device().request_render_pass(
-    wsi->get_device().get_swapchain_render_pass(SwapchainRenderPass::ColorOnly), true
-  ).get_render_pass();
-}
-
-VkCommandBuffer GetVkCommandBuffer() {
-  requested_command_buffer = wsi->get_device().request_command_buffer();
-  return requested_command_buffer->get_command_buffer();
-}
-
-void SubmitRequestedVkCommandBuffer() {
-  wsi->get_device().submit(requested_command_buffer);
-}
 
 bool IsFramerateUnlocked() {
   return wsi->get_present_mode() != PresentMode::SyncToVBlank;
@@ -162,7 +118,7 @@ void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image, Util::Intrusive
   cmd->draw(3, 1);
 }
 
-void UpdateScreen(n64::Core& core, Util::IntrusivePtr<Image> image) {
+void UpdateScreen(Util::IntrusivePtr<Image> image) {
   wsi->begin_frame();
 
   if (!image) {
@@ -197,7 +153,7 @@ void UpdateScreen(n64::Core& core, Util::IntrusivePtr<Image> image) {
   wsi->end_frame();
 }
 
-void UpdateScreenParallelRdp(n64::Core& core, n64::VI& vi) {
+void UpdateScreenParallelRdp(n64::VI& vi) {
   command_processor->set_vi_register(VIRegister::Control,      vi.status.raw);
   command_processor->set_vi_register(VIRegister::Origin,       vi.origin);
   command_processor->set_vi_register(VIRegister::Width,        vi.width);
@@ -223,12 +179,12 @@ void UpdateScreenParallelRdp(n64::Core& core, n64::VI& vi) {
   opts.downscale_steps = true;
   opts.crop_overscan_pixels = true;
   Util::IntrusivePtr<Image> image = command_processor->scanout(opts);
-  UpdateScreen(core, image);
+  UpdateScreen(image);
   command_processor->begin_frame_context();
 }
 
-void UpdateScreenParallelRdpNoGame(n64::Core& core) {
-  UpdateScreen(core, static_cast<Util::IntrusivePtr<Image>>(nullptr));
+void UpdateScreenParallelRdpNoGame() {
+  UpdateScreen(static_cast<Util::IntrusivePtr<Image>>(nullptr));
 }
 
 void ParallelRdpEnqueueCommand(int command_length, u32* buffer) {

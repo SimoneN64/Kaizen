@@ -1,7 +1,6 @@
 #include <Core.hpp>
 #include <Scheduler.hpp>
 #include <ParallelRDPWrapper.hpp>
-#include <SDL2/SDL.h>
 
 namespace n64 {
 u32 extraCycles = 0;
@@ -16,13 +15,7 @@ u32 PopStalledCycles() {
   return ret;
 }
 
-Core::Core() {
-  if(SDL_GameControllerAddMappingsFromFile("resources/gamecontrollerdb.txt") < 0) {
-    Util::warn("Failed to load game controller DB");
-  }
-
-  cpu = std::make_unique<Interpreter>();
-}
+Core::Core() : cpu(std::make_unique<Interpreter>()) {}
 
 void Core::Stop() {
   render = false;

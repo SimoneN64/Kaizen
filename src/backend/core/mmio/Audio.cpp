@@ -1,6 +1,6 @@
 #include <Audio.hpp>
-#include <SDL2/SDL_audio.h>
 #include <log.hpp>
+#include <SDL2/SDL.h>
 
 namespace n64 {
 #define AUDIO_SAMPLE_RATE 44100
@@ -38,6 +38,7 @@ void audioCallback(void*, Uint8* stream, int length) {
 }
 
 void InitAudio() {
+  SDL_InitSubSystem(SDL_INIT_AUDIO);
   AdjustSampleRate(AUDIO_SAMPLE_RATE);
   memset(&request, 0, sizeof(request));
 

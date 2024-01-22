@@ -278,11 +278,11 @@ FORCE_INLINE void SetCauseOnResult(Registers& regs, T& d) {
   if constexpr(std::is_same_v<T, float>) {
     u32 c = 0x7FBFFFFF;
     magic = U32_TO_F(c);
-    min = FLT_MIN;
+    min = std::numeric_limits<float>::min();
   } else if constexpr(std::is_same_v<T, double>) {
     u64 c = 0x7FF7FFFFFFFFFFFF;
     magic = U64_TO_D(c);
-    min = DBL_MIN;
+    min = std::numeric_limits<double>::min();
   }
   switch (fp_class) {
     case FP_NAN:

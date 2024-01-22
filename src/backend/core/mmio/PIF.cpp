@@ -2,7 +2,6 @@
 #include <core/Mem.hpp>
 #include <core/registers/Registers.hpp>
 #include <log.hpp>
-#include <SDL_keyboard.h>
 #include <cic_nus_6105/n64_cic_nus_6105.hpp>
 #include <cassert>
 #include <Netplay.hpp>
@@ -335,46 +334,7 @@ void PIF::EepromWrite(const u8* cmd, u8* res, const Mem& mem) {
 }
 
 void PIF::UpdateController() {
-  const uint8_t* state = SDL_GetKeyboardState(nullptr);
-  joybusDevices[channel].controller.a = state[SDL_SCANCODE_X];
-  joybusDevices[channel].controller.b = state[SDL_SCANCODE_C];
-  joybusDevices[channel].controller.z = state[SDL_SCANCODE_Z];
-  joybusDevices[channel].controller.start = state[SDL_SCANCODE_RETURN];
-  joybusDevices[channel].controller.dp_up = state[SDL_SCANCODE_PAGEUP];
-  joybusDevices[channel].controller.dp_down = state[SDL_SCANCODE_PAGEDOWN];
-  joybusDevices[channel].controller.dp_left = state[SDL_SCANCODE_HOME];
-  joybusDevices[channel].controller.dp_right = state[SDL_SCANCODE_END];
-  joybusDevices[channel].controller.joy_reset = state[SDL_SCANCODE_RETURN] && state[SDL_SCANCODE_A] && state[SDL_SCANCODE_S];
-  joybusDevices[channel].controller.l = state[SDL_SCANCODE_A];
-  joybusDevices[channel].controller.r = state[SDL_SCANCODE_S];
-  joybusDevices[channel].controller.c_up = state[SDL_SCANCODE_I];
-  joybusDevices[channel].controller.c_down = state[SDL_SCANCODE_K];
-  joybusDevices[channel].controller.c_left = state[SDL_SCANCODE_J];
-  joybusDevices[channel].controller.c_right = state[SDL_SCANCODE_L];
 
-  s8 xaxis = 0, yaxis = 0;
-  if (state[SDL_SCANCODE_LEFT]) {
-    xaxis = -86;
-  }
-  else if (state[SDL_SCANCODE_RIGHT]) {
-    xaxis = 86;
-  }
-
-  if (state[SDL_SCANCODE_DOWN]) {
-    yaxis = -86;
-  }
-  else if (state[SDL_SCANCODE_UP]) {
-    yaxis = 86;
-  }
-
-  joybusDevices[channel].controller.joy_x = xaxis;
-  joybusDevices[channel].controller.joy_y = yaxis;
-
-  if (joybusDevices[channel].controller.joy_reset) {
-    joybusDevices[channel].controller.start = false;
-    joybusDevices[channel].controller.joy_x = 0;
-    joybusDevices[channel].controller.joy_y = 0;
-  }
 }
 
 void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {

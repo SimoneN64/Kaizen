@@ -3,7 +3,6 @@
 #include <QApplication>
 #include <QDropEvent>
 #include <QMimeData>
-#include <SDL2/SDL.h>
 
 KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   mainWindow = new MainWindowController();

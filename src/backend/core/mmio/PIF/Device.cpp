@@ -2,7 +2,6 @@
 #include <PIF/MupenMovie.hpp>
 #include <Netplay.hpp>
 #include <log.hpp>
-#include <SDL2/SDL_keyboard.h>
 
 namespace n64 {
 void PIF::InitDevices(SaveType saveType) {

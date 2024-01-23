@@ -4,9 +4,9 @@
 #include <SettingsWindow.hpp>
 
 struct QtInstanceFactory;
-struct ParallelRdpWindowInfo;
+class ParallelRdpWindowInfo;
 namespace Vulkan {
-struct WSIPlatform;
+class WSIPlatform;
 }
 
 class EmuThread : public QThread

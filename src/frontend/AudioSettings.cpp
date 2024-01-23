@@ -11,6 +11,10 @@ AudioSettings::AudioSettings(nlohmann::json& settings) : settings(settings), QWi
 
   connect(lockChannels, &QCheckBox::stateChanged, this, [&]() {
     JSONSetField(settings, "audio", "lock", lockChannels->isChecked());
+    if (lockChannels->isChecked()) {
+      volumeR->setValue(volumeL->value());
+    }
+
     emit modified();
   });
 

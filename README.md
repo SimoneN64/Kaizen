@@ -36,8 +36,7 @@ This build uses Visual Studio with Vcpkg and Clang-cl
 Dependencies:
 - CMake 3.20 or higher
 - SDL2 (install it by making sure that you're choosing the "vulkan" extension of the package and the x64-windows triplet: `vcpkg install sdl2[vulkan]:x64-windows`)
-- fmtlib (install it by making sure that you're choosing the x64-windows triplet: `vcpkg install fmt:x64-windows`)
-- nlohmann-json (install it by making sure that you're choosing the x64-windows triplet: `vcpkg install nlohmann-json:x64-windows`)
+- Qt6 (install it with `vcpkg install qtbase[core,gui,widgets,vulkan]:x64-windows`)
 
 ```
 cd path/to/kaizen
@@ -53,9 +52,8 @@ Dependencies:
 - GCC or Clang with C++17 support
 - CMake 3.20 or higher
 - SDL2
-- fmtlib
 - Vulkan API (including the validation layers) + SPIR-V tools
-- nlohmann-json
+- Qt6
 
 ```
 cd path/to/kaizen
@@ -78,7 +76,7 @@ Your GPU needs to support Vulkan 1.1+, because the RDP is implemented via [ParaL
 - [x] Full TLB emulation
 - [x] Full joybus emulation (but it's not configurable by the user at the moment)
 - [x] TAS replay (using Mupen's format)
-- [ ] Qt or wxWidgets for native GUI (keeping ImGui as opt-in).
+- [x] Qt for native GUI
 - [ ] JIT, with support for x86_64 and ARM (using an IR).
 - [ ] Debug tools: disassembly, breakpoints, single-step and memory editor
 - [ ] TAS tools: TAS input, recording (using Mupen's format), save-states, rewind and frame-advance

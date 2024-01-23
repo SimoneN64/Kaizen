@@ -1,6 +1,7 @@
 #include <log.hpp>
 #include <core/registers/Registers.hpp>
 #include <core/Interpreter.hpp>
+#include <core/JIT.hpp>
 
 namespace n64 {
 Cop0::Cop0() {
@@ -336,7 +337,25 @@ template void Cop0::decode<Interpreter>(Interpreter&, u32);
 template void Cop0::decode<JIT>(JIT&, u32);
 
 void Cop0::decodeJIT(JIT& cpu, u32 instr) {
-
+  u8 mask_cop = (instr >> 21) & 0x1F;
+  u8 mask_cop2 = instr & 0x3F;
+  switch(mask_cop) {
+    case 0x00: cpu.mfc0(instr); break;
+    case 0x01: cpu.dmfc0(instr); break;
+    case 0x04: cpu.mtc0(instr); break;
+    case 0x05: cpu.dmtc0(instr); break;
+    case 0x10 ... 0x1F:
+      switch(mask_cop2) {
+        case 0x01: cpu.tlbr(); break;
+        case 0x02: cpu.tlbw(index.i); break;
+        case 0x06: cpu.tlbw(GetRandom()); break;
+        case 0x08: cpu.tlbp(); break;
+        case 0x18: cpu.eret(); break;
+        default: Util::panic("Unimplemented COP0 function {} {} ({:08X}) ({:016lX})", mask_cop2 >> 3, mask_cop2 & 7, instr, cpu.regs.oldPC);
+      }
+      break;
+    default: Util::panic("Unimplemented COP0 instruction {} {}", mask_cop >> 4, mask_cop & 7);
+  }
 }
 
 void Cop0::decodeInterp(Registers& regs, u32 instr) {

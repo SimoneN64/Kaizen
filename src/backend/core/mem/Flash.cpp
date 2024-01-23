@@ -49,7 +49,7 @@ void Flash::CommandExecute() {
     case FlashState::Erase:
       if(saveData.is_mapped()) {
         for (int i = 0; i < 128; i++) {
-          saveData[eraseOffs + i] = 0xFF;
+          saveData[eraseOffs + i] = 0xFFi8;
         }
       } else {
         Util::panic("Accessing flash when not mapped!");

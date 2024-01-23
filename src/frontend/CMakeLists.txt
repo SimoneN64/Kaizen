@@ -19,6 +19,7 @@ include_directories(
   ../../external/xbyak
   ../../external/mio/include
   ../../external/fmt/include
+  ../../external/json/include
   ../../external/parallel-rdp
   ../../external/parallel-rdp/parallel-rdp-standalone/parallel-rdp
   ../../external/parallel-rdp/parallel-rdp-standalone/volk
@@ -33,17 +34,18 @@ include_directories(
   ../../external/unarr
 )
 
-add_subdirectory(../../external/fmt fmt)
-add_subdirectory(../../external/mio mio)
-add_subdirectory(../backend backend)
-add_subdirectory(../../external/discord-rpc discord-rpc)
-add_subdirectory(../../external/nativefiledialog-extended nfd)
-add_subdirectory(../../external/parallel-rdp parallel-rdp)
-add_subdirectory(../../external/unarr unarr)
-
 option(RAPIDJSON_BUILD_DOC "Build rapidjson documentation." OFF)
 option(RAPIDJSON_BUILD_EXAMPLES "Build rapidjson examples." OFF)
 option(RAPIDJSON_BUILD_TESTS "Build rapidjson perftests and unittests." OFF)
+
+add_subdirectory(../../external/discord-rpc discord-rpc)
+add_subdirectory(../../external/json json)
+add_subdirectory(../../external/fmt fmt)
+add_subdirectory(../../external/mio mio)
+add_subdirectory(../backend backend)
+add_subdirectory(../../external/nativefiledialog-extended nfd)
+add_subdirectory(../../external/parallel-rdp parallel-rdp)
+add_subdirectory(../../external/unarr unarr)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -61,7 +63,7 @@ add_executable(kaizen-qt
   MainWindow.hpp
   MainWindow.cpp)
 
-target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets fmt mio nlohmann_json
+target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets fmt mio json
   discord-rpc nfd parallel-rdp backend)
 
 file(COPY ../../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)

@@ -12,7 +12,7 @@ EmuThread::EmuThread(std::unique_ptr<QtInstanceFactory>&& instance, std::unique_
   n64::InitAudio();
   while (true) {
     if (!core->pause) {
-      core->Run(0.5, 0.5);
+      core->Run(settings->getVolumeL(), settings->getVolumeR());
       if(core->render) {
         UpdateScreenParallelRdp(core->cpu->mem.mmio.vi);
       }

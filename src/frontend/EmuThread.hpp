@@ -1,6 +1,7 @@
 #pragma once
 #include <QThread>
 #include <Core.hpp>
+#include <SettingsWindow.hpp>
 
 struct QtInstanceFactory;
 struct ParallelRdpWindowInfo;
@@ -20,6 +21,7 @@ public:
   [[noreturn]] void run() noexcept override;
 
   n64::Core* core;
+  SettingsWindow* settings;
   bool running = false;
 
   void TogglePause()

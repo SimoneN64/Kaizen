@@ -16,8 +16,10 @@ static inline nlohmann::json JSONOpenOrCreate(const std::string& path) {
   } else {
     auto file = std::fstream(path, std::fstream::in | std::fstream::out | std::fstream::trunc);
     nlohmann::json json;
-    json["audio"]["volume"] = 0.5;
-    json["cpu"]["type"] = std::string("interpreter");
+    json["audio"]["volumeL"] = 0.5;
+    json["audio"]["volumeR"] = 0.5;
+    json["audio"]["lock"] = true;
+    json["cpu"]["type"] = "interpreter";
 
     file << json;
     file.close();
@@ -32,6 +34,6 @@ static inline void JSONSetField(nlohmann::json& json, const std::string& field1,
 }
 
 template <typename T>
-static inline const T& JSONGetField(nlohmann::json& json, const std::string& field1, const std::string& field2) {
-  return json[field1][field2];
+static inline T JSONGetField(nlohmann::json& json, const std::string& field1, const std::string& field2) {
+  return json[field1][field2].get<T>();
 }

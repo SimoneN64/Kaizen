@@ -13,14 +13,19 @@ SettingsWindow::SettingsWindow() : QWidget(nullptr) {
   setWindowTitle("Settings");
 
   cpuSettings = new CPUSettings(settings);
+  audioSettings = new AudioSettings(settings);
 
   auto* tabs = new QTabWidget;
   tabs->addTab(cpuSettings, tr("CPU"));
-  //tabs->addTab(new PermissionsTab, tr("Audio"));
+  tabs->addTab(audioSettings, tr("Audio"));
 
   apply->setEnabled(false);
 
   connect(cpuSettings, &CPUSettings::modified, this, [&]() {
+    apply->setEnabled(true);
+  });
+
+  connect(audioSettings, &AudioSettings::modified, this, [&]() {
     apply->setEnabled(true);
   });
 

@@ -22,6 +22,7 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   settingsWindow = new SettingsWindow;
   settingsWindow->hide();
   emuThread->core = new n64::Core();
+  emuThread->settings = settingsWindow;
 }
 
 void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept {

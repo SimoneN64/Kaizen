@@ -10,11 +10,10 @@ endif ()
 
 include(CheckCCompilerFlag)
 
-check_c_compiler_flag(-mssse3 HAS_SSSE3)
 check_c_compiler_flag(-msse4.1 HAS_SSE4_1)
 
-if (HAS_SSSE3 AND HAS_SSE4_1)
-  add_compile_options(-mssse3 -msse4.1)
+if (HAS_SSE4_1)
+  add_compile_options(-msse3 -msse4.1)
 endif ()
 
 if(${CMAKE_BUILD_TYPE} MATCHES Debug)

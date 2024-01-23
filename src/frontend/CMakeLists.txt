@@ -30,7 +30,6 @@ include_directories(
   ../../external/nativefiledialog-extended/src/include
   ../../external/imgui/imgui
   ../../external/imgui/imgui/backends
-  ../../external/discord-rpc/include
   ../../external/unarr
 )
 
@@ -38,7 +37,6 @@ option(RAPIDJSON_BUILD_DOC "Build rapidjson documentation." OFF)
 option(RAPIDJSON_BUILD_EXAMPLES "Build rapidjson examples." OFF)
 option(RAPIDJSON_BUILD_TESTS "Build rapidjson perftests and unittests." OFF)
 
-add_subdirectory(../../external/discord-rpc discord-rpc)
 add_subdirectory(../../external/json json)
 add_subdirectory(../../external/fmt fmt)
 add_subdirectory(../../external/mio mio)
@@ -63,8 +61,7 @@ add_executable(kaizen-qt
   MainWindow.hpp
   MainWindow.cpp)
 
-target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets fmt mio json
-  discord-rpc nfd parallel-rdp backend)
+target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets fmt mio nlohmann_json nfd parallel-rdp backend)
 
 file(COPY ../../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)
 file(REMOVE

@@ -1,0 +1,43 @@
+#include <SettingsWindow.hpp>
+#include <QGroupBox>
+#include <QVBoxLayout>
+#include <QButtonGroup>
+
+SettingsWindow::SettingsWindow() : QWidget(nullptr) {
+  settings = JSONOpenOrCreate("resources/settings.json");
+
+  if (objectName().isEmpty())
+    setObjectName("Settings");
+
+  resize(500, 400);
+  setWindowTitle("Settings");
+
+  cpuSettings = new CPUSettings(settings);
+
+  auto* tabs = new QTabWidget;
+  tabs->addTab(cpuSettings, tr("CPU"));
+  //tabs->addTab(new PermissionsTab, tr("Audio"));
+
+  apply->setEnabled(false);
+
+  connect(cpuSettings, &CPUSettings::modified, this, [&]() {
+    apply->setEnabled(true);
+  });
+
+  connect(apply, &QPushButton::pressed, this, [&]() {
+    apply->setEnabled(false);
+    std::ofstream file("resources/settings.json");
+    file << settings;
+    file.close();
+  });
+
+  connect(cancel, &QPushButton::pressed, this, &QWidget::hide);
+
+  QVBoxLayout* mainLayout = new QVBoxLayout;
+  QHBoxLayout* buttonsLayout = new QHBoxLayout;
+  buttonsLayout->addWidget(apply);
+  buttonsLayout->addWidget(cancel);
+  mainLayout->addWidget(tabs);
+  mainLayout->addLayout(buttonsLayout);
+  setLayout(mainLayout);
+}

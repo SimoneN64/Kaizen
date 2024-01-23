@@ -58,10 +58,6 @@ void MainWindowController::ConnectSignalsToSlots() noexcept {
   });
 
   connect(view.actionSettings, &QAction::triggered, this, [this]() {
-    auto layout = new QVBoxLayout(this);
-    layout->addWidget(new QSlider(Qt::Horizontal));
-    auto settings = new QWidget;
-    settings->setLayout(layout);
-    settings->show();
+    emit OpenSettings();
   });
 }

@@ -18,12 +18,16 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   setFocusPolicy(Qt::StrongFocus);
   setFocus();
   grabKeyboard();
-
   mainWindow->show();
+  settingsWindow = new SettingsWindow;
+  settingsWindow->hide();
   emuThread->core = new n64::Core();
 }
 
 void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept {
+  connect(mainWindow, &MainWindowController::OpenSettings, this, [this]() {
+    settingsWindow->show();
+  });
   connect(mainWindow, &MainWindowController::OpenROM, this, &KaizenQt::LoadROM);
   connect(mainWindow, &MainWindowController::Exit, this, []() {
     QApplication::quit();

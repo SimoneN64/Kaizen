@@ -59,7 +59,12 @@ add_executable(kaizen-qt
   EmuThread.cpp
   mainwindow.ui
   MainWindow.hpp
-  MainWindow.cpp)
+  MainWindow.cpp
+  SettingsWindow.hpp
+  SettingsWindow.cpp
+  CPUSettings.hpp
+  CPUSettings.cpp
+  JSONUtils.hpp)
 
 target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets fmt mio nlohmann_json nfd parallel-rdp backend)
 

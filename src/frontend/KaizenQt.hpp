@@ -1,6 +1,7 @@
 #pragma once
 #include <EmuThread.hpp>
 #include <MainWindow.hpp>
+#include <SettingsWindow.hpp>
 
 enum class CompositorCategory {
   Windows, MacOS, XCB, Wayland
@@ -34,5 +35,6 @@ public:
 private:
   void ConnectMainWindowSignalsToSlots() noexcept;
   MainWindowController* mainWindow;
+  SettingsWindow* settingsWindow;
   EmuThread* emuThread;
 };

@@ -66,7 +66,9 @@ add_executable(kaizen-qt
   CPUSettings.cpp
   JSONUtils.hpp
   AudioSettings.hpp
-  AudioSettings.cpp)
+  AudioSettings.cpp
+  InputSettings.hpp
+  InputSettings.cpp)
 
 target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets fmt mio nlohmann_json nfd parallel-rdp backend)
 

@@ -20,6 +20,26 @@ static inline nlohmann::json JSONOpenOrCreate(const std::string& path) {
     json["audio"]["volumeR"] = 0.5;
     json["audio"]["lock"] = true;
     json["cpu"]["type"] = "interpreter";
+    json["input"] = {
+      {"A", ""},
+      {"B", ""},
+      {"Z", ""},
+      {"Start", ""},
+      {"L", ""},
+      {"R", ""},
+      {"Dpad Up", ""},
+      {"Dpad Down", ""},
+      {"Dpad Left", ""},
+      {"Dpad Right", ""},
+      {"C Up", ""},
+      {"C Down", ""},
+      {"C Left", ""},
+      {"C Right", ""},
+      {"Analog Up", ""},
+      {"Analog Down", ""},
+      {"Analog Left", ""},
+      {"Analog Right", ""},
+    };
 
     file << json;
     file.close();

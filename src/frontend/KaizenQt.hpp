@@ -2,6 +2,8 @@
 #include <EmuThread.hpp>
 #include <MainWindow.hpp>
 #include <SettingsWindow.hpp>
+#include <Debugger.hpp>
+#include <MemoryEditor.hpp>
 
 enum class CompositorCategory {
   Windows, MacOS, XCB, Wayland
@@ -36,5 +38,7 @@ private:
   void ConnectMainWindowSignalsToSlots() noexcept;
   MainWindowController* mainWindow;
   SettingsWindow* settingsWindow;
+  DebuggerWindow* debuggerWindow;
+  MemoryEditor* memoryEditorWindow;
   EmuThread* emuThread;
 };

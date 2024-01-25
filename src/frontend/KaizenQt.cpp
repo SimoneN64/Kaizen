@@ -21,6 +21,10 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   mainWindow->show();
   settingsWindow = new SettingsWindow;
   settingsWindow->hide();
+  debuggerWindow = new DebuggerWindow;
+  debuggerWindow->hide();
+  memoryEditorWindow = new MemoryEditor;
+  memoryEditorWindow->hide();
   connect(settingsWindow, &SettingsWindow::regrabKeyboard, this, [&]() {
     grabKeyboard();
   }),
@@ -31,6 +35,12 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
 void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept {
   connect(mainWindow, &MainWindowController::OpenSettings, this, [this]() {
     settingsWindow->show();
+  });
+  connect(mainWindow, &MainWindowController::OpenDebugger, this, [this]() {
+    debuggerWindow->show();
+  });
+  connect(mainWindow, &MainWindowController::OpenMemoryEditor, this, [this]() {
+    memoryEditorWindow->show();
   });
   connect(mainWindow, &MainWindowController::OpenROM, this, &KaizenQt::LoadROM);
   connect(mainWindow, &MainWindowController::Exit, this, []() {

@@ -18,6 +18,8 @@ private:
   bool textPauseToggle = false;
 
 Q_SIGNALS:
+  void OpenMemoryEditor();
+  void OpenDebugger();
   void OpenSettings();
   void OpenROM(const QString& rom_file);
   void Exit();

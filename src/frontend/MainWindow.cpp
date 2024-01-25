@@ -60,4 +60,12 @@ void MainWindowController::ConnectSignalsToSlots() noexcept {
   connect(view.actionSettings, &QAction::triggered, this, [this]() {
     emit OpenSettings();
   });
+
+  connect(view.actionDebugger, &QAction::triggered, this, [this]() {
+    emit OpenDebugger();
+  });
+
+  connect(view.actionMemoryEditor, &QAction::triggered, this, [this]() {
+    emit OpenMemoryEditor();
+    });
 }

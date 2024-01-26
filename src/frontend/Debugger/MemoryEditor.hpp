@@ -1,7 +1,7 @@
 #pragma once
-#include <QWidget>
+#include <QTextEdit>
 
-class MemoryEditor : public QWidget {
+class MemoryEditor : public QTextEdit {
 public:
   MemoryEditor();
 };

@@ -7,7 +7,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
 
 include_directories(
   .
-  debugger
+  debugger/
   ../
   ../utils
   ../backend
@@ -70,8 +70,8 @@ add_executable(kaizen-qt
   AudioSettings.cpp
   InputSettings.hpp
   InputSettings.cpp
-  Debugger/Debugger.hpp
-  Debugger/Debugger.cpp "Debugger/MemoryEditor.cpp")
+  debugger/Debugger.hpp
+  debugger/Debugger.cpp "debugger/MemoryEditor.cpp")
 
 target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets fmt mio nlohmann_json nfd parallel-rdp backend)
 

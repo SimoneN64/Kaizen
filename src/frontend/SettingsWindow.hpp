@@ -1,14 +1,13 @@
 #pragma once
 #include <QWidget>
 #include <QTabWidget>
-#include <QPushButton>
+#include <QDialogButtonBox>
 #include <CPUSettings.hpp>
 #include <AudioSettings.hpp>
 #include <InputSettings.hpp>
 
 class SettingsWindow : public QWidget {
-  QPushButton* cancel = new QPushButton("Cancel");
-  QPushButton* apply = new QPushButton("Apply");
+  QDialogButtonBox* buttonBox;
   Q_OBJECT
 public:
   float getVolumeL() { return float(audioSettings->volumeL->value()) / 100.f; }

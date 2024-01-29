@@ -1,7 +1,6 @@
 #include <KaizenQt.hpp>
 #include <QApplication>
 #include <QCommandLineParser>
-#include <QCommandLineOption>
 #include <MupenMovie.hpp>
 
 int main(int argc, char** argv) {

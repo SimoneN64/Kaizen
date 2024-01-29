@@ -11,6 +11,7 @@ struct PI {
   PI();
   void Reset();
   auto Read(MI&, u32) const -> u32;
+  auto ReadDebugger(MI&, u32) const -> u32;
   void Write(Mem&, Registers&, u32, u32);
 
   template<typename T, bool isDma>
@@ -20,6 +21,8 @@ struct PI {
 
   template<typename T, bool isDma>
   auto BusRead(Mem&, u32) -> T;
+  template<typename T>
+  auto BusReadDebugger(Mem&, u32) -> T;
 
   bool ReadLatch();
   bool WriteLatch(u32 val);

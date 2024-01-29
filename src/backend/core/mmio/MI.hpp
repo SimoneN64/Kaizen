@@ -22,6 +22,7 @@ struct MI {
   MI();
   void Reset();
   [[nodiscard]] auto Read(u32) const -> u32;
+  [[nodiscard]] auto ReadDebugger(u32) const -> u32;
   void Write(Registers& regs, u32, u32);
 
   u32 miMode{};

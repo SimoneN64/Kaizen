@@ -1,6 +1,4 @@
 #include <Mem.hpp>
-#include <core/registers/Registers.hpp>
-#include <core/registers/Cop0.hpp>
 #include <core/Interpreter.hpp>
 #include <backend/RomHelpers.hpp>
 #include <File.hpp>
@@ -346,6 +344,149 @@ template<> u64 Mem::Read(n64::Registers &regs, u32 paddr) {
   }
 }
 
+
+template<> u8 Mem::ReadDebugger(u32 paddr) {
+  const auto page = paddr >> 12;
+  const auto offset = paddr & 0xFFF;
+  const auto pointer = readPages[page];
+  SI& si = mmio.si;
+
+  if(pointer) {
+    return ((u8*)pointer)[BYTE_ADDRESS(offset)];
+  } else {
+    switch (paddr) {
+      case RDRAM_REGION:
+        return mmio.rdp.rdram[BYTE_ADDRESS(paddr)];
+      case RSP_MEM_REGION: {
+        u32 mirrAddr = paddr & 0x1FFF;
+        if(mirrAddr & 0x1000) {
+          mirrAddr -= 0x1000;
+          return mmio.rsp.imem[BYTE_ADDRESS(mirrAddr)];
+        } else {
+          return mmio.rsp.dmem[BYTE_ADDRESS(mirrAddr)];
+        }
+      }
+      case REGION_CART:
+        return mmio.pi.BusReadDebugger<u8>(*this, paddr);
+      case AI_REGION: {
+        u32 w = mmio.ai.Read(paddr & ~3);
+        int offs = 3 - (paddr & 3);
+        return (w >> (offs * 8)) & 0xff;
+      }
+      case PIF_ROM_REGION:
+        return si.pif.bootrom[BYTE_ADDRESS(paddr) - PIF_ROM_REGION_START];
+      case PIF_RAM_REGION:
+        return si.pif.ram[paddr - PIF_RAM_REGION_START];
+      default: return 0;
+    }
+  }
+}
+
+template<> u16 Mem::ReadDebugger(u32 paddr) {
+  const auto page = paddr >> 12;
+  const auto offset = paddr & 0xFFF;
+  const auto pointer = readPages[page];
+  SI& si = mmio.si;
+
+  if(pointer) {
+    return Util::ReadAccess<u16>((u8*)pointer, HALF_ADDRESS(offset));
+  } else {
+    switch (paddr) {
+      case RDRAM_REGION:
+        return Util::ReadAccess<u16>(mmio.rdp.rdram, HALF_ADDRESS(paddr));
+      case RSP_MEM_REGION: {
+        u32 mirrAddr = paddr & 0x1FFF;
+        if(mirrAddr & 0x1000) {
+          mirrAddr -= 0x1000;
+          return Util::ReadAccess<u16>(mmio.rsp.imem, HALF_ADDRESS(mirrAddr));
+        } else {
+          return Util::ReadAccess<u16>(mmio.rsp.dmem, HALF_ADDRESS(mirrAddr));
+        }
+      }
+      case MMIO_REGION:
+        return mmio.ReadDebugger(paddr);
+      case REGION_CART:
+        return mmio.pi.BusReadDebugger<u16>(*this, paddr);
+      case PIF_ROM_REGION:
+        return Util::ReadAccess<u16>(si.pif.bootrom, HALF_ADDRESS(paddr) - PIF_ROM_REGION_START);
+      case PIF_RAM_REGION:
+        return be16toh(Util::ReadAccess<u16>(si.pif.ram, paddr - PIF_RAM_REGION_START));
+      default:
+        return 0;
+    }
+  }
+}
+
+template<> u32 Mem::ReadDebugger(u32 paddr) {
+  const auto page = paddr >> 12;
+  const auto offset = paddr & 0xFFF;
+  const auto pointer = readPages[page];
+  SI& si = mmio.si;
+
+  if(pointer) {
+    return Util::ReadAccess<u32>((u8*)pointer, offset);
+  } else {
+    switch(paddr) {
+      case RDRAM_REGION:
+        return Util::ReadAccess<u32>(mmio.rdp.rdram, paddr);
+      case RSP_MEM_REGION: {
+        u32 mirrAddr = paddr & 0x1FFF;
+        if(mirrAddr & 0x1000) {
+          mirrAddr -= 0x1000;
+          return Util::ReadAccess<u32>(mmio.rsp.imem, mirrAddr);
+        } else {
+          return Util::ReadAccess<u32>(mmio.rsp.dmem, mirrAddr);
+        }
+      }
+      case MMIO_REGION:
+        return mmio.ReadDebugger(paddr);
+      case REGION_CART:
+        return mmio.pi.BusReadDebugger<u32>(*this, paddr);
+      case PIF_ROM_REGION:
+        return Util::ReadAccess<u32>(si.pif.bootrom, paddr - PIF_ROM_REGION_START);
+      case PIF_RAM_REGION:
+        return be32toh(Util::ReadAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START));
+      default:
+        return 0;
+    }
+  }
+}
+
+template<> u64 Mem::ReadDebugger(u32 paddr) {
+  const auto page = paddr >> 12;
+  const auto offset = paddr & 0xFFF;
+  const auto pointer = readPages[page];
+  SI& si = mmio.si;
+
+  if(pointer) {
+    return Util::ReadAccess<u64>((u8*)pointer, offset);
+  } else {
+    switch (paddr) {
+      case RDRAM_REGION:
+        return Util::ReadAccess<u64>(mmio.rdp.rdram, paddr);
+      case RSP_MEM_REGION: {
+        u32 mirrAddr = paddr & 0x1FFF;
+        if(mirrAddr & 0x1000) {
+          mirrAddr -= 0x1000;
+          return Util::ReadAccess<u64>(mmio.rsp.imem, mirrAddr);
+        } else {
+          return Util::ReadAccess<u64>(mmio.rsp.dmem, mirrAddr);
+        }
+      }
+      case MMIO_REGION:
+        return mmio.ReadDebugger(paddr);
+      case REGION_CART:
+        return mmio.pi.BusReadDebugger<u64>(*this, paddr);
+      case PIF_ROM_REGION:
+        return Util::ReadAccess<u64>(si.pif.bootrom, paddr - PIF_ROM_REGION_START);
+      case PIF_RAM_REGION:
+        return be64toh(Util::ReadAccess<u64>(si.pif.ram, paddr - PIF_RAM_REGION_START));
+      default:
+        return 0;
+    }
+  }
+}
+
 template<> void Mem::Write<u8>(Registers& regs, u32 paddr, u32 val) {
   const auto page = paddr >> 12;
   const auto offset = paddr & 0xFFF;
@@ -565,6 +706,37 @@ template <> u8 Mem::BackupRead<u8>(u32 addr) {
     }
   default:
     Util::panic("Backup read word with unknown save type");
+  }
+}
+
+template <> u32 Mem::BackupReadDebugger<u32>(u32 addr) {
+  switch(saveType) {
+    case SAVE_NONE: return 0;
+    case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
+      return 0;
+    case SAVE_FLASH_1m:
+      return flash.Read<u32>(addr);
+    case SAVE_SRAM_256k:
+      return 0xFFFFFFFF;
+    default: return 0;
+  }
+}
+
+template <> u8 Mem::BackupReadDebugger<u8>(u32 addr) {
+  switch (saveType) {
+    case SAVE_NONE: return 0;
+    case SAVE_EEPROM_4k: case SAVE_EEPROM_16k:
+      return 0;
+    case SAVE_FLASH_1m:
+      return flash.Read<u8>(addr);
+    case SAVE_SRAM_256k: {
+      if (saveData.is_mapped()) {
+        assert(addr < saveData.size());
+        return saveData[addr];
+      }
+      return 0;
+    }
+    default: return 0;
   }
 }
 

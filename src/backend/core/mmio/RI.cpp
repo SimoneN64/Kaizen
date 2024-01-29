@@ -24,6 +24,16 @@ auto RI::Read(u32 addr) const -> u32 {
   }
 }
 
+auto RI::ReadDebugger(u32 addr) const -> u32 {
+  switch(addr) {
+    case 0x04700000: return mode;
+    case 0x04700004: return config;
+    case 0x0470000C: return select;
+    case 0x04700010: return refresh;
+    default: return 0;
+  }
+}
+
 void RI::Write(u32 addr, u32 val) {
   switch(addr) {
     case 0x04700000: mode = val; break;

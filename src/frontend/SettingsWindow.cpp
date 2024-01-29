@@ -22,38 +22,39 @@ SettingsWindow::SettingsWindow() : QWidget(nullptr) {
   tabs->addTab(audioSettings, tr("Audio"));
   tabs->addTab(inputSettings, tr("Input"));
 
-  apply->setEnabled(false);
+  buttonBox = new QDialogButtonBox(QDialogButtonBox::Cancel | QDialogButtonBox::Apply);
+
+  buttonBox->button(QDialogButtonBox::Apply)->setEnabled(false);
 
   connect(cpuSettings, &CPUSettings::modified, this, [&]() {
-    apply->setEnabled(true);
+    buttonBox->button(QDialogButtonBox::Apply)->setEnabled(true);
   });
 
   connect(audioSettings, &AudioSettings::modified, this, [&]() {
-    apply->setEnabled(true);
+    buttonBox->button(QDialogButtonBox::Apply)->setEnabled(true);
   });
 
   connect(inputSettings, &InputSettings::modified, this, [&]() {
-    apply->setEnabled(true);
+    buttonBox->button(QDialogButtonBox::Apply)->setEnabled(true);
   });
 
-  connect(apply, &QPushButton::pressed, this, [&]() {
+  connect(buttonBox->button(QDialogButtonBox::Apply), &QPushButton::pressed, this, [&]() {
     auto newMap = inputSettings->GetMappedKeys();
     if (!std::equal(keyMap.begin(), keyMap.end(), newMap.begin(), newMap.end())) {
       keyMap = newMap;
       emit regrabKeyboard();
     }
-    apply->setEnabled(false);
+    buttonBox->button(QDialogButtonBox::Apply)->setEnabled(false);
     std::ofstream file("resources/settings.json");
     file << settings;
     file.close();
   });
 
-  connect(cancel, &QPushButton::pressed, this, &QWidget::hide);
+  connect(buttonBox->button(QDialogButtonBox::Cancel), &QPushButton::pressed, this, &QWidget::hide);
 
   QVBoxLayout* mainLayout = new QVBoxLayout;
   QHBoxLayout* buttonsLayout = new QHBoxLayout;
-  buttonsLayout->addWidget(apply);
-  buttonsLayout->addWidget(cancel);
+  buttonsLayout->addWidget(buttonBox);
   mainLayout->addWidget(tabs);
   mainLayout->addLayout(buttonsLayout);
   setLayout(mainLayout);

@@ -83,6 +83,22 @@ auto RSP::Read(u32 addr) -> u32{
   }
 }
 
+auto RSP::ReadDebugger(u32 addr) -> u32{
+  switch (addr) {
+    case 0x04040000: return lastSuccessfulSPAddr.raw & 0x1FF8;
+    case 0x04040004: return lastSuccessfulDRAMAddr.raw & 0xFFFFF8;
+    case 0x04040008:
+    case 0x0404000C: return spDMALen.raw;
+    case 0x04040010: return spStatus.raw;
+    case 0x04040014: return spStatus.dmaFull;
+    case 0x04040018: return 0;
+    case 0x0404001C:
+      return AcquireSemaphore();
+    case 0x04080000: return pc & 0xFFC;
+    default: return 0;
+  }
+}
+
 void RSP::WriteStatus(MI& mi, Registers& regs, u32 value) {
   auto write = SPStatusWrite{.raw = value};
   if(write.clearHalt && !write.setHalt) {

@@ -29,6 +29,7 @@ struct SI {
   bool toDram = false;
 
   auto Read(MI&, u32) const -> u32;
+  auto ReadDebugger(MI&, u32) const -> u32;
   void Write(Mem&, Registers&, u32, u32);
   void DMA(Mem&, Registers&) const;
   PIF pif;

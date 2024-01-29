@@ -30,6 +30,20 @@ u32 MMIO::Read(u32 addr) {
   }
 }
 
+u32 MMIO::ReadDebugger(u32 addr) {
+  switch (addr) {
+    case RSP_REGION: return rsp.ReadDebugger(addr);
+    case RDP_REGION: return rdp.ReadDebugger(addr);
+    case MI_REGION: return mi.ReadDebugger(addr);
+    case VI_REGION: return vi.ReadDebugger(addr);
+    case AI_REGION: return ai.Read(addr);
+    case PI_REGION: return pi.ReadDebugger(mi, addr);
+    case RI_REGION: return ri.ReadDebugger(addr);
+    case SI_REGION: return si.ReadDebugger(mi, addr);
+    default: return 0;
+  }
+}
+
 void MMIO::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
   switch (addr) {
     case RSP_REGION: rsp.Write(mem, regs, addr, val); break;

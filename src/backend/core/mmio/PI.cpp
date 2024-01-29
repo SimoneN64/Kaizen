@@ -103,6 +103,25 @@ template<> auto PI::BusRead<u8, false>(Mem& mem, u32 addr) -> u8 {
   }
 }
 
+
+template<> auto PI::BusReadDebugger<u8>(Mem& mem, u32 addr) -> u8 {
+  switch (addr) {
+    case REGION_PI_64DD_ROM: return 0xFF;
+    case REGION_PI_SRAM:
+      return mem.BackupReadDebugger<u8>(addr - SREGION_PI_SRAM);
+    case REGION_PI_ROM: {
+      // round to nearest 4 byte boundary, keeping old LSB
+      u32 index = BYTE_ADDRESS(addr) - SREGION_PI_ROM;
+      if (index >= mem.rom.size) {
+        Util::warn("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM! ({}/0x{:016X})", addr, index, index, mem.rom.size, mem.rom.size);
+        return 0xFF;
+      }
+      return mem.rom.cart[index];
+    }
+    default: return 0;
+  }
+}
+
 template<> void PI::BusWrite<u8, true>(Mem& mem, u32 addr, u32 val) {
   switch (addr) {
     case REGION_PI_UNKNOWN:
@@ -161,6 +180,25 @@ template <> auto PI::BusRead<u16, false>(Mem& mem, u32 addr) -> u16 {
     }
     default:
       Util::panic("Should never end up here! Access to address {:08X} which did not match any PI bus regions!", addr);
+  }
+}
+
+
+template <> auto PI::BusReadDebugger<u16>(Mem& mem, u32 addr) -> u16 {
+  if (!ReadLatch()) [[unlikely]] {
+    return latch >> 16;
+  }
+
+  switch (addr) {
+    case REGION_PI_ROM: {
+      addr = (addr + 2) & ~3;
+      u32 index = HALF_ADDRESS(addr) - SREGION_PI_ROM;
+      if (index > mem.rom.size - 1) {
+        Util::panic("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM!", addr, index, index);
+      }
+      return Util::ReadAccess<u16>(mem.rom.cart, index);
+    }
+    default: return 0;
   }
 }
 
@@ -229,6 +267,32 @@ template <> auto PI::BusRead<u32, false>(Mem& mem, u32 addr) -> u32 {
     }
     default:
       Util::panic("Should never end up here! Access to address {:08X} which did not match any PI bus regions!", addr);
+  }
+}
+
+
+template <> auto PI::BusReadDebugger<u32>(Mem& mem, u32 addr) -> u32 {
+  if (!ReadLatch()) [[unlikely]] {
+    return latch;
+  }
+
+  switch (addr) {
+    case REGION_PI_SRAM:
+      return mem.BackupReadDebugger<u32>(addr);
+    case REGION_PI_ROM: {
+      u32 index = addr - SREGION_PI_ROM;
+      if (index > mem.rom.size - 3) { // -3 because we're reading an entire word
+        switch (addr) {
+          case REGION_CART_ISVIEWER_BUFFER:
+            return htobe32(Util::ReadAccess<u32>(mem.isviewer, addr - SREGION_CART_ISVIEWER_BUFFER));
+          default: break;
+        }
+        return 0;
+      } else {
+        return Util::ReadAccess<u32>(mem.rom.cart, index);
+      }
+    }
+    default: return 0xff;
   }
 }
 
@@ -323,6 +387,23 @@ template <> auto PI::BusRead<u64, false>(Mem& mem, u32 addr) -> u64 {
   }
 }
 
+template <> auto PI::BusReadDebugger<u64>(Mem& mem, u32 addr) -> u64 {
+  if (!ReadLatch()) [[unlikely]] {
+    return (u64)latch << 32;
+  }
+
+  switch (addr) {
+    case REGION_PI_ROM: {
+      u32 index = addr - SREGION_PI_ROM;
+      if (index > mem.rom.size - 7) { // -7 because we're reading an entire dword
+        return 0;
+      }
+      return Util::ReadAccess<u64>(mem.rom.cart, index);
+    }
+    default: return 0;
+  }
+}
+
 template <> auto PI::BusRead<u64, true>(Mem& mem, u32 addr) -> u64 {
   return BusRead<u64, false>(mem, addr);
 }
@@ -377,6 +458,32 @@ auto PI::Read(MI& mi, u32 addr) const -> u32 {
     case 0x04600030: return pi_bsd_dom2_rls;
     default:
       Util::panic("Unhandled PI[{:08X}] read", addr);
+  }
+}
+
+auto PI::ReadDebugger(MI& mi, u32 addr) const -> u32 {
+  switch(addr) {
+    case 0x04600000: return dramAddr;
+    case 0x04600004: return cartAddr;
+    case 0x04600008: return rdLen;
+    case 0x0460000C: return wrLen;
+    case 0x04600010: {
+      u32 value = 0;
+      value |= (dmaBusy << 0); // Is PI DMA active? No, because it's instant
+      value |= (ioBusy << 1); // Is PI IO busy? No, because it's instant
+      value |= (0 << 2); // PI IO error?
+      value |= (mi.miIntr.pi << 3); // PI interrupt?
+      return value;
+    }
+    case 0x04600014: return pi_bsd_dom1_lat;
+    case 0x04600018: return pi_bsd_dom1_pwd;
+    case 0x0460001C: return pi_bsd_dom1_pgs;
+    case 0x04600020: return pi_bsd_dom1_rls;
+    case 0x04600024: return pi_bsd_dom2_lat;
+    case 0x04600028: return pi_bsd_dom2_pwd;
+    case 0x0460002C: return pi_bsd_dom2_pgs;
+    case 0x04600030: return pi_bsd_dom2_rls;
+    default: return 0;
   }
 }
 

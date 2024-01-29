@@ -27,6 +27,16 @@ auto MI::Read(u32 paddr) const -> u32 {
   }
 }
 
+auto MI::ReadDebugger(u32 paddr) const -> u32 {
+  switch(paddr & 0xF) {
+    case 0x0: return miMode & 0x3FF;
+    case 0x4: return MI_VERSION_REG;
+    case 0x8: return miIntr.raw & 0x3F;
+    case 0xC: return miIntrMask.raw & 0x3F;
+    default: return 0;
+  }
+}
+
 void MI::Write(Registers& regs, u32 paddr, u32 val) {
   switch(paddr & 0xF) {
     case 0x0:

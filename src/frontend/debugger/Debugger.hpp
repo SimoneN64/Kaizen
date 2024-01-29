@@ -4,9 +4,10 @@
 #include <QPlainTextEdit>
 
 class DebuggerWindow : public QWidget {
-  QPlainTextEdit* disasm;
+  QTextEdit* disasm, *addressBox;
   QVBoxLayout* disasmLayout, *regsLayout;
-  QHBoxLayout* mainLayout;
+  QVBoxLayout* mainLayout;
 public:
+  bool eventFilter(QObject*, QEvent*);
   DebuggerWindow();
 };

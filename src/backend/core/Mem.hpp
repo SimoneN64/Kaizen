@@ -103,6 +103,8 @@ struct Mem {
   template <typename T>
   T BackupRead(u32);
   template <typename T>
+  T BackupReadDebugger(u32);
+  template <typename T>
   void BackupWrite(u32, T);
 
   MMIO mmio;
@@ -141,6 +143,7 @@ struct Mem {
   SaveType saveType = SAVE_NONE;
   Flash flash;
 private:
+  friend class DebuggerWindow;
   friend struct SI;
   friend struct PI;
   friend struct AI;
@@ -150,6 +153,9 @@ private:
   std::string sramPath{};
   mio::mmap_sink saveData{};
   int mmioSize{}, flashSize{};
+
+  template <typename T>
+  T ReadDebugger(u32);
 
   FORCE_INLINE bool IsROMPAL() {
     static const char pal_codes[] = {'D', 'F', 'I', 'P', 'S', 'U', 'X', 'Y'};

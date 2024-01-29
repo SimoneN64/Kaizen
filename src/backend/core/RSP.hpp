@@ -125,6 +125,7 @@ struct RSP {
     Exec(regs, mem, instr);
   }
   auto Read(u32 addr) -> u32;
+  auto ReadDebugger(u32 addr) -> u32;
   void Write(Mem& mem, Registers& regs, u32 addr, u32 value);
   void Exec(Registers& regs, Mem& mem, u32 instr);
   SPStatus spStatus{};

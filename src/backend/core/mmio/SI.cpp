@@ -32,6 +32,23 @@ auto SI::Read(MI& mi, u32 addr) const -> u32 {
   }
 }
 
+auto SI::ReadDebugger(MI& mi, u32 addr) const -> u32 {
+  switch(addr) {
+    case 0x04800000: return dramAddr;
+    case 0x04800004: case 0x04800010: return pifAddr;
+    case 0x0480000C: return 0;
+    case 0x04800018: {
+      u32 val = 0;
+      val |= status.dmaBusy;
+      val |= (0 << 1);
+      val |= (0 << 3);
+      val |= (mi.miIntr.si << 12);
+      return val;
+    }
+    default: return 0;
+  }
+}
+
 void SI::DMA(Mem& mem, Registers& regs) const {
   SI& si = mem.mmio.si;
   si.status.dmaBusy = false;

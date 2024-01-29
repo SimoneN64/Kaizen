@@ -29,14 +29,27 @@ auto RDP::Read(u32 addr) const -> u32 {
     case 0x04100000: return dpc.start;
     case 0x04100004: return dpc.end;
     case 0x04100008: return dpc.current;
-    case 0x0410000C:
-      return dpc.status.raw;
+    case 0x0410000C: return dpc.status.raw;
     case 0x04100010: return dpc.clock;
     case 0x04100014: return dpc.status.cmdBusy;
     case 0x04100018: return dpc.status.pipeBusy;
     case 0x0410001C: return dpc.tmem;
     default:
       Util::panic("Unhandled DP Command Registers read (addr: {:08X})", addr);
+  }
+}
+
+auto RDP::ReadDebugger(u32 addr) const -> u32 {
+  switch(addr) {
+    case 0x04100000: return dpc.start;
+    case 0x04100004: return dpc.end;
+    case 0x04100008: return dpc.current;
+    case 0x0410000C: return dpc.status.raw;
+    case 0x04100010: return dpc.clock;
+    case 0x04100014: return dpc.status.cmdBusy;
+    case 0x04100018: return dpc.status.pipeBusy;
+    case 0x0410001C: return dpc.tmem;
+    default: return 0;
   }
 }
 

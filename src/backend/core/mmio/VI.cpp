@@ -43,6 +43,26 @@ u32 VI::Read(u32 paddr) const {
   }
 }
 
+u32 VI::ReadDebugger(u32 paddr) const {
+  switch(paddr) {
+    case 0x04400000: return status.raw;
+    case 0x04400004: return origin;
+    case 0x04400008: return width;
+    case 0x0440000C: return intr;
+    case 0x04400010: return current << 1;
+    case 0x04400014: return burst.raw;
+    case 0x04400018: return vsync;
+    case 0x0440001C: return hsync;
+    case 0x04400020: return hsyncLeap.raw;
+    case 0x04400024: return hstart.raw;
+    case 0x04400028: return vstart.raw;
+    case 0x0440002C: return vburst;
+    case 0x04400030: return xscale.raw;
+    case 0x04400034: return yscale.raw;
+    default: return 0;
+  }
+}
+
 void VI::Write(MI& mi, Registers& regs, u32 paddr, u32 val) {
   switch(paddr) {
     case 0x04400000:

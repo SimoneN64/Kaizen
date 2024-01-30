@@ -23,7 +23,7 @@ DebuggerWindow::DebuggerWindow() : QWidget(nullptr) {
 
   setFixedSize(960, 600);
   setWindowTitle("Debugger");
-  setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+  installEventFilter(this);
 
   disasmLayout = new QVBoxLayout;
   disasm = new QTextEdit;
@@ -114,8 +114,18 @@ DebuggerWindow::DebuggerWindow() : QWidget(nullptr) {
   setLayout(mainLayout);
 }
 
+void DebuggerWindow::toggleBkp(u32 addr) {
+  auto pos = std::find(bkps.begin(), bkps.end(), addr);
+  if (pos == bkps.end()) {
+    bkps.push_back(addr);
+  }
+  else {
+    bkps.erase(pos);
+  }
+}
+
 bool DebuggerWindow::eventFilter(QObject *o, QEvent *e) {
-  if (o == disasm && e->type() == QEvent::MouseButtonPress) {
+  if (o == this && e->type() == QEvent::MouseButtonPress) {
     if(disasm->underMouse()) {
       auto mouseEvent = static_cast<QMouseEvent*>(e);
       auto linesCount = disasm->size().height() / disasm->font().pixelSize();

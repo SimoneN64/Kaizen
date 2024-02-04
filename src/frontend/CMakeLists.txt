@@ -3,7 +3,7 @@ project(kaizen-qt)
 
 set(CMAKE_CXX_STANDARD 17)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
+find_package(Qt6 REQUIRED COMPONENTS OpenGLWidgets Core Gui Widgets)
 
 include_directories(
   .
@@ -29,8 +29,8 @@ include_directories(
   ../../external/parallel-rdp/parallel-rdp-standalone/vulkan-headers/include
   ../../external/parallel-rdp/parallel-rdp-standalone/util
   ../../external/nativefiledialog-extended/src/include
-  ../../external/imgui/imgui
-  ../../external/imgui/imgui/backends
+  ../../external/qtimgui/src
+  ../../external/qtimgui/modules/imgui
   ../../external/unarr
 )
 
@@ -41,6 +41,7 @@ option(RAPIDJSON_BUILD_TESTS "Build rapidjson perftests and unittests." OFF)
 add_subdirectory(../../external/json json)
 add_subdirectory(../../external/fmt fmt)
 add_subdirectory(../../external/mio mio)
+add_subdirectory(../../external/qtimgui qtimgui)
 add_subdirectory(../backend backend)
 add_subdirectory(../../external/nativefiledialog-extended nfd)
 add_subdirectory(../../external/parallel-rdp parallel-rdp)
@@ -73,7 +74,7 @@ add_executable(kaizen-qt
   debugger/Debugger.hpp
   debugger/Debugger.cpp "debugger/MemoryEditor.cpp")
 
-target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets fmt mio nlohmann_json nfd parallel-rdp backend)
+target_link_libraries(kaizen-qt PUBLIC qt_imgui_widgets Qt6::OpenGLWidgets Qt6::Core Qt6::Gui Qt6::Widgets fmt mio nlohmann_json nfd parallel-rdp backend)
 
 file(COPY ../../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)
 file(REMOVE

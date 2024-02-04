@@ -22,30 +22,29 @@ namespace QtImGui {
 namespace {
 
 // Keyboard mapping. Dear ImGui use those indices to peek into the io.KeysDown[] array.
-const QHash<int, ImGuiKey> keyMap = {
-    { Qt::Key_Tab, ImGuiKey_Tab },
-    { Qt::Key_Left, ImGuiKey_LeftArrow },
-    { Qt::Key_Right, ImGuiKey_RightArrow },
-    { Qt::Key_Up, ImGuiKey_UpArrow },
-    { Qt::Key_Down, ImGuiKey_DownArrow },
-    { Qt::Key_PageUp, ImGuiKey_PageUp },
-    { Qt::Key_PageDown, ImGuiKey_PageDown },
-    { Qt::Key_Home, ImGuiKey_Home },
-    { Qt::Key_End, ImGuiKey_End },
-    { Qt::Key_Insert, ImGuiKey_Insert },
-    { Qt::Key_Delete, ImGuiKey_Delete },
-    { Qt::Key_Backspace, ImGuiKey_Backspace },
-    { Qt::Key_Space, ImGuiKey_Space },
-    { Qt::Key_Enter, ImGuiKey_Enter },
-    { Qt::Key_Return, ImGuiKey_Enter },
-    { Qt::Key_Escape, ImGuiKey_Escape },
-    { Qt::Key_A, ImGuiKey_A },
-    { Qt::Key_C, ImGuiKey_C },
-    { Qt::Key_V, ImGuiKey_V },
-    { Qt::Key_X, ImGuiKey_X },
-    { Qt::Key_Y, ImGuiKey_Y },
-    { Qt::Key_Z, ImGuiKey_Z },
-    { Qt::MiddleButton, ImGuiMouseButton_Middle }
+const QHash<int, int> keyMap = {
+    { Qt::Key_Tab, static_cast<int>(ImGuiKey_Tab) },
+    { Qt::Key_Left, static_cast<int>(ImGuiKey_LeftArrow) },
+    { Qt::Key_Right, static_cast<int>(ImGuiKey_RightArrow) },
+    { Qt::Key_Up, static_cast<int>(ImGuiKey_UpArrow) },
+    { Qt::Key_Down, static_cast<int>(ImGuiKey_DownArrow) },
+    { Qt::Key_PageUp, static_cast<int>(ImGuiKey_PageUp) },
+    { Qt::Key_PageDown, static_cast<int>(ImGuiKey_PageDown) },
+    { Qt::Key_Home, static_cast<int>(ImGuiKey_Home) },
+    { Qt::Key_End, static_cast<int>(ImGuiKey_End) },
+    { Qt::Key_Insert, static_cast<int>(ImGuiKey_Insert) },
+    { Qt::Key_Delete, static_cast<int>(ImGuiKey_Delete) },
+    { Qt::Key_Backspace, static_cast<int>(ImGuiKey_Backspace) },
+    { Qt::Key_Space, static_cast<int>(ImGuiKey_Space) },
+    { Qt::Key_Enter, static_cast<int>(ImGuiKey_Enter) },
+    { Qt::Key_Return, static_cast<int>(ImGuiKey_Enter) },
+    { Qt::Key_Escape, static_cast<int>(ImGuiKey_Escape) },
+    { Qt::Key_A, static_cast<int>(ImGuiKey_A) },
+    { Qt::Key_C, static_cast<int>(ImGuiKey_C) },
+    { Qt::Key_V, static_cast<int>(ImGuiKey_V) },
+    { Qt::Key_X, static_cast<int>(ImGuiKey_X) },
+    { Qt::Key_Y, static_cast<int>(ImGuiKey_Y) },
+    { Qt::Key_Z, static_cast<int>(ImGuiKey_Z) },
 };
 
 #ifndef QT_NO_CURSOR
@@ -82,8 +81,8 @@ void ImGuiRenderer::initialize(WindowWrapper *window) {
     io.BackendPlatformName = "qtimgui";
     
     // Setup keyboard mapping
-    for (ImGuiKey key : keyMap.values()) {
-        io.KeyMap[key] = key;
+    for (auto key : keyMap.values()) {
+        io.AddKeyEvent(static_cast<ImGuiKey>(key), false);
     }
     
     // io.RenderDrawListsFn = [](ImDrawData *drawData) {

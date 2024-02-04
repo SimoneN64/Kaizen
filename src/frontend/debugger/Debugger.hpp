@@ -1,17 +1,19 @@
 #pragma once
-#include <QWidget>
-#include <QVBoxLayout>
-#include <QPlainTextEdit>
+#include <QOpenGLExtraFunctions>
+#include <QOpenGLWidget>
+#include <QTimer>
 #include <vector>
 #include <log.hpp>
 
-class DebuggerWindow : public QWidget {
-  QTextEdit* disasm, *addressBox;
-  QVBoxLayout* disasmLayout, *regsLayout;
-  QVBoxLayout* mainLayout;
+class DebuggerWindow : public QOpenGLWidget, private QOpenGLExtraFunctions {
   std::vector<u32> bkps{};
   void toggleBkp(u32);
+  QTimer timer;
+  void renderDisasm();
+  void renderRegs();
 public:
-  bool eventFilter(QObject*, QEvent*);
   DebuggerWindow();
+protected:
+  void initializeGL() override;
+  void paintGL() override;
 };

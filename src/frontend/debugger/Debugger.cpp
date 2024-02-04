@@ -44,7 +44,24 @@ void DebuggerWindow::initializeGL() {
 }
 
 void DebuggerWindow::renderDisasm() {
+  auto fontSize = ImGui::GetFontSize();
+  int availLines = std::ceil(ImGui::GetContentRegionAvail().y / fontSize);
+  for(int i = 0; i < availLines; i++) {
+    if(std::find(bkps.begin(), bkps.end(), 0x80000000+i) != bkps.end()) {
+      ImGui::GetWindowDrawList()->AddRectFilled(
+        {0, i*fontSize+19+ImGui::GetScrollY()},
+        {ImGui::GetContentRegionAvail().x, i*fontSize+fontSize+19+ImGui::GetScrollY()},
+        ImU32{0xed4242ff}
+      );
+    }
 
+    ImGui::SetNextItemWidth(600);
+    ImGui::Text("%s", fmt::format("{:08X}:\tnop", 0x80000000+i).c_str());
+    if(ImGui::GetMousePos().y >= i*fontSize+19 && ImGui::GetMousePos().y <= i*fontSize+fontSize+19 && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+      printf("toggled line: %d\n", i);
+      toggleBkp(0x80000000+i);
+    }
+  }
 }
 
 void DebuggerWindow::renderRegs() {
@@ -104,8 +121,7 @@ void DebuggerWindow::toggleBkp(u32 addr) {
   auto pos = std::find(bkps.begin(), bkps.end(), addr);
   if (pos == bkps.end()) {
     bkps.push_back(addr);
-  }
-  else {
+  } else {
     bkps.erase(pos);
   }
 }

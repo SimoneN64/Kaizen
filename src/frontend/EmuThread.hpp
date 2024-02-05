@@ -24,25 +24,24 @@ public:
   std::set<u32>* bkps = nullptr;
   n64::Core* core;
   SettingsWindow* settings;
-  bool running = false;
 
   void TogglePause()
   {
-    running = !running;
+    core->pause = !core->pause;
   }
 
   void Reset()
   {
-    running = false;
+    core->pause = true;
     core->Stop();
     core->LoadROM(core->rom);
-    running = true;
+    core->pause = false;
   }
 
   void Stop()
   {
     core->rom = {};
-    running = false;
+    core->pause = true;
     core->Stop();
   }
 };

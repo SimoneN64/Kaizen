@@ -11,7 +11,7 @@ enum LogLevel : u8 {
 #ifndef NDEBUG
 static constexpr auto globalLogLevel = Debug;
 #else
-static constexpr auto globalLogLevel = Error;
+static constexpr auto globalLogLevel = Info;
 #endif
 
 template <LogLevel messageType = Info, typename ...Args>

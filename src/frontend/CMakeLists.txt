@@ -31,6 +31,7 @@ include_directories(
   ../../external/nativefiledialog-extended/src/include
   ../../external/qtimgui/src
   ../../external/qtimgui/modules/imgui
+  ../../external/qtimgui/modules/imgui/misc/cpp
   ../../external/capstone/include
   ../../external/unarr
 )

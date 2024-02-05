@@ -35,6 +35,7 @@ const QHash<int, int> keyMap = {
     { Qt::Key_Insert, static_cast<int>(ImGuiKey_Insert) },
     { Qt::Key_Delete, static_cast<int>(ImGuiKey_Delete) },
     { Qt::Key_Backspace, static_cast<int>(ImGuiKey_Backspace) },
+    { Qt::Key_Shift, static_cast<int>(ImGuiKey_LeftShift) },
     { Qt::Key_Space, static_cast<int>(ImGuiKey_Space) },
     { Qt::Key_Enter, static_cast<int>(ImGuiKey_Enter) },
     { Qt::Key_Return, static_cast<int>(ImGuiKey_Enter) },
@@ -45,6 +46,7 @@ const QHash<int, int> keyMap = {
     { Qt::Key_X, static_cast<int>(ImGuiKey_X) },
     { Qt::Key_Y, static_cast<int>(ImGuiKey_Y) },
     { Qt::Key_Z, static_cast<int>(ImGuiKey_Z) },
+    { Qt::MiddleButton, static_cast<int>(ImGuiMouseButton_Middle) }
 };
 
 #ifndef QT_NO_CURSOR
@@ -82,7 +84,7 @@ void ImGuiRenderer::initialize(WindowWrapper *window) {
     
     // Setup keyboard mapping
     for (auto key : keyMap.values()) {
-        io.AddKeyEvent(static_cast<ImGuiKey>(key), false);
+        io.KeyMap[key] = key;
     }
     
     // io.RenderDrawListsFn = [](ImDrawData *drawData) {

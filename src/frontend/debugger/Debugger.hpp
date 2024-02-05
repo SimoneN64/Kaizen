@@ -6,6 +6,7 @@
 #include <log.hpp>
 #include <capstone/capstone.h>
 #include <EmuThread.hpp>
+#include <imgui.h>
 
 class DebuggerWindow : public QOpenGLWidget, private QOpenGLExtraFunctions {
   std::set<u32> bkps{};
@@ -13,10 +14,15 @@ class DebuggerWindow : public QOpenGLWidget, private QOpenGLExtraFunctions {
   QTimer timer;
   csh disasmHandle;
   bool followPC = false;
-  int scrollAmount = 0;
+  u64 scrollAmount = 0;
   void renderDisasm();
   void renderRegs();
   EmuThread* emuThread;
+  ImU32 hover_col;
+  ImU32 bkp_col;
+  ImVec4 instr_hex_col;
+  ImVec4 instr_mnemonic_col;
+  ImVec4 instr_ops_col;
 public:
   void wheelEvent(QWheelEvent*) override;
   DebuggerWindow(EmuThread*);

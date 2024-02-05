@@ -17,6 +17,8 @@ if (QTIMGUI_BUILD_IMGUI)
       imgui/imstb_rectpack.h
       imgui/imstb_textedit.h
       imgui/imstb_truetype.h
+      imgui/misc/cpp/imgui_stdlib.h
+      imgui/misc/cpp/imgui_stdlib.cpp
     )
     target_include_directories(imgui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
 endif(QTIMGUI_BUILD_IMGUI)

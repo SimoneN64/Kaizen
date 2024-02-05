@@ -12,6 +12,7 @@ class DebuggerWindow : public QOpenGLWidget, private QOpenGLExtraFunctions {
   void toggleBkp(u32);
   QTimer timer;
   csh disasmHandle;
+  bool followPC = false;
   void renderDisasm();
   void renderRegs();
   EmuThread* emuThread;

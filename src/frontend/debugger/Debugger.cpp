@@ -50,54 +50,6 @@ void DebuggerWindow::initializeGL() {
 }
 
 void DebuggerWindow::renderDisasm() {
-  auto availArea = ImGui::GetContentRegionAvail();
-  auto lineHeight = ImGui::GetTextLineHeightWithSpacing();
-  auto lineCount = availArea.y / lineHeight + 1;
-  auto drawList = ImGui::GetBackgroundDrawList();
-
-  for (int i = 0; i < lineCount; i++) {
-    emuThread->TogglePause();
-    cs_insn* insn;
-    u32 pc = emuThread->core->cpu->regs.pc;
-    n64::Registers& regs = emuThread->core->cpu->regs;
-    auto instr = emuThread->core->cpu->mem.ReadDebugger<u32>(regs, pc + i * 4);
-    instr = bswap_32(instr);
-    emuThread->TogglePause();
-    size_t count = cs_disasm(disasmHandle, reinterpret_cast<u8*>(&instr), 4, pc + i * 4, 1, &insn);
-    if (count > 0) {
-      size_t j;
-      for (j = 0; j < count; j++) {
-        ImGui::Text("%s", fmt::format("{:08X}:\t{}\t\t{}", insn[j].address, insn[j].mnemonic,
-          insn[j].op_str).c_str());
-      }
-
-      cs_free(insn, count);
-    }
-    else
-      ImGui::Text("%s", fmt::format("{:08X}:\tinvalid", pc).c_str());
-
-    auto cursorPos = ImGui::GetCursorPos();
-    auto end = ImVec2{ cursorPos.x + availArea.x, cursorPos.y + lineHeight - 4 };
-    if (ImGui::IsWindowHovered()) { // if mouse inside this frame
-      auto mousePosY = ImGui::GetMousePos().y;
-
-      if (std::floor(mousePosY / lineHeight) == i + 1) { // is hovering this line
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-          toggleBkp(pc + i * 4);
-        }
-        
-        drawList->AddRectFilled(cursorPos, end, ImU32(0xff0000ff));
-      }
-    }
-
-    for (auto bkp : bkps) {
-      if ((bkp - i * 4) == pc) {
-        cursorPos.y -= ImGui::GetScrollY();
-        end.y -= ImGui::GetScrollY();
-        drawList->AddRectFilled(cursorPos, end, ImU32(0xff00ffff));
-      }
-    }
-  }
 }
 
 void DebuggerWindow::renderRegs() {
@@ -134,6 +86,8 @@ void DebuggerWindow::paintGL() {
   if(ImGui::Button("Step out")) {
 
   }
+  ImGui::SameLine();
+  ImGui::Checkbox("Follow PC", &followPC);
   ImGui::BeginChild("Disassembly", ImVec2(600,0), 0, ImGuiWindowFlags_NoScrollbar);
   renderDisasm();
   ImGui::EndChild();
@@ -146,7 +100,7 @@ void DebuggerWindow::paintGL() {
 
   // Do render before ImGui UI is rendered
   glViewport(0, 0, width(), height());
-  glClearColor(0,0,0,255);
+  glClearColor(0, 0, 0, 255);
   glClear(GL_COLOR_BUFFER_BIT);
 
   ImGui::Render();

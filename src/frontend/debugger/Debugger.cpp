@@ -3,6 +3,7 @@
 #include <imgui.h>
 #include <QGuiApplication>
 #include <QStyleHints>
+#include <QWheelEvent>
 
 const std::string regNames[] = {
   "r0", "at", "v0", "v1",
@@ -47,6 +48,20 @@ void DebuggerWindow::initializeGL() {
   } else {
     ImGui::StyleColorsLight();
   }
+}
+
+void DebuggerWindow::wheelEvent(QWheelEvent* e) {
+  if (e->hasPixelDelta()) {
+    if (!e->pixelDelta().isNull()) {
+      if (e->pixelDelta().y() < 0) {
+        scrollAmount -= 1;
+      } else if(e->pixelDelta().y() > 0) {
+        scrollAmount += 1;
+      }
+    }
+  }
+  printf("%d\n", scrollAmount);
+  e->accept();
 }
 
 void DebuggerWindow::renderDisasm() {

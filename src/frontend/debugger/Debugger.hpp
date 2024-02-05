@@ -13,10 +13,12 @@ class DebuggerWindow : public QOpenGLWidget, private QOpenGLExtraFunctions {
   QTimer timer;
   csh disasmHandle;
   bool followPC = false;
+  int scrollAmount = 0;
   void renderDisasm();
   void renderRegs();
   EmuThread* emuThread;
 public:
+  void wheelEvent(QWheelEvent*) override;
   DebuggerWindow(EmuThread*);
 protected:
   void initializeGL() override;

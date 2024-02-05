@@ -44,22 +44,33 @@ void DebuggerWindow::initializeGL() {
 }
 
 void DebuggerWindow::renderDisasm() {
-  auto fontSize = ImGui::GetFontSize();
-  int availLines = std::ceil(ImGui::GetContentRegionAvail().y / fontSize);
-  for(int i = 0; i < availLines; i++) {
-    if(std::find(bkps.begin(), bkps.end(), 0x80000000+i) != bkps.end()) {
-      ImGui::GetWindowDrawList()->AddRectFilled(
-        {0, i*fontSize+19+ImGui::GetScrollY()},
-        {ImGui::GetContentRegionAvail().x, i*fontSize+fontSize+19+ImGui::GetScrollY()},
-        ImU32{0xed4242ff}
-      );
+  auto availArea = ImGui::GetContentRegionAvail();
+  auto lineHeight = ImGui::GetTextLineHeightWithSpacing();
+  auto lineCount = availArea.y / lineHeight + 1;
+  auto drawList = ImGui::GetBackgroundDrawList();
+
+  for (int i = 0; i < lineCount; i++) {
+    ImGui::Text("%s", fmt::format("{:08X}:\tnop", 0x80000000 + i * 4).c_str());
+    auto cursorPos = ImGui::GetCursorPos();
+    auto end = ImVec2{ cursorPos.x + availArea.x, cursorPos.y + lineHeight - 4 };
+    if (ImGui::IsWindowHovered()) { // if mouse inside this frame
+      auto mousePosY = ImGui::GetMousePos().y;
+
+      if (std::floor(mousePosY / lineHeight) == i + 1) { // is hovering this line
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+          toggleBkp(0x8000'0000 + i * 4);
+        }
+        
+        drawList->AddRectFilled(cursorPos, end, ImU32(0xff0000ff));
+      }
     }
 
-    ImGui::SetNextItemWidth(600);
-    ImGui::Text("%s", fmt::format("{:08X}:\tnop", 0x80000000+i).c_str());
-    if(ImGui::GetMousePos().y >= i*fontSize+19 && ImGui::GetMousePos().y <= i*fontSize+fontSize+19 && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-      printf("toggled line: %d\n", i);
-      toggleBkp(0x80000000+i);
+    for (auto bkp : bkps) {
+      if ((bkp - i * 4) == 0x8000'0000) {
+        cursorPos.y -= ImGui::GetScrollY();
+        end.y -= ImGui::GetScrollY();
+        drawList->AddRectFilled(cursorPos, end, ImU32(0xff00ffff));
+      }
     }
   }
 }
@@ -98,11 +109,11 @@ void DebuggerWindow::paintGL() {
   if(ImGui::Button("Step out")) {
 
   }
-  ImGui::BeginChild("Disassembly", ImVec2(0,0), ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AlwaysAutoResize);
+  ImGui::BeginChild("Disassembly", ImVec2(600,0), 0, ImGuiWindowFlags_NoScrollbar);
   renderDisasm();
   ImGui::EndChild();
   ImGui::SameLine();
-  ImGui::BeginChild("Registers", ImVec2(0,0), ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AlwaysAutoResize);
+  ImGui::BeginChild("Registers", ImVec2(360,0));
   renderRegs();
   ImGui::EndChild();
   ImGui::End();

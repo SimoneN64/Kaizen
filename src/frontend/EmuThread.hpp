@@ -1,5 +1,6 @@
 #pragma once
 #include <QThread>
+#include <set>
 #include <Core.hpp>
 #include <SettingsWindow.hpp>
 
@@ -20,6 +21,7 @@ public:
 
   [[noreturn]] void run() noexcept override;
 
+  std::set<u32>* bkps = nullptr;
   n64::Core* core;
   SettingsWindow* settings;
   bool running = false;

@@ -344,25 +344,28 @@ template<> u64 Mem::Read(n64::Registers &regs, u32 paddr) {
   }
 }
 
+template<> u8 Mem::ReadDebugger(Registers& regs, u64 vaddr) {
+  u32 paddr;
+  if (MapVAddr(regs, LOAD, vaddr, paddr)) {
+    const auto page = paddr >> 12;
+    const auto offset = paddr & 0xFFF;
+    const auto pointer = readPages[page];
+    SI& si = mmio.si;
 
-template<> u8 Mem::ReadDebugger(u32 paddr) {
-  const auto page = paddr >> 12;
-  const auto offset = paddr & 0xFFF;
-  const auto pointer = readPages[page];
-  SI& si = mmio.si;
-
-  if(pointer) {
-    return ((u8*)pointer)[BYTE_ADDRESS(offset)];
-  } else {
-    switch (paddr) {
+    if (pointer) {
+      return ((u8*)pointer)[BYTE_ADDRESS(offset)];
+    }
+    else {
+      switch (paddr) {
       case RDRAM_REGION:
         return mmio.rdp.rdram[BYTE_ADDRESS(paddr)];
       case RSP_MEM_REGION: {
         u32 mirrAddr = paddr & 0x1FFF;
-        if(mirrAddr & 0x1000) {
+        if (mirrAddr & 0x1000) {
           mirrAddr -= 0x1000;
           return mmio.rsp.imem[BYTE_ADDRESS(mirrAddr)];
-        } else {
+        }
+        else {
           return mmio.rsp.dmem[BYTE_ADDRESS(mirrAddr)];
         }
       }
@@ -378,28 +381,35 @@ template<> u8 Mem::ReadDebugger(u32 paddr) {
       case PIF_RAM_REGION:
         return si.pif.ram[paddr - PIF_RAM_REGION_START];
       default: return 0;
+      }
     }
   }
+
+  return 0;
 }
 
-template<> u16 Mem::ReadDebugger(u32 paddr) {
-  const auto page = paddr >> 12;
-  const auto offset = paddr & 0xFFF;
-  const auto pointer = readPages[page];
-  SI& si = mmio.si;
+template<> u16 Mem::ReadDebugger(Registers& regs, u64 vaddr) {
+  u32 paddr;
+  if (MapVAddr(regs, LOAD, vaddr, paddr)) {
+    const auto page = paddr >> 12;
+    const auto offset = paddr & 0xFFF;
+    const auto pointer = readPages[page];
+    SI& si = mmio.si;
 
-  if(pointer) {
-    return Util::ReadAccess<u16>((u8*)pointer, HALF_ADDRESS(offset));
-  } else {
-    switch (paddr) {
+    if (pointer) {
+      return Util::ReadAccess<u16>((u8*)pointer, HALF_ADDRESS(offset));
+    }
+    else {
+      switch (paddr) {
       case RDRAM_REGION:
         return Util::ReadAccess<u16>(mmio.rdp.rdram, HALF_ADDRESS(paddr));
       case RSP_MEM_REGION: {
         u32 mirrAddr = paddr & 0x1FFF;
-        if(mirrAddr & 0x1000) {
+        if (mirrAddr & 0x1000) {
           mirrAddr -= 0x1000;
           return Util::ReadAccess<u16>(mmio.rsp.imem, HALF_ADDRESS(mirrAddr));
-        } else {
+        }
+        else {
           return Util::ReadAccess<u16>(mmio.rsp.dmem, HALF_ADDRESS(mirrAddr));
         }
       }
@@ -413,28 +423,34 @@ template<> u16 Mem::ReadDebugger(u32 paddr) {
         return be16toh(Util::ReadAccess<u16>(si.pif.ram, paddr - PIF_RAM_REGION_START));
       default:
         return 0;
+      }
     }
   }
+  return 0;
 }
 
-template<> u32 Mem::ReadDebugger(u32 paddr) {
-  const auto page = paddr >> 12;
-  const auto offset = paddr & 0xFFF;
-  const auto pointer = readPages[page];
-  SI& si = mmio.si;
+template<> u32 Mem::ReadDebugger(Registers& regs, u64 vaddr) {
+  u32 paddr;
+  if (MapVAddr(regs, LOAD, vaddr, paddr)) {
+    const auto page = paddr >> 12;
+    const auto offset = paddr & 0xFFF;
+    const auto pointer = readPages[page];
+    SI& si = mmio.si;
 
-  if(pointer) {
-    return Util::ReadAccess<u32>((u8*)pointer, offset);
-  } else {
-    switch(paddr) {
+    if (pointer) {
+      return Util::ReadAccess<u32>((u8*)pointer, offset);
+    }
+    else {
+      switch (paddr) {
       case RDRAM_REGION:
         return Util::ReadAccess<u32>(mmio.rdp.rdram, paddr);
       case RSP_MEM_REGION: {
         u32 mirrAddr = paddr & 0x1FFF;
-        if(mirrAddr & 0x1000) {
+        if (mirrAddr & 0x1000) {
           mirrAddr -= 0x1000;
           return Util::ReadAccess<u32>(mmio.rsp.imem, mirrAddr);
-        } else {
+        }
+        else {
           return Util::ReadAccess<u32>(mmio.rsp.dmem, mirrAddr);
         }
       }
@@ -448,28 +464,34 @@ template<> u32 Mem::ReadDebugger(u32 paddr) {
         return be32toh(Util::ReadAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START));
       default:
         return 0;
+      }
     }
   }
+  return 0;
 }
 
-template<> u64 Mem::ReadDebugger(u32 paddr) {
-  const auto page = paddr >> 12;
-  const auto offset = paddr & 0xFFF;
-  const auto pointer = readPages[page];
-  SI& si = mmio.si;
+template<> u64 Mem::ReadDebugger(Registers& regs, u64 vaddr) {
+  u32 paddr;
+  if (MapVAddr(regs, LOAD, vaddr, paddr)) {
+    const auto page = paddr >> 12;
+    const auto offset = paddr & 0xFFF;
+    const auto pointer = readPages[page];
+    SI& si = mmio.si;
 
-  if(pointer) {
-    return Util::ReadAccess<u64>((u8*)pointer, offset);
-  } else {
-    switch (paddr) {
+    if (pointer) {
+      return Util::ReadAccess<u64>((u8*)pointer, offset);
+    }
+    else {
+      switch (paddr) {
       case RDRAM_REGION:
         return Util::ReadAccess<u64>(mmio.rdp.rdram, paddr);
       case RSP_MEM_REGION: {
         u32 mirrAddr = paddr & 0x1FFF;
-        if(mirrAddr & 0x1000) {
+        if (mirrAddr & 0x1000) {
           mirrAddr -= 0x1000;
           return Util::ReadAccess<u64>(mmio.rsp.imem, mirrAddr);
-        } else {
+        }
+        else {
           return Util::ReadAccess<u64>(mmio.rsp.dmem, mirrAddr);
         }
       }
@@ -483,8 +505,11 @@ template<> u64 Mem::ReadDebugger(u32 paddr) {
         return be64toh(Util::ReadAccess<u64>(si.pif.ram, paddr - PIF_RAM_REGION_START));
       default:
         return 0;
+      }
     }
   }
+
+  return 0;
 }
 
 template<> void Mem::Write<u8>(Registers& regs, u32 paddr, u32 val) {

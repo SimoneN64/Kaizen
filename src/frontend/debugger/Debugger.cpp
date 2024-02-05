@@ -15,7 +15,13 @@ const std::string regNames[] = {
   "gp", "sp", "s8", "ra",
 };
 
-DebuggerWindow::DebuggerWindow() : QOpenGLWidget(nullptr) {
+DebuggerWindow::DebuggerWindow(EmuThread* emuThread) : emuThread(emuThread), QOpenGLWidget(nullptr) {
+  emuThread->bkps = &bkps;
+
+  if (cs_open(CS_ARCH_MIPS, cs_mode(CS_MODE_BIG_ENDIAN | CS_MODE_MIPS64), &disasmHandle) != CS_ERR_OK) {
+    Util::panic("Could not initialize capstone!");
+  }
+
   if (objectName().isEmpty())
     setObjectName("Debugger");
 
@@ -50,7 +56,26 @@ void DebuggerWindow::renderDisasm() {
   auto drawList = ImGui::GetBackgroundDrawList();
 
   for (int i = 0; i < lineCount; i++) {
-    ImGui::Text("%s", fmt::format("{:08X}:\tnop", 0x80000000 + i * 4).c_str());
+    emuThread->TogglePause();
+    cs_insn* insn;
+    u32 pc = emuThread->core->cpu->regs.pc;
+    n64::Registers& regs = emuThread->core->cpu->regs;
+    auto instr = emuThread->core->cpu->mem.ReadDebugger<u32>(regs, pc + i * 4);
+    instr = bswap_32(instr);
+    emuThread->TogglePause();
+    size_t count = cs_disasm(disasmHandle, reinterpret_cast<u8*>(&instr), 4, pc + i * 4, 1, &insn);
+    if (count > 0) {
+      size_t j;
+      for (j = 0; j < count; j++) {
+        ImGui::Text("%s", fmt::format("{:08X}:\t{}\t\t{}", insn[j].address, insn[j].mnemonic,
+          insn[j].op_str).c_str());
+      }
+
+      cs_free(insn, count);
+    }
+    else
+      ImGui::Text("%s", fmt::format("{:08X}:\tinvalid", pc).c_str());
+
     auto cursorPos = ImGui::GetCursorPos();
     auto end = ImVec2{ cursorPos.x + availArea.x, cursorPos.y + lineHeight - 4 };
     if (ImGui::IsWindowHovered()) { // if mouse inside this frame
@@ -58,7 +83,7 @@ void DebuggerWindow::renderDisasm() {
 
       if (std::floor(mousePosY / lineHeight) == i + 1) { // is hovering this line
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-          toggleBkp(0x8000'0000 + i * 4);
+          toggleBkp(pc + i * 4);
         }
         
         drawList->AddRectFilled(cursorPos, end, ImU32(0xff0000ff));
@@ -66,7 +91,7 @@ void DebuggerWindow::renderDisasm() {
     }
 
     for (auto bkp : bkps) {
-      if ((bkp - i * 4) == 0x8000'0000) {
+      if ((bkp - i * 4) == pc) {
         cursorPos.y -= ImGui::GetScrollY();
         end.y -= ImGui::GetScrollY();
         drawList->AddRectFilled(cursorPos, end, ImU32(0xff00ffff));
@@ -129,10 +154,10 @@ void DebuggerWindow::paintGL() {
 }
 
 void DebuggerWindow::toggleBkp(u32 addr) {
-  auto pos = std::find(bkps.begin(), bkps.end(), addr);
-  if (pos == bkps.end()) {
-    bkps.push_back(addr);
-  } else {
+  auto pos = bkps.find(addr);
+  if (pos != bkps.end()) {
     bkps.erase(pos);
+  } else {
+    bkps.insert(addr);
   }
 }

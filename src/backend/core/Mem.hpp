@@ -138,6 +138,9 @@ struct Mem {
     free(temp);
     fclose(fp);
   }
+
+  template <typename T>
+  T ReadDebugger(Registers&, u64);
   uintptr_t writePages[PAGE_COUNT]{}, readPages[PAGE_COUNT]{};
   ROM rom;
   SaveType saveType = SAVE_NONE;
@@ -153,9 +156,6 @@ private:
   std::string sramPath{};
   mio::mmap_sink saveData{};
   int mmioSize{}, flashSize{};
-
-  template <typename T>
-  T ReadDebugger(u32);
 
   FORCE_INLINE bool IsROMPAL() {
     static const char pal_codes[] = {'D', 'F', 'I', 'P', 'S', 'U', 'X', 'Y'};

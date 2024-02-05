@@ -21,7 +21,7 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   mainWindow->show();
   settingsWindow = new SettingsWindow;
   settingsWindow->hide();
-  debuggerWindow = new DebuggerWindow;
+  debuggerWindow = new DebuggerWindow(emuThread);
   debuggerWindow->hide();
   memoryEditorWindow = new MemoryEditor;
   memoryEditorWindow->hide();

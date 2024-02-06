@@ -33,7 +33,23 @@ struct Core {
 
   inline void insertGhostBkp(const Breakpoint& bkp) {
     if (isInstrJump(bkp.addr)) {
-      insertGhostBkp(Breakpoint{ bkp.addr + 8, true });
+      auto pos = std::find(bkps.begin(), bkps.end(), bkp);
+      if (pos == bkps.end()) {
+        bkps.insert(bkp);
+      }
+
+      insertGhostBkp(Breakpoint{ bkp.addr + 4, true });
+    }
+  }
+
+  inline void removeGhostBkp(const Breakpoint& bkp) {
+    if (isInstrJump(bkp.addr)) {
+      auto pos = std::find(bkps.begin(), bkps.end(), bkp);
+      if (pos == bkps.end()) {
+        bkps.insert(bkp);
+      }
+
+      removeGhostBkp(Breakpoint{ bkp.addr + 4, true });
     }
   }
 
@@ -41,11 +57,11 @@ struct Core {
     auto pos = std::find(bkps.begin(), bkps.end(), bkp);
     if (pos != bkps.end()) {
       bkps.erase(pos);
+      removeGhostBkp(bkp);
     } else {
       bkps.insert(bkp);
+      insertGhostBkp(bkp);
     }
-
-    insertGhostBkp(bkp);
   }
 
   inline bool hasToBreak(u32 addr) {

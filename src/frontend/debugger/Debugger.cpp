@@ -107,7 +107,7 @@ void DebuggerWindow::renderDisasm() {
       }
     }
 
-    pos = ImGui::GetCursorScreenPos();
+    pos.y = ImGui::GetCursorScreenPos().y;
     end = ImVec2{pos.x + areaAvail.x, pos.y + lineHeight - 2};
 
     // program counter is teal
@@ -175,7 +175,8 @@ void DebuggerWindow::paintGL() {
   }
   ImGui::SameLine();
   if(ImGui::Button("Step over")) {
-
+    emuThread->core->Step();
+    emuThread->core->broken = false;
   }
   ImGui::SameLine();
   if(ImGui::Button("Step in")) {
@@ -183,7 +184,8 @@ void DebuggerWindow::paintGL() {
   }
   ImGui::SameLine();
   if(ImGui::Button("Step out")) {
-
+    emuThread->core->Step();
+    emuThread->core->broken = false;
   }
   ImGui::SameLine();
   ImGui::Checkbox("Follow PC", &followPC);

@@ -22,6 +22,10 @@ DebuggerWindow::DebuggerWindow(EmuThread* emuThread) : emuThread(emuThread), QOp
     Util::panic("Could not initialize capstone!");
   }
 
+  if (cs_option(disasmHandle, CS_OPT_DETAIL, CS_OPT_ON) != CS_ERR_OK) {
+    Util::panic("Could not enable capstone detail!");
+  }
+
   if (objectName().isEmpty())
     setObjectName("Debugger");
 
@@ -44,16 +48,16 @@ void DebuggerWindow::initializeGL() {
   QtImGui::initialize(this);
   if(QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark) {
     ImGui::StyleColorsDark();
-    instr_hex_col = ImVec4{0.878, 0.875, 0.584, 1};
+    instr_imm_col = ImVec4{0.878, 0.875, 0.584, 1};
     instr_mnemonic_col = ImVec4{0.6, 0.929, 0.847, 1};
-    instr_ops_col = ImVec4{0.788, 0.6, 0.929, 1};
+    instr_regs_col = ImVec4{0.788, 0.6, 0.929, 1};
     bkp_col = IM_COL32(245, 217, 78, 80);
     hover_col = IM_COL32(245, 78, 78, 80);
   } else {
     ImGui::StyleColorsLight();
-    instr_hex_col = ImVec4{0.702, 0.694, 0.365, 1};
+    instr_imm_col = ImVec4{0.702, 0.694, 0.365, 1};
     instr_mnemonic_col = ImVec4{0.365, 0.702, 0.616, 1};
-    instr_ops_col = ImVec4{0.498, 0.302, 0.651, 1};
+    instr_regs_col = ImVec4{0.498, 0.302, 0.651, 1};
     bkp_col = IM_COL32(168, 147, 40, 255);
     hover_col = IM_COL32(173, 35, 35, 255);
   }
@@ -121,20 +125,70 @@ void DebuggerWindow::renderDisasm() {
     size_t count = cs_disasm(disasmHandle, reinterpret_cast<u8*>(&instr), 4, pc, 0, &insn);
     if(count > 0) {
       for(size_t j = 0; j < count; j++) {
-        ImGui::Text("%08X", insn[j].address);
+        cs_insn *in = &insn[j];
+        ImGui::Text("%08X", in->address);
         ImGui::SameLine();
-        ImGui::TextColored(instr_hex_col, "%08X", instr);
+        ImGui::TextColored(instr_imm_col, "%08X", instr);
         ImGui::SameLine();
-        ImGui::TextColored(instr_mnemonic_col, "%s", insn[j].mnemonic);
-        ImGui::SameLine();
-        ImGui::TextColored(instr_ops_col, "%s", insn[j].op_str);
+        ImGui::TextColored(instr_mnemonic_col, "%s", in->mnemonic);
+        if(in->detail->mips.op_count > 0) {
+          ImGui::SameLine();
+          for(int x = 0; x < in->detail->mips.op_count; x++) {
+            cs_mips_op* op = &in->detail->mips.operands[x];
+
+            auto printReg = [this](mips_reg reg) {
+              if(reg == MIPS_REG_PC) {
+                ImGui::TextColored(instr_regs_col, "pc");
+              } else if(reg == MIPS_REG_LO) {
+                ImGui::TextColored(instr_regs_col, "lo");
+              } else if(reg == MIPS_REG_HI) {
+                ImGui::TextColored(instr_regs_col, "hi");
+              } else {
+                reg = static_cast<mips_reg>(static_cast<int>(reg - 2));
+                if(reg >= 0 && reg <= 31) {
+                  ImGui::TextColored(instr_regs_col, "%s", regNames[reg].c_str());
+                } else if(reg >= 55 && reg <= 86) {
+                  ImGui::TextColored(instr_regs_col, "f%d", static_cast<int>(reg) - 55);
+                } else {
+                  ImGui::TextColored(instr_regs_col, "unk");
+                }
+              }
+            };
+
+            switch(op->type) {
+              case MIPS_OP_REG:
+                printReg(op->reg);
+                break;
+              case MIPS_OP_IMM:
+                ImGui::TextColored(instr_imm_col, "#%X", (u32)op->imm);
+                break;
+              case MIPS_OP_MEM:
+                ImGui::TextColored(instr_imm_col, "%X", (u32)op->mem.disp);
+                ImGui::SameLine(0, 0);
+                ImGui::TextUnformatted("(");
+                ImGui::SameLine(0, 0);
+                printReg(op->mem.base);
+                ImGui::SameLine(0, 0);
+                ImGui::TextUnformatted(")");
+              break;
+              default:
+                break;
+            }
+
+            if(x < (in->detail->mips.op_count-1)) {
+              ImGui::SameLine(0, 0);
+              ImGui::TextUnformatted(", ");
+              ImGui::SameLine(0, 0);
+            }
+          }
+        }        
       }
 
       cs_free(insn, count);
     } else {
       ImGui::Text("%08X", pc);
       ImGui::SameLine();
-      ImGui::TextColored(instr_hex_col, "%08X", instr);
+      ImGui::TextColored(instr_imm_col, "%08X", instr);
       ImGui::SameLine();
       ImGui::TextColored(instr_mnemonic_col, "invalid");
     }

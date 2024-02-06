@@ -18,9 +18,9 @@ class DebuggerWindow : public QOpenGLWidget, private QOpenGLExtraFunctions {
   EmuThread* emuThread;
   ImU32 hover_col;
   ImU32 bkp_col;
-  ImVec4 instr_hex_col;
+  ImVec4 instr_imm_col;
   ImVec4 instr_mnemonic_col;
-  ImVec4 instr_ops_col;
+  ImVec4 instr_regs_col;
 public:
   void wheelEvent(QWheelEvent*) override;
   DebuggerWindow(EmuThread*);

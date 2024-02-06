@@ -38,18 +38,18 @@ struct Core {
         bkps.insert(bkp);
       }
 
-      insertGhostBkp(Breakpoint{ bkp.addr + 4, true });
+      insertGhostBkp(Breakpoint{ bkp.addr + 8, true });
     }
   }
 
   inline void removeGhostBkp(const Breakpoint& bkp) {
     if (isInstrJump(bkp.addr)) {
       auto pos = std::find(bkps.begin(), bkps.end(), bkp);
-      if (pos == bkps.end()) {
-        bkps.insert(bkp);
+      if (pos != bkps.end()) {
+        bkps.erase(pos);
       }
 
-      removeGhostBkp(Breakpoint{ bkp.addr + 4, true });
+      removeGhostBkp(Breakpoint{ bkp.addr + 8, true });
     }
   }
 

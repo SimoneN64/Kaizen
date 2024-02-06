@@ -1,6 +1,7 @@
 #include <Core.hpp>
 #include <Scheduler.hpp>
 #include <ParallelRDPWrapper.hpp>
+#include <CpuDefinitions.hpp>
 
 namespace n64 {
 u32 extraCycles = 0;
@@ -51,10 +52,64 @@ void Core::LoadROM(const std::string& rom_) {
   render = true;
 }
 
+bool Core::isInstrJump(u32 addr) {
+  u32 instr = cpu->mem.ReadDebugger<u32>(cpu->regs, addr);
+  u8 mask = (instr >> 26) & 0x3f;
+  switch (mask) {
+  case SPECIAL: {
+    mask = (instr & 0x3F);
+    switch (mask) {
+    case TGE: case TGEU: case TLT:  case TLTU:
+    case TEQ: case TNE: case JR: case JALR:
+    case SYSCALL: case BREAK: return true;
+    default: return false;
+    }
+  }
+  case J: case JAL: case BEQ: case BNE:
+  case BLEZ: case BGTZ: case BEQL: case BNEL:
+  case BLEZL: case BGTZL: case REGIMM: return true;
+  default: return false;
+  }
+}
+
+void Core::Step() {
+  Mem& mem = cpu->mem;
+  MMIO& mmio = mem.mmio;
+  Registers& regs = cpu->regs;
+
+  u32 taken = cpu->Step();
+  taken += PopStalledCycles();
+  static u32 cpuSteps = 0;
+  cpuSteps += taken;
+  if (mmio.rsp.spStatus.halt) {
+    cpuSteps = 0;
+    mmio.rsp.steps = 0;
+  }
+  else {
+    while (cpuSteps > 2) {
+      mmio.rsp.steps += 2;
+      cpuSteps -= 3;
+    }
+
+    while (mmio.rsp.steps > 0) {
+      mmio.rsp.steps--;
+      mmio.rsp.Step(regs, mem);
+    }
+  }
+
+  cycles += taken;
+  scheduler.tick(taken, mem, regs);
+  cycles--;
+}
+
 void Core::Run(float volumeL, float volumeR) {
   Mem& mem = cpu->mem;
   MMIO& mmio = mem.mmio;
   Registers& regs = cpu->regs;
+  if (hasToBreak(regs.pc)) {
+    broken = true;
+    return;
+  }
 
   for (int field = 0; field < mmio.vi.numFields; field++) {
     u32 frameCycles = 0;

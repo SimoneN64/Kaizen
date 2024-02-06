@@ -21,7 +21,6 @@ public:
 
   [[noreturn]] void run() noexcept override;
 
-  std::set<u32>* bkps = nullptr;
   n64::Core* core;
   SettingsWindow* settings;
 

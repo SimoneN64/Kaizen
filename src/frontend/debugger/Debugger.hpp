@@ -9,8 +9,6 @@
 #include <imgui.h>
 
 class DebuggerWindow : public QOpenGLWidget, private QOpenGLExtraFunctions {
-  std::set<u32> bkps{};
-  void toggleBkp(u32);
   QTimer timer;
   csh disasmHandle;
   bool followPC = false;

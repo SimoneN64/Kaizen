@@ -46,7 +46,6 @@ const QHash<int, int> keyMap = {
     { Qt::Key_X, static_cast<int>(ImGuiKey_X) },
     { Qt::Key_Y, static_cast<int>(ImGuiKey_Y) },
     { Qt::Key_Z, static_cast<int>(ImGuiKey_Z) },
-    { Qt::MiddleButton, static_cast<int>(ImGuiMouseButton_Middle) }
 };
 
 #ifndef QT_NO_CURSOR
@@ -84,7 +83,7 @@ void ImGuiRenderer::initialize(WindowWrapper *window) {
     
     // Setup keyboard mapping
     for (auto key : keyMap.values()) {
-        io.KeyMap[key] = key;
+        io.KeyMap[key] = key - 512;
     }
     
     // io.RenderDrawListsFn = [](ImDrawData *drawData) {

@@ -18,8 +18,6 @@ const std::string regNames[] = {
 };
 
 DebuggerWindow::DebuggerWindow(EmuThread* emuThread) : emuThread(emuThread), QOpenGLWidget(nullptr) {
-  emuThread->bkps = &bkps;
-
   if (cs_open(CS_ARCH_MIPS, cs_mode(CS_MODE_BIG_ENDIAN | CS_MODE_MIPS64), &disasmHandle) != CS_ERR_OK) {
     Util::panic("Could not initialize capstone!");
   }
@@ -97,14 +95,14 @@ void DebuggerWindow::renderDisasm() {
 
       if (std::trunc(mousePosY / lineHeight) == i) { // is hovering this line
         if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-          toggleBkp(pc);
+          emuThread->core->toggleBkp(Breakpoint{pc-8, false});
         }
         drawList->AddRectFilled(pos, end, hover_col);
       }
     }
 
-    for(auto bkp : bkps) {
-      if(pc == bkp) {
+    for(auto bkp : emuThread->core->bkps) {
+      if(pc-8 == bkp.addr && !bkp.ghost) {
         drawList->AddRectFilled(pos, end, bkp_col);
       }
     }
@@ -172,7 +170,8 @@ void DebuggerWindow::paintGL() {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
   ImGui::Begin("##debugger", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize);
   if(ImGui::Button("Continue")) {
-
+    emuThread->core->Step();
+    emuThread->core->broken = false;
   }
   ImGui::SameLine();
   if(ImGui::Button("Step over")) {
@@ -180,7 +179,7 @@ void DebuggerWindow::paintGL() {
   }
   ImGui::SameLine();
   if(ImGui::Button("Step in")) {
-
+    emuThread->core->Step();
   }
   ImGui::SameLine();
   if(ImGui::Button("Step out")) {
@@ -216,13 +215,4 @@ void DebuggerWindow::paintGL() {
 
   ImGui::Render();
   QtImGui::render();
-}
-
-void DebuggerWindow::toggleBkp(u32 addr) {
-  auto pos = bkps.find(addr);
-  if (pos != bkps.end()) {
-    bkps.erase(pos);
-  } else {
-    bkps.insert(addr);
-  }
 }

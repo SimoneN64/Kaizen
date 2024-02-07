@@ -4,6 +4,7 @@
 #include <SettingsWindow.hpp>
 #include <Debugger.hpp>
 #include <MemoryEditor.hpp>
+#include <RSPDebugger.hpp>
 
 enum class CompositorCategory {
   Windows, MacOS, XCB, Wayland
@@ -39,6 +40,7 @@ private:
   MainWindowController* mainWindow;
   SettingsWindow* settingsWindow;
   DebuggerWindow* debuggerWindow;
+  RSPDebugger* rspDebugger;
   MemoryEditor* memoryEditorWindow;
   EmuThread* emuThread;
 };

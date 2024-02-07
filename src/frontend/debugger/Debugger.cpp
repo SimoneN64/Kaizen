@@ -1,5 +1,5 @@
 #include <Debugger.hpp>
-#include <QtImGui.h>
+#include <RSPDebugger.hpp>
 #include <imgui.h>
 #include <imgui_stdlib.h>
 #include <QGuiApplication>
@@ -17,13 +17,13 @@ const std::string regNames[] = {
   "gp", "sp", "s8", "ra",
 };
 
-DebuggerWindow::DebuggerWindow(EmuThread* emuThread) : emuThread(emuThread), QOpenGLWidget(nullptr) {
+DebuggerWindow::DebuggerWindow(EmuThread* emuThread, RSPDebugger* rspDebugger) : rspDebugger(rspDebugger), emuThread(emuThread), QOpenGLWidget(nullptr) {
   if (cs_open(CS_ARCH_MIPS, cs_mode(CS_MODE_BIG_ENDIAN | CS_MODE_MIPS64), &disasmHandle) != CS_ERR_OK) {
-    Util::panic("Could not initialize capstone!");
+    Util::panic("Could not initialize capstone for main CPU!");
   }
 
   if (cs_option(disasmHandle, CS_OPT_DETAIL, CS_OPT_ON) != CS_ERR_OK) {
-    Util::panic("Could not enable capstone detail!");
+    Util::panic("Could not enable capstone detail for main CPU!");
   }
 
   if (objectName().isEmpty())
@@ -45,7 +45,8 @@ DebuggerWindow::DebuggerWindow(EmuThread* emuThread) : emuThread(emuThread), QOp
 
 void DebuggerWindow::initializeGL() {
   initializeOpenGLFunctions();
-  QtImGui::initialize(this);
+  ref = QtImGui::initialize(this, false);
+  rspDebugger->ref = ref;
   if(QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark) {
     ImGui::StyleColorsDark();
     instr_imm_col = ImVec4{0.878, 0.875, 0.584, 1};
@@ -215,7 +216,7 @@ void DebuggerWindow::renderRegs() {
 void DebuggerWindow::paintGL() {
   static std::string goToAddrBuf{"00000000"};
   static u32 goToAddr=0;
-  QtImGui::newFrame();
+  QtImGui::newFrame(ref);
 
   grabKeyboard();
 
@@ -270,5 +271,5 @@ void DebuggerWindow::paintGL() {
   releaseKeyboard();
 
   ImGui::Render();
-  QtImGui::render();
+  QtImGui::render(ref);
 }

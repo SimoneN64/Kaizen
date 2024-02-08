@@ -21,9 +21,7 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   mainWindow->show();
   settingsWindow = new SettingsWindow;
   settingsWindow->hide();
-  rspDebugger = new RSPDebugger(emuThread);
-  rspDebugger->hide();
-  debuggerWindow = new DebuggerWindow(emuThread, rspDebugger);
+  debuggerWindow = new DebuggerWindow(emuThread);
   debuggerWindow->hide();
   memoryEditorWindow = new MemoryEditor;
   memoryEditorWindow->hide();
@@ -40,7 +38,6 @@ void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept {
   });
   connect(mainWindow, &MainWindowController::OpenDebugger, this, [this]() {
     debuggerWindow->show();
-    rspDebugger->show();
   });
   connect(mainWindow, &MainWindowController::OpenMemoryEditor, this, [this]() {
     memoryEditorWindow->show();

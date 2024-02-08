@@ -17,7 +17,7 @@ const std::string regNames[] = {
   "gp", "sp", "s8", "ra",
 };
 
-DebuggerWindow::DebuggerWindow(EmuThread* emuThread, RSPDebugger* rspDebugger) : rspDebugger(rspDebugger), emuThread(emuThread), QOpenGLWidget(nullptr) {
+DebuggerWindow::DebuggerWindow(EmuThread* emuThread) : rspDebugger(emuThread), emuThread(emuThread), QOpenGLWidget(nullptr) {
   if (cs_open(CS_ARCH_MIPS, cs_mode(CS_MODE_BIG_ENDIAN | CS_MODE_MIPS64), &disasmHandle) != CS_ERR_OK) {
     Util::panic("Could not initialize capstone for main CPU!");
   }
@@ -45,8 +45,7 @@ DebuggerWindow::DebuggerWindow(EmuThread* emuThread, RSPDebugger* rspDebugger) :
 
 void DebuggerWindow::initializeGL() {
   initializeOpenGLFunctions();
-  ref = QtImGui::initialize(this, false);
-  rspDebugger->ref = ref;
+  QtImGui::initialize(this);
   if(QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark) {
     ImGui::StyleColorsDark();
     instr_imm_col = ImVec4{0.878, 0.875, 0.584, 1};
@@ -92,7 +91,7 @@ void DebuggerWindow::renderDisasm() {
     u32 pc = scrollAmount + (i * 4);
 
     auto pos = ImGui::GetCursorPos();
-    pos.y -= 4;
+    pos.y += 19;
     auto end = ImVec2{pos.x + areaAvail.x, pos.y + lineHeight - 2};
 
     if (ImGui::IsWindowHovered()) { // if mouse inside this frame
@@ -112,7 +111,7 @@ void DebuggerWindow::renderDisasm() {
       }
     }
 
-    pos.y = ImGui::GetCursorScreenPos().y;
+    pos.y = ImGui::GetCursorScreenPos().y + 19;
     end = ImVec2{pos.x + areaAvail.x, pos.y + lineHeight - 2};
 
     // program counter is teal
@@ -213,17 +212,13 @@ void DebuggerWindow::renderRegs() {
   emuThread->core->pause = false;
 }
 
-void DebuggerWindow::paintGL() {
+void DebuggerWindow::renderCPU() {
   static std::string goToAddrBuf{"00000000"};
   static u32 goToAddr=0;
-  QtImGui::newFrame(ref);
-
-  grabKeyboard();
-
+  ImGui::BeginChild("##cpudisasm");
   ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
   ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
   ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-  ImGui::Begin("##debugger", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize);
   if(ImGui::Button("Continue")) {
     emuThread->core->Step();
     emuThread->core->broken = false;
@@ -260,8 +255,29 @@ void DebuggerWindow::paintGL() {
   ImGui::BeginChild("Registers", ImVec2(360,0));
   renderRegs();
   ImGui::EndChild();
-  ImGui::End();
   ImGui::PopStyleVar();
+  ImGui::EndChild();
+}
+
+void DebuggerWindow::paintGL() {
+  QtImGui::newFrame();
+
+  grabKeyboard();
+
+  ImGui::SetNextWindowPos(ImVec2{0.f, 0.f});
+  ImGui::SetNextWindowSize(ImVec2{(float)size().width(), (float)size().height()});
+  ImGui::Begin("##debugger", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+  ImGui::BeginTabBar("Debuggers");
+  if(ImGui::BeginTabItem("CPU")) {
+    renderCPU();
+    ImGui::EndTabItem();
+  }
+
+  if(ImGui::BeginTabItem("RSP")) {
+    ImGui::EndTabItem();
+  }
+  ImGui::EndTabBar();
+  ImGui::End();
 
   // Do render before ImGui UI is rendered
   glViewport(0, 0, width(), height());
@@ -271,5 +287,5 @@ void DebuggerWindow::paintGL() {
   releaseKeyboard();
 
   ImGui::Render();
-  QtImGui::render(ref);
+  QtImGui::render();
 }

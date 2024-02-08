@@ -8,8 +8,7 @@
 #include <capstone/capstone.h>
 #include <EmuThread.hpp>
 #include <imgui.h>
-
-class RSPDebugger;
+#include <RSPDebugger.hpp>
 
 class DebuggerWindow : public QOpenGLWidget, private QOpenGLExtraFunctions {
   QTimer timer;
@@ -18,17 +17,17 @@ class DebuggerWindow : public QOpenGLWidget, private QOpenGLExtraFunctions {
   u64 scrollAmount = 0;
   void renderDisasm();
   void renderRegs();
+  void renderCPU();
   EmuThread* emuThread;
   ImU32 hover_col;
   ImU32 bkp_col;
   ImVec4 instr_imm_col;
   ImVec4 instr_mnemonic_col;
   ImVec4 instr_regs_col;
-  RSPDebugger* rspDebugger;
+  RSPDebugger rspDebugger;
 public:
-  QtImGui::RenderRef ref = nullptr;
   void wheelEvent(QWheelEvent*) override;
-  DebuggerWindow(EmuThread*, RSPDebugger*);
+  DebuggerWindow(EmuThread*);
 protected:
   void initializeGL() override;
   void paintGL() override;

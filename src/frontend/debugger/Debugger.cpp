@@ -91,7 +91,6 @@ void DebuggerWindow::renderDisasm() {
     u32 pc = scrollAmount + (i * 4);
 
     auto pos = ImGui::GetCursorPos();
-    pos.y += 19;
     auto end = ImVec2{pos.x + areaAvail.x, pos.y + lineHeight - 2};
 
     if (ImGui::IsWindowHovered()) { // if mouse inside this frame
@@ -99,19 +98,19 @@ void DebuggerWindow::renderDisasm() {
 
       if (std::trunc(mousePosY / lineHeight) == i) { // is hovering this line
         if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-          emuThread->core->toggleBkp(Breakpoint{pc-8, false});
+          emuThread->core->toggleBkp(Breakpoint{pc - 8, false});
         }
         drawList->AddRectFilled(pos, end, hover_col);
       }
     }
 
     for(auto bkp : emuThread->core->bkps) {
-      if(pc-8 == bkp.addr && !bkp.ghost) {
+      if(pc - 8 == bkp.addr && !bkp.ghost) {
         drawList->AddRectFilled(pos, end, bkp_col);
       }
     }
 
-    pos.y = ImGui::GetCursorScreenPos().y + 19;
+    pos.y = ImGui::GetCursorScreenPos().y;
     end = ImVec2{pos.x + areaAvail.x, pos.y + lineHeight - 2};
 
     // program counter is teal
@@ -216,9 +215,6 @@ void DebuggerWindow::renderCPU() {
   static std::string goToAddrBuf{"00000000"};
   static u32 goToAddr=0;
   ImGui::BeginChild("##cpudisasm");
-  ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-  ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
   if(ImGui::Button("Continue")) {
     emuThread->core->Step();
     emuThread->core->broken = false;
@@ -255,7 +251,6 @@ void DebuggerWindow::renderCPU() {
   ImGui::BeginChild("Registers", ImVec2(360,0));
   renderRegs();
   ImGui::EndChild();
-  ImGui::PopStyleVar();
   ImGui::EndChild();
 }
 

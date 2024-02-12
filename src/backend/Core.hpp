@@ -29,6 +29,7 @@ struct Core {
   void Deserialize();
   void TogglePause() { pause = !pause; }
   bool isInstrJump(u32 addr);
+  template <bool rsp = false>
   void Step();
 
   inline void insertGhostBkp(const Breakpoint& bkp) {

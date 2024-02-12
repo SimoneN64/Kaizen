@@ -61,6 +61,9 @@ void DebuggerWindow::initializeGL() {
     bkp_col = IM_COL32(168, 147, 40, 255);
     hover_col = IM_COL32(173, 35, 35, 255);
   }
+  rspDebugger.instr_imm_col = instr_imm_col;
+  rspDebugger.instr_mnemonic_col = instr_mnemonic_col;
+  rspDebugger.instr_regs_col = instr_regs_col;
 }
 
 void DebuggerWindow::wheelEvent(QWheelEvent* e) {

@@ -13,6 +13,6 @@ RSPDebugger::RSPDebugger(EmuThread* emuThread) : emuThread(emuThread) {
   }
 }
 
-cs_insn RSPDebugger::disassemble(u32 instr) {
-
+cs_insn RSPDebugger::disassemble(u32 instr, u16 addr) {
+  
 }

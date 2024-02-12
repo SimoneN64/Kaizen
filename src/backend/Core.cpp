@@ -5,6 +5,7 @@
 
 namespace n64 {
 u32 extraCycles = 0;
+static u32 cpuSteps = 0;
 
 void CpuStall(u32 cycles) {
   extraCycles += cycles;
@@ -72,34 +73,39 @@ bool Core::isInstrJump(u32 addr) {
   }
 }
 
+template <bool rsp>
 void Core::Step() {
   Mem& mem = cpu->mem;
   MMIO& mmio = mem.mmio;
   Registers& regs = cpu->regs;
 
-  u32 taken = cpu->Step();
-  taken += PopStalledCycles();
-  static u32 cpuSteps = 0;
-  cpuSteps += taken;
-  if (mmio.rsp.spStatus.halt) {
-    cpuSteps = 0;
-    mmio.rsp.steps = 0;
-  }
-  else {
-    while (cpuSteps > 2) {
-      mmio.rsp.steps += 2;
-      cpuSteps -= 3;
+  if constexpr(!rsp) {
+    u32 taken = cpu->Step();
+    taken += PopStalledCycles();
+    cpuSteps += taken;
+    if (mmio.rsp.spStatus.halt) {
+      cpuSteps = 0;
+      mmio.rsp.steps = 0;
+    } else {
+      while (cpuSteps > 2) {
+        mmio.rsp.steps += 2;
+        cpuSteps -= 3;
+      }
+
+      while (mmio.rsp.steps > 0) {
+        mmio.rsp.steps--;
+        mmio.rsp.Step(regs, mem);
+      }
     }
 
-    while (mmio.rsp.steps > 0) {
-      mmio.rsp.steps--;
-      mmio.rsp.Step(regs, mem);
-    }
+    cycles += taken;
+    scheduler.tick(taken, mem, regs);
+    cycles--;
+  } else {
+    Step<false>();
+    Step<false>();
+    Step<false>();
   }
-
-  cycles += taken;
-  scheduler.tick(taken, mem, regs);
-  cycles--;
 }
 
 void Core::Run(float volumeL, float volumeR) {
@@ -123,7 +129,6 @@ void Core::Run(float volumeL, float volumeR) {
       for(; cycles < mem.mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
         u32 taken = cpu->Step();
         taken += PopStalledCycles();
-        static u32 cpuSteps = 0;
         cpuSteps += taken;
         if(mmio.rsp.spStatus.halt) {
           cpuSteps = 0;

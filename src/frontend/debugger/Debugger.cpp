@@ -1,5 +1,4 @@
 #include <Debugger.hpp>
-#include <RSPDebugger.hpp>
 #include <imgui.h>
 #include <imgui_stdlib.h>
 #include <QGuiApplication>
@@ -17,7 +16,7 @@ const std::string regNames[] = {
   "gp", "sp", "s8", "ra",
 };
 
-DebuggerWindow::DebuggerWindow(EmuThread* emuThread) : rspDebugger(emuThread), emuThread(emuThread), QOpenGLWidget(nullptr) {
+DebuggerWindow::DebuggerWindow(EmuThread* emuThread) : emuThread(emuThread), QOpenGLWidget(nullptr) {
   if (cs_open(CS_ARCH_MIPS, cs_mode(CS_MODE_BIG_ENDIAN | CS_MODE_MIPS64), &disasmHandle) != CS_ERR_OK) {
     Util::panic("Could not initialize capstone for main CPU!");
   }
@@ -29,7 +28,7 @@ DebuggerWindow::DebuggerWindow(EmuThread* emuThread) : rspDebugger(emuThread), e
   if (objectName().isEmpty())
     setObjectName("Debugger");
 
-  setFixedSize(960, 600);
+  resize(1024, 768);
   setWindowTitle("Debugger");
   QSurfaceFormat glFormat;
   if (QOpenGLContext::openGLModuleType() == QOpenGLContext::LibGL)
@@ -61,9 +60,6 @@ void DebuggerWindow::initializeGL() {
     bkp_col = IM_COL32(168, 147, 40, 255);
     hover_col = IM_COL32(173, 35, 35, 255);
   }
-  rspDebugger.instr_imm_col = instr_imm_col;
-  rspDebugger.instr_mnemonic_col = instr_mnemonic_col;
-  rspDebugger.instr_regs_col = instr_regs_col;
 }
 
 void DebuggerWindow::wheelEvent(QWheelEvent* e) {
@@ -214,6 +210,61 @@ void DebuggerWindow::renderRegs() {
   emuThread->core->pause = false;
 }
 
+void DebuggerWindow::renderDisasmRSP() {
+}
+
+void DebuggerWindow::renderRegsRSP() {
+  emuThread->core->pause = true;
+  n64::MMIO& mmio = emuThread->core->cpu->mem.mmio;
+  n64::RSP& rsp = mmio.rsp;
+  for(int i = 0; i < 32; i += 2) {
+    ImGui::Text("%s", regNames[i].c_str());
+    ImGui::SameLine();
+    ImGui::Text("%s", fmt::format("{:08X}", (u32)rsp.gpr[i]).c_str());
+    ImGui::SameLine();
+    ImGui::Text("%s", regNames[i+1].c_str());
+    ImGui::SameLine();
+    ImGui::Text("%s", fmt::format("{:08X}", (u32)rsp.gpr[i+1]).c_str());
+  }
+  for(int i = 0; i < 32; i += 2) {
+    ImGui::Text("%s", fmt::format("vpr{}", i).c_str());
+    ImGui::SameLine();
+    ImGui::Text("%s", fmt::format("{:08X}{:08X}{:08X}{:08X}", rsp.vpr[i].word[0], rsp.vpr[i].word[1], rsp.vpr[i].word[2], rsp.vpr[i].word[3]).c_str());
+    ImGui::SameLine();
+    ImGui::Text("%s", fmt::format("vpr{}", i+1).c_str());
+    ImGui::SameLine();
+    ImGui::Text("%s", fmt::format("{:08X}{:08X}{:08X}{:08X}", rsp.vpr[i+1].word[0], rsp.vpr[i+1].word[1], rsp.vpr[i+1].word[2], rsp.vpr[i+1].word[3]).c_str());
+  }
+  ImGui::Text("vce");
+  ImGui::SameLine();
+  ImGui::Text("%s", fmt::format("{:08X}{:08X}{:08X}{:08X}", rsp.vce.word[0], rsp.vce.word[1], rsp.vce.word[2], rsp.vce.word[3]).c_str());
+  ImGui::Text("acc.lo");
+  ImGui::SameLine();
+  ImGui::Text("%s", fmt::format("{:08X}{:08X}{:08X}{:08X}", rsp.acc.l.word[0], rsp.acc.l.word[1], rsp.acc.l.word[2], rsp.acc.l.word[3]).c_str());
+  ImGui::Text("acc.mid");
+  ImGui::SameLine();
+  ImGui::Text("%s", fmt::format("{:08X}{:08X}{:08X}{:08X}", rsp.acc.m.word[0], rsp.acc.m.word[1], rsp.acc.m.word[2], rsp.acc.m.word[3]).c_str());
+  ImGui::Text("acc.hi");
+  ImGui::SameLine();
+  ImGui::Text("%s", fmt::format("{:08X}{:08X}{:08X}{:08X}", rsp.acc.h.word[0], rsp.acc.h.word[1], rsp.acc.h.word[2], rsp.acc.h.word[3]).c_str());
+  ImGui::Text("vcc.lo");
+  ImGui::SameLine();
+  ImGui::Text("%s", fmt::format("{:08X}{:08X}{:08X}{:08X}", rsp.vcc.l.word[0], rsp.vcc.l.word[1], rsp.vcc.l.word[2], rsp.vcc.l.word[3]).c_str());
+  ImGui::Text("vcc.hi");
+  ImGui::SameLine();
+  ImGui::Text("%s", fmt::format("{:08X}{:08X}{:08X}{:08X}", rsp.vcc.h.word[0], rsp.vcc.h.word[1], rsp.vcc.h.word[2], rsp.vcc.h.word[3]).c_str());
+  ImGui::Text("vco.lo");
+  ImGui::SameLine();
+  ImGui::Text("%s", fmt::format("{:08X}{:08X}{:08X}{:08X}", rsp.vco.l.word[0], rsp.vco.l.word[1], rsp.vco.l.word[2], rsp.vco.l.word[3]).c_str());
+  ImGui::Text("vco.hi");
+  ImGui::SameLine();
+  ImGui::Text("%s", fmt::format("{:08X}{:08X}{:08X}{:08X}", rsp.vco.h.word[0], rsp.vco.h.word[1], rsp.vco.h.word[2], rsp.vco.h.word[3]).c_str());
+  ImGui::Text("semaphore");
+  ImGui::SameLine();
+  ImGui::Text("%s", fmt::format("{}", rsp.semaphore).c_str());
+  emuThread->core->pause = false;
+}
+
 void DebuggerWindow::renderCPU() {
   static std::string goToAddrBuf{"00000000"};
   static u32 goToAddr=0;
@@ -247,12 +298,56 @@ void DebuggerWindow::renderCPU() {
     goToAddr &= ~3;
     scrollAmount = goToAddr;
   }
-  ImGui::BeginChild("Disassembly", ImVec2(600,0), 0, ImGuiWindowFlags_NoScrollbar);
+  ImGui::BeginChild("Disassembly", ImVec2((float)size().width()*6.f/10.f,0), 0, ImGuiWindowFlags_NoScrollbar);
   renderDisasm();
   ImGui::EndChild();
   ImGui::SameLine();
-  ImGui::BeginChild("Registers", ImVec2(360,0));
+  ImGui::BeginChild("Registers", ImVec2((float)size().width()*4.f/10.f,0));
   renderRegs();
+  ImGui::EndChild();
+  ImGui::EndChild();
+}
+
+void DebuggerWindow::renderRSP() {
+  static std::string goToAddrBuf{"0000"};
+  static u16 goToAddr=0;
+  ImGui::BeginChild("##cpudisasm");
+  if(ImGui::Button("Continue")) {
+    emuThread->core->Step<true>();
+    emuThread->core->broken = false;
+  }
+  ImGui::SameLine();
+  if(ImGui::Button("Step over")) {
+    emuThread->core->Step<true>();
+    emuThread->core->broken = false;
+  }
+  ImGui::SameLine();
+  if(ImGui::Button("Step in")) {
+    emuThread->core->Step<true>();
+  }
+  ImGui::SameLine();
+  if(ImGui::Button("Step out")) {
+    emuThread->core->Step<true>();
+    emuThread->core->broken = false;
+  }
+  ImGui::SameLine();
+  ImGui::Checkbox("Follow PC", &followPC);
+  ImGui::SameLine();
+  ImGui::SetNextItemWidth(100.f);
+  ImGui::InputText("Go to address", &goToAddrBuf, ImGuiInputTextFlags_CharsHexadecimal);
+  ImGui::SameLine();
+  if(ImGui::Button("Go")) {
+    goToAddr = std::stoull(goToAddrBuf, nullptr, 16);
+    goToAddr &= 0x1FFF;
+    goToAddr &= ~3;
+    scrollAmount = goToAddr;
+  }
+  ImGui::BeginChild("Disassembly", ImVec2((float)size().width()*6.f/10.f,0), 0, ImGuiWindowFlags_NoScrollbar);
+  renderDisasmRSP();
+  ImGui::EndChild();
+  ImGui::SameLine();
+  ImGui::BeginChild("Registers", ImVec2((float)size().width()*4.f/10.f,0));
+  renderRegsRSP();
   ImGui::EndChild();
   ImGui::EndChild();
 }
@@ -272,6 +367,7 @@ void DebuggerWindow::paintGL() {
   }
 
   if(ImGui::BeginTabItem("RSP")) {
+    renderRSP();
     ImGui::EndTabItem();
   }
   ImGui::EndTabBar();

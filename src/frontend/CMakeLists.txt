@@ -78,9 +78,7 @@ add_executable(kaizen-qt
   debugger/Debugger.hpp
   debugger/Debugger.cpp
   debugger/MemoryEditor.hpp
-  debugger/MemoryEditor.cpp
-  debugger/RSPDebugger.hpp
-  debugger/RSPDebugger.cpp)
+  debugger/MemoryEditor.cpp)
 
 target_link_libraries(kaizen-qt PUBLIC capstone qt_imgui_widgets Qt6::OpenGLWidgets Qt6::Core Qt6::Gui Qt6::Widgets fmt mio nlohmann_json nfd parallel-rdp backend)
 

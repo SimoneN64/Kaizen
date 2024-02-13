@@ -73,39 +73,38 @@ bool Core::isInstrJump(u32 addr) {
   }
 }
 
-template <bool rsp>
-void Core::Step() {
+template <> void Core::Step<false>() {
   Mem& mem = cpu->mem;
   MMIO& mmio = mem.mmio;
   Registers& regs = cpu->regs;
 
-  if constexpr(!rsp) {
-    u32 taken = cpu->Step();
-    taken += PopStalledCycles();
-    cpuSteps += taken;
-    if (mmio.rsp.spStatus.halt) {
-      cpuSteps = 0;
-      mmio.rsp.steps = 0;
-    } else {
-      while (cpuSteps > 2) {
-        mmio.rsp.steps += 2;
-        cpuSteps -= 3;
-      }
-
-      while (mmio.rsp.steps > 0) {
-        mmio.rsp.steps--;
-        mmio.rsp.Step(regs, mem);
-      }
+  u32 taken = cpu->Step();
+  taken += PopStalledCycles();
+  cpuSteps += taken;
+  if (mmio.rsp.spStatus.halt) {
+    cpuSteps = 0;
+    mmio.rsp.steps = 0;
+  } else {
+    while (cpuSteps > 2) {
+      mmio.rsp.steps += 2;
+      cpuSteps -= 3;
     }
 
-    cycles += taken;
-    scheduler.tick(taken, mem, regs);
-    cycles--;
-  } else {
-    Step<false>();
-    Step<false>();
-    Step<false>();
+    while (mmio.rsp.steps > 0) {
+      mmio.rsp.steps--;
+      mmio.rsp.Step(regs, mem);
+    }
   }
+
+  cycles += taken;
+  scheduler.tick(taken, mem, regs);
+  cycles--;
+}
+
+template <> void Core::Step<true>() {
+  Step<false>();
+  Step<false>();
+  Step<false>();
 }
 
 void Core::Run(float volumeL, float volumeR) {

@@ -89,6 +89,11 @@ struct RSP_Operand {
   };
 };
 
+struct RSP_Instruction {
+  std::vector<RSP_Operand> operands;
+
+};
+
 class DebuggerWindow : public QOpenGLWidget, private QOpenGLExtraFunctions {
   QTimer timer;
   csh disasmHandle;
@@ -106,6 +111,7 @@ class DebuggerWindow : public QOpenGLWidget, private QOpenGLExtraFunctions {
   ImVec4 instr_imm_col;
   ImVec4 instr_mnemonic_col;
   ImVec4 instr_regs_col;
+  
 public:
   void wheelEvent(QWheelEvent*) override;
   DebuggerWindow(EmuThread*);

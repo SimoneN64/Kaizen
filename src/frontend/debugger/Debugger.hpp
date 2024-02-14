@@ -77,13 +77,23 @@ enum RSP_VPRAccessType {
 
 struct RSP_Reg {
   eRSP_Reg idx;
-  RSP_VPRAccessType acType = Uint32;
-  int disp = -1;
+  RSP_VPRAccessType acType;
+  int disp;
+
+  RSP_Reg() {
+    idx = RSP_INVALID;
+    acType = Uint32;
+    disp = -1;
+  }
 };
 
 struct RSP_Mem {
 	RSP_Reg base;	///< base register
 	int64_t disp;	///< displacement/offset value
+
+  RSP_Mem() {
+    disp = -1;
+  }
 };
 
 struct RSP_Operand {
@@ -93,6 +103,11 @@ struct RSP_Operand {
     int64_t imm;		///< immediate value for IMM operand
 		RSP_Mem mem;	///< base/index/scale/disp value for MEM operand
   };
+
+  RSP_Operand() {
+    type = MIPS_OP_INVALID;
+    imm = -1;
+  }
 };
 
 struct RSP_Instruction {
@@ -103,7 +118,7 @@ struct RSP_Instruction {
 
 class DebuggerWindow : public QOpenGLWidget, private QOpenGLExtraFunctions {
   QTimer timer;
-  csh disasmHandle;
+  csh disasmHandle, rspHandle;
   bool followPC = false;
   bool isRSPfocused = false;
   u64 scrollAmount = 0;

@@ -26,6 +26,14 @@ DebuggerWindow::DebuggerWindow(EmuThread* emuThread) : emuThread(emuThread), QOp
     Util::panic("Could not enable capstone detail for main CPU!");
   }
 
+  if (cs_open(CS_ARCH_MIPS, cs_mode(CS_MODE_BIG_ENDIAN | CS_MODE_MIPS32), &rspHandle) != CS_ERR_OK) {
+    Util::panic("Could not initialize capstone for main CPU!");
+  }
+
+  if (cs_option(rspHandle, CS_OPT_DETAIL, CS_OPT_ON) != CS_ERR_OK) {
+    Util::panic("Could not enable capstone detail for main CPU!");
+  }
+
   if (objectName().isEmpty())
     setObjectName("Debugger");
 
@@ -221,9 +229,21 @@ void DebuggerWindow::renderRegs() {
 RSP_Instruction DebuggerWindow::disassembleRSP(u32 address, u32 instr) {
   switch (instr) {
     case n64::SPECIAL: {
-      u8 mask = instr & 0x3f;
-      switch (mask) {
-      case 0x00: return { address, {}, "nop" };
+      cs_insn* insn;
+      size_t count = cs_disasm(rspHandle, reinterpret_cast<u8*>(&instr), 4, address, 0, &insn);
+      if(count > 0) {
+        std::vector<RSP_Operand> operands;
+        for(int i = 0; i < insn->detail->mips.op_count; i++) {
+          cs_mips_op mips_op = insn->detail->mips.operands[i];
+          RSP_Operand op;
+          op.type = mips_op.type;
+          op.reg.idx = op.type == MIPS_OP_REG ? static_cast<eRSP_Reg>(mips_op.reg - 1) : RSP_INVALID;
+          op.imm = op.type == MIPS_OP_IMM ? mips_op.imm : 0;
+          op.mem.base.idx = op.type == MIPS_OP_MEM ? static_cast<eRSP_Reg>(mips_op.mem.base - 1) : RSP_INVALID;
+          op.mem.base.disp = op.type == MIPS_OP_MEM ? mips_op.mem.disp : -1;
+          operands.push_back(op);
+        }
+        return { address, operands, insn->mnemonic };
       }
     }
     default: return { address, {}, "unk" };

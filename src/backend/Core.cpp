@@ -111,7 +111,7 @@ void Core::Run(float volumeL, float volumeR) {
   Mem& mem = cpu->mem;
   MMIO& mmio = mem.mmio;
   Registers& regs = cpu->regs;
-  if (hasToBreak(regs.pc)) {
+  if (hasToBreak(regs.pc) || hasToBreak(mmio.rsp.pc)) {
     broken = true;
     return;
   }

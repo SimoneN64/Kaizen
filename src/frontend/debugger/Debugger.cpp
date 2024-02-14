@@ -4,6 +4,7 @@
 #include <QGuiApplication>
 #include <QStyleHints>
 #include <QWheelEvent>
+#include <CpuDefinitions.hpp>
 
 const std::string regNames[] = {
   "r0", "at", "v0", "v1",
@@ -65,9 +66,17 @@ void DebuggerWindow::initializeGL() {
 void DebuggerWindow::wheelEvent(QWheelEvent* e) {
   if (!e->angleDelta().isNull()) {
     if (e->angleDelta().y() < 0) {
-      scrollAmount += 4;
+      if (isRSPfocused) {
+        scrollAmountRSP += 4;
+      } else {
+        scrollAmount += 4;
+      }
     } else if(e->angleDelta().y() > 0) {
-      scrollAmount -= 4;
+      if (isRSPfocused) {
+        scrollAmountRSP -= 4;
+      } else {
+        scrollAmount -= 4;
+      }
     }
   }
 
@@ -75,7 +84,6 @@ void DebuggerWindow::wheelEvent(QWheelEvent* e) {
 
   e->accept();
 }
-
 void DebuggerWindow::renderDisasm() {
   auto areaAvail = ImGui::GetContentRegionAvail();
   auto lineHeight = ImGui::GetTextLineHeightWithSpacing();
@@ -210,7 +218,155 @@ void DebuggerWindow::renderRegs() {
   emuThread->core->pause = false;
 }
 
+RSP_Instruction DebuggerWindow::disassembleRSP(u32 address, u32 instr) {
+  switch (instr) {
+    case n64::SPECIAL: {
+      u8 mask = instr & 0x3f;
+      switch (mask) {
+      case 0x00: return { address, {}, "nop" };
+      }
+    }
+    default: return { address, {}, "unk" };
+  }
+}
+
 void DebuggerWindow::renderDisasmRSP() {
+  auto areaAvail = ImGui::GetContentRegionAvail();
+  auto lineHeight = ImGui::GetTextLineHeightWithSpacing();
+  auto lineCount = areaAvail.y / lineHeight;
+  auto drawList = ImGui::GetWindowDrawList();
+
+  n64::Mem& mem = emuThread->core->cpu->mem;
+  n64::RSP& rsp = mem.mmio.rsp;
+
+  emuThread->core->pause = true;
+  if(followPC) {
+    scrollAmountRSP = rsp.pc;
+  }
+  for(int i = 0; i < lineCount; i++) {
+    u16 pc = scrollAmountRSP + (i * 4);
+
+    auto pos = ImGui::GetCursorPos();
+    auto end = ImVec2{pos.x + areaAvail.x, pos.y + lineHeight - 2};
+
+    if (ImGui::IsWindowHovered()) { // if mouse inside this frame
+      auto mousePosY = ImGui::GetMousePos().y;
+
+      if (std::trunc(mousePosY / lineHeight) == i) { // is hovering this line
+        if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+          emuThread->core->toggleBkp(Breakpoint{(u32)(pc - 8), false});
+        }
+        drawList->AddRectFilled(pos, end, hover_col);
+      }
+    }
+
+    for(auto bkp : emuThread->core->bkps) {
+      if(pc - 8 == bkp.addr && !bkp.ghost) {
+        drawList->AddRectFilled(pos, end, bkp_col);
+      }
+    }
+
+    pos.y = ImGui::GetCursorScreenPos().y;
+    end = ImVec2{pos.x + areaAvail.x, pos.y + lineHeight - 2};
+
+    // program counter is teal
+    if(pc == rsp.pc)
+      drawList->AddRectFilled(pos, end, IM_COL32(0, 128, 128, 80));
+
+    auto instr = Util::ReadAccess<u32>(rsp.imem, pc & IMEM_DSIZE);
+    instr = bswap_32(instr);
+
+    auto in = disassembleRSP(pc, instr);
+    ImGui::Text("%08X", in.address);
+    ImGui::SameLine();
+    ImGui::TextColored(instr_imm_col, "%08X", instr);
+    ImGui::SameLine();
+    ImGui::TextColored(instr_mnemonic_col, "%s", in.mnemonic.c_str());
+    if(in.operands.size() > 0) {
+      ImGui::SameLine();
+      int x = 0;
+      for(auto op : in.operands) {
+        auto printVec = [this](const char* name, RSP_Reg reg) {
+          switch(reg.acType) {
+            case Uint8:
+              ImGui::TextColored(instr_regs_col, "%s.8[%d]", name, reg.disp);
+              break;
+            case Uint16:
+              ImGui::TextColored(instr_regs_col, "%s.16[%d]", name, reg.disp);
+              break;
+            case Uint32:
+              ImGui::TextColored(instr_regs_col, "%s.32[%d]", name, reg.disp);
+              break;
+            case Uint128:
+              ImGui::TextColored(instr_regs_col, "%s.128", name);
+              break;
+          }
+        };
+
+        auto printReg = [printVec, this](RSP_Reg reg) {
+          if(reg.idx == RSP_PC) {
+            ImGui::TextColored(instr_regs_col, "pc");
+          } else {
+            if(reg.idx >= RSP_R0 && reg.idx <= RSP_R31) {
+              ImGui::TextColored(instr_regs_col, "%s", regNames[reg.idx].c_str());
+            } else if(reg.idx >= RSP_VPR0 && reg.idx <= RSP_VPR15) {
+              printVec(fmt::format("vpr{}", reg.idx-33).c_str(), reg);
+            } else if(reg.idx == RSP_VCE) {
+              printVec("vce", reg);
+            } else if(reg.idx == RSP_ACC_LO) {
+              printVec("acc.lo", reg);
+            } else if(reg.idx == RSP_ACC_MID) {
+              printVec("acc.mid", reg);
+            } else if(reg.idx == RSP_ACC_HI) {
+              printVec("acc.hi", reg);
+            } else if(reg.idx == RSP_VCC_LO) {
+              printVec("vcc.lo", reg);
+            } else if(reg.idx == RSP_VCC_HI) {
+              printVec("vcc.hi", reg);
+            } else if(reg.idx == RSP_VCO_LO) {
+              printVec("vco.lo", reg);
+            } else if(reg.idx == RSP_VCO_HI) {
+              printVec("vco.hi", reg);
+            } else if(reg.idx == RSP_SEMAPHORE) {
+              ImGui::TextColored(instr_regs_col, "semaphore");
+            } else {
+              ImGui::TextColored(instr_regs_col, "unk");
+            }
+          }
+        };
+
+        switch(op.type) {
+          case MIPS_OP_REG:
+            printReg(op.reg);
+            break;
+          case MIPS_OP_IMM:
+            ImGui::TextColored(instr_imm_col, "#%X", (u32)op.imm);
+            break;
+          case MIPS_OP_MEM:
+            ImGui::TextColored(instr_imm_col, "%X", (u32)op.mem.disp);
+            ImGui::SameLine(0, 0);
+            ImGui::TextUnformatted("(");
+            ImGui::SameLine(0, 0);
+            printReg(op.mem.base);
+            ImGui::SameLine(0, 0);
+            ImGui::TextUnformatted(")");
+          break;
+          default:
+            break;
+        }
+
+        if(x < (in.operands.size()-1)) {
+          ImGui::SameLine(0, 0);
+          ImGui::TextUnformatted(", ");
+          ImGui::SameLine(0, 0);
+        }
+
+        x++;
+      }
+    }        
+  }
+
+  emuThread->core->pause = false;
 }
 
 void DebuggerWindow::renderRegsRSP() {
@@ -362,11 +518,13 @@ void DebuggerWindow::paintGL() {
   ImGui::Begin("##debugger", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
   ImGui::BeginTabBar("Debuggers");
   if(ImGui::BeginTabItem("CPU")) {
+    isRSPfocused = false;
     renderCPU();
     ImGui::EndTabItem();
   }
 
   if(ImGui::BeginTabItem("RSP")) {
+    isRSPfocused = true;
     renderRSP();
     ImGui::EndTabItem();
   }

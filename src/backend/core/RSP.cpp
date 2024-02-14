@@ -33,39 +33,6 @@ void RSP::Reset() {
   divInLoaded = false;
 }
 
-/*
-FORCE_INLINE void logRSP(const RSP& rsp, const u32 instr) {
-  Util::debug("{:04X} {:08X} ", rsp.oldPC, instr);
-  for (auto gpr : rsp.gpr) {
-    Util::debug("{:08X} ", gpr);
-  }
-
-  for (auto vpr : rsp.vpr) {
-    for (int i = 0; i < 8; i++) {
-      Util::debug("{:04X}", vpr.element[i]);
-    }
-    Util::debug(" ");
-  }
-
-  for (int i = 0; i < 8; i++) {
-    Util::debug("{:04X}", rsp.acc.h.element[i]);
-  }
-  Util::debug(" ");
-
-  for (int i = 0; i < 8; i++) {
-    Util::debug("{:04X}", rsp.acc.m.element[i]);
-  }
-  Util::debug(" ");
-
-  for (int i = 0; i < 8; i++) {
-    Util::debug("{:04X}", rsp.acc.l.element[i]);
-  }
-
-  Util::debug(" {:04X} {:04X} {:02X}", rsp.GetVCC(), rsp.GetVCO(), rsp.GetVCE());
-  Util::debug("DMEM: {:02X}{:02X}", rsp.dmem[0x3c4], rsp.dmem[0x3c5]);
-}
-*/
-
 auto RSP::Read(u32 addr) -> u32{
   switch (addr) {
     case 0x04040000: return lastSuccessfulSPAddr.raw & 0x1FF8;

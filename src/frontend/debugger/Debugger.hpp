@@ -9,7 +9,7 @@
 #include <EmuThread.hpp>
 #include <imgui.h>
 
-enum RSP_Reg {
+enum eRSP_Reg {
   RSP_INVALID,
   RSP_R0,
   RSP_R1,
@@ -75,6 +75,12 @@ enum RSP_VPRAccessType {
   Uint8, Uint16, Uint32, Uint128
 };
 
+struct RSP_Reg {
+  eRSP_Reg idx;
+  RSP_VPRAccessType acType = Uint32;
+  int disp = -1;
+};
+
 struct RSP_Mem {
 	RSP_Reg base;	///< base register
 	int64_t disp;	///< displacement/offset value
@@ -90,21 +96,25 @@ struct RSP_Operand {
 };
 
 struct RSP_Instruction {
+  u32 address;
   std::vector<RSP_Operand> operands;
-
+  std::string mnemonic;
 };
 
 class DebuggerWindow : public QOpenGLWidget, private QOpenGLExtraFunctions {
   QTimer timer;
   csh disasmHandle;
   bool followPC = false;
+  bool isRSPfocused = false;
   u64 scrollAmount = 0;
+  u16 scrollAmountRSP = 0;
   void renderDisasm();
   void renderRegs();
   void renderCPU();
   void renderDisasmRSP();
   void renderRegsRSP();
   void renderRSP();
+  RSP_Instruction disassembleRSP(u32, u32);
   EmuThread* emuThread;
   ImU32 hover_col;
   ImU32 bkp_col;

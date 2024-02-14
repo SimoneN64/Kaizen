@@ -14,9 +14,10 @@ EmuThread::EmuThread(std::unique_ptr<QtInstanceFactory>&& instance, std::unique_
     if (!core->pause) {
       if (!core->broken) {
         core->Run(settings->getVolumeL(), settings->getVolumeR());
-        if (core->render) {
-          UpdateScreenParallelRdp(core->cpu->mem.mmio.vi);
-        }
+      }
+
+      if (core->render) {
+        UpdateScreenParallelRdp(core->cpu->mem.mmio.vi);
       }
     } else {
       if(core->render) {

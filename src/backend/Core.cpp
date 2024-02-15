@@ -73,7 +73,8 @@ bool Core::isInstrJump(u32 addr) {
   }
 }
 
-template <> void Core::Step<false>() {
+template <> void Core::Step<false>(float volumeL, float volumeR) {
+  static int i = 0, field = 0, frameCycles = 0;
   Mem& mem = cpu->mem;
   MMIO& mmio = mem.mmio;
   Registers& regs = cpu->regs;
@@ -96,15 +97,41 @@ template <> void Core::Step<false>() {
     }
   }
 
-  cycles += taken;
   scheduler.tick(taken, mem, regs);
-  cycles--;
+  cycles += taken;
+  if(cycles >= mmio.vi.cyclesPerHalfline) {
+    cycles -= mmio.vi.cyclesPerHalfline;
+    mmio.vi.current = (i << 1) + field;
+    if ((mmio.vi.current & 0x3FE) == mmio.vi.intr) {
+      InterruptRaise(mmio.mi, regs, Interrupt::VI);
+    }
+
+    i++;
+  }
+
+  if(i >= mmio.vi.numHalflines) {
+    i -= mmio.vi.numHalflines;
+    
+    if ((mmio.vi.current & 0x3FE) == mmio.vi.intr) {
+      InterruptRaise(mmio.mi, regs, Interrupt::VI);
+    }
+    
+    mmio.ai.Step(cpu->mem, regs, frameCycles, volumeL, volumeR);
+    scheduler.tick(frameCycles, mem, regs);
+
+    field++;
+    frameCycles = 0;
+  }
+
+  if(field >= mmio.vi.numFields) {
+    field = 0;
+  }
 }
 
-template <> void Core::Step<true>() {
-  Step<false>();
-  Step<false>();
-  Step<false>();
+template <> void Core::Step<true>(float volumeL, float volumeR) {
+  Step<false>(volumeL, volumeR);
+  Step<false>(volumeL, volumeR);
+  Step<false>(volumeL, volumeR);
 }
 
 void Core::Run(float volumeL, float volumeR) {

@@ -30,7 +30,7 @@ struct Core {
   void TogglePause() { pause = !pause; }
   bool isInstrJump(u32 addr);
   template <bool rsp = false>
-  void Step();
+  void Step(float volumeL, float volumeR);
 
   inline void insertGhostBkp(const Breakpoint& bkp) {
     if (isInstrJump(bkp.addr)) {

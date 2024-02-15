@@ -5,6 +5,7 @@
 #include <QStyleHints>
 #include <QWheelEvent>
 #include <CpuDefinitions.hpp>
+#include <AudioSettings.hpp>
 
 const std::string regNames[] = {
   "r0", "at", "v0", "v1",
@@ -17,7 +18,7 @@ const std::string regNames[] = {
   "gp", "sp", "s8", "ra",
 };
 
-DebuggerWindow::DebuggerWindow(EmuThread* emuThread) : emuThread(emuThread), QOpenGLWidget(nullptr) {
+DebuggerWindow::DebuggerWindow(EmuThread* emuThread, AudioSettings* audio) : audio(audio), emuThread(emuThread), QOpenGLWidget(nullptr) {
   if (cs_open(CS_ARCH_MIPS, cs_mode(CS_MODE_BIG_ENDIAN | CS_MODE_MIPS64), &disasmHandle) != CS_ERR_OK) {
     Util::panic("Could not initialize capstone for main CPU!");
   }
@@ -446,21 +447,21 @@ void DebuggerWindow::renderCPU() {
   static u32 goToAddr=0;
   ImGui::BeginChild("##cpudisasm");
   if(ImGui::Button("Continue")) {
-    emuThread->core->Step();
+    emuThread->core->Step(audio->volumeL->value(), audio->volumeR->value());
     emuThread->core->broken = false;
   }
   ImGui::SameLine();
   if(ImGui::Button("Step over")) {
-    emuThread->core->Step();
+    emuThread->core->Step(audio->volumeL->value(), audio->volumeR->value());
     emuThread->core->broken = false;
   }
   ImGui::SameLine();
   if(ImGui::Button("Step in")) {
-    emuThread->core->Step();
+    emuThread->core->Step(audio->volumeL->value(), audio->volumeR->value());
   }
   ImGui::SameLine();
   if(ImGui::Button("Step out")) {
-    emuThread->core->Step();
+    emuThread->core->Step(audio->volumeL->value(), audio->volumeR->value());
     emuThread->core->broken = false;
   }
   ImGui::SameLine();
@@ -489,21 +490,21 @@ void DebuggerWindow::renderRSP() {
   static u16 goToAddr=0;
   ImGui::BeginChild("##cpudisasm");
   if(ImGui::Button("Continue")) {
-    emuThread->core->Step<true>();
+    emuThread->core->Step<true>(audio->volumeL->value(), audio->volumeR->value());
     emuThread->core->broken = false;
   }
   ImGui::SameLine();
   if(ImGui::Button("Step over")) {
-    emuThread->core->Step<true>();
+    emuThread->core->Step<true>(audio->volumeL->value(), audio->volumeR->value());
     emuThread->core->broken = false;
   }
   ImGui::SameLine();
   if(ImGui::Button("Step in")) {
-    emuThread->core->Step<true>();
+    emuThread->core->Step<true>(audio->volumeL->value(), audio->volumeR->value());
   }
   ImGui::SameLine();
   if(ImGui::Button("Step out")) {
-    emuThread->core->Step<true>();
+    emuThread->core->Step<true>(audio->volumeL->value(), audio->volumeR->value());
     emuThread->core->broken = false;
   }
   ImGui::SameLine();

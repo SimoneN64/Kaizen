@@ -9,6 +9,8 @@
 #include <EmuThread.hpp>
 #include <imgui.h>
 
+class AudioSettings;
+
 enum eRSP_Reg {
   RSP_INVALID,
   RSP_R0,
@@ -136,10 +138,11 @@ class DebuggerWindow : public QOpenGLWidget, private QOpenGLExtraFunctions {
   ImVec4 instr_imm_col;
   ImVec4 instr_mnemonic_col;
   ImVec4 instr_regs_col;
+  AudioSettings* audio;
   
 public:
   void wheelEvent(QWheelEvent*) override;
-  DebuggerWindow(EmuThread*);
+  DebuggerWindow(EmuThread*, AudioSettings*);
 protected:
   void initializeGL() override;
   void paintGL() override;

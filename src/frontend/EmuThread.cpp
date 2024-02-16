@@ -11,8 +11,8 @@ EmuThread::EmuThread(std::unique_ptr<QtInstanceFactory>&& instance, std::unique_
   LoadParallelRDP(core->cpu->mem.GetRDRAM());
   n64::InitAudio();
   while (true) {
-    if (!core->pause) {
-      if (!core->broken) {
+    if (core->romLoaded) {
+      if (!core->broken && !core->pause) {
         core->Run(settings->getVolumeL(), settings->getVolumeR());
       }
 

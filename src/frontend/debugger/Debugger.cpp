@@ -99,7 +99,6 @@ void DebuggerWindow::renderDisasm() {
   auto lineCount = areaAvail.y / lineHeight;
   auto drawList = ImGui::GetWindowDrawList();
 
-  emuThread->core->pause = true;
   if(followPC) {
     scrollAmount = emuThread->core->cpu->regs.pc;
   }
@@ -208,12 +207,9 @@ void DebuggerWindow::renderDisasm() {
       ImGui::TextColored(instr_mnemonic_col, "invalid");
     }
   }
-
-  emuThread->core->pause = false;
 }
 
 void DebuggerWindow::renderRegs() {
-  emuThread->core->pause = true;
   n64::Registers& regs = emuThread->core->cpu->regs;
   for(int i = 0; i < 32; i += 2) {
     ImGui::Text("%s", regNames[i].c_str());
@@ -224,7 +220,6 @@ void DebuggerWindow::renderRegs() {
     ImGui::SameLine();
     ImGui::Text("%s", fmt::format("{:016X}", (u64)regs.gpr[i+1]).c_str());
   }
-  emuThread->core->pause = false;
 }
 
 RSP_Instruction DebuggerWindow::disassembleRSP(u32 address, u32 instr) {
@@ -260,7 +255,6 @@ void DebuggerWindow::renderDisasmRSP() {
   n64::Mem& mem = emuThread->core->cpu->mem;
   n64::RSP& rsp = mem.mmio.rsp;
 
-  emuThread->core->pause = true;
   if(followPC) {
     scrollAmountRSP = rsp.pc;
   }
@@ -386,12 +380,9 @@ void DebuggerWindow::renderDisasmRSP() {
       }
     }        
   }
-
-  emuThread->core->pause = false;
 }
 
 void DebuggerWindow::renderRegsRSP() {
-  emuThread->core->pause = true;
   n64::MMIO& mmio = emuThread->core->cpu->mem.mmio;
   n64::RSP& rsp = mmio.rsp;
   for(int i = 0; i < 32; i += 2) {
@@ -439,7 +430,6 @@ void DebuggerWindow::renderRegsRSP() {
   ImGui::Text("semaphore");
   ImGui::SameLine();
   ImGui::Text("%s", fmt::format("{}", rsp.semaphore).c_str());
-  emuThread->core->pause = false;
 }
 
 void DebuggerWindow::renderCPU() {

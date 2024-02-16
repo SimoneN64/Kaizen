@@ -68,7 +68,6 @@ void KaizenQt::LoadROM(const QString& file_name) noexcept {
 }
 
 void KaizenQt::keyPressEvent(QKeyEvent *e) {
-  emuThread->core->pause = true;
   auto k = static_cast<Qt::Key>(e->key());
   if(k == settingsWindow->keyMap[0])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::A, true);
   if(k == settingsWindow->keyMap[1])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::B, true);
@@ -88,12 +87,10 @@ void KaizenQt::keyPressEvent(QKeyEvent *e) {
   if(k == settingsWindow->keyMap[15]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::Y, -86);
   if(k == settingsWindow->keyMap[16]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::X, -86);
   if(k == settingsWindow->keyMap[17]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::X, 86);
-  emuThread->core->pause = false;
   QWidget::keyPressEvent(e);
 }
 
 void KaizenQt::keyReleaseEvent(QKeyEvent *e) {
-  emuThread->core->pause = true;
   auto k = static_cast<Qt::Key>(e->key());
   if (k == settingsWindow->keyMap[0])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::A, false);
   if (k == settingsWindow->keyMap[1])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::B, false);
@@ -113,6 +110,5 @@ void KaizenQt::keyReleaseEvent(QKeyEvent *e) {
   if (k == settingsWindow->keyMap[15]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::Y, 0);
   if (k == settingsWindow->keyMap[16]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::X, 0);
   if (k == settingsWindow->keyMap[17]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::X, 0);
-  emuThread->core->pause = false;
   QWidget::keyPressEvent(e);
 }

@@ -68,8 +68,8 @@ void DebuggerWindow::initializeGL() {
     instr_imm_col = ImVec4{0.702, 0.694, 0.365, 1};
     instr_mnemonic_col = ImVec4{0.365, 0.702, 0.616, 1};
     instr_regs_col = ImVec4{0.498, 0.302, 0.651, 1};
-    bkp_col = IM_COL32(168, 147, 40, 255);
-    hover_col = IM_COL32(173, 35, 35, 255);
+    bkp_col = IM_COL32(168, 147, 40, 80);
+    hover_col = IM_COL32(173, 35, 35, 80);
   }
 }
 
@@ -446,6 +446,7 @@ void DebuggerWindow::renderCPU() {
   static std::string goToAddrBuf{"00000000"};
   static u32 goToAddr=0;
   ImGui::BeginChild("##cpudisasm");
+  ImGui::BeginDisabled(!emuThread->core->broken && !emuThread->core->pause);
   if(ImGui::Button("Continue")) {
     emuThread->core->Step(audio->volumeL->value(), audio->volumeR->value());
     emuThread->core->broken = false;
@@ -464,6 +465,7 @@ void DebuggerWindow::renderCPU() {
     emuThread->core->Step(audio->volumeL->value(), audio->volumeR->value());
     emuThread->core->broken = false;
   }
+  ImGui::EndDisabled();
   ImGui::SameLine();
   ImGui::Checkbox("Follow PC", &followPC);
   ImGui::SameLine();
@@ -489,6 +491,7 @@ void DebuggerWindow::renderRSP() {
   static std::string goToAddrBuf{"0000"};
   static u16 goToAddr=0;
   ImGui::BeginChild("##cpudisasm");
+  ImGui::BeginDisabled((!emuThread->core->broken && !emuThread->core->pause) || emuThread->core->cpu->mem.mmio.rsp.spStatus.halt);
   if(ImGui::Button("Continue")) {
     emuThread->core->Step<true>(audio->volumeL->value(), audio->volumeR->value());
     emuThread->core->broken = false;
@@ -507,6 +510,7 @@ void DebuggerWindow::renderRSP() {
     emuThread->core->Step<true>(audio->volumeL->value(), audio->volumeR->value());
     emuThread->core->broken = false;
   }
+  ImGui::EndDisabled();
   ImGui::SameLine();
   ImGui::Checkbox("Follow PC", &followPC);
   ImGui::SameLine();

@@ -119,6 +119,7 @@ struct RSP_Instruction {
 };
 
 class DebuggerWindow : public QOpenGLWidget, private QOpenGLExtraFunctions {
+Q_OBJECT
   QTimer timer;
   csh disasmHandle, rspHandle;
   bool followPC = false;
@@ -139,11 +140,14 @@ class DebuggerWindow : public QOpenGLWidget, private QOpenGLExtraFunctions {
   ImVec4 instr_mnemonic_col;
   ImVec4 instr_regs_col;
   AudioSettings* audio;
-  
+  void focusInEvent(QFocusEvent*) override;
+  void focusOutEvent(QFocusEvent*) override;
 public:
   void wheelEvent(QWheelEvent*) override;
   DebuggerWindow(EmuThread*, AudioSettings*);
 protected:
   void initializeGL() override;
   void paintGL() override;
+Q_SIGNALS:
+  void regrabKeyboard();
 };

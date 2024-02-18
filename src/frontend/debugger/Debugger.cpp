@@ -38,6 +38,7 @@ DebuggerWindow::DebuggerWindow(EmuThread* emuThread, AudioSettings* audio) : aud
   if (objectName().isEmpty())
     setObjectName("Debugger");
 
+  setFocusPolicy(Qt::WheelFocus);
   resize(1024, 768);
   setWindowTitle("Debugger");
   QSurfaceFormat glFormat;
@@ -432,6 +433,15 @@ void DebuggerWindow::renderRegsRSP() {
   ImGui::Text("%s", fmt::format("{}", rsp.semaphore).c_str());
 }
 
+void DebuggerWindow::focusInEvent(QFocusEvent*) {
+  grabKeyboard();
+}
+
+void DebuggerWindow::focusOutEvent(QFocusEvent*) {
+  releaseKeyboard();
+  emit regrabKeyboard();
+}
+
 void DebuggerWindow::renderCPU() {
   static std::string goToAddrBuf{"00000000"};
   static u32 goToAddr=0;
@@ -522,8 +532,6 @@ void DebuggerWindow::renderRSP() {
 void DebuggerWindow::paintGL() {
   QtImGui::newFrame();
 
-  grabKeyboard();
-
   ImGui::SetNextWindowPos(ImVec2{0.f, 0.f});
   ImGui::SetNextWindowSize(ImVec2{(float)size().width(), (float)size().height()});
   ImGui::Begin("##debugger", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
@@ -546,8 +554,6 @@ void DebuggerWindow::paintGL() {
   glViewport(0, 0, width(), height());
   glClearColor(0, 0, 0, 255);
   glClear(GL_COLOR_BUFFER_BIT);
-
-  releaseKeyboard();
 
   ImGui::Render();
   QtImGui::render();

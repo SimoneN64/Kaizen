@@ -14,10 +14,10 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
 
   ConnectMainWindowSignalsToSlots();
 
-  setAcceptDrops(true);
-  setFocusPolicy(Qt::StrongFocus);
-  setFocus();
   grabKeyboard();
+  setAcceptDrops(true);
+  setFocusPolicy(Qt::WheelFocus);
+  setFocus();
   mainWindow->show();
   settingsWindow = new SettingsWindow;
   settingsWindow->hide();
@@ -25,9 +25,14 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   debuggerWindow->hide();
   memoryEditorWindow = new MemoryEditor;
   memoryEditorWindow->hide();
+
   connect(settingsWindow, &SettingsWindow::regrabKeyboard, this, [&]() {
     grabKeyboard();
-  }),
+  });
+
+  connect(debuggerWindow, &DebuggerWindow::regrabKeyboard, this, [&]() {
+    grabKeyboard();
+  });
   emuThread->core = new n64::Core();
   emuThread->settings = settingsWindow;
 }

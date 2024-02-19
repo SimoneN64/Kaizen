@@ -225,7 +225,8 @@ void DebuggerWindow::renderRegs() {
 
 RSP_Instruction DebuggerWindow::disassembleRSP(u32 address, u32 instr) {
   switch (instr) {
-    case n64::SPECIAL: {
+    case n64::COP2: case n64::LWC2: case n64::SWC2: return { address, {}, "unk" };
+    default: {
       cs_insn* insn;
       size_t count = cs_disasm(rspHandle, reinterpret_cast<u8*>(&instr), 4, address, 0, &insn);
       if(count > 0) {
@@ -234,16 +235,16 @@ RSP_Instruction DebuggerWindow::disassembleRSP(u32 address, u32 instr) {
           cs_mips_op mips_op = insn->detail->mips.operands[i];
           RSP_Operand op;
           op.type = mips_op.type;
-          op.reg.idx = op.type == MIPS_OP_REG ? static_cast<eRSP_Reg>(mips_op.reg - 1) : RSP_INVALID;
-          op.imm = op.type == MIPS_OP_IMM ? mips_op.imm : 0;
-          op.mem.base.idx = op.type == MIPS_OP_MEM ? static_cast<eRSP_Reg>(mips_op.mem.base - 1) : RSP_INVALID;
-          op.mem.base.disp = op.type == MIPS_OP_MEM ? mips_op.mem.disp : -1;
+          op.reg.idx = static_cast<eRSP_Reg>(mips_op.reg - 1);
+          op.imm = mips_op.imm;
+          op.mem.base.idx = static_cast<eRSP_Reg>(mips_op.mem.base - 1);
+          op.mem.base.disp = mips_op.mem.disp;
           operands.push_back(op);
         }
         return { address, operands, insn->mnemonic };
       }
+      return { address, {}, "unk" };
     }
-    default: return { address, {}, "unk" };
   }
 }
 

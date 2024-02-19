@@ -111,6 +111,8 @@ struct Registers;
   if(set && !clear) (val) = 1; \
 } while(0)
 
+#define OFFSET(x) ((x) & 0x7F)
+
 struct RSP {
   RSP();
   void Reset();

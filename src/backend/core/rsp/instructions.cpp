@@ -229,8 +229,6 @@ void RSP::lui(u32 instr) {
   gpr[RT(instr)] = imm;
 }
 
-#define OFFSET(x) ((x) & 0x7F)
-
 void RSP::lqv(u32 instr) {
   int e = E1(instr);
   u32 addr = gpr[BASE(instr)] + SignExt7bit(OFFSET(instr), 4);

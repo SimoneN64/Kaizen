@@ -73,20 +73,9 @@ enum eRSP_Reg {
   RSP_SEMAPHORE
 };
 
-enum RSP_VPRAccessType {
-  Uint8, Uint16, Uint32, Uint128
-};
-
 struct RSP_Reg {
-  eRSP_Reg idx;
-  RSP_VPRAccessType acType;
-  int disp;
-
-  RSP_Reg() {
-    idx = RSP_INVALID;
-    acType = Uint32;
-    disp = -1;
-  }
+  int e;
+  eRSP_Reg i;
 };
 
 struct RSP_Mem {

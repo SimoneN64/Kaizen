@@ -223,9 +223,78 @@ void DebuggerWindow::renderRegs() {
   }
 }
 
+static RSP_Instruction disasmSWC2(u32 address, u32 instr) {
+  u8 mask = (instr >> 11) & 0x1f;
+  std::vector<RSP_Operand> operands{};
+  RSP_Operand op;
+  op.type = MIPS_OP_REG;
+  op.reg.i = static_cast<eRSP_Reg>(VT(instr) + 34);
+  op.reg.e = E1(instr);
+  operands.push_back(op);
+  op.type = MIPS_OP_MEM;
+  op.mem.base.i = static_cast<eRSP_Reg>(BASE(instr) + 1);
+  op.mem.disp = OFFSET(instr);
+  operands.push_back(op);
+
+  switch(mask) {
+    case 0x00: return {address, operands, "sbv"};
+    case 0x01: return {address, operands, "ssv"};
+    case 0x02: return {address, operands, "slv"};
+    case 0x03: return {address, operands, "sdv"};
+    case 0x04: return {address, operands, "sqv"};
+    case 0x05: return {address, operands, "srv"};
+    case 0x06: return {address, operands, "spv"};
+    case 0x07: return {address, operands, "suv"};
+    case 0x08: return {address, operands, "shv"};
+    case 0x09: return {address, operands, "sfv"};
+    case 0x0A: return {address, operands, "swv"};
+    case 0x0B: return {address, operands, "stv"};
+    default: return {address, {}, "unk"};
+  }
+}
+
+static RSP_Instruction disasmLWC2(u32 address, u32 instr) {
+  u8 mask = (instr >> 11) & 0x1f;
+  std::vector<RSP_Operand> operands{};
+  RSP_Operand op;
+  op.type = MIPS_OP_REG;
+  op.reg.i = static_cast<eRSP_Reg>(VT(instr) + 34);
+  op.reg.e = E1(instr);
+  operands.push_back(op);
+  op.type = MIPS_OP_MEM;
+  op.mem.base.i = static_cast<eRSP_Reg>(BASE(instr) + 1);
+  op.mem.disp = OFFSET(instr);
+  operands.push_back(op);
+
+  switch(mask) {
+    case 0x00: return {address, operands, "lbv"};
+    case 0x01: return {address, operands, "lsv"};
+    case 0x02: return {address, operands, "llv"};
+    case 0x03: return {address, operands, "ldv"};
+    case 0x04: return {address, operands, "lqv"};
+    case 0x05: return {address, operands, "lrv"};
+    case 0x06: return {address, operands, "lpv"};
+    case 0x07: return {address, operands, "luv"};
+    case 0x08: return {address, operands, "lhv"};
+    case 0x09: return {address, operands, "lfv"};
+    case 0x0A: return { address, {}, "swv (nop)" };
+    case 0x0B: return {address, operands, "ltv"};
+    default: return {address, {}, "unk"};
+  }
+}
+
+static RSP_Instruction disasmRSPUnique(u32 address, u32 instr) {
+  switch(instr) {
+    case n64::LWC2: return disasmLWC2(address, instr);
+    case n64::SWC2: return disasmSWC2(address, instr);
+    case n64::COP2:
+    default: return {address, {}, "unk"};
+  }
+}
+
 RSP_Instruction DebuggerWindow::disassembleRSP(u32 address, u32 instr) {
   switch (instr) {
-    case n64::COP2: case n64::LWC2: case n64::SWC2: return { address, {}, "unk" };
+    case n64::COP2: case n64::LWC2: case n64::SWC2: return disasmRSPUnique(address, instr);
     default: {
       cs_insn* insn;
       size_t count = cs_disasm(rspHandle, reinterpret_cast<u8*>(&instr), 4, address, 0, &insn);
@@ -235,10 +304,10 @@ RSP_Instruction DebuggerWindow::disassembleRSP(u32 address, u32 instr) {
           cs_mips_op mips_op = insn->detail->mips.operands[i];
           RSP_Operand op;
           op.type = mips_op.type;
-          op.reg.idx = static_cast<eRSP_Reg>(mips_op.reg - 1);
+          op.reg.i = static_cast<eRSP_Reg>(mips_op.reg - 1);
           op.imm = mips_op.imm;
-          op.mem.base.idx = static_cast<eRSP_Reg>(mips_op.mem.base - 1);
-          op.mem.base.disp = mips_op.mem.disp;
+          op.mem.base.i = static_cast<eRSP_Reg>(mips_op.mem.base - 1);
+          op.mem.disp = mips_op.mem.disp;
           operands.push_back(op);
         }
         return { address, operands, insn->mnemonic };
@@ -303,48 +372,33 @@ void DebuggerWindow::renderDisasmRSP() {
       ImGui::SameLine();
       int x = 0;
       for(auto op : in.operands) {
-        auto printVec = [this](const char* name, RSP_Reg reg) {
-          switch(reg.acType) {
-            case Uint8:
-              ImGui::TextColored(instr_regs_col, "%s.8[%d]", name, reg.disp);
-              break;
-            case Uint16:
-              ImGui::TextColored(instr_regs_col, "%s.16[%d]", name, reg.disp);
-              break;
-            case Uint32:
-              ImGui::TextColored(instr_regs_col, "%s.32[%d]", name, reg.disp);
-              break;
-            case Uint128:
-              ImGui::TextColored(instr_regs_col, "%s.128", name);
-              break;
-          }
-        };
-
-        auto printReg = [printVec, this](RSP_Reg reg) {
-          if(reg.idx == RSP_PC) {
+        auto printReg = [this](RSP_Reg reg) {
+          int elem = reg.e;
+          eRSP_Reg reg_idx = reg.i;
+          if(reg_idx== RSP_PC) {
             ImGui::TextColored(instr_regs_col, "pc");
           } else {
-            if(reg.idx >= RSP_R0 && reg.idx <= RSP_R31) {
-              ImGui::TextColored(instr_regs_col, "%s", regNames[reg.idx].c_str());
-            } else if(reg.idx >= RSP_VPR0 && reg.idx <= RSP_VPR15) {
-              printVec(fmt::format("vpr{}", reg.idx-33).c_str(), reg);
-            } else if(reg.idx == RSP_VCE) {
-              printVec("vce", reg);
-            } else if(reg.idx == RSP_ACC_LO) {
-              printVec("acc.lo", reg);
-            } else if(reg.idx == RSP_ACC_MID) {
-              printVec("acc.mid", reg);
-            } else if(reg.idx == RSP_ACC_HI) {
-              printVec("acc.hi", reg);
-            } else if(reg.idx == RSP_VCC_LO) {
-              printVec("vcc.lo", reg);
-            } else if(reg.idx == RSP_VCC_HI) {
-              printVec("vcc.hi", reg);
-            } else if(reg.idx == RSP_VCO_LO) {
-              printVec("vco.lo", reg);
-            } else if(reg.idx == RSP_VCO_HI) {
-              printVec("vco.hi", reg);
-            } else if(reg.idx == RSP_SEMAPHORE) {
+            if(reg_idx>= RSP_R0 && reg_idx<= RSP_R31) {
+              ImGui::TextColored(instr_regs_col, "%s", regNames[reg_idx].c_str());
+            } else if(reg_idx>= RSP_VPR0 && reg_idx<= RSP_VPR15) {
+              ImGui::TextColored(instr_regs_col, "%s", fmt::format("vpr{}[{}]", reg_idx-34, elem).c_str());
+            } else if(reg_idx== RSP_VCE) {
+              ImGui::TextColored(instr_regs_col, "%s", "vce");
+            } else if(reg_idx== RSP_ACC_LO) {
+              ImGui::TextColored(instr_regs_col, "%s", "acc.lo");
+            } else if(reg_idx== RSP_ACC_MID) {
+              ImGui::TextColored(instr_regs_col, "%s", "acc.mid");
+            } else if(reg_idx== RSP_ACC_HI) {
+              ImGui::TextColored(instr_regs_col, "%s", "acc.hi");
+            } else if(reg_idx== RSP_VCC_LO) {
+              ImGui::TextColored(instr_regs_col, "%s", "vcc.lo");
+            } else if(reg_idx== RSP_VCC_HI) {
+              ImGui::TextColored(instr_regs_col, "%s", "vcc.hi");
+            } else if(reg_idx== RSP_VCO_LO) {
+              ImGui::TextColored(instr_regs_col, "%s", "vco.lo");
+            } else if(reg_idx== RSP_VCO_HI) {
+              ImGui::TextColored(instr_regs_col, "%s", "vco.hi");
+            } else if(reg_idx== RSP_SEMAPHORE) {
               ImGui::TextColored(instr_regs_col, "semaphore");
             } else {
               ImGui::TextColored(instr_regs_col, "unk");

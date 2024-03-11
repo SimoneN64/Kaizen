@@ -99,7 +99,4 @@ public:
   std::unique_ptr<ParallelRdpWindowInfo> windowInfo;
   std::unique_ptr<Vulkan::WSIPlatform> wsiPlatform;
   std::unique_ptr<QtInstanceFactory> instance;
-Q_SIGNALS:
-  void Show() { show(); }
-  void Hide() { hide(); }
 };

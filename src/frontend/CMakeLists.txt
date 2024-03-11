@@ -16,6 +16,7 @@ include_directories(
   ../backend/core/registers
   ../backend/core/rsp
   ../../external/
+  ../../external/enet/include
   ../../external/xbyak
   ../../external/mio/include
   ../../external/fmt/include

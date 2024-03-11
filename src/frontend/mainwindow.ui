@@ -60,6 +60,12 @@
     <addaction name="actionReset"/>
     <addaction name="actionStop"/>
    </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <addaction name="actionNetplay"/>
+   </widget>
    <widget class="QMenu" name="menuAbout">
     <property name="title">
      <string>Help</string>
@@ -68,6 +74,7 @@
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEmulation"/>
+   <addaction name="menuTools"/>
    <addaction name="menuAbout"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -131,6 +138,11 @@
    </property>
    <property name="statusTip">
     <string>Open the settings window</string>
+   </property>
+  </action>
+  <action name="actionNetplay">
+   <property name="text">
+    <string>Netplay</string>
    </property>
   </action>
  </widget>

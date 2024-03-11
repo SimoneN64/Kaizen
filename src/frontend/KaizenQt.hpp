@@ -2,6 +2,7 @@
 #include <EmuThread.hpp>
 #include <MainWindow.hpp>
 #include <SettingsWindow.hpp>
+#include <NetplayWindow.hpp>
 
 enum class CompositorCategory {
   Windows, MacOS, XCB, Wayland
@@ -34,6 +35,7 @@ public:
   void keyReleaseEvent(QKeyEvent*) override;
 private:
   void ConnectMainWindowSignalsToSlots() noexcept;
+  NetplayWindow* netplayWindow;
   MainWindowController* mainWindow;
   SettingsWindow* settingsWindow;
   EmuThread* emuThread;

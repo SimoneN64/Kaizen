@@ -18,6 +18,7 @@ private:
   bool textPauseToggle = false;
 
 Q_SIGNALS:
+  void OpenNetplay();
   void OpenSettings();
   void OpenROM(const QString& rom_file);
   void Exit();

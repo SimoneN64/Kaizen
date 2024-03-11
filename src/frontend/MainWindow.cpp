@@ -34,6 +34,10 @@ void MainWindowController::ConnectSignalsToSlots() noexcept {
     emit Reset();
   });
 
+  connect(view.actionNetplay, &QAction::triggered, this, [this]() {
+    emit OpenNetplay();
+  });
+
   connect(view.actionStop, &QAction::triggered, this, [this]() {
     view.vulkanWidget->hide();
     view.actionPause->setDisabled(true);

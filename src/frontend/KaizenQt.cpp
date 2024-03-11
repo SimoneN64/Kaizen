@@ -19,6 +19,8 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   setFocus();
   grabKeyboard();
   mainWindow->show();
+  netplayWindow = new NetplayWindow;
+  netplayWindow->hide();
   settingsWindow = new SettingsWindow;
   settingsWindow->hide();
   connect(settingsWindow, &SettingsWindow::regrabKeyboard, this, [&]() {
@@ -30,6 +32,9 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
 
 void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept {
   connect(mainWindow, &MainWindowController::OpenSettings, this, [this]() {
+    netplayWindow->show();
+  });
+  connect(mainWindow, &MainWindowController::OpenNetplay, this, [this]() {
     settingsWindow->show();
   });
   connect(mainWindow, &MainWindowController::OpenROM, this, &KaizenQt::LoadROM);

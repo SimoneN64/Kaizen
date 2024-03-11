@@ -32,10 +32,10 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
 
 void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept {
   connect(mainWindow, &MainWindowController::OpenSettings, this, [this]() {
-    netplayWindow->show();
+    settingsWindow->show();
   });
   connect(mainWindow, &MainWindowController::OpenNetplay, this, [this]() {
-    settingsWindow->show();
+    netplayWindow->show();
   });
   connect(mainWindow, &MainWindowController::OpenROM, this, &KaizenQt::LoadROM);
   connect(mainWindow, &MainWindowController::Exit, this, []() {

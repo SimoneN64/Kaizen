@@ -59,6 +59,7 @@ private:
 static std::vector<ENetPeer*> g_remote_peers;
 
 void NetplayWindow::showEvent(QShowEvent *event) {
+  disconnect = false;
   std::thread findLobbies([&]() {
     if (enet_initialize() != 0) {
       Util::print("An error occurred while initializing ENet.");
@@ -69,6 +70,10 @@ void NetplayWindow::showEvent(QShowEvent *event) {
     hostAddress.host = ENET_HOST_ANY;
     hostAddress.port = ENET_PORT_ANY;
     ENetHost* host = enet_host_create(&hostAddress, 4, 2, 0, 0);
+    if (!host) {
+      Util::print("An error occurred while creating the host.");
+      return;
+    }
 
     ENetAddress serverAddress;
     enet_address_set_host(&serverAddress, "gadolinium.dev");
@@ -163,9 +168,11 @@ void NetplayWindow::showEvent(QShowEvent *event) {
 void NetplayWindow::closeEvent(QCloseEvent *event) {
   disconnect = true;
   event->accept();
+  close();
 }
 
 void NetplayWindow::hideEvent(QHideEvent *event) {
   disconnect = true;
   event->accept();
+  hide();
 }

@@ -4,56 +4,17 @@
 #include <QCloseEvent>
 #include <QHideEvent>
 #include <thread>
-#include "log.hpp"
+#include <log.hpp>
+#include <arena.hpp>
 
 enum PeerCommand : uint8_t {
   ePC_None,
   ePC_PeerList,
   ePC_NewPeer,
+  ePC_JoinLobby,
+  ePC_CreateLobby,
   ePC_Ping,
   ePC_Pong,
-};
-
-struct ArenaBuffer {
-  ArenaBuffer(size_t maxSize = 0x1000) : maxSize(maxSize) {
-    buffer = (char*)malloc(maxSize);
-  }
-
-  ~ArenaBuffer() {
-    free(buffer);
-  }
-
-  template<typename T>
-  void Write(const T& value) {
-    memcpy(buffer + cursor, &value, sizeof(T));
-    cursor += sizeof(T);
-  }
-
-  void Reset() {
-    cursor = 0;
-  }
-
-  const void* GetBuffer() { return buffer; }
-  size_t GetSize() { return cursor; }
-private:
-  char* buffer{};
-  size_t maxSize{};
-  size_t cursor{};
-};
-
-struct ArenaReadBuffer {
-  ArenaReadBuffer(const char* buffer, size_t size) : buffer(buffer), size(size) {}
-
-  template<typename T>
-  T Read() {
-    T* ret = (T*)(buffer + cursor);
-    cursor += sizeof(T);
-    return *ret;
-  }
-private:
-  const char* buffer{};
-  size_t size{};
-  size_t cursor{};
 };
 
 static std::vector<ENetPeer*> g_remote_peers;

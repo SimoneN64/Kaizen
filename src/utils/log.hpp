@@ -42,6 +42,11 @@ constexpr void print(const std::string& fmt, Args... args) {
 }
 
 template <typename ...Args>
+constexpr void println(const std::string& fmt, Args... args) {
+  print(fmt + "\n", args...);
+}
+
+template <typename ...Args>
 constexpr void panic(const std::string& fmt, Args... args) {
   print<Error>(fmt + "\n", args...);
   exit(-1);

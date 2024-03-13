@@ -7,7 +7,7 @@
 namespace n64 {
 FORCE_INLINE void special(MI& mi, Registers& regs, RSP& rsp, u32 instr) {
   u8 mask = instr & 0x3f;
-  //Util::print("rsp special {:02X}", mask);
+  //Util::println("rsp special {:02X}", mask);
   switch(mask) {
     case 0x00:
       if(instr != 0) {
@@ -47,7 +47,7 @@ FORCE_INLINE void special(MI& mi, Registers& regs, RSP& rsp, u32 instr) {
 
 FORCE_INLINE void regimm(RSP& rsp, u32 instr) {
   u8 mask = ((instr >> 16) & 0x1F);
-  //Util::print("rsp regimm {:02X}", mask);
+  //Util::println("rsp regimm {:02X}", mask);
   switch(mask) {
     case 0x00: rsp.b(instr, (s32)rsp.gpr[RS(instr)] < 0); break;
     case 0x01: rsp.b(instr, (s32)rsp.gpr[RS(instr)] >= 0); break;
@@ -59,7 +59,7 @@ FORCE_INLINE void regimm(RSP& rsp, u32 instr) {
 
 FORCE_INLINE void lwc2(RSP& rsp, u32 instr) {
   u8 mask = (instr >> 11) & 0x1F;
-  //Util::print("lwc2 {:02X}", mask);
+  //Util::println("lwc2 {:02X}", mask);
   switch(mask) {
     case 0x00: rsp.lbv(instr); break;
     case 0x01: rsp.lsv(instr); break;
@@ -79,7 +79,7 @@ FORCE_INLINE void lwc2(RSP& rsp, u32 instr) {
 
 FORCE_INLINE void swc2(RSP& rsp, u32 instr) {
   u8 mask = (instr >> 11) & 0x1F;
-  //Util::print("swc2 {:02X}", mask);
+  //Util::println("swc2 {:02X}", mask);
   switch(mask) {
     case 0x00: rsp.sbv(instr); break;
     case 0x01: rsp.ssv(instr); break;
@@ -100,7 +100,7 @@ FORCE_INLINE void swc2(RSP& rsp, u32 instr) {
 FORCE_INLINE void cop2(RSP& rsp, u32 instr) {
   u8 mask = instr & 0x3F;
   u8 mask_sub = (instr >> 21) & 0x1F;
-  //Util::print("Cop2 {:02X}", mask);
+  //Util::println("Cop2 {:02X}", mask);
   switch(mask) {
     case 0x00:
       if((instr >> 25) & 1) {
@@ -173,7 +173,7 @@ FORCE_INLINE void cop0(Registers& regs, Mem& mem, u32 instr) {
   MMIO& mmio = mem.mmio;
   RSP& rsp = mmio.rsp;
   RDP& rdp = mmio.rdp;
-  //Util::print("Cop0 {:02X}", mask);
+  //Util::println("Cop0 {:02X}", mask);
   if((instr & 0x7FF) == 0) {
     switch (mask) {
       case 0x00: rsp.mfc0(rdp, instr); break;
@@ -189,7 +189,7 @@ void RSP::Exec(Registers &regs, Mem& mem, u32 instr) {
   u8 mask = (instr >> 26) & 0x3F;
   MMIO& mmio = mem.mmio;
   MI& mi = mmio.mi;
-  //Util::print("RSP {:02X}", mask);
+  //Util::println("RSP {:02X}", mask);
   switch(mask) {
     case 0x00: special(mi, regs, *this, instr); break;
     case 0x01: regimm(*this, instr); break;

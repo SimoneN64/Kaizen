@@ -62,7 +62,7 @@ void NetplayWindow::showEvent(QShowEvent *event) {
   disconnect = false;
   std::thread findLobbies([&]() {
     if (enet_initialize() != 0) {
-      Util::print("An error occurred while initializing ENet.");
+      Util::println("An error occurred while initializing ENet.");
       return;
     }
 
@@ -71,7 +71,7 @@ void NetplayWindow::showEvent(QShowEvent *event) {
     hostAddress.port = ENET_PORT_ANY;
     ENetHost* host = enet_host_create(&hostAddress, 4, 2, 0, 0);
     if (!host) {
-      Util::print("An error occurred while creating the host.");
+      Util::println("An error occurred while creating the host.");
       return;
     }
 
@@ -80,7 +80,7 @@ void NetplayWindow::showEvent(QShowEvent *event) {
     serverAddress.port = 7788;
     ENetPeer* serverPeer = enet_host_connect(host, &serverAddress, 2, 0);
     if(!serverPeer) {
-      Util::print("An error occurred while connecting.");
+      Util::println("An error occurred while connecting.");
       return;
     }
 
@@ -92,9 +92,9 @@ void NetplayWindow::showEvent(QShowEvent *event) {
         enet_address_get_host_ip(&evt.peer->address, ip, 40);
 
         if(evt.type == ENET_EVENT_TYPE_CONNECT) {
-          Util::print("Connected to {}:{}", ip, evt.peer->address.port);
+          Util::println("Connected to {}:{}", ip, evt.peer->address.port);
         } else if(evt.type == ENET_EVENT_TYPE_DISCONNECT) {
-          Util::print("Disconnected to {}:{}", ip, evt.peer->address.port);
+          Util::println("Disconnected to {}:{}", ip, evt.peer->address.port);
 
           auto it = std::find(g_remote_peers.begin(), g_remote_peers.end(), evt.peer);
           if (it != g_remote_peers.end()) {
@@ -113,7 +113,7 @@ void NetplayWindow::showEvent(QShowEvent *event) {
               char peerListIp[40];
               enet_address_get_host_ip(&addr, peerListIp, 40);
 
-              Util::print("- {}:{}", peerListIp, (int)addr.port);
+              Util::println("- {}:{}", peerListIp, (int)addr.port);
 
               ENetPeer* peerRemote = enet_host_connect(host, &addr, 2, 0);
               g_remote_peers.emplace_back(peerRemote);
@@ -126,29 +126,29 @@ void NetplayWindow::showEvent(QShowEvent *event) {
             char newPeerIp[40];
             enet_address_get_host_ip(&addr, newPeerIp, 40);
 
-            Util::print("New peer connected from {}: {}:{}", ip, newPeerIp, (int)addr.port);
+            Util::println("New peer connected from {}: {}:{}", ip, newPeerIp, (int)addr.port);
 
             ENetPeer* peerRemote = enet_host_connect(host, &addr, 2, 0);
             g_remote_peers.emplace_back(peerRemote);
           } else if(pc == ePC_Ping) {
-            Util::print("Ping from {}:{}", ip, (int)evt.peer->address.port);
+            Util::println("Ping from {}:{}", ip, (int)evt.peer->address.port);
 
             wb.Reset();
             wb.Write(ePC_Pong);
             ENetPacket* pongPacket = enet_packet_create(wb.GetBuffer(), wb.GetSize(), ENET_PACKET_FLAG_RELIABLE);
             enet_peer_send(evt.peer, 0, pongPacket);
           } else if(pc == ePC_Pong) {
-            Util::print("Pong from {}:{}", ip, (int)evt.peer->address.port);
+            Util::println("Pong from {}:{}", ip, (int)evt.peer->address.port);
           } else {
-            Util::print("Unknown command from {}:{}", ip, (int)evt.peer->address.port);
+            Util::println("Unknown command from {}:{}", ip, (int)evt.peer->address.port);
           }
 
           enet_packet_destroy(evt.packet);
         } else {
-          Util::print("Unknown event from {}", ip);
+          Util::println("Unknown event from {}", ip);
         }
       } else {
-        Util::print("... ({} remote peers)\n", g_remote_peers.size());
+        Util::println("... ({} remote peers)", g_remote_peers.size());
         for (auto peer : g_remote_peers) {
           wb.Reset();
           wb.Write(ePC_Ping);

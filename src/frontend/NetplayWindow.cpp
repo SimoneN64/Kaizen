@@ -77,20 +77,32 @@ NetplayWindow::NetplayWindow() {
 
   auto tabs = new QTabWidget;
   auto createRoomWidget = new QTabBar;
-  auto createRoomLayout = new QHBoxLayout;
+  auto createRoomLayout = new QVBoxLayout;
+  auto createRoomLayoutH = new QHBoxLayout;
+  auto createButton = new QPushButton("Create");
   auto passcodeLabel = new QLabel("");
-  createRoomLayout->addWidget(passcodeLabel);
+  createRoomLayoutH->addWidget(createButton);
+  createRoomLayoutH->addWidget(new QLabel("The passcode:"));
+  createRoomLayoutH->addWidget(passcodeLabel);
+  createRoomLayout->addLayout(createRoomLayoutH);
+  createRoomLayout->addStretch();
   createRoomWidget->setLayout(createRoomLayout);
   auto joinRoomWidget = new QTabBar;
   auto passcodeInput = new QPlainTextEdit;
-  passcodeInput->setPlaceholderText("Passcode (eg: AbcD31)");
+  passcodeInput->setPlaceholderText("AbcD31");
+  passcodeInput->setFixedSize(60, 30);
+  passcodeInput->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  passcodeInput->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   auto joinButton = new QPushButton("Join");
-  auto joinRoomLayout = new QHBoxLayout;
-  joinRoomLayout->addWidget(passcodeInput);
-  joinRoomLayout->addWidget(joinButton);
+  auto joinRoomLayout = new QVBoxLayout;
+  auto joinRoomLayoutH = new QHBoxLayout;
+  joinRoomLayoutH->addWidget(passcodeInput);
+  joinRoomLayoutH->addWidget(joinButton);
+  joinRoomLayout->addLayout(joinRoomLayoutH);
+  joinRoomLayout->addStretch();
   joinRoomWidget->setLayout(joinRoomLayout);
 
-  connect(createRoomWidget, &QTabBar::hasFocus, this, [&]() {
+  connect(createButton, &QPushButton::pressed, this, [&]() {
     bool loop = true;
     while (loop) {
       ENetEvent evt;
@@ -139,7 +151,7 @@ NetplayWindow::NetplayWindow() {
     }
   });
 
-  connect(joinButton, &QPushButton::clicked, this, [&]() {
+  connect(joinButton, &QPushButton::pressed, this, [&]() {
     bool loop = true;
     while (loop) {
       ENetEvent evt;

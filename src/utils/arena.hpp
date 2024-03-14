@@ -33,6 +33,12 @@ struct ArenaReadBuffer {
     cursor += sizeof(T);
     return *ret;
   }
+
+  std::string Read() {
+    std::string ret((buffer + cursor));
+    cursor += ret.length();
+    return ret;
+  }
 private:
   const char* buffer{};
   size_t size{};

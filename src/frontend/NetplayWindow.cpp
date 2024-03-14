@@ -9,6 +9,8 @@
 #include <QBoxLayout>
 #include <QTabBar>
 #include <QMessageBox>
+#include <QPlainTextEdit>
+#include <QLabel>
 
 enum ServerSideCommand : uint8_t {
   eSCMD_None,
@@ -24,6 +26,24 @@ enum ClientSideCommand : uint8_t {
   eCCMD_LobbyChanged,
   eCCMD_Passcode,
 };
+
+template <typename ...Args>
+void SendPacket(ArenaBuffer& wb, ENetPeer* dest, Args... args) {
+  wb.Reset();
+  wb.Write(args...);
+  ENetPacket* packet = enet_packet_create(wb.GetBuffer(), wb.GetSize(), ENET_PACKET_FLAG_RELIABLE);
+  enet_peer_send(dest, 0, packet);
+}
+
+template <typename ...Args>
+void SendPacket(ArenaBuffer& wb, std::vector<ENetPeer*> dests, Args... args) {
+  wb.Reset();
+  wb.Write(args...);
+  ENetPacket* packet = enet_packet_create(wb.GetBuffer(), wb.GetSize(), ENET_PACKET_FLAG_RELIABLE);
+  for (auto dest : dests) {
+    enet_peer_send(dest, 0, packet);
+  }
+}
 
 NetplayWindow::NetplayWindow() {
   if (objectName().isEmpty())
@@ -53,12 +73,26 @@ NetplayWindow::NetplayWindow() {
   }
 
   std::string passcode{};
+  ArenaBuffer wb;
 
   auto tabs = new QTabWidget;
   auto createRoomWidget = new QTabBar;
+  auto createRoomLayout = new QHBoxLayout;
+  auto passcodeLabel = new QLabel("");
+  createRoomLayout->addWidget(passcodeLabel);
+  createRoomWidget->setLayout(createRoomLayout);
   auto joinRoomWidget = new QTabBar;
-  connect(createRoomWidget, &QTabBar::tabBarClicked, this, [&]() {
-    while (true) {
+  auto passcodeInput = new QPlainTextEdit;
+  passcodeInput->setPlaceholderText("Passcode (eg: AbcD31)");
+  auto joinButton = new QPushButton("Join");
+  auto joinRoomLayout = new QHBoxLayout;
+  joinRoomLayout->addWidget(passcodeInput);
+  joinRoomLayout->addWidget(joinButton);
+  joinRoomWidget->setLayout(joinRoomLayout);
+
+  connect(createRoomWidget, &QTabBar::hasFocus, this, [&]() {
+    bool loop = true;
+    while (loop) {
       ENetEvent evt;
       while (enet_host_service(host, &evt, 0) > 0) {
         switch (evt.type) {
@@ -72,38 +106,42 @@ NetplayWindow::NetplayWindow() {
                 this, tr("What?!"),
                 tr("You just tried to create a room...\n"
                   "so how can you possibily encounter a full room?\n"));
-              goto STOP;
+              loop = false;
+              break;
             case eCCMD_PasscodeIncorrect:
               QMessageBox::critical(
                 this, tr("What?!"),
                 tr("You just tried to create a room...\n"
                   "so how can you possibily have entered an incorrect passcode?\n"));
-              goto STOP;
+              loop = false;
+              break;
             case eCCMD_MaxLobbiesReached:
               QMessageBox::critical(
                 this, tr("Sorry :("),
                 tr("My server is not that powerful,\n"
                   "so more than 16 rooms can't be created\n"));
-              goto STOP;
+              loop = false;
+              break;
             case eCCMD_LobbyChanged: break;
             case eCCMD_Passcode:
               passcode = b.Read();
-              goto STOP;
+              passcodeLabel->setText(passcode.c_str());
+              loop = false;
             default: break;
           }
         } break;
         case ENET_EVENT_TYPE_DISCONNECT:
         case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
-          goto STOP;
+          loop = false;
         default: break;
         }
       }
     }
-    STOP:
   });
 
-  connect(joinRoomWidget, &QTabBar::tabBarClicked, this, [&]() {
-    while (true) {
+  connect(joinButton, &QPushButton::clicked, this, [&]() {
+    bool loop = true;
+    while (loop) {
       ENetEvent evt;
       while (enet_host_service(host, &evt, 0) > 0) {
         switch (evt.type) {
@@ -116,34 +154,36 @@ NetplayWindow::NetplayWindow() {
             QMessageBox::critical(
               this, tr("Oops"),
               tr("This lobby is full"));
-            goto STOP;
+            loop = false;
+            break;
           case eCCMD_PasscodeIncorrect:
             QMessageBox::critical(
               this, tr("Oops"),
               tr("The passcode you entered is either incorrect or doesn't exist"));
-            goto STOP;
+            loop = false;
+            break;
           case eCCMD_MaxLobbiesReached:
             QMessageBox::critical(
               this, tr("What?!"),
               tr("You are not creating a lobby, so why did you receive the error that max lobbies are reached?"));
-            goto STOP;
+            loop = false;
+            break;
           case eCCMD_LobbyChanged: break;
           case eCCMD_Passcode:
             QMessageBox::critical(
               this, tr("What?!"),
               tr("You are not creating a lobby, so why did you receive a passcode from the server?"));
-            goto STOP;
+            loop = false;
           default: break;
           }
         } break;
         case ENET_EVENT_TYPE_DISCONNECT:
         case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
-          goto STOP;
+          loop = false;
         default: break;
         }
       }
     }
-    STOP:
   });
   tabs->addTab(createRoomWidget, "Create a room");
   tabs->addTab(joinRoomWidget, "Join a room");

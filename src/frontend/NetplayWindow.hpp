@@ -6,5 +6,5 @@
 class NetplayWindow : public QWidget {
   Q_OBJECT
 public:
-
+  NetplayWindow();
 };

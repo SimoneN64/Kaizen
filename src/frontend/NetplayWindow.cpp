@@ -6,6 +6,7 @@
 #include <thread>
 #include <log.hpp>
 #include <arena.hpp>
+#include <QBoxLayout>
 
 enum ServerSideCommand : uint8_t {
   eSCMD_None,
@@ -22,3 +23,19 @@ enum ClientSideCommand : uint8_t {
   eCCMD_Passcode,
 };
 
+NetplayWindow::NetplayWindow() {
+  if (objectName().isEmpty())
+    setObjectName("Netplay");
+
+  resize(500, 400);
+  setWindowTitle("Netplay");
+
+  auto tabs = new QTabWidget;
+  auto createRoomWidget = new QWidget;
+  auto joinRoomWidget = new QWidget;
+  tabs->addTab(createRoomWidget, "Create a room");
+  tabs->addTab(joinRoomWidget, "Join a room");
+  QVBoxLayout* mainLayout = new QVBoxLayout;
+  mainLayout->addWidget(tabs);
+  setLayout(mainLayout);
+}

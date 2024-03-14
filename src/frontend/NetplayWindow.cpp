@@ -5,7 +5,6 @@
 #include <QHideEvent>
 #include <thread>
 #include <log.hpp>
-#include <arena.hpp>
 #include <QBoxLayout>
 #include <QTabBar>
 #include <QMessageBox>
@@ -60,20 +59,19 @@ NetplayWindow::NetplayWindow() {
   address.host = ENET_HOST_ANY;
   address.port = 7788;
 
-  ENetHost* host = enet_host_create(nullptr, 4, 2, 0, 0);
+  host = enet_host_create(nullptr, 4, 2, 0, 0);
   if (!host) {
     Util::panic("Could not create host");
   }
 
   enet_address_set_host(&address, "gadolinium.dev");
   address.port = 7788;
-  ENetPeer* peer = enet_host_connect(host, &address, 2, 0);
+  peer = enet_host_connect(host, &address, 2, 0);
   if (!peer) {
     Util::panic("Could not connect");
   }
 
   std::string passcode{};
-  ArenaBuffer wb;
 
   auto tabs = new QTabWidget;
   auto createRoomWidget = new QTabBar;
@@ -108,7 +106,9 @@ NetplayWindow::NetplayWindow() {
       ENetEvent evt;
       while (enet_host_service(host, &evt, 0) > 0) {
         switch (evt.type) {
-        case ENET_EVENT_TYPE_CONNECT: break;
+        case ENET_EVENT_TYPE_CONNECT:
+          SendPacket(wb, evt.peer, eSCMD_CreateLobby);
+          break;
         case ENET_EVENT_TYPE_RECEIVE: {
           ArenaReadBuffer b{ (char*)evt.packet->data, evt.packet->dataLength };
           auto command = b.Read<ClientSideCommand>();

@@ -1,4 +1,6 @@
 #pragma once
+#include <vector>
+#include <common.hpp>
 
 struct ArenaBuffer {
   explicit ArenaBuffer(size_t maxSize = 0x1000) : maxSize(maxSize) {
@@ -15,30 +17,35 @@ struct ArenaBuffer {
     cursor += sizeof(T);
   }
 
+  template<typename ...Args>
+  void Write(Args... args) {
+    Write(args...);
+  }
+
+  template<typename T>
+  void Write(const std::vector<T>& v) {
+    memcpy(buffer + cursor, v.data(), sizeof(T) * v.size());
+    cursor += sizeof(T) * v.size();
+  }
+
+  void Write(const std::string& s) {
+    memcpy(buffer + cursor, s.c_str(), s.length());
+    cursor += s.length();
+  }
+
   void Reset() { cursor = 0; }
   const void* GetBuffer() { return buffer; }
   [[nodiscard]] size_t GetSize() const { return cursor; }
 private:
   char* buffer{};
-  size_t maxSize=0;
-  size_t cursor=0;
+  size_t maxSize = 0;
+  size_t cursor = 0;
 };
 
 struct ArenaReadBuffer {
   ArenaReadBuffer(const char* buffer, size_t size) : buffer(buffer), size(size) {}
 
-  template<typename T>
-  T Read() {
-    T* ret = (T*)(buffer + cursor);
-    cursor += sizeof(T);
-    return *ret;
-  }
-
-  std::string Read() {
-    std::string ret((buffer + cursor));
-    cursor += ret.length();
-    return ret;
-  }
+  template <typename T> T Read();
 private:
   const char* buffer{};
   size_t size{};

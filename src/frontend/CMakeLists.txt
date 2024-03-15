@@ -71,7 +71,9 @@ add_executable(kaizen-qt
   InputSettings.hpp
   InputSettings.cpp
   NetplayWindow.hpp
-  NetplayWindow.cpp)
+  NetplayWindow.cpp
+  ../utils/arena.cpp
+)
 
 target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets fmt mio nlohmann_json nfd parallel-rdp backend)
 

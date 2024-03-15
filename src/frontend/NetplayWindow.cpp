@@ -64,7 +64,7 @@ NetplayWindow::NetplayWindow() {
     Util::panic("Could not create host");
   }
 
-  enet_address_set_host(&address, "gadolinium.dev");
+  enet_address_set_host(&address, "127.0.0.1");
   address.port = 7788;
   peer = enet_host_connect(host, &address, 2, 0);
   if (!peer) {
@@ -111,7 +111,7 @@ NetplayWindow::NetplayWindow() {
           break;
         case ENET_EVENT_TYPE_RECEIVE: {
           ArenaReadBuffer b{ (char*)evt.packet->data, evt.packet->dataLength };
-          auto command = b.Read<ClientSideCommand>();
+          auto command = b.Read<uint8_t>();
           switch (command) {
             case eCCMD_LobbyIsFull:
               QMessageBox::critical(
@@ -136,7 +136,7 @@ NetplayWindow::NetplayWindow() {
               break;
             case eCCMD_LobbyChanged: break;
             case eCCMD_Passcode:
-              passcode = b.Read();
+              passcode = b.Read<std::string>();
               passcodeLabel->setText(passcode.c_str());
               loop = false;
             default: break;
@@ -157,10 +157,12 @@ NetplayWindow::NetplayWindow() {
       ENetEvent evt;
       while (enet_host_service(host, &evt, 0) > 0) {
         switch (evt.type) {
-        case ENET_EVENT_TYPE_CONNECT: break;
+        case ENET_EVENT_TYPE_CONNECT:
+          SendPacket(wb, evt.peer, eSCMD_JoinLobby); 
+          break;
         case ENET_EVENT_TYPE_RECEIVE: {
           ArenaReadBuffer b{ (char*)evt.packet->data, evt.packet->dataLength };
-          auto command = b.Read<ClientSideCommand>();
+          auto command = b.Read<uint8_t>();
           switch (command) {
           case eCCMD_LobbyIsFull:
             QMessageBox::critical(

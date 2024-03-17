@@ -8,8 +8,6 @@
 #include <QBoxLayout>
 #include <QTabBar>
 #include <QMessageBox>
-#include <QPlainTextEdit>
-#include <QLabel>
 
 enum ServerSideCommand : uint8_t {
   eSCMD_None,
@@ -35,7 +33,7 @@ void SendPacket(ArenaBuffer& wb, ENetPeer* dest, Args... args) {
 }
 
 template <typename ...Args>
-void SendPacket(ArenaBuffer& wb, std::vector<ENetPeer*> dests, Args... args) {
+void SendPacket(ArenaBuffer& wb, const std::vector<ENetPeer*>& dests, Args... args) {
   wb.Reset();
   wb.Write(args...);
   ENetPacket* packet = enet_packet_create(wb.GetBuffer(), wb.GetSize(), ENET_PACKET_FLAG_RELIABLE);
@@ -44,9 +42,77 @@ void SendPacket(ArenaBuffer& wb, std::vector<ENetPeer*> dests, Args... args) {
   }
 }
 
+template <typename T>
+void SendPacket(ArenaBuffer& wb, const std::vector<ENetPeer*>& dests, std::vector<T> data) {
+  wb.Reset();
+  wb.Write(data);
+  ENetPacket *packet = enet_packet_create(wb.GetBuffer(), wb.GetSize(), ENET_PACKET_FLAG_RELIABLE);
+  for(auto dest : dests) {
+    enet_peer_send(dest, 0, packet);
+  }
+}
+
+void NetplayWindow::MainNetLoop() {
+  if(!toConnect) return;
+
+  std::string passcode{};
+  ENetEvent evt;
+  while (enet_host_service(host, &evt, 0) > 0) {
+    switch (evt.type) {
+      case ENET_EVENT_TYPE_CONNECT:
+        if(wantsToCreateLobby)
+          SendPacket(wb, evt.peer, eSCMD_CreateLobby);
+        else
+          SendPacket(wb, evt.peer, eSCMD_JoinLobby);
+        break;
+      case ENET_EVENT_TYPE_RECEIVE: {
+        ArenaReadBuffer b{ evt.packet->data, evt.packet->dataLength };
+        auto command = b.Read<uint8_t>();
+        switch (command) {
+          case eCCMD_LobbyIsFull:
+            QMessageBox::critical(
+            this, "eCCMD_LobbyIsFull",
+            "Please ask for help in my discord server");
+            break;
+          case eCCMD_PasscodeIncorrect:
+            QMessageBox::critical(
+            this, "eCCMD_PasscodeIncorrect",
+            "Please ask for help in my discord server");
+            break;
+          case eCCMD_MaxLobbiesReached:
+            QMessageBox::critical(
+            this, tr("Sorry :("),
+            tr("My server is not that powerful,\n"
+               "so more than 16 rooms can't be created\n"));
+            break;
+          case eCCMD_LobbyChanged: break;
+          case eCCMD_Passcode: {
+            passcode = b.Read<std::string>();
+            passcodeLabel->setText(passcode.c_str());
+          }
+          default: break;
+        }
+      } break;
+      case ENET_EVENT_TYPE_DISCONNECT:
+      case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
+      default: break;
+    }
+  }
+}
+
+void NetplayWindow::keyPressEvent(QKeyEvent *event) {
+  grabKeyboard();
+  event->accept();
+}
+
+void NetplayWindow::keyReleaseEvent(QKeyEvent *event) {
+  releaseKeyboard();
+  event->accept();
+}
+
 NetplayWindow::NetplayWindow() {
   if (objectName().isEmpty())
-    setObjectName("Netplay");
+    setObjectName("NetplayWindow");
 
   resize(500, 400);
   setWindowTitle("Netplay");
@@ -71,14 +137,16 @@ NetplayWindow::NetplayWindow() {
     Util::panic("Could not connect");
   }
 
-  std::string passcode{};
+  netTimer = new QTimer(this);
+  connect(netTimer, SIGNAL(timeout()), this, SLOT(MainNetLoop()));
+  netTimer->start(16);
 
   auto tabs = new QTabWidget;
   auto createRoomWidget = new QTabBar;
   auto createRoomLayout = new QVBoxLayout;
   auto createRoomLayoutH = new QHBoxLayout;
   auto createButton = new QPushButton("Create");
-  auto passcodeLabel = new QLabel("");
+  passcodeLabel = new QLabel("");
   createRoomLayoutH->addWidget(createButton);
   createRoomLayoutH->addWidget(new QLabel("The passcode:"));
   createRoomLayoutH->addWidget(passcodeLabel);
@@ -86,8 +154,8 @@ NetplayWindow::NetplayWindow() {
   createRoomLayout->addStretch();
   createRoomWidget->setLayout(createRoomLayout);
   auto joinRoomWidget = new QTabBar;
-  auto passcodeInput = new QPlainTextEdit;
-  passcodeInput->setPlaceholderText("AbcD31");
+  passcodeInput = new QPlainTextEdit;
+  passcodeInput->setPlaceholderText("kj3l87");
   passcodeInput->setFixedSize(60, 30);
   passcodeInput->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   passcodeInput->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -101,104 +169,15 @@ NetplayWindow::NetplayWindow() {
   joinRoomWidget->setLayout(joinRoomLayout);
 
   connect(createButton, &QPushButton::pressed, this, [&]() {
-    bool loop = true;
-    while (loop) {
-      ENetEvent evt;
-      while (enet_host_service(host, &evt, 0) > 0) {
-        switch (evt.type) {
-        case ENET_EVENT_TYPE_CONNECT:
-          SendPacket(wb, evt.peer, eSCMD_CreateLobby);
-          break;
-        case ENET_EVENT_TYPE_RECEIVE: {
-          ArenaReadBuffer b{ (char*)evt.packet->data, evt.packet->dataLength };
-          auto command = b.Read<uint8_t>();
-          switch (command) {
-            case eCCMD_LobbyIsFull:
-              QMessageBox::critical(
-                this, tr("What?!"),
-                tr("You just tried to create a room...\n"
-                  "so how can you possibily encounter a full room?\n"));
-              loop = false;
-              break;
-            case eCCMD_PasscodeIncorrect:
-              QMessageBox::critical(
-                this, tr("What?!"),
-                tr("You just tried to create a room...\n"
-                  "so how can you possibily have entered an incorrect passcode?\n"));
-              loop = false;
-              break;
-            case eCCMD_MaxLobbiesReached:
-              QMessageBox::critical(
-                this, tr("Sorry :("),
-                tr("My server is not that powerful,\n"
-                  "so more than 16 rooms can't be created\n"));
-              loop = false;
-              break;
-            case eCCMD_LobbyChanged: break;
-            case eCCMD_Passcode:
-              passcode = b.Read<std::string>();
-              passcodeLabel->setText(passcode.c_str());
-              loop = false;
-            default: break;
-          }
-        } break;
-        case ENET_EVENT_TYPE_DISCONNECT:
-        case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
-          loop = false;
-        default: break;
-        }
-      }
-    }
+    wantsToCreateLobby = true;
+    toConnect = true;
   });
 
   connect(joinButton, &QPushButton::pressed, this, [&]() {
-    bool loop = true;
-    while (loop) {
-      ENetEvent evt;
-      while (enet_host_service(host, &evt, 0) > 0) {
-        switch (evt.type) {
-        case ENET_EVENT_TYPE_CONNECT:
-          SendPacket(wb, evt.peer, eSCMD_JoinLobby); 
-          break;
-        case ENET_EVENT_TYPE_RECEIVE: {
-          ArenaReadBuffer b{ (char*)evt.packet->data, evt.packet->dataLength };
-          auto command = b.Read<uint8_t>();
-          switch (command) {
-          case eCCMD_LobbyIsFull:
-            QMessageBox::critical(
-              this, tr("Oops"),
-              tr("This lobby is full"));
-            loop = false;
-            break;
-          case eCCMD_PasscodeIncorrect:
-            QMessageBox::critical(
-              this, tr("Oops"),
-              tr("The passcode you entered is either incorrect or doesn't exist"));
-            loop = false;
-            break;
-          case eCCMD_MaxLobbiesReached:
-            QMessageBox::critical(
-              this, tr("What?!"),
-              tr("You are not creating a lobby, so why did you receive the error that max lobbies are reached?"));
-            loop = false;
-            break;
-          case eCCMD_LobbyChanged: break;
-          case eCCMD_Passcode:
-            QMessageBox::critical(
-              this, tr("What?!"),
-              tr("You are not creating a lobby, so why did you receive a passcode from the server?"));
-            loop = false;
-          default: break;
-          }
-        } break;
-        case ENET_EVENT_TYPE_DISCONNECT:
-        case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
-          loop = false;
-        default: break;
-        }
-      }
-    }
+    wantsToCreateLobby = false;
+    toConnect = true;
   });
+
   tabs->addTab(createRoomWidget, "Create a room");
   tabs->addTab(joinRoomWidget, "Join a room");
   QVBoxLayout* mainLayout = new QVBoxLayout;

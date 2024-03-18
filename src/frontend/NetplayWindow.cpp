@@ -59,6 +59,26 @@ void SendPacket(ArenaBuffer& wb, const std::vector<ENetPeer*>& dests, const T& d
   }
 }
 
+
+template <typename T>
+std::vector<uint8_t> CreatePacketWithData(const uint8_t &cmd, const std::vector<T>& second) {
+  std::vector<uint8_t> ret{};
+  ret.resize(sizeof(T)*second.size() + 1);
+  ret[0] = cmd;
+  memcpy(ret.data() + 1, second.data(), sizeof(T)*second.size());
+
+  return ret;
+}
+
+std::vector<uint8_t> CreatePacketWithData(const uint8_t &cmd, const std::string& second) {
+  std::vector<uint8_t> ret{};
+  ret.resize(second.length() + 1);
+  ret[0] = cmd;
+  memcpy(ret.data() + 1, second.data(), second.length());
+
+  return ret;
+}
+
 void NetplayWindow::MainNetLoop() {
   if(!toConnect) return;
 

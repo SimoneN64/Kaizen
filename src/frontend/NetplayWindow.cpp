@@ -24,18 +24,25 @@ enum ClientSideCommand : uint8_t {
   eCCMD_Passcode,
 };
 
-template <typename ...Args>
-void SendPacket(ArenaBuffer& wb, ENetPeer* dest, Args... args) {
+void SendPacket(ArenaBuffer& wb, ENetPeer* dest, const std::string& s) {
   wb.Reset();
-  wb.Write(args...);
+  wb.Write(s);
   ENetPacket* packet = enet_packet_create(wb.GetBuffer(), wb.GetSize(), ENET_PACKET_FLAG_RELIABLE);
   enet_peer_send(dest, 0, packet);
 }
 
-template <typename ...Args>
-void SendPacket(ArenaBuffer& wb, const std::vector<ENetPeer*>& dests, Args... args) {
+template <typename T>
+void SendPacket(ArenaBuffer& wb, ENetPeer* dest, const T& data) {
   wb.Reset();
-  wb.Write(args...);
+  wb.Write(data);
+  ENetPacket* packet = enet_packet_create(wb.GetBuffer(), wb.GetSize(), ENET_PACKET_FLAG_RELIABLE);
+  enet_peer_send(dest, 0, packet);
+}
+
+template <typename T>
+void SendPacket(ArenaBuffer& wb, const std::vector<ENetPeer*>& dests, const std::vector<T>& data) {
+  wb.Reset();
+  wb.Write(data);
   ENetPacket* packet = enet_packet_create(wb.GetBuffer(), wb.GetSize(), ENET_PACKET_FLAG_RELIABLE);
   for (auto dest : dests) {
     enet_peer_send(dest, 0, packet);
@@ -43,11 +50,11 @@ void SendPacket(ArenaBuffer& wb, const std::vector<ENetPeer*>& dests, Args... ar
 }
 
 template <typename T>
-void SendPacket(ArenaBuffer& wb, const std::vector<ENetPeer*>& dests, std::vector<T> data) {
+void SendPacket(ArenaBuffer& wb, const std::vector<ENetPeer*>& dests, const T& data) {
   wb.Reset();
   wb.Write(data);
-  ENetPacket *packet = enet_packet_create(wb.GetBuffer(), wb.GetSize(), ENET_PACKET_FLAG_RELIABLE);
-  for(auto dest : dests) {
+  ENetPacket* packet = enet_packet_create(wb.GetBuffer(), wb.GetSize(), ENET_PACKET_FLAG_RELIABLE);
+  for (auto dest : dests) {
     enet_peer_send(dest, 0, packet);
   }
 }

@@ -20,15 +20,17 @@ enum ClientSideCommand : uint8_t {
   eCCMD_LobbyIsFull,
   eCCMD_PasscodeIncorrect,
   eCCMD_MaxLobbiesReached,
-  eCCMD_LobbyChanged,
+  eCCMD_PeerConnect,
+  eCCMD_PeerDisconnect,
   eCCMD_Passcode,
 };
 
-void SendPacket(ArenaBuffer& wb, ENetPeer* dest, const std::string& s) {
+
+void SendPacket(ArenaBuffer& wb, Peer& dest, const std::string& s) {
   wb.Reset();
   wb.Write(s);
   ENetPacket* packet = enet_packet_create(wb.GetBuffer(), wb.GetSize(), ENET_PACKET_FLAG_RELIABLE);
-  enet_peer_send(dest, 0, packet);
+  enet_peer_send(&dest.handle, 0, packet);
 }
 
 template <typename T>
@@ -40,41 +42,58 @@ void SendPacket(ArenaBuffer& wb, ENetPeer* dest, const T& data) {
 }
 
 template <typename T>
-void SendPacket(ArenaBuffer& wb, const std::vector<ENetPeer*>& dests, const std::vector<T>& data) {
+void SendPacket(ArenaBuffer& wb, Peer& dest, const T& data) {
+  wb.Reset();
+  wb.Write(data);
+  ENetPacket* packet = enet_packet_create(wb.GetBuffer(), wb.GetSize(), ENET_PACKET_FLAG_RELIABLE);
+  enet_peer_send(&dest.handle, 0, packet);
+}
+
+template <typename T>
+void SendPacket(ArenaBuffer& wb, const std::vector<Peer>& dests, const std::vector<T>& data) {
   wb.Reset();
   wb.Write(data);
   ENetPacket* packet = enet_packet_create(wb.GetBuffer(), wb.GetSize(), ENET_PACKET_FLAG_RELIABLE);
   for (auto dest : dests) {
-    enet_peer_send(dest, 0, packet);
+    enet_peer_send(&dest.handle, 0, packet);
   }
 }
 
 template <typename T>
-void SendPacket(ArenaBuffer& wb, const std::vector<ENetPeer*>& dests, const T& data) {
+void SendPacket(ArenaBuffer& wb, const std::vector<Peer>& dests, const T& data) {
   wb.Reset();
   wb.Write(data);
   ENetPacket* packet = enet_packet_create(wb.GetBuffer(), wb.GetSize(), ENET_PACKET_FLAG_RELIABLE);
   for (auto dest : dests) {
-    enet_peer_send(dest, 0, packet);
+    enet_peer_send(&dest.handle, 0, packet);
   }
 }
 
-
 template <typename T>
-std::vector<uint8_t> CreatePacketWithData(const uint8_t &cmd, const std::vector<T>& second) {
+std::vector<uint8_t> CreatePacketWithData(const uint8_t& cmd, const std::vector<T>& second) {
   std::vector<uint8_t> ret{};
-  ret.resize(sizeof(T)*second.size() + 1);
+  ret.resize(sizeof(T) * second.size() + 1);
   ret[0] = cmd;
-  memcpy(ret.data() + 1, second.data(), sizeof(T)*second.size());
+  memcpy(ret.data() + 1, second.data(), sizeof(T) * second.size());
 
   return ret;
 }
 
-std::vector<uint8_t> CreatePacketWithData(const uint8_t &cmd, const std::string& second) {
+std::vector<uint8_t> CreatePacketWithData(const uint8_t& cmd, const std::string& second) {
   std::vector<uint8_t> ret{};
   ret.resize(second.length() + 1);
   ret[0] = cmd;
-  memcpy(ret.data() + 1, second.data(), second.length());
+  memcpy(&ret[1], second.data(), second.length());
+
+  return ret;
+}
+
+template <typename T>
+std::vector<uint8_t> CreatePacketWithData(const uint8_t& cmd, const T& second) {
+  std::vector<uint8_t> ret{};
+  ret.resize(sizeof(T) + 1);
+  ret[0] = cmd;
+  memcpy(&ret[1], &second, sizeof(T));
 
   return ret;
 }
@@ -87,10 +106,13 @@ void NetplayWindow::MainNetLoop() {
   while (enet_host_service(host, &evt, 0) > 0) {
     switch (evt.type) {
       case ENET_EVENT_TYPE_CONNECT:
-        if(wantsToCreateLobby)
-          SendPacket(wb, evt.peer, eSCMD_CreateLobby);
-        else
-          SendPacket(wb, evt.peer, eSCMD_JoinLobby);
+        if (wantsToCreateLobby) {
+          Peer connect = { true, *evt.peer };
+          SendPacket(wb, connect, eSCMD_CreateLobby);
+        } else {
+          Peer connect = { false, *evt.peer };
+          SendPacket(wb, connect, eSCMD_JoinLobby);
+        }
         break;
       case ENET_EVENT_TYPE_RECEIVE: {
         ArenaReadBuffer b{ evt.packet->data, evt.packet->dataLength };
@@ -112,7 +134,16 @@ void NetplayWindow::MainNetLoop() {
             tr("My server is not that powerful,\n"
                "so more than 16 rooms can't be created\n"));
             break;
-          case eCCMD_LobbyChanged: break;
+          case eCCMD_PeerConnect: {
+            Peer connect = b.Read<Peer>();
+            lobbyPeers.push_back(connect);
+          } break;
+          case eCCMD_PeerDisconnect: {
+            Peer disconnect = b.Read<Peer>();
+            lobbyPeers.erase(std::find_if(lobbyPeers.begin(), lobbyPeers.end(), [&disconnect](Peer peer) {
+              return peer.handle.connectID == disconnect.handle.connectID;
+            }));
+          } break;
           case eCCMD_Passcode: {
             passcode = b.Read<std::string>();
             passcodeLabel->setText(passcode.c_str());

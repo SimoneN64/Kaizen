@@ -6,9 +6,7 @@
 #include <QLabel>
 #include <QTimer>
 #include <QPlainTextEdit>
-
-typedef struct _ENetHost ENetHost;
-typedef struct _ENetPeer ENetPeer;
+#include <enet.h>
 
 class NetplayWindow : public QWidget {
   ENetPeer* peer{};

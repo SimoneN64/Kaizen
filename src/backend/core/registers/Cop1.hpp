@@ -1,6 +1,7 @@
 #pragma once
 #include <core/registers/Cop0.hpp>
 #include <cstring>
+#include <Float.hpp>
 
 namespace n64 {
 struct Cop1;
@@ -62,11 +63,11 @@ enum CompConds {
 
 union FloatingPointReg {
   struct {
-    s32 int32;
+    s32 int32l;
     s32 int32h;
   } __attribute__((__packed__));
   struct {
-    u32 uint32;
+    u32 uint32l;
     u32 uint32h;
   } __attribute__((__packed__));
   struct {
@@ -76,11 +77,11 @@ union FloatingPointReg {
     u64 uint64;
   } __attribute__((__packed__));
   struct {
-    float float32;
-    float float32h;
+    f32 float32l;
+    f32 float32h;
   } __attribute__((__packed__));
   struct {
-    double float64;
+    f64 float64;
   } __attribute__((__packed__));
 };
 

@@ -78,7 +78,7 @@ void MI::Write(Registers& regs, u32 paddr, u32 val) {
       UpdateInterrupt(*this, regs);
       break;
     default:
-      Util::panic("Unhandled MI[{:08X}] write ({:08X})", val, paddr);
+      Util::panic("Unhandled MI[{:08X}] write ({:08X})", paddr, val);
   }
 }
 }

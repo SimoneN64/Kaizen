@@ -74,13 +74,13 @@ struct Interpreter;
 struct JIT;
 struct Registers;
 
-enum class FpeCause : u8 {
-  Inexact = 1,
-  Underflow = 2,
-  Overflow = 4,
-  DivByZero = 8,
-  Invalid = 16,
-  Unimplemented = 32,
+enum FpeCause : u8 {
+  FpeInexact = 1,
+  FpeUnderflow = 2,
+  FpeOverflow = 4,
+  FpeDivByZero = 8,
+  FpeInvalid = 16,
+  FpeUnimplemented = 32,
 };
 
 struct Cop1 {
@@ -93,16 +93,24 @@ struct Cop1 {
   void decode(T&, u32);
   friend struct Interpreter;
 
-  template <typename T, typename... Args>
-  void DoOp(std::function<T(Args...)>, Args...);
+  struct CheckResult { u8 cause; bool is_underflow; };
+  CheckResult CheckExceptions();
+
+  void BeginOp();
+  template <AnyFloat Float, typename F, typename ...Args>
+  void DoOp(u32 instr, F, Args...);
+  template <AnyFloat Float>
+  Float EndOp(Float);
   void SetCauseUnimplemented();
   void SetCauseUnderflow();
   void SetCauseInexact();
   void SetCauseDivisionByZero();
   void SetCauseOverflow();
   void SetCauseInvalid();
-  template <typename AnyFloat, bool check_inf = false>
-  bool CheckInput(AnyFloat value);
+  template <AnyFloat Float, bool check_inf = false>
+  bool CheckInput(Float value);
+  template <typename ...Args, bool check_inf = false>
+  bool CheckInput(Args... values);
 private:
   Registers& regs;
   int system_rounding;

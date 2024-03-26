@@ -22,36 +22,31 @@ bool Cop1::UpdateCause(u8 cause) {
   }
 }
 
-template <typename AnyFloat, bool check_inf>
-bool Cop1::CheckInput(AnyFloat value) {
+template <AnyFloat Float, bool check_inf>
+bool Cop1::CheckInput(Float value) {
   if (value.is_nan()) {
     auto signaling = value.is_signaling();
     if (signaling) {
-      return UpdateCause(u8(FpeCause::Unimplemented));
+      return UpdateCause(FpeUnimplemented);
     } else {
       if constexpr (check_inf) {
-        return UpdateCause(u8(FpeCause::Unimplemented));
+        return UpdateCause(FpeUnimplemented);
       } else {
-        return UpdateCause(u8(FpeCause::Invalid));
+        return UpdateCause(FpeInvalid);
       }
     }
   } else if (value.is_subnormal()) {
-    return UpdateCause(u8(FpeCause::Unimplemented));
-  } else if (check_inf && value.is_inf) {
-    return UpdateCause(u8(FpeCause::Unimplemented));
+    return UpdateCause(FpeUnimplemented);
+  } else if (check_inf && value.is_infinite()) {
+    return UpdateCause(FpeUnimplemented);
   }
+
+  return true;
 }
 
-FORCE_INLINE int PushRoundingMode(const FCR31& fcr31) {
-  int og = fegetround();
-  switch (fcr31.rounding_mode) {
-    case 0: fesetround(FE_TONEAREST); break;
-    case 1: fesetround(FE_TOWARDZERO); break;
-    case 2: fesetround(FE_UPWARD); break;
-    case 3: fesetround(FE_DOWNWARD); break;
-  }
-
-  return og;
+template <typename ...Args, bool check_inf>
+bool Cop1::CheckInput(Args ...values) {
+  return (CheckInput(values), ...);
 }
 
 void Cop1::SetCauseUnimplemented() {
@@ -93,61 +88,117 @@ void Cop1::SetCauseInvalid() {
   }
 }
 
-template <>
-void Cop1::DoOp<double, double>(std::function<double(double)> func, double fs) {
-  if (!CheckInput(fs)) return;
-  auto result = f64(func(fs));
-  if (!EndOp(result)) return;
-  fgr[FD(instr)].as_f64 = result;
+Cop1::CheckResult Cop1::CheckExceptions() {
+  u8 cause;
+  auto exceptions = std::fetestexcept(FE_ALL_EXCEPT);
+
+  if(exceptions & FE_INEXACT) {
+    cause |= FpeInexact;
+  }
+
+  if(exceptions & FE_INVALID) {
+    cause |= FpeInvalid;
+  }
+
+  if(exceptions & FE_OVERFLOW) {
+    cause |= FpeOverflow;
+  }
+
+  if(exceptions & FE_DIVBYZERO) {
+    cause |= FpeDivByZero;
+  }
+
+  bool is_underflow = (exceptions & FE_UNDERFLOW);
+
+  return {cause, is_underflow};
 }
 
-template <>
-void Cop1::DoOp<float, float>(std::function<float(float)> func, float fs) {
-  if (!CheckInput(fs)) return;
-  auto result = f32(func(fs));
-  if (!EndOp(result)) return;
-  fgr[FD(instr)].as_u64 = result.to_bits();
+template <AnyFloat Float>
+Float Cop1::EndOp(Float f) {
+  Float retval = f;
+  auto [cause, is_underflow] = CheckExceptions();
+  if(f.is_nan()) {
+    retval = f.nan();
+  } else if(f.is_subnormal() || is_underflow) {
+    if(!fcr31.fs || fcr31.enable_underflow || fcr31.enable_inexact_operation) {
+      cause = FpeUnimplemented;
+    } else {
+      cause = FpeInexact | FpeUnderflow;
+      fcr31.cause |= cause;
+      switch(fcr31.rounding_mode) {
+        case 0: case 1:
+          if(!f.is_neg()) {
+            retval = 0.0;
+          } else {
+            retval = -0.0;
+          }
+          break;
+        case 2:
+          if(!f.is_neg()) {
+            retval = f.from_bits(0x00800000);
+          } else {
+            retval = -0.0;
+          }
+          break;
+        case 3:
+          if(!f.is_neg()) {
+            retval = 0.0;
+          } else {
+            retval = -f.from_bits(0x00800000);
+          }
+          break;
+      }
+    }
+  }
+
+  if(cause) {
+    if(!UpdateCause<true>(cause)) return retval;
+  }
+
+  if(fcr31.cause & FpeInvalid) {
+    retval = f.nan();
+  }
+
+  std::fesetround(system_rounding);
+
+  return retval;
 }
 
-template <>
-void Cop1::DoOp<double, double, double>(std::function<double(double, double)> func, double fs, double ft) {
-  if (!CheckInput(fs)) return;
-  if (!CheckInput(ft)) return;
-  auto result = f64(func(fs, ft));
-  if (!EndOp(result)) return;
-  fgr[FD(instr)].as_f64 = result;
-}
-
-template <>
-void Cop1::DoOp<float, float, float>(std::function<float(float, float)> func, float fs, float ft) {
-  if (!CheckInput(fs)) return;
-  if (!CheckInput(ft)) return;
-  auto result = f32(func(fs, ft));
-  if (!EndOp(result)) return;
-  fgr[FD(instr)].as_u64 = result.to_bits();
+template <AnyFloat Float, typename F, typename ...Args>
+void Cop1::DoOp(u32 instr, F op, Args... args) {
+  BeginOp();
+  if(!CheckInput(args...)) return;
+  auto result = EndOp(op(args...));
+  if constexpr (std::is_same_v<Float, f64>) {
+    fgr[FD(instr)].as_f64 = result;
+  } else if(std::is_same_v<Float, f32>) {
+    fgr[FD(instr)].as_f32 = result;
+  }
 }
 
 void Cop1::absd(u32 instr) {
-  DoOp<double, double>(&std::abs, fgr[FS(instr)].as_f64.operator double());
+  DoOp<f64>(instr, [](f64 f) { return f64(std::abs(f.operator double())); }, fgr[FS(instr)].as_f64);
 }
 
 void Cop1::abss(u32 instr) {
-  DoOp<float>(&std::abs, fgr[FS(instr)].as_f32.operator float());
+  DoOp<f32>(instr, [](f32 f) { return f32(std::abs(f.operator float())); }, fgr[FS(instr)].as_f32);
 }
 
 void Cop1::adds(u32 instr) {
-  DoOp<float, float, float>(
-    [](float p, float t) { return p + t; },
-    fgr[FS(instr)].as_f32.operator float(),
-    fgr[FT(instr)].as_f32.operator float()
+  DoOp<f32>(
+    instr,
+    [](f32 p, f32 t) { return p + t; },
+    fgr[FS(instr)].as_f32,
+    fgr[FT(instr)].as_f32
   );
 }
 
 void Cop1::addd(u32 instr) {
-  DoOp<double, double, double>(
-    [](double p, double t) { return p + t; },
-    fgr[FS(instr)].as_f64.operator double(),
-    fgr[FT(instr)].as_f64.operator double()
+  DoOp<f64>(
+    instr,
+    [](f64 p, f64 t) { return p + t; },
+    fgr[FS(instr)].as_f64,
+    fgr[FT(instr)].as_f64
   );
 }
 
@@ -826,4 +877,18 @@ void Cop1::dmtc1(u32 instr) {
   FGR<u64>(regs.cop0.status, FS(instr)) = regs.gpr[RT(instr)];
 }
 
+void Cop1::BeginOp() {
+  int round_mode = fcr31.rounding_mode;
+  switch(round_mode) {
+    case 0b00: round_mode = FE_TONEAREST; break;
+    case 0b01: round_mode = FE_TOWARDZERO; break;
+    case 0b10: round_mode = FE_UPWARD; break;
+    case 0b11: round_mode = FE_DOWNWARD; break;
+  }
+
+  std::fesetround(round_mode);
+  std::feclearexcept(FE_ALL_EXCEPT);
+
+  fcr31.cause &= 0x20;
+}
 }

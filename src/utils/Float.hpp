@@ -3,6 +3,20 @@
 #include <cmath>
 #include <cfenv>
 
+template <typename T>
+concept AnyFloat = requires(T a, T b) {
+  a + b;
+  a - b;
+  a * b;
+  a / b;
+  a > b;
+  a < b;
+  a == b;
+  a != b;
+  a >= b;
+  a <= b;
+};
+
 struct f32 {
   f32() = default;
   explicit f32(float v) : val(v) {}
@@ -30,14 +44,20 @@ struct f32 {
     return f32(val * rhs.val);
   }
 
-  bool operator>=(const float& rhs) const {
+  bool operator>=(const double& rhs) const {
     return val >= rhs;
   }
-  bool operator<=(const float& rhs) const {
+  bool operator<=(const double& rhs) const {
     return val <= rhs;
   }
-  bool operator<(const float& rhs) const {
+  bool operator<(const double& rhs) const {
     return val < rhs;
+  }
+  bool operator>=(const f32& rhs) const {
+    return val >= rhs.val;
+  }
+  bool operator>(const f32& rhs) const {
+    return val > rhs.val;
   }
   bool operator<(const f32& rhs) const {
     return val < rhs.val;
@@ -47,6 +67,10 @@ struct f32 {
   }
   bool operator<=(const f32& rhs) const {
     return val <= rhs.val;
+  }
+
+  bool is_neg() {
+    return (to_bits() >> 31) != 0;
   }
 
   [[nodiscard]] bool is_nan() const {
@@ -68,6 +92,18 @@ struct f32 {
 
   bool is_subnormal() {
     return std::fpclassify(val) == FP_SUBNORMAL;
+  }
+
+  f32 nan() {
+    return from_bits(0x7FBFFFFF);
+  }
+
+  f32 from_bits(u32 bits) {
+    return f32(*(float*)&bits);
+  }
+
+  auto operator-() const {
+    return -val;
   }
 
   explicit operator float() const {
@@ -105,7 +141,6 @@ struct f64 {
     return f64(val * rhs.val);
   }
 
-
   bool operator>=(const double& rhs) const {
     return val >= rhs;
   }
@@ -115,6 +150,12 @@ struct f64 {
   bool operator<(const double& rhs) const {
     return val < rhs;
   }
+  bool operator>=(const f64& rhs) const {
+    return val >= rhs.val;
+  }
+  bool operator>(const f64& rhs) const {
+    return val > rhs.val;
+  }
   bool operator<(const f64& rhs) const {
     return val < rhs.val;
   }
@@ -123,6 +164,14 @@ struct f64 {
   }
   bool operator<=(const f64& rhs) const {
     return val <= rhs.val;
+  }
+
+  auto operator-() const {
+    return -val;
+  }
+
+  bool is_neg() {
+    return (to_bits() >> 63) != 0;
   }
 
   [[nodiscard]] bool is_nan() const {
@@ -144,6 +193,14 @@ struct f64 {
 
   u64 to_bits() {
     return *(u64*)&val;
+  }
+
+  f64 from_bits(u64 bits) {
+    return f64(*(double*)&bits);
+  }
+
+  f64 nan() {
+    return from_bits(0x7FF7FFFFFFFFFFFF);
   }
 
   explicit operator double() const {

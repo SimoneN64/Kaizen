@@ -2,6 +2,7 @@
 #include <core/registers/Cop0.hpp>
 #include <cstring>
 #include <Float.hpp>
+#include <functional>
 
 namespace n64 {
 struct Cop1;
@@ -62,28 +63,11 @@ enum CompConds {
   LT, NGE, LE, NGT
 };
 
-union FloatingPointReg {
-  struct {
-    s32 int32l;
-    s32 int32h;
-  } __attribute__((__packed__));
-  struct {
-    u32 uint32l;
-    u32 uint32h;
-  } __attribute__((__packed__));
-  struct {
-    s64 int64;
-  } __attribute__((__packed__));
-  struct {
-    u64 uint64;
-  } __attribute__((__packed__));
-  struct {
-    f32 float32l;
-    f32 float32h;
-  } __attribute__((__packed__));
-  struct {
-    f64 float64;
-  } __attribute__((__packed__));
+union Fgr {
+  u64 as_u64;
+  u32 as_u32;
+  f32 as_f32;
+  f64 as_f64;
 };
 
 struct Interpreter;
@@ -103,27 +87,27 @@ struct Cop1 {
   Cop1(Registers&);
   u32 fcr0{};
   FCR31 fcr31{};
-  FloatingPointReg fgr[32]{};
+  Fgr fgr[32]{};
   void Reset();
   template <class T> // either JIT or Interpreter
   void decode(T&, u32);
   friend struct Interpreter;
 
+  template <typename T, typename... Args>
+  void DoOp(std::function<T(Args...)>, Args...);
   void SetCauseUnimplemented();
   void SetCauseUnderflow();
   void SetCauseInexact();
   void SetCauseDivisionByZero();
   void SetCauseOverflow();
   void SetCauseInvalid();
-  template <typename AnyFloat, bool check_inf>
-  void CheckInput(AnyFloat value);
+  template <typename AnyFloat, bool check_inf = false>
+  bool CheckInput(AnyFloat value);
 private:
   Registers& regs;
   int system_rounding;
-  template <typename T>
-  auto FGR(Cop0Status&, u32) -> T&;
   template <bool update_flags>
-  void UpdateCause(u8);
+  bool UpdateCause(u8);
   void decodeInterp(Interpreter&, u32);
   void decodeJIT(JIT&, u32);
   void absd(u32 instr);

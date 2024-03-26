@@ -5,85 +5,40 @@
 #include <Float.hpp>
 
 namespace n64 {
-template<> auto Cop1::FGR<s32>(Cop0Status& status, u32 index) -> s32& {
-  if (status.fr) {
-    return fgr[index].int32l;
-  } else {
-    if (index & 1) {
-      return fgr[index & ~1].int32h;
-    } else {
-      return fgr[index].int32l;
-    }
-  }
-}
-
-template<> auto Cop1::FGR<u32>(Cop0Status& status, u32 index) -> u32& {
-  return (u32&)FGR<s32>(status, index);
-}
-
-template<> auto Cop1::FGR<f32>(Cop0Status& status, u32 index) -> f32& {
-  if (status.fr) {
-    return fgr[index].float32l;
-  } else {
-    if (index & 1) {
-      return fgr[index & ~1].float32h;
-    } else {
-      return fgr[index].float32l;
-    }
-  }
-}
-
-template<> auto Cop1::FGR<s64>(Cop0Status& status, u32 index) -> s64& {
-  if (status.fr) {
-    return fgr[index].int64;
-  } else {
-    return fgr[index & ~1].int64;
-  }
-}
-
-template<> auto Cop1::FGR<u64>(Cop0Status& status, u32 index) -> u64& {
-  return (u64&)FGR<s64>(status, index);
-}
-
-template<> auto Cop1::FGR<f64>(Cop0Status& status, u32 index) -> f64& {
-  if (status.fr) {
-    return fgr[index].float64;
-  } else {
-    return fgr[index & ~1].float64;
-  }
-}
-
 template <bool update_flags = true>
-void Cop1::UpdateCause(u8 cause) {
+bool Cop1::UpdateCause(u8 cause) {
   fcr31.cause |= cause;
   bool unimplemented = cause & 0x20;
   if (unimplemented || (cause & fcr31.enable)) {
     fesetround(system_rounding);
     FireException(regs, ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    return false;
   } else {
     if constexpr (update_flags) {
       fcr31.flag = cause & 0x1f;
     }
+
+    return true;
   }
 }
 
 template <typename AnyFloat, bool check_inf>
-void Cop1::CheckInput(AnyFloat value) {
+bool Cop1::CheckInput(AnyFloat value) {
   if (value.is_nan()) {
     auto signaling = value.is_signaling();
     if (signaling) {
-      UpdateCause(u8(FpeCause::Unimplemented));
+      return UpdateCause(u8(FpeCause::Unimplemented));
     } else {
       if constexpr (check_inf) {
-        UpdateCause(u8(FpeCause::Unimplemented));
+        return UpdateCause(u8(FpeCause::Unimplemented));
       } else {
-        UpdateCause(u8(FpeCause::Invalid));
+        return UpdateCause(u8(FpeCause::Invalid));
       }
     }
   } else if (value.is_subnormal()) {
-    UpdateCause(u8(FpeCause::Unimplemented));
+    return UpdateCause(u8(FpeCause::Unimplemented));
   } else if (check_inf && value.is_inf) {
-    UpdateCause(u8(FpeCause::Unimplemented));
+    return UpdateCause(u8(FpeCause::Unimplemented));
   }
 }
 
@@ -138,340 +93,62 @@ void Cop1::SetCauseInvalid() {
   }
 }
 
-#define PUSHROUNDING int orig_round = PushRoundingMode(fcr31)
-#define POPROUNDING fesetround(orig_round)
-#define OP_CheckExcept(op) do { feclearexcept(FE_ALL_EXCEPT); PUSHROUNDING; op; SetFPUCauseRaised(regs, fetestexcept(FE_ALL_EXCEPT)); POPROUNDING; } while(0)
-#define CVT_OP_CheckExcept(op) do { feclearexcept(FE_ALL_EXCEPT); op; SetFPUCauseCVTRaised(regs, fetestexcept(FE_ALL_EXCEPT)); CheckFPUException(); } while(0)
-
-#define OP(T, op) do { \
-  CheckFPUUsable(); \
-  auto fs = FGR<T>(regs.cop0.status, FS(instr)); \
-  auto ft = FGR<T>(regs.cop0.status, FT(instr)); \
-  CheckArg(fs); \
-  CheckArg(ft); \
-  T result; \
-  OP_CheckExcept({result = (op);});             \
-  CheckResult(result);                     \
-  FGR<T>(regs.cop0.status, FD(instr)) = result; \
-} while(0)
-
-FORCE_INLINE void SetCauseByArgWCVT(Registers& regs, f32 f) {
-  switch (std::fpclassify(f.operator float())) {
-    case FP_NAN:
-    case FP_INFINITE:
-    case FP_SUBNORMAL:
-      regs.cop1.SetCauseUnimplemented();
-      CheckFPUException();
-      break;
-
-    case FP_NORMAL:
-      // Check overflow
-      if (f >= 2147483648.f || f < -2147483648.f) {
-        regs.cop1.SetCauseUnimplemented();
-        CheckFPUException();
-      }
-      break;
-
-    case FP_ZERO:
-      break; // Fine
-  }
+template <>
+void Cop1::DoOp<double, double>(std::function<double(double)> func, double fs) {
+  if (!CheckInput(fs)) return;
+  auto result = f64(func(fs));
+  if (!EndOp(result)) return;
+  fgr[FD(instr)].as_f64 = result;
 }
 
-FORCE_INLINE void SetCauseByArgWCVT(Registers& regs, f64 f) {
-  switch (std::fpclassify(f.operator double ())) {
-    case FP_NAN:
-    case FP_INFINITE:
-    case FP_SUBNORMAL:
-      regs.cop1.SetCauseUnimplemented();
-      CheckFPUException();
-      break;
-
-    case FP_NORMAL:
-      // Check overflow
-      if (f >= 2147483648.f || f < -2147483648.f) {
-        regs.cop1.SetCauseUnimplemented();
-        CheckFPUException();
-      }
-      break;
-
-    case FP_ZERO:
-      break; // Fine
-  }
+template <>
+void Cop1::DoOp<float, float>(std::function<float(float)> func, float fs) {
+  if (!CheckInput(fs)) return;
+  auto result = f32(func(fs));
+  if (!EndOp(result)) return;
+  fgr[FD(instr)].as_u64 = result.to_bits();
 }
 
-FORCE_INLINE void SetCauseByArgLCVT(Registers& regs, f32 f) {
-  switch (std::fpclassify(f.operator float ())) {
-    case FP_NAN:
-    case FP_INFINITE:
-    case FP_SUBNORMAL:
-      regs.cop1.SetCauseUnimplemented();
-      CheckFPUException();
-      break;
-
-    case FP_NORMAL:
-      // Check overflow
-      if (f >= 9007199254740992.f || f <= -9007199254740992.f) {
-        regs.cop1.SetCauseUnimplemented();
-        CheckFPUException();
-      }
-      break;
-
-    case FP_ZERO:
-      break; // Fine
-  }
+template <>
+void Cop1::DoOp<double, double, double>(std::function<double(double, double)> func, double fs, double ft) {
+  if (!CheckInput(fs)) return;
+  if (!CheckInput(ft)) return;
+  auto result = f64(func(fs, ft));
+  if (!EndOp(result)) return;
+  fgr[FD(instr)].as_f64 = result;
 }
 
-FORCE_INLINE void SetCauseByArgLCVT(Registers& regs, f64 f) {
-  switch (std::fpclassify(f.operator double ())) {
-    case FP_NAN:
-    case FP_INFINITE:
-    case FP_SUBNORMAL:
-      regs.cop1.SetCauseUnimplemented();
-      CheckFPUException();
-      break;
-
-    case FP_NORMAL:
-      // Check overflow
-      if (f >= 9007199254740992.0 || f <= -9007199254740992.0) {
-        regs.cop1.SetCauseUnimplemented();
-        CheckFPUException();
-      }
-      break;
-
-    case FP_ZERO:
-      break; // Fine
-  }
+template <>
+void Cop1::DoOp<float, float, float>(std::function<float(float, float)> func, float fs, float ft) {
+  if (!CheckInput(fs)) return;
+  if (!CheckInput(ft)) return;
+  auto result = f32(func(fs, ft));
+  if (!EndOp(result)) return;
+  fgr[FD(instr)].as_u64 = result.to_bits();
 }
-
-#define CheckWCVTArg(f) do { SetCauseByArgWCVT(regs, f); CheckFPUException(); } while(0)
-#define CheckLCVTArg(f) do { SetCauseByArgLCVT(regs, f); CheckFPUException(); } while(0)
-
-FORCE_INLINE void SetFPUCauseRaised(Registers& regs, int raised) {
-  if (raised == 0) {
-    return;
-  }
-
-  if (raised & FE_UNDERFLOW) {
-    if (!regs.cop1.fcr31.fs || regs.cop1.fcr31.enable_underflow || regs.cop1.fcr31.enable_inexact_operation) {
-      regs.cop1.SetCauseUnimplemented();
-      return;
-    } else {
-      regs.cop1.SetCauseUnderflow();
-    }
-  }
-
-  if (raised & FE_INEXACT) {
-    regs.cop1.SetCauseInexact();
-  }
-
-  if (raised & FE_DIVBYZERO) {
-    regs.cop1.SetCauseDivisionByZero();
-  }
-
-  if (raised & FE_OVERFLOW) {
-    regs.cop1.SetCauseOverflow();
-  }
-
-  if (raised & FE_INVALID) {
-    regs.cop1.SetCauseInvalid();
-  }
-}
-
-FORCE_INLINE void SetFPUCauseCVTRaised(Registers& regs, int raised) {
-  if(raised & FE_INVALID) {
-    regs.cop1.SetCauseUnimplemented();
-    return;
-  }
-
-  SetFPUCauseRaised(regs, raised);
-}
-
-#define F_TO_U32(f) (*((u32*)(&(f))))
-#define D_TO_U64(d) (*((u64*)(&(d))))
-#define U64_TO_D(d) (*((double*)(&(d))))
-#define U32_TO_F(f) (*((float*)(&(f))))
-
-FORCE_INLINE void SetCauseByArg(Registers& regs, f32& f) {
-  auto fp_class = std::fpclassify(f.operator float());
-  switch(fp_class) {
-    case FP_NAN:
-      if(f.is_quiet()) {
-        regs.cop1.SetCauseInvalid();
-        CheckFPUException();
-      } else {
-        regs.cop1.SetCauseUnimplemented();
-        CheckFPUException();
-      }
-      break;
-    case FP_SUBNORMAL:
-      regs.cop1.SetCauseUnimplemented();
-      CheckFPUException();
-      break;
-    case FP_INFINITE:
-    case FP_ZERO:
-    case FP_NORMAL:
-      break; // No-op, these are fine.
-    default:
-      Util::panic("Unknown floating point classification: {}", fp_class);
-  }
-}
-
-FORCE_INLINE void SetCauseByArg(Registers& regs, f64& f) {
-  auto fp_class = std::fpclassify(f.operator double());
-  switch(fp_class) {
-    case FP_NAN:
-      if(f.is_quiet()) {
-        regs.cop1.SetCauseInvalid();
-        CheckFPUException();
-      } else {
-        regs.cop1.SetCauseUnimplemented();
-        CheckFPUException();
-      }
-      break;
-    case FP_SUBNORMAL:
-      regs.cop1.SetCauseUnimplemented();
-      CheckFPUException();
-      break;
-    case FP_INFINITE:
-    case FP_ZERO:
-    case FP_NORMAL:
-      break; // No-op, these are fine.
-    default:
-      Util::panic("Unknown floating point classification: {}", fp_class);
-  }
-}
-
-#define CheckArg(f) do { SetCauseByArg(regs, f); CheckFPUException(); } while(0)
-
-FORCE_INLINE void SetCauseOnResult(Registers& regs, f64& d) {
-  Cop1& cop1 = regs.cop1;
-  auto fp_class = std::fpclassify(d.operator double());
-  u64 c = 0x7FF7FFFFFFFFFFFF;
-  double magic = U64_TO_D(c), min = std::numeric_limits<double>::min();
-  switch (fp_class) {
-    case FP_NAN:
-      d = magic; // set result to sNAN
-      break;
-    case FP_SUBNORMAL:
-      if (!cop1.fcr31.fs || cop1.fcr31.enable_underflow || cop1.fcr31.enable_inexact_operation) {
-        regs.cop1.SetCauseUnimplemented();
-        CheckFPUException();
-      } else {
-        // Since the if statement checks for the corresponding enable bits, it's safe to turn these cause bits on here.
-        regs.cop1.SetCauseUnderflow();
-        regs.cop1.SetCauseInexact();
-        switch (cop1.fcr31.rounding_mode) {
-          case 0:
-          case 1:
-            d = std::copysign(0, d.operator double());
-            break;
-          case 2:
-            if (std::signbit(d.operator double())) {
-              d = -(double)0;
-            } else {
-              d = min;
-            }
-            break;
-          case 3:
-            if (std::signbit(d.operator double())) {
-              d = -min;
-            } else {
-              d = 0;
-            }
-            break;
-        }
-      }
-      break;
-    case FP_INFINITE:
-    case FP_ZERO:
-    case FP_NORMAL:
-      break; // No-op, these are fine.
-    default:
-      Util::panic("Unknown FP classification: {}", fp_class);
-  }
-}
-
-FORCE_INLINE void SetCauseOnResult(Registers& regs, f32& f) {
-  Cop1& cop1 = regs.cop1;
-  auto fp_class = std::fpclassify(f.operator float());
-  u32 c = 0x7FBFFFFF;
-  float magic = U32_TO_F(c), min = std::numeric_limits<float>::min();
-  switch (fp_class) {
-    case FP_NAN:
-      f = magic; // set result to sNAN
-      break;
-    case FP_SUBNORMAL:
-      if (!cop1.fcr31.fs || cop1.fcr31.enable_underflow || cop1.fcr31.enable_inexact_operation) {
-        regs.cop1.SetCauseUnimplemented();
-        CheckFPUException();
-      } else {
-        // Since the if statement checks for the corresponding enable bits, it's safe to turn these cause bits on here.
-        regs.cop1.SetCauseUnderflow();
-        regs.cop1.SetCauseInexact();
-        switch (cop1.fcr31.rounding_mode) {
-          case 0:
-          case 1:
-            f = std::copysign(0, f.operator float ());
-            break;
-          case 2:
-            if (std::signbit(f.operator float ())) {
-              f = -(float )0;
-            } else {
-              f = min;
-            }
-            break;
-          case 3:
-            if (std::signbit(f.operator float ())) {
-              f = -min;
-            } else {
-              f = 0;
-            }
-            break;
-        }
-      }
-      break;
-    case FP_INFINITE:
-    case FP_ZERO:
-    case FP_NORMAL:
-      break; // No-op, these are fine.
-    default:
-      Util::panic("Unknown FP classification: {}", fp_class);
-  }
-}
-
-#define CheckResult(f) do { SetCauseOnResult(regs, (f)); CheckFPUException(); } while(0)
-
-#define any_unordered(fs, ft) ((fs).is_nan() || (ft).is_nan())
-#define CheckRound(a, b) do { if ((a) != (b)) { SetCauseInexact(); } CheckFPUException(); } while(0)
-
-#define checknanregs(fs, ft) do { \
-  if((fs).is_nan() || (ft).is_nan()) {                                       \
-    regs.cop1.SetCauseInvalid();                                           \
-    CheckFPUException();                                             \
-  }                                                                  \
-} while(0)
-
-#define checkqnanregs(fs, ft) do { \
-  if((fs).is_quiet() || (ft).is_quiet()) {                                     \
-    regs.cop1.SetCauseInvalid();                                           \
-    CheckFPUException();                                             \
-  }                                                                  \
-} while(0)
 
 void Cop1::absd(u32 instr) {
-  OP(f64, std::fabs(fs.operator double()));
+  DoOp<double, double>(&std::abs, fgr[FS(instr)].as_f64.operator double());
 }
 
 void Cop1::abss(u32 instr) {
-  OP(f32, std::fabs(fs.operator float()));
+  DoOp<float>(&std::abs, fgr[FS(instr)].as_f32.operator float());
 }
 
 void Cop1::adds(u32 instr) {
-  OP(f32, fs + ft);
+  DoOp<float, float, float>(
+    [](float p, float t) { return p + t; },
+    fgr[FS(instr)].as_f32.operator float(),
+    fgr[FT(instr)].as_f32.operator float()
+  );
 }
 
 void Cop1::addd(u32 instr) {
-  OP(f64, fs + ft);
+  DoOp<double, double, double>(
+    [](double p, double t) { return p + t; },
+    fgr[FS(instr)].as_f64.operator double(),
+    fgr[FT(instr)].as_f64.operator double()
+  );
 }
 
 void Cop1::ceills(u32 instr) {

@@ -62,6 +62,14 @@ struct f32 {
     return *(u32*)&val;
   }
 
+  bool is_infinite() {
+    return std::isinf(val);
+  }
+
+  bool is_subnormal() {
+    return std::fpclassify(val) == FP_SUBNORMAL;
+  }
+
   explicit operator float() const {
     return val;
   }
@@ -121,6 +129,14 @@ struct f64 {
     return std::isnan(val);
   }
 
+  bool is_subnormal() {
+    return std::fpclassify(val) == FP_SUBNORMAL;
+  }
+
+  bool is_infinite() {
+    return std::isinf(val);
+  }
+
   bool is_signaling() {
     static u64 QUIET_BIT = 0x0008000000000000;
     return is_nan() && ((to_bits() & QUIET_BIT) == 0);
@@ -136,4 +152,8 @@ struct f64 {
 private:
   friend struct f64;
   double val{};
+};
+
+concept AnyFloat = requires(T a) {
+  std::is_same_v<T, f32> || std::is_same_v<T, f64>;
 };

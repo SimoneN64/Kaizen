@@ -4,11 +4,12 @@
 #include <log.hpp>
 
 namespace n64 {
-Cop1::Cop1() {
+Cop1::Cop1(Registers& regs) : regs(regs) {
   Reset();
 }
 
 void Cop1::Reset() {
+  system_rounding = fegetround();
   fcr0 = 0xa00;
   fcr31.write(0x01000800);
   memset(fgr, 0, 32 * sizeof(FloatingPointReg));
@@ -27,122 +28,120 @@ template void Cop1::decode<Interpreter>(Interpreter&, u32);
 template void Cop1::decode<JIT>(JIT&, u32);
 
 void Cop1::decodeInterp(Interpreter &cpu, u32 instr) {
-  Registers &regs = cpu.regs;
-
   u8 mask_sub = (instr >> 21) & 0x1F;
   u8 mask_fun = instr & 0x3F;
   u8 mask_branch = (instr >> 16) & 0x1F;
   switch(mask_sub) {
     // 000r_rccc
-    case 0x00: mfc1(regs, instr); break;
-    case 0x01: dmfc1(regs, instr); break;
-    case 0x02: cfc1(regs, instr); break;
-    case 0x03: unimplemented(regs); break;
-    case 0x04: mtc1(regs, instr); break;
-    case 0x05: dmtc1(regs, instr); break;
-    case 0x06: ctc1(regs, instr); break;
-    case 0x07: unimplemented(regs); break;
+    case 0x00: mfc1(instr); break;
+    case 0x01: dmfc1(instr); break;
+    case 0x02: cfc1(instr); break;
+    case 0x03: unimplemented(); break;
+    case 0x04: mtc1(instr); break;
+    case 0x05: dmtc1(instr); break;
+    case 0x06: ctc1(instr); break;
+    case 0x07: unimplemented(); break;
     case 0x08:
       switch(mask_branch) {
-        case 0: CheckFPUUsable(); cpu.b(instr, !regs.cop1.fcr31.compare); break;
-        case 1: CheckFPUUsable(); cpu.b(instr, regs.cop1.fcr31.compare); break;
-        case 2: CheckFPUUsable(); cpu.bl(instr, !regs.cop1.fcr31.compare); break;
-        case 3: CheckFPUUsable(); cpu.bl(instr, regs.cop1.fcr31.compare); break;
+        case 0: CheckFPUUsable(); cpu.b(instr, !fcr31.compare); break;
+        case 1: CheckFPUUsable(); cpu.b(instr, fcr31.compare); break;
+        case 2: CheckFPUUsable(); cpu.bl(instr, !fcr31.compare); break;
+        case 3: CheckFPUUsable(); cpu.bl(instr, fcr31.compare); break;
         default: Util::panic("Undefined BC COP1 {:02X}", mask_branch);
       }
       break;
     case 0x10: // s
       switch(mask_fun) {
-        case 0x00: adds(regs, instr); break;
-        case 0x01: subs(regs, instr); break;
-        case 0x02: muls(regs, instr); break;
-        case 0x03: divs(regs, instr); break;
-        case 0x04: sqrts(regs, instr); break;
-        case 0x05: abss(regs, instr); break;
-        case 0x06: movs(regs, instr); break;
-        case 0x07: negs(regs, instr); break;
-        case 0x08: roundls(regs, instr); break;
-        case 0x09: truncls(regs, instr); break;
-        case 0x0A: ceills(regs, instr); break;
-        case 0x0B: floorls(regs, instr); break;
-        case 0x0C: roundws(regs, instr); break;
-        case 0x0D: truncws(regs, instr); break;
-        case 0x0E: ceilws(regs, instr); break;
-        case 0x0F: floorws(regs, instr); break;
-        case 0x21: cvtds(regs, instr); break;
-        case 0x24: cvtws(regs, instr); break;
-        case 0x25: cvtls(regs, instr); break;
-        case 0x30: cf<f32>(regs, instr); break;
-        case 0x31: cun<f32>(regs, instr); break;
-        case 0x32: ceq<f32>(regs, instr); break;
-        case 0x33: cueq<f32>(regs, instr); break;
-        case 0x34: colt<f32>(regs, instr); break;
-        case 0x35: cult<f32>(regs, instr); break;
-        case 0x36: cole<f32>(regs, instr); break;
-        case 0x37: cule<f32>(regs, instr); break;
-        case 0x38: csf<f32>(regs, instr); break;
-        case 0x39: cngle<f32>(regs, instr); break;
-        case 0x3A: cseq<f32>(regs, instr); break;
-        case 0x3B: cngl<f32>(regs, instr); break;
-        case 0x3C: clt<f32>(regs, instr); break;
-        case 0x3D: cnge<f32>(regs, instr); break;
-        case 0x3E: cle<f32>(regs, instr); break;
-        case 0x3F: cngt<f32>(regs, instr); break;
-        default: unimplemented(regs);
+        case 0x00: adds(instr); break;
+        case 0x01: subs(instr); break;
+        case 0x02: muls(instr); break;
+        case 0x03: divs(instr); break;
+        case 0x04: sqrts(instr); break;
+        case 0x05: abss(instr); break;
+        case 0x06: movs(instr); break;
+        case 0x07: negs(instr); break;
+        case 0x08: roundls(instr); break;
+        case 0x09: truncls(instr); break;
+        case 0x0A: ceills(instr); break;
+        case 0x0B: floorls(instr); break;
+        case 0x0C: roundws(instr); break;
+        case 0x0D: truncws(instr); break;
+        case 0x0E: ceilws(instr); break;
+        case 0x0F: floorws(instr); break;
+        case 0x21: cvtds(instr); break;
+        case 0x24: cvtws(instr); break;
+        case 0x25: cvtls(instr); break;
+        case 0x30: cf<f32>(instr); break;
+        case 0x31: cun<f32>(instr); break;
+        case 0x32: ceq<f32>(instr); break;
+        case 0x33: cueq<f32>(instr); break;
+        case 0x34: colt<f32>(instr); break;
+        case 0x35: cult<f32>(instr); break;
+        case 0x36: cole<f32>(instr); break;
+        case 0x37: cule<f32>(instr); break;
+        case 0x38: csf<f32>(instr); break;
+        case 0x39: cngle<f32>(instr); break;
+        case 0x3A: cseq<f32>(instr); break;
+        case 0x3B: cngl<f32>(instr); break;
+        case 0x3C: clt<f32>(instr); break;
+        case 0x3D: cnge<f32>(instr); break;
+        case 0x3E: cle<f32>(instr); break;
+        case 0x3F: cngt<f32>(instr); break;
+        default: unimplemented();
       }
       break;
     case 0x11: // d
       switch(mask_fun) {
-        case 0x00: addd(regs, instr); break;
-        case 0x01: subd(regs, instr); break;
-        case 0x02: muld(regs, instr); break;
-        case 0x03: divd(regs, instr); break;
-        case 0x04: sqrtd(regs, instr); break;
-        case 0x05: absd(regs, instr); break;
-        case 0x06: movd(regs, instr); break;
-        case 0x07: negd(regs, instr); break;
-        case 0x08: roundld(regs, instr); break;
-        case 0x09: truncld(regs, instr); break;
-        case 0x0A: ceilld(regs, instr); break;
-        case 0x0B: floorld(regs, instr); break;
-        case 0x0C: roundwd(regs, instr); break;
-        case 0x0D: truncwd(regs, instr); break;
-        case 0x0E: ceilwd(regs, instr); break;
-        case 0x0F: floorwd(regs, instr); break;
-        case 0x20: cvtsd(regs, instr); break;
-        case 0x24: cvtwd(regs, instr); break;
-        case 0x25: cvtld(regs, instr); break;
-        case 0x30: cf<f64>(regs, instr); break;
-        case 0x31: cun<f64>(regs, instr); break;
-        case 0x32: ceq<f64>(regs, instr); break;
-        case 0x33: cueq<f64>(regs, instr); break;
-        case 0x34: colt<f64>(regs, instr); break;
-        case 0x35: cult<f64>(regs, instr); break;
-        case 0x36: cole<f64>(regs, instr); break;
-        case 0x37: cule<f64>(regs, instr); break;
-        case 0x38: csf<f64>(regs, instr); break;
-        case 0x39: cngle<f64>(regs, instr); break;
-        case 0x3A: cseq<f64>(regs, instr); break;
-        case 0x3B: cngl<f64>(regs, instr); break;
-        case 0x3C: clt<f64>(regs, instr); break;
-        case 0x3D: cnge<f64>(regs, instr); break;
-        case 0x3E: cle<f64>(regs, instr); break;
-        case 0x3F: cngt<f64>(regs, instr); break;
-        default: unimplemented(regs);
+        case 0x00: addd(instr); break;
+        case 0x01: subd(instr); break;
+        case 0x02: muld(instr); break;
+        case 0x03: divd(instr); break;
+        case 0x04: sqrtd(instr); break;
+        case 0x05: absd(instr); break;
+        case 0x06: movd(instr); break;
+        case 0x07: negd(instr); break;
+        case 0x08: roundld(instr); break;
+        case 0x09: truncld(instr); break;
+        case 0x0A: ceilld(instr); break;
+        case 0x0B: floorld(instr); break;
+        case 0x0C: roundwd(instr); break;
+        case 0x0D: truncwd(instr); break;
+        case 0x0E: ceilwd(instr); break;
+        case 0x0F: floorwd(instr); break;
+        case 0x20: cvtsd(instr); break;
+        case 0x24: cvtwd(instr); break;
+        case 0x25: cvtld(instr); break;
+        case 0x30: cf<f64>(instr); break;
+        case 0x31: cun<f64>(instr); break;
+        case 0x32: ceq<f64>(instr); break;
+        case 0x33: cueq<f64>(instr); break;
+        case 0x34: colt<f64>(instr); break;
+        case 0x35: cult<f64>(instr); break;
+        case 0x36: cole<f64>(instr); break;
+        case 0x37: cule<f64>(instr); break;
+        case 0x38: csf<f64>(instr); break;
+        case 0x39: cngle<f64>(instr); break;
+        case 0x3A: cseq<f64>(instr); break;
+        case 0x3B: cngl<f64>(instr); break;
+        case 0x3C: clt<f64>(instr); break;
+        case 0x3D: cnge<f64>(instr); break;
+        case 0x3E: cle<f64>(instr); break;
+        case 0x3F: cngt<f64>(instr); break;
+        default: unimplemented();
       }
       break;
     case 0x14: // w
       switch(mask_fun) {
-        case 0x20: cvtsw(regs, instr); break;
-        case 0x21: cvtdw(regs, instr); break;
-        default: unimplemented(regs);
+        case 0x20: cvtsw(instr); break;
+        case 0x21: cvtdw(instr); break;
+        default: unimplemented();
       }
       break;
     case 0x15: // l
       switch(mask_fun) {
-        case 0x20: cvtsl(regs, instr); break;
-        case 0x21: cvtdl(regs, instr); break;
-        default: unimplemented(regs);
+        case 0x20: cvtsl(instr); break;
+        case 0x21: cvtdl(instr); break;
+        default: unimplemented();
       }
       break;
     default: Util::panic("Unimplemented COP1 instruction {} {}", mask_sub >> 3, mask_sub & 7);

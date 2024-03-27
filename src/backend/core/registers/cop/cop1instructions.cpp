@@ -49,43 +49,19 @@ bool Cop1::CheckInput(Args ...values) {
   return (CheckInput(values), ...);
 }
 
-void Cop1::SetCauseUnimplemented() {
-  fcr31.cause_unimplemented_operation = true;
-}
-
-void Cop1::SetCauseUnderflow() {
-  fcr31.cause_underflow = true;
-  if(!fcr31.enable_underflow) {
-    fcr31.flag_underflow = true;
+void Cop1::BeginOp() {
+  int round_mode = fcr31.rounding_mode;
+  switch (round_mode) {
+  case 0b00: round_mode = FE_TONEAREST; break;
+  case 0b01: round_mode = FE_TOWARDZERO; break;
+  case 0b10: round_mode = FE_UPWARD; break;
+  case 0b11: round_mode = FE_DOWNWARD; break;
   }
-}
 
-void Cop1::SetCauseInexact() {
-  fcr31.cause_inexact_operation = true;
-  if(!fcr31.enable_inexact_operation) {
-    fcr31.flag_inexact_operation = true;
-  }
-}
+  std::fesetround(round_mode);
+  std::feclearexcept(FE_ALL_EXCEPT);
 
-void Cop1::SetCauseDivisionByZero() {
-  fcr31.cause_division_by_zero = true;
-  if(!fcr31.enable_division_by_zero) {
-    fcr31.flag_division_by_zero = true;
-  }
-}
-
-void Cop1::SetCauseOverflow() {
-  fcr31.cause_overflow = true;
-  if(!fcr31.enable_overflow) {
-    fcr31.flag_overflow = true;
-  }
-}
-
-void Cop1::SetCauseInvalid() {
-  fcr31.cause_invalid_operation = true;
-  if(!fcr31.enable_invalid_operation) {
-    fcr31.flag_invalid_operation = true;
-  }
+  fcr31.cause &= 0x20;
 }
 
 Cop1::CheckResult Cop1::CheckExceptions() {
@@ -111,6 +87,38 @@ Cop1::CheckResult Cop1::CheckExceptions() {
   bool is_underflow = (exceptions & FE_UNDERFLOW);
 
   return {cause, is_underflow};
+}
+
+template <typename T, AnyFloat Float>
+T Cop1::EndCVTOp(Float f) {
+  auto [cause, _] = CheckExceptions();
+  auto value = (s64)f.to_bits();
+
+  auto min_value = 0.0;
+  auto max_value = 0.0;
+
+  if constexpr (std::is_same_v<T, u64>) {
+    min_value = f.to_bits(((53 + 1023) << 52) | (1 << 63));
+    max_value = f.to_bits((53 + 1023) << 52);
+
+    if (f >= max_value || f <= min_value) {
+      cause = FpeUnimplemented;
+      value = (2 << 63) - 1;
+    }
+  } else {
+    if (value < -(1 << 31) || value > ((1 << 31) - 1)) {
+      cause = FpeUnimplemented;
+      value = (2 << 31) - 1;
+    }
+  }
+
+  if (cause) {
+    UpdateCause<true>(cause);
+  }
+
+  std::fesetround(system_rounding);
+
+  return value;
 }
 
 template <AnyFloat Float>
@@ -165,6 +173,19 @@ Float Cop1::EndOp(Float f) {
 }
 
 template <AnyFloat Float, typename F, typename ...Args>
+void Cop1::DoCVTOp(u32 instr, F op, Args... args) {
+  BeginOp();
+  if (!CheckInput<true>(args...)) return;
+  auto result = EndCVTOp(op(args...));
+  if constexpr (std::is_same_v<Float, f64>) {
+    fgr[FD(instr)].as_f64 = result;
+  }
+  else if (std::is_same_v<Float, f32>) {
+    fgr[FD(instr)].as_f32 = result;
+  }
+}
+
+template <AnyFloat Float, typename F, typename ...Args>
 void Cop1::DoOp(u32 instr, F op, Args... args) {
   BeginOp();
   if(!CheckInput(args...)) return;
@@ -203,43 +224,39 @@ void Cop1::addd(u32 instr) {
 }
 
 void Cop1::ceills(u32 instr) {
-  CheckFPUUsable();
-  auto fs = FGR<f32>(regs.cop0.status, FS(instr));
-  CheckLCVTArg(fs);
-  s64 result;
-  CVT_OP_CheckExcept({ result = std::ceil(fs.operator float()); });
-  CheckRound(fs.to_bits(), result);
-  FGR<s64>(regs.cop0.status, FD(instr)) = result;
+  std::fesetround(FE_UPWARD);
+  DoCVTOp<f64>(
+    instr,
+    [](f64 f) { return f64(std::rint(f.operator double())); },
+    f64(fgr[FS(instr)].as_f32.operator float())
+  );
 }
 
 void Cop1::ceilws(u32 instr) {
-  CheckFPUUsable();
-  auto fs = FGR<f32>(regs.cop0.status, FS(instr));
-  CheckWCVTArg(fs);
-  s32 result;
-  CVT_OP_CheckExcept({ result = std::ceil(fs.operator float()); });
-  CheckRound(fs.to_bits(), result);
-  FGR<s32>(regs.cop0.status, FD(instr)) = result;
+  std::fesetround(FE_UPWARD);
+  DoCVTOp<f64>(
+    instr,
+    [](f64 f) { return f64(std::rint(f.operator double())); },
+    f64(fgr[FS(instr)].as_f32.operator float())
+  );
 }
 
 void Cop1::ceilld(u32 instr) {
-  CheckFPUUsable();
-  auto fs = FGR<f64>(regs.cop0.status, FS(instr));
-  CheckLCVTArg(fs);
-  s64 result;
-  CVT_OP_CheckExcept({ result = std::ceil(fs.operator double()); });
-  CheckRound(fs.to_bits(), result);
-  FGR<s64>(regs.cop0.status, FD(instr)) = result;
+  std::fesetround(FE_UPWARD);
+  DoCVTOp<f64>(
+    instr,
+    [](f64 f) { return f64(std::rint(f.operator double())); },
+    fgr[FS(instr)].as_f64
+  );
 }
 
 void Cop1::ceilwd(u32 instr) {
-  CheckFPUUsable();
-  auto fs = FGR<f64>(regs.cop0.status, FS(instr));
-  CheckWCVTArg(fs);
-  s32 result;
-  CVT_OP_CheckExcept({ result = std::ceil(fs.operator double()); });
-  CheckRound(fs.to_bits(), result);
-  FGR<s32>(regs.cop0.status, FD(instr)) = result;
+  std::fesetround(FE_UPWARD);
+  DoCVTOp<f64>(
+    instr,
+    [](f64 f) { return f64(std::rint(f.operator double())); },
+    fgr[FS(instr)].as_f64
+  );
 }
 
 void Cop1::cfc1(u32 instr) const {
@@ -875,20 +892,5 @@ void Cop1::mtc1(u32 instr) {
 void Cop1::dmtc1(u32 instr) {
   CheckFPUUsable_PreserveCause();
   FGR<u64>(regs.cop0.status, FS(instr)) = regs.gpr[RT(instr)];
-}
-
-void Cop1::BeginOp() {
-  int round_mode = fcr31.rounding_mode;
-  switch(round_mode) {
-    case 0b00: round_mode = FE_TONEAREST; break;
-    case 0b01: round_mode = FE_TOWARDZERO; break;
-    case 0b10: round_mode = FE_UPWARD; break;
-    case 0b11: round_mode = FE_DOWNWARD; break;
-  }
-
-  std::fesetround(round_mode);
-  std::feclearexcept(FE_ALL_EXCEPT);
-
-  fcr31.cause &= 0x20;
 }
 }

@@ -99,14 +99,12 @@ struct Cop1 {
   void BeginOp();
   template <AnyFloat Float, typename F, typename ...Args>
   void DoOp(u32 instr, F, Args...);
+  template <AnyFloat Float, typename F, typename ...Args>
+  void DoCVTOp(u32 instr, F, Args...);
   template <AnyFloat Float>
   Float EndOp(Float);
-  void SetCauseUnimplemented();
-  void SetCauseUnderflow();
-  void SetCauseInexact();
-  void SetCauseDivisionByZero();
-  void SetCauseOverflow();
-  void SetCauseInvalid();
+  template <typename T, AnyFloat Float>
+  T EndCVTOp(Float);
   template <AnyFloat Float, bool check_inf = false>
   bool CheckInput(Float value);
   template <typename ...Args, bool check_inf = false>

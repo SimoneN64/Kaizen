@@ -3,26 +3,40 @@
 #include <MemoryHelpers.hpp>
 
 namespace Util {
-#define Z64 0x80371240
-#define N64 0x40123780
-#define V64 0x37804012
-#define Z64_ALT 0x80371241
-#define N64_ALT 0x41123780
-#define V64_ALT 0x37804112
+#define Z64 0x80371200
+#define N64 0x00123780
+#define V64 0x37800012
 
 template <bool toBE = false>
 FORCE_INLINE void SwapN64Rom(size_t size, u8 *rom, u32 endianness) {
+  u8 altByteShift = 0;
+  if((endianness >> 24) != 0x80) {
+    if((endianness & 0xFF) != 0x80) {
+      if(((endianness >> 16) & 0xff) != 0x80) {
+        Util::panic("TODO: Unrecognized rom endianness. Ideally, this should be more robust");
+      } else {
+        altByteShift = 12;
+      }
+    } else {
+      altByteShift = 24;
+    }
+  } else {
+    altByteShift = 0;
+  }
+
+  endianness &= ~(0xFF << altByteShift);
+
   switch (endianness) {
-    case V64: case V64_ALT:
+    case V64:
       SwapBuffer16(size, rom);
       if constexpr(!toBE)
         SwapBuffer32(size, rom);
       break;
-    case N64: case N64_ALT:
+    case N64:
       if constexpr(toBE)
         SwapBuffer32(size, rom);
       break;
-    case Z64: case Z64_ALT:
+    case Z64:
       if constexpr(!toBE)
         SwapBuffer32(size, rom);
       break;

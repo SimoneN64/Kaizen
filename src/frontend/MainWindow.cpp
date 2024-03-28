@@ -15,7 +15,8 @@ MainWindowController::MainWindowController() noexcept {
 
 void MainWindowController::ConnectSignalsToSlots() noexcept {
   connect(view.actionOpen, &QAction::triggered, this, [this]() {
-    QString file_name = QFileDialog::getOpenFileName(this);
+    QString file_name = QFileDialog::getOpenFileName(this, "Nintendo 64 executable", QString(),
+      "All supported types (*.zip *.ZIP *.7z *.7Z *.rar *.RAR *.tar *.TAR *.n64 *.N64 *.v64 *.V64 *.z64 *.Z64)");
 
     if (!file_name.isEmpty()) {
       view.actionPause->setEnabled(true);

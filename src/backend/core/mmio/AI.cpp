@@ -2,7 +2,6 @@
 #include <log.hpp>
 #include <core/Mem.hpp>
 #include <core/registers/Registers.hpp>
-#include <Audio.hpp>
 
 namespace n64 {
 void AI::Reset() {
@@ -56,12 +55,12 @@ void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       InterruptLower(mem.mmio.mi, regs, Interrupt::AI);
       break;
     case 0x04500010: {
-      u32 old_dac_freq = dac.freq;
+      u32 oldDacFreq = dac.freq;
       dacRate = val & 0x3FFF;
       dac.freq = std::max(1u, GetVideoFrequency(mem.IsROMPAL()) / (dacRate + 1));
       dac.period = N64_CPU_FREQ / dac.freq;
-      if(old_dac_freq != dac.freq) {
-        AdjustSampleRate(dac.freq);
+      if(oldDacFreq != dac.freq) {
+        device.AdjustSampleRate(dac.freq);
       }
     } break;
     case 0x04500014:
@@ -87,7 +86,7 @@ void AI::Step(Mem& mem, Registers& regs, u32 cpuCycles, float volumeL, float vol
       s16 r = s16(data);
 
       if(volumeR > 0 && volumeL > 0) {
-        PushSample((float) l / INT16_MAX, volumeL, (float) r / INT16_MAX, volumeR);
+        device.PushSample((float) l / INT16_MAX, volumeL, (float) r / INT16_MAX, volumeR);
       }
 
       u32 addrLo = (dmaAddr[0] + 4) & 0x1FFF;

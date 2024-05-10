@@ -1,6 +1,7 @@
 #pragma once
 #include <common.hpp>
 #include <core/mmio/Interrupt.hpp>
+#include "Audio.hpp"
 
 namespace n64 {
 struct Mem;
@@ -20,6 +21,7 @@ struct AI {
   u32 dmaAddr[2]{};
   bool dmaAddrCarry{};
   u32 cycles{};
+  AudioDevice device;
 
   struct {
     u32 freq{44100};

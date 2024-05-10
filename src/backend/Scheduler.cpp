@@ -4,15 +4,15 @@
 
 Scheduler scheduler;
 
-void Scheduler::enqueueRelative(u64 t, const EventType type) {
-  enqueueAbsolute(t + ticks, type);
+void Scheduler::EnqueueRelative(u64 t, const EventType type) {
+  EnqueueAbsolute(t + ticks, type);
 }
 
-void Scheduler::enqueueAbsolute(u64 t, const EventType type) {
+void Scheduler::EnqueueAbsolute(u64 t, const EventType type) {
   events.push({t, type});
 }
 
-u64 Scheduler::remove(EventType type) {
+u64 Scheduler::Remove(EventType type) {
   for (auto& e : events) {
     if(e.type == type) {
       u64 ret = e.time - ticks;
@@ -25,7 +25,7 @@ u64 Scheduler::remove(EventType type) {
   return 0;
 }
 
-void Scheduler::tick(u64 t, n64::Mem& mem, n64::Registers& regs) {
+void Scheduler::Tick(u64 t, n64::Mem& mem, n64::Registers& regs) {
   ticks += t;
   n64::MI& mi = mem.mmio.mi;
   n64::SI& si = mem.mmio.si;

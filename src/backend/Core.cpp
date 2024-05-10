@@ -91,7 +91,7 @@ void Core::Run(float volumeL, float volumeR) {
 
         cycles += taken;
         frameCycles += taken;
-        scheduler.tick(taken, mem, regs);
+        scheduler.Tick(taken, mem, regs);
       }
 
       cycles -= mmio.vi.cyclesPerHalfline;
@@ -102,7 +102,7 @@ void Core::Run(float volumeL, float volumeR) {
     }
 
     mmio.ai.Step(cpu->mem, regs, frameCycles, volumeL, volumeR);
-    scheduler.tick(frameCycles, mem, regs);
+    scheduler.Tick(frameCycles, mem, regs);
   }
 }
 

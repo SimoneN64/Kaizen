@@ -30,9 +30,9 @@ struct PI {
   u32 latch{};
   u32 dramAddr{}, cartAddr{}, dramAddrInternal{}, cartAddrInternal{};
   u32 rdLen{}, wrLen{};
-  u32 pi_bsd_dom1_lat{}, pi_bsd_dom2_lat{};
-  u32 pi_bsd_dom1_pwd{}, pi_bsd_dom2_pwd{};
-  u32 pi_bsd_dom1_pgs{}, pi_bsd_dom2_pgs{};
-  u32 pi_bsd_dom1_rls{}, pi_bsd_dom2_rls{};
+  u32 piBsdDom1Lat{}, piBsdDom2Lat{};
+  u32 piBsdDom1Pwd{}, piBsdDom2Pwd{};
+  u32 piBsdDom1Pgs{}, piBsdDom2Pgs{};
+  u32 piBsdDom1Rls{}, piBsdDom2Rls{};
 };
 }

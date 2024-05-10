@@ -18,14 +18,14 @@ void PI::Reset() {
   cartAddrInternal = 0;
   rdLen = 0;
   wrLen = 0;
-  pi_bsd_dom1_lat = 0;
-  pi_bsd_dom2_lat = 0;
-  pi_bsd_dom1_pwd = 0;
-  pi_bsd_dom2_pwd = 0;
-  pi_bsd_dom1_pgs = 0;
-  pi_bsd_dom2_pgs = 0;
-  pi_bsd_dom1_rls = 0;
-  pi_bsd_dom2_rls = 0;
+  piBsdDom1Lat = 0;
+  piBsdDom2Lat = 0;
+  piBsdDom1Pwd = 0;
+  piBsdDom2Pwd = 0;
+  piBsdDom1Pgs = 0;
+  piBsdDom2Pgs = 0;
+  piBsdDom1Rls = 0;
+  piBsdDom2Rls = 0;
 }
 
 bool PI::WriteLatch(u32 value) {
@@ -34,7 +34,7 @@ bool PI::WriteLatch(u32 value) {
   } else {
     ioBusy = true;
     latch = value;
-    scheduler.enqueueRelative(100, PI_BUS_WRITE_COMPLETE);
+    scheduler.EnqueueRelative(100, PI_BUS_WRITE_COMPLETE);
     return true;
   }
 }
@@ -42,7 +42,7 @@ bool PI::WriteLatch(u32 value) {
 bool PI::ReadLatch() {
   if (ioBusy) [[unlikely]] {
     ioBusy = false;
-    CpuStall(scheduler.remove(PI_BUS_WRITE_COMPLETE));
+    CpuStall(scheduler.Remove(PI_BUS_WRITE_COMPLETE));
     return false;
   }
   return true;
@@ -367,14 +367,14 @@ auto PI::Read(MI& mi, u32 addr) const -> u32 {
       value |= (mi.miIntr.pi << 3); // PI interrupt?
       return value;
     }
-    case 0x04600014: return pi_bsd_dom1_lat;
-    case 0x04600018: return pi_bsd_dom1_pwd;
-    case 0x0460001C: return pi_bsd_dom1_pgs;
-    case 0x04600020: return pi_bsd_dom1_rls;
-    case 0x04600024: return pi_bsd_dom2_lat;
-    case 0x04600028: return pi_bsd_dom2_pwd;
-    case 0x0460002C: return pi_bsd_dom2_pgs;
-    case 0x04600030: return pi_bsd_dom2_rls;
+    case 0x04600014: return piBsdDom1Lat;
+    case 0x04600018: return piBsdDom1Pwd;
+    case 0x0460001C: return piBsdDom1Pgs;
+    case 0x04600020: return piBsdDom1Rls;
+    case 0x04600024: return piBsdDom2Lat;
+    case 0x04600028: return piBsdDom2Pwd;
+    case 0x0460002C: return piBsdDom2Pgs;
+    case 0x04600030: return piBsdDom2Rls;
     default:
       Util::panic("Unhandled PI[{:08X}] read", addr);
   }
@@ -404,16 +404,16 @@ u32 PI::AccessTiming(u8 domain, u32 length) const {
 
   switch (domain) {
     case 1:
-      latency = pi_bsd_dom1_lat + 1;
-      pulse_width = pi_bsd_dom1_pwd + 1;
-      release = pi_bsd_dom1_rls + 1;
-      page_size = std::pow(2, (pi_bsd_dom1_pgs + 2));
+      latency = piBsdDom1Lat + 1;
+      pulse_width = piBsdDom1Pwd + 1;
+      release = piBsdDom1Rls + 1;
+      page_size = std::pow(2, (piBsdDom1Pgs + 2));
       break;
     case 2:
-      latency = pi_bsd_dom2_lat + 1;
-      pulse_width = pi_bsd_dom2_pwd + 1;
-      release = pi_bsd_dom2_rls + 1;
-      page_size = std::pow(2, (pi_bsd_dom2_pgs + 2));
+      latency = piBsdDom2Lat + 1;
+      pulse_width = piBsdDom2Pwd + 1;
+      release = piBsdDom2Rls + 1;
+      page_size = std::pow(2, (piBsdDom2Pgs + 2));
       break;
     default:
       Util::panic("Unknown PI domain: {}\n", domain);
@@ -449,7 +449,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       Util::trace("PI DMA from RDRAM to CARTRIDGE (size: {} B, {:08X} to {:08X})", len, dramAddr, cartAddr);
       dmaBusy = true;
       toCart = true;
-      scheduler.enqueueRelative(AccessTiming(GetDomain(cartAddr), len), PI_DMA_COMPLETE);
+      scheduler.EnqueueRelative(AccessTiming(GetDomain(cartAddr), len), PI_DMA_COMPLETE);
     } break;
     case 0x0460000C: {
       u32 len = (val & 0x00FFFFFF) + 1;
@@ -470,20 +470,20 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       dmaBusy = true;
       Util::trace("PI DMA from CARTRIDGE to RDRAM (size: {} B, {:08X} to {:08X})", len, cartAddr, dramAddr);
       toCart = false;
-      scheduler.enqueueRelative(AccessTiming(GetDomain(cartAddr), len), PI_DMA_COMPLETE);
+      scheduler.EnqueueRelative(AccessTiming(GetDomain(cartAddr), len), PI_DMA_COMPLETE);
     } break;
     case 0x04600010:
       if(val & 2) {
         mi.InterruptLower(MI::Interrupt::PI);
       } break;
-    case 0x04600014: pi_bsd_dom1_lat = val & 0xff; break;
-    case 0x04600018: pi_bsd_dom1_pwd = val & 0xff; break;
-    case 0x0460001C: pi_bsd_dom1_pgs = val & 0xff; break;
-    case 0x04600020: pi_bsd_dom1_rls = val & 0xff; break;
-    case 0x04600024: pi_bsd_dom2_lat = val & 0xff; break;
-    case 0x04600028: pi_bsd_dom2_pwd = val & 0xff; break;
-    case 0x0460002C: pi_bsd_dom2_pgs = val & 0xff; break;
-    case 0x04600030: pi_bsd_dom2_rls = val & 0xff; break;
+    case 0x04600014: piBsdDom1Lat = val & 0xff; break;
+    case 0x04600018: piBsdDom1Pwd = val & 0xff; break;
+    case 0x0460001C: piBsdDom1Pgs = val & 0xff; break;
+    case 0x04600020: piBsdDom1Rls = val & 0xff; break;
+    case 0x04600024: piBsdDom2Lat = val & 0xff; break;
+    case 0x04600028: piBsdDom2Pwd = val & 0xff; break;
+    case 0x0460002C: piBsdDom2Pgs = val & 0xff; break;
+    case 0x04600030: piBsdDom2Rls = val & 0xff; break;
     default:
       Util::panic("Unhandled PI[{:08X}] write ({:08X})", val, addr);
   }

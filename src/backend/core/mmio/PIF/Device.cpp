@@ -76,7 +76,7 @@ void PIF::ControllerID(u8 *res) const {
   }
 }
 
-bool PIF::ReadButtons(u8* res) const {
+bool PIF::ReadButtons(u8* res) {
   if(channel >= 6) {
     res[0] = 0;
     res[1] = 0;
@@ -95,17 +95,17 @@ bool PIF::ReadButtons(u8* res) const {
     case JOYBUS_4KB_EEPROM:
     case JOYBUS_16KB_EEPROM:
     case JOYBUS_CONTROLLER:
-      if (TasMovieLoaded()) {
-        Controller controller = TasNextInputs();
+      if (movie.IsLoaded()) {
+        Controller controller = movie.NextInputs();
         res[0] = controller.byte1;
         res[1] = controller.byte2;
-        res[2] = controller.joy_x;
-        res[3] = controller.joy_y;
+        res[2] = controller.joyX;
+        res[3] = controller.joyY;
       } else {
         res[0] = joybusDevices[channel].controller.byte1;
         res[1] = joybusDevices[channel].controller.byte2;
-        res[2] = joybusDevices[channel].controller.joy_x;
-        res[3] = joybusDevices[channel].controller.joy_y;
+        res[2] = joybusDevices[channel].controller.joyX;
+        res[3] = joybusDevices[channel].controller.joyY;
       }
       return true;
     case JOYBUS_DANCEPAD:

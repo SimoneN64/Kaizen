@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <mio/mmap.hpp>
 #include <vector>
+#include "MupenMovie.hpp"
 
 namespace fs = std::filesystem;
 
@@ -21,10 +22,10 @@ struct Controller {
       union {
         u8 byte1;
         struct {
-          bool dp_right: 1;
-          bool dp_left: 1;
-          bool dp_down: 1;
-          bool dp_up: 1;
+          bool dpRight: 1;
+          bool dpLeft: 1;
+          bool dpDown: 1;
+          bool dpUp: 1;
           bool start: 1;
           bool z: 1;
           bool b: 1;
@@ -34,19 +35,19 @@ struct Controller {
       union {
         u8 byte2;
         struct {
-          bool c_right: 1;
-          bool c_left: 1;
-          bool c_down: 1;
-          bool c_up: 1;
+          bool cRight: 1;
+          bool cLeft: 1;
+          bool cDown: 1;
+          bool cUp: 1;
           bool r: 1;
           bool l: 1;
           bool zero: 1;
-          bool joy_reset: 1;
+          bool joyReset: 1;
         };
       };
 
-      s8 joy_x;
-      s8 joy_y;
+      s8 joyX;
+      s8 joyY;
     };
 
     u32 raw;
@@ -54,8 +55,8 @@ struct Controller {
   Controller& operator=(const Controller& other) {
     byte1 = other.byte1;
     byte2 = other.byte2;
-    joy_x = other.joy_x;
-    joy_y = other.joy_y;
+    joyX = other.joyX;
+    joyY = other.joyY;
 
     return *this;
   }
@@ -73,14 +74,14 @@ struct Controller {
       case B: b = state; break;
       case Z: z = state; break;
       case Start: start = state; break;
-      case DUp: dp_up = state; break;
-      case DDown: dp_down = state; break;
-      case DLeft: dp_left = state; break;
-      case DRight: dp_right = state; break;
-      case CUp: c_up = state; break;
-      case CDown: c_down = state; break;
-      case CLeft: c_left = state; break;
-      case CRight: c_right = state; break;
+      case DUp: dpUp = state; break;
+      case DDown: dpDown = state; break;
+      case DLeft: dpLeft = state; break;
+      case DRight: dpRight = state; break;
+      case CUp: cUp = state; break;
+      case CDown: cDown = state; break;
+      case CLeft: cLeft = state; break;
+      case CRight: cRight = state; break;
       case LT: l = state; break;
       case RT: r = state; break;
     }
@@ -88,14 +89,14 @@ struct Controller {
 
   void UpdateAxis(Axis a, s8 state) {
     switch(a) {
-      case X: joy_x = state; break;
-      case Y: joy_y = state; break;
+      case X: joyX = state; break;
+      case Y: joyY = state; break;
     }
   }
 
   Controller& operator=(u32 v) {
-    joy_y = v & 0xff;
-    joy_x = v >> 8;
+    joyY = v & 0xff;
+    joyX = v >> 8;
     byte2 = v >> 16;
     byte1 = v >> 24;
 
@@ -161,7 +162,7 @@ struct PIF {
   void CICChallenge();
   static void ExecutePIF(Mem& mem, Registers& regs);
   static void DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType);
-  bool ReadButtons(u8*) const;
+  bool ReadButtons(u8*);
   void ControllerID(u8*) const;
   void MempakRead(const u8*, u8*);
   void MempakWrite(u8*, u8*);
@@ -176,6 +177,7 @@ struct PIF {
   int channel = 0;
   std::string mempakPath{}, eepromPath{};
   size_t eepromSize{};
+  MupenMovie movie;
 
   FORCE_INLINE u8 Read(u32 addr) {
     addr &= 0x7FF;

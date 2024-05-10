@@ -25,6 +25,10 @@ void Core::Stop() {
   cpu->mem.Reset();
 }
 
+bool Core::LoadTAS(const fs::path &path) {
+  return cpu->mem.mmio.si.pif.movie.Load(path);
+}
+
 void Core::LoadROM(const std::string& rom_) {
   pause = true;
   rom = rom_;

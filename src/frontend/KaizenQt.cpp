@@ -3,6 +3,9 @@
 #include <QApplication>
 #include <QDropEvent>
 #include <QMimeData>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   mainWindow = new MainWindowController();
@@ -52,9 +55,13 @@ void KaizenQt::dropEvent(QDropEvent* event) {
   LoadROM(path);
 }
 
-void KaizenQt::LoadROM(const QString& file_name) noexcept {
+void KaizenQt::LoadROM(const QString& fileName) noexcept {
   emuThread->start();
-  emuThread->core->LoadROM(file_name.toStdString());
+  emuThread->core->LoadROM(fileName.toStdString());
+}
+
+void KaizenQt::LoadTAS(const QString& fileName) noexcept {
+  emuThread->core->LoadTAS(fileName.toStdString());
 }
 
 void KaizenQt::keyPressEvent(QKeyEvent *e) {

@@ -1,178 +1,128 @@
 #include <PIF/MupenMovie.hpp>
 #include <log.hpp>
-
-struct TASMovieHeader {
-  u8 signature[4];
-  u32 version;
-  u32 uid;
-  u32 numFrames;
-  u32 rerecords;
-  u8 fps;
-  u8 numControllers;
-  u8 reserved1;
-  u8 reserved2;
-  u32 numInputSamples;
-  uint16_t startType;
-  u8 reserved3;
-  u8 reserved4;
-  u32 controllerFlags;
-  u8 reserved5[160];
-  char romName[32];
-  u32 romCrc32;
-  uint16_t romCountryCode;
-  u8 reserved6[56];
-  // 122 64-byte ASCII string: name of video plugin used when recording, directly from plugin
-  char video_plugin_name[64];
-  // 162 64-byte ASCII string: name of sound plugin used when recording, directly from plugin
-  char audio_plugin_name[64];
-  // 1A2 64-byte ASCII string: name of input plugin used when recording, directly from plugin
-  char input_plugin_name[64];
-  // 1E2 64-byte ASCII string: name of rsp plugin used when recording, directly from plugin
-  char rsp_plugin_name[64];
-  // 222 222-byte UTF-8 string: author name info
-  char author_name[222];
-  // 300 256-byte UTF-8 string: author movie description info
-  char movie_description[256];
-} __attribute__((packed));
-
-static_assert(sizeof(TASMovieHeader) == 1024);
+#include "File.hpp"
+#include "PIF.hpp"
 
 union TASMovieControllerData {
   struct {
-    bool dpad_right: 1;
-    bool dpad_left: 1;
-    bool dpad_down: 1;
-    bool dpad_up: 1;
-    bool start: 1;
-    bool z: 1;
-    bool b: 1;
-    bool a: 1;
-    bool c_right: 1;
-    bool c_left: 1;
-    bool c_down: 1;
-    bool c_up: 1;
-    bool r: 1;
-    bool l: 1;
-    u8: 2;
-    s8 analog_x: 8;
-    s8 analog_y: 8;
+    unsigned dpadRight: 1;
+    unsigned dpadLeft: 1;
+    unsigned dpadDown: 1;
+    unsigned dpadUp: 1;
+    unsigned start: 1;
+    unsigned z: 1;
+    unsigned b: 1;
+    unsigned a: 1;
+    unsigned cRight: 1;
+    unsigned cLeft: 1;
+    unsigned cDown: 1;
+    unsigned cUp: 1;
+    unsigned r: 1;
+    unsigned l: 1;
+    unsigned : 2;
+    signed analogX : 8;
+    signed analogY : 8;
   };
   u32 raw;
 } __attribute__((packed));
 
 static_assert(sizeof(TASMovieControllerData) == 4);
 
-static u8* loaded_tas_movie = nullptr;
-static size_t loaded_tas_movie_size = 0;
-TASMovieHeader loaded_tas_movie_header;
-uint32_t loaded_tas_movie_index = 0;
-
-void LoadTAS(const char* filename) {
-  FILE *fp = fopen(filename, "rb");
-
-  if (!fp) {
-    Util::panic("Error opening the movie file {}! Are you sure it's a valid movie and that it exists?", filename);
+bool MupenMovie::Load(const fs::path &path) {
+  loadedTasMovie = Util::ReadFileBinary(path.string());
+  if(!IsLoaded()) {
+    Util::error("Error loading movie!");
+    return false;
   }
 
-  fseek(fp, 0, SEEK_END);
-  size_t size = ftell(fp);
+  memcpy(&loadedTasMovieHeader, loadedTasMovie.data(), loadedTasMovie.size());
 
-  fseek(fp, 0, SEEK_SET);
-  u8 *buf = (u8*)malloc(size);
-  fread(buf, size, 1, fp);
-
-  loaded_tas_movie = buf;
-  loaded_tas_movie_size = size;
-
-  if (!loaded_tas_movie) {
-    Util::panic("Error loading movie!");
+  if (loadedTasMovieHeader.signature[0] != 0x4D || loadedTasMovieHeader.signature[1] != 0x36 || loadedTasMovieHeader.signature[2] != 0x34 || loadedTasMovieHeader.signature[3] != 0x1A) {
+    Util::error("Failed to load movie: incorrect signature. Are you sure this is a valid movie?");
+    return false;
   }
 
-  memcpy(&loaded_tas_movie_header, buf, sizeof(TASMovieHeader));
-
-  if (loaded_tas_movie_header.signature[0] != 0x4D || loaded_tas_movie_header.signature[1] != 0x36 || loaded_tas_movie_header.signature[2] != 0x34 || loaded_tas_movie_header.signature[3] != 0x1A) {
-    Util::panic("Failed to load movie: incorrect signature. Are you sure this is a valid movie?");
+  if (loadedTasMovieHeader.version != 3) {
+    Util::error("This movie is version {}: only version 3 is supported.", loadedTasMovieHeader.version);
+    return false;
   }
 
-  if (loaded_tas_movie_header.version != 3) {
-    Util::panic("This movie is version {}: only version 3 is supported.", loaded_tas_movie_header.version);
+  if (loadedTasMovieHeader.startType != 2) {
+    Util::error("Movie start type is {} - only movies with a start type of 2 are supported (start at power on)", loadedTasMovieHeader.startType);
+    return false;
   }
 
-  if (loaded_tas_movie_header.startType != 2) {
-    Util::panic("Movie start type is {} - only movies with a start type of 2 are supported (start at power on)", loaded_tas_movie_header.startType);
+  Util::info("Loaded movie '{}' ", loadedTasMovieHeader.movie_description);
+  Util::info("by {}", loadedTasMovieHeader.author_name);
+  Util::info("{} controller(s) connected", loadedTasMovieHeader.numControllers);
+
+  if (loadedTasMovieHeader.numControllers != 1) {
+    Util::error("Currently, only movies with 1 controller connected are supported.");
+    return false;
   }
 
-  // TODO: check ROM CRC32 here
-
-  Util::info("Loaded movie '{}' ", loaded_tas_movie_header.movie_description);
-  Util::info("by {}", loaded_tas_movie_header.author_name);
-  Util::info("{} controller(s) connected", loaded_tas_movie_header.numControllers);
-
-  if (loaded_tas_movie_header.numControllers != 1) {
-    Util::panic("Currently, only movies with 1 controller connected are supported.");
-  }
-
-  loaded_tas_movie_index = sizeof(TASMovieHeader) - 4; // skip header
+  loadedTasMovieIndex = sizeof(TASMovieHeader) - 4; // skip header
+  return true;
 }
 
-bool TasMovieLoaded() {
-  return loaded_tas_movie != nullptr;
+MupenMovie::MupenMovie(const fs::path &path) {
+  if(!Load(path)) {
+    Util::panic("");
+  }
 }
 
 FORCE_INLINE void LogController(const n64::Controller& controller) {
-  Util::debug("c_right: {}", controller.c_right);
-  Util::debug("c_left: {}", controller.c_left);
-  Util::debug("c_down: {}", controller.c_down);
-  Util::debug("c_up: {}", controller.c_up);
+  Util::debug("c_right: {}", controller.cRight);
+  Util::debug("c_left: {}", controller.cLeft);
+  Util::debug("c_down: {}", controller.cDown);
+  Util::debug("c_up: {}", controller.cUp);
   Util::debug("r: {}", controller.r);
   Util::debug("l: {}", controller.l);
-  Util::debug("dp_right: {}", controller.dp_right);
-  Util::debug("dp_left: {}", controller.dp_left);
-  Util::debug("dp_down: {}", controller.dp_down);
-  Util::debug("dp_up: {}", controller.dp_up);
+  Util::debug("dp_right: {}", controller.dpRight);
+  Util::debug("dp_left: {}", controller.dpLeft);
+  Util::debug("dp_down: {}", controller.dpDown);
+  Util::debug("dp_up: {}", controller.dpUp);
   Util::debug("z: {}", controller.z);
   Util::debug("b: {}", controller.b);
   Util::debug("a: {}", controller.a);
   Util::debug("start: {}", controller.start);
-  Util::debug("joy_x: {}", controller.joy_x);
-  Util::debug("joy_y: {}", controller.joy_y);
+  Util::debug("joy_x: {}", controller.joyX);
+  Util::debug("joy_y: {}", controller.joyY);
 }
 
-n64::Controller TasNextInputs() {
-  if (loaded_tas_movie_index + sizeof(TASMovieControllerData) > loaded_tas_movie_size) {
-    loaded_tas_movie = nullptr;
-    n64::Controller empty_controller{};
-    memset(&empty_controller, 0, sizeof(n64::Controller));
-    return empty_controller;
+n64::Controller MupenMovie::NextInputs() {
+  if (loadedTasMovieIndex + sizeof(TASMovieControllerData) > loadedTasMovie.size()) {
+    loadedTasMovie.clear();
+    n64::Controller emptyController{};
+    return emptyController;
   }
 
-  TASMovieControllerData movie_cdata{};
-  memcpy(&movie_cdata, loaded_tas_movie + loaded_tas_movie_index, sizeof(TASMovieControllerData));
+  TASMovieControllerData movieCData{};
+  memcpy(&movieCData, &loadedTasMovie[loadedTasMovieIndex], sizeof(TASMovieControllerData));
 
-  loaded_tas_movie_index += sizeof(TASMovieControllerData);
+  loadedTasMovieIndex += sizeof(TASMovieControllerData);
 
   n64::Controller controller{};
-  memset(&controller, 0, sizeof(controller));
 
-  controller.c_right = movie_cdata.c_right;
-  controller.c_left = movie_cdata.c_left;
-  controller.c_down = movie_cdata.c_down;
-  controller.c_up = movie_cdata.c_up;
-  controller.r = movie_cdata.r;
-  controller.l = movie_cdata.l;
+  controller.cRight = movieCData.cRight;
+  controller.cLeft = movieCData.cLeft;
+  controller.cDown = movieCData.cDown;
+  controller.cUp = movieCData.cUp;
+  controller.r = movieCData.r;
+  controller.l = movieCData.l;
 
-  controller.dp_right = movie_cdata.dpad_right;
-  controller.dp_left = movie_cdata.dpad_left;
-  controller.dp_down = movie_cdata.dpad_down;
-  controller.dp_up = movie_cdata.dpad_up;
+  controller.dpRight = movieCData.dpadRight;
+  controller.dpLeft = movieCData.dpadLeft;
+  controller.dpDown = movieCData.dpadDown;
+  controller.dpUp = movieCData.dpadUp;
 
-  controller.z = movie_cdata.z;
-  controller.b = movie_cdata.b;
-  controller.a = movie_cdata.a;
-  controller.start = movie_cdata.start;
+  controller.z = movieCData.z;
+  controller.b = movieCData.b;
+  controller.a = movieCData.a;
+  controller.start = movieCData.start;
 
-  controller.joy_x = movie_cdata.analog_x;
-  controller.joy_y = movie_cdata.analog_y;
+  controller.joyX = movieCData.analogX;
+  controller.joyY = movieCData.analogY;
 
   LogController(controller);
 

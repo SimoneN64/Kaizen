@@ -24,6 +24,10 @@ public:
   SettingsWindow* settings;
   bool running = false;
 
+  bool LoadTAS(const fs::path& path) {
+    return core->LoadTAS(path);
+  }
+
   void TogglePause()
   {
     running = !running;

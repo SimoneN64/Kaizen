@@ -1,6 +1,5 @@
 #include <Audio.hpp>
 #include <log.hpp>
-#include <SDL2/SDL.h>
 
 namespace n64 {
 #define AUDIO_SAMPLE_RATE 44100
@@ -8,56 +7,47 @@ namespace n64 {
 #define SYSTEM_SAMPLE_SIZE 4
 #define BYTES_PER_HALF_SECOND (((float)AUDIO_SAMPLE_RATE / 2) * SYSTEM_SAMPLE_SIZE)
 
-static SDL_AudioStream* audioStream = nullptr;
-SDL_mutex* audioStreamMutex;
-SDL_AudioSpec audioSpec;
-SDL_AudioSpec request;
-SDL_AudioDeviceID audioDev{};
-
-#define LockAudioMutex() SDL_LockMutex(audioStreamMutex)
-#define UnlockAudioMutex() SDL_UnlockMutex(audioStreamMutex)
-
-void audioCallback(void*, Uint8* stream, int length) {
+void audioCallback(void* user, Uint8* stream, int length) {
+  auto audioDevice = (AudioDevice*)user;
   int gotten = 0;
-  LockAudioMutex();
-  int available = SDL_AudioStreamAvailable(audioStream);
+  audioDevice->LockMutex();
+  int available = SDL_AudioStreamAvailable(audioDevice->GetStream());
 
   if (available > 0) {
-    gotten = SDL_AudioStreamGet(audioStream, stream, length);
+    gotten = SDL_AudioStreamGet(audioDevice->GetStream(), stream, length);
   }
-  UnlockAudioMutex();
+  audioDevice->UnlockMutex();
 
-  int gotten_samples = (int)(gotten / sizeof(float));
+  int gottenSamples = (int)(gotten / sizeof(float));
   auto* out = (float*)stream;
-  out += gotten_samples;
+  out += gottenSamples;
 
-  for (int i = gotten_samples; i < length / sizeof(float); i++) {
+  for (int i = gottenSamples; i < length / sizeof(float); i++) {
     float sample = 0;
     *out++ = sample;
   }
 }
 
-void InitAudio() {
+AudioDevice::AudioDevice() {
   SDL_InitSubSystem(SDL_INIT_AUDIO);
   AdjustSampleRate(AUDIO_SAMPLE_RATE);
-  memset(&request, 0, sizeof(request));
 
   request.freq = AUDIO_SAMPLE_RATE;
   request.format = SYSTEM_SAMPLE_FORMAT;
   request.channels = 2;
   request.samples = 1024;
   request.callback = audioCallback;
-  request.userdata = nullptr;
+  request.userdata = (void*)this;
 
-  if(!audioDev) {
-    audioDev = SDL_OpenAudioDevice(nullptr, 0, &request, &audioSpec, 0);
+  if(!handle) {
+    handle = SDL_OpenAudioDevice(nullptr, 0, &request, &audioSpec, 0);
   }
 
-  if(!audioDev) {
+  if(!handle) {
     Util::panic("Failed to initialize SDL Audio: {}", SDL_GetError());
   }
 
-  SDL_PauseAudioDevice(audioDev, false);
+  SDL_PauseAudioDevice(handle, false);
 
   audioStreamMutex = SDL_CreateMutex();
 
@@ -66,7 +56,7 @@ void InitAudio() {
   }
 }
 
-void PushSample(float left, float volumeL, float right, float volumeR) {
+void AudioDevice::PushSample(float left, float volumeL, float right, float volumeR) {
   float adjustedL = left * volumeL;
   float adjustedR = right * volumeR;
   float samples[2]{ adjustedL, adjustedR };
@@ -77,12 +67,11 @@ void PushSample(float left, float volumeL, float right, float volumeR) {
   }
 }
 
-void AdjustSampleRate(int sampleRate) {
-  LockAudioMutex();
+void AudioDevice::AdjustSampleRate(int sampleRate) {
+  LockMutex();
   if(audioStream) SDL_FreeAudioStream(audioStream);
 
   audioStream = SDL_NewAudioStream(AUDIO_F32SYS, 2, sampleRate, SYSTEM_SAMPLE_FORMAT, 2, AUDIO_SAMPLE_RATE);
-  UnlockAudioMutex();
+  UnlockMutex();
 }
-
 }

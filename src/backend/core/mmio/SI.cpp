@@ -60,13 +60,13 @@ void SI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       pifAddr = val & 0x1FFFFFFF;
       status.dmaBusy = true;
       toDram = true;
-      scheduler.enqueueRelative(SI_DMA_DELAY, SI_DMA);
+      scheduler.EnqueueRelative(SI_DMA_DELAY, SI_DMA);
     } break;
     case 0x04800010: {
       pifAddr = val & 0x1FFFFFFF;
       status.dmaBusy = true;
       toDram = false;
-      scheduler.enqueueRelative(SI_DMA_DELAY, SI_DMA);
+      scheduler.EnqueueRelative(SI_DMA_DELAY, SI_DMA);
     } break;
     case 0x04800018:
       mem.mmio.mi.InterruptLower(MI::Interrupt::SI);

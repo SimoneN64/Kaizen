@@ -47,13 +47,13 @@ public:
 
 struct Scheduler {
   Scheduler() {
-    enqueueAbsolute(std::numeric_limits<u64>::max(), IMPOSSIBLE);
+    EnqueueAbsolute(std::numeric_limits<u64>::max(), IMPOSSIBLE);
   }
 
-  void enqueueRelative(u64, EventType);
-  void enqueueAbsolute(u64, EventType);
-  u64 remove(EventType);
-  void tick(u64 t, n64::Mem&, n64::Registers&);
+  void EnqueueRelative(u64, EventType);
+  void EnqueueAbsolute(u64, EventType);
+  u64 Remove(EventType);
+  void Tick(u64 t, n64::Mem&, n64::Registers&);
 
   IterableEvents events;
   u64 ticks = 0;

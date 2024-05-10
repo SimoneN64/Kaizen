@@ -15,6 +15,6 @@ struct BaseCPU {
   virtual std::vector<u8> Serialize() = 0;
   virtual void Deserialize(const std::vector<u8>&) = 0;
   Registers regs;
-  Mem mem;
+  Mem mem{regs};
 };
 }

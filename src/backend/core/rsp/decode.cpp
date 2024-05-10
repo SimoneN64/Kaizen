@@ -26,7 +26,7 @@ FORCE_INLINE void special(MI& mi, Registers& regs, RSP& rsp, u32 instr) {
       rsp.steps = 0;
       rsp.spStatus.broke = true;
       if(rsp.spStatus.interruptOnBreak) {
-        InterruptRaise(mi, regs, Interrupt::SP);
+        mi.InterruptRaise(MI::Interrupt::SP);
       }
       break;
     case 0x20: case 0x21:

@@ -17,7 +17,7 @@ void Interpreter::CheckCompareInterrupt() {
   regs.cop0.count &= 0x1FFFFFFFF;
   if(regs.cop0.count == (u64)regs.cop0.compare << 1) {
     regs.cop0.cause.ip7 = 1;
-    UpdateInterrupt(mem.mmio.mi, regs);
+    mem.mmio.mi.UpdateInterrupt();
   }
 }
 

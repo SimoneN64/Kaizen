@@ -8,7 +8,7 @@
 #include <cassert>
 
 namespace n64 {
-Mem::Mem() : flash(saveData) {
+Mem::Mem(Registers& regs) : flash(saveData), mmio(regs) {
   memset(readPages, 0, PAGE_COUNT);
   memset(writePages, 0, PAGE_COUNT);
 

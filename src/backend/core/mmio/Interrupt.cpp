@@ -3,57 +3,58 @@
 #include <core/registers/Registers.hpp>
 
 namespace n64 {
-void InterruptRaise(MI &mi, Registers &regs, Interrupt intr) {
+void MI::InterruptRaise(Interrupt intr) {
   switch(intr) {
     case Interrupt::VI:
-      mi.miIntr.vi = true;
+      miIntr.vi = true;
       break;
     case Interrupt::SI:
-      mi.miIntr.si = true;
+      miIntr.si = true;
       break;
     case Interrupt::PI:
-      mi.miIntr.pi = true;
+      miIntr.pi = true;
       break;
     case Interrupt::AI:
-      mi.miIntr.ai = true;
+      miIntr.ai = true;
       break;
     case Interrupt::DP:
-      mi.miIntr.dp = true;
+      miIntr.dp = true;
       break;
     case Interrupt::SP:
-      mi.miIntr.sp = true;
+      miIntr.sp = true;
       break;
   }
 
-  UpdateInterrupt(mi, regs);
+  UpdateInterrupt();
 }
 
-void InterruptLower(MI &mi, Registers &regs, Interrupt intr) {
+void MI::InterruptLower(Interrupt intr) {
   switch(intr) {
     case Interrupt::VI:
-      mi.miIntr.vi = false;
+      miIntr.vi = false;
       break;
     case Interrupt::SI:
-      mi.miIntr.si = false;
+      miIntr.si = false;
       break;
     case Interrupt::PI:
-      mi.miIntr.pi = false;
+      miIntr.pi = false;
       break;
     case Interrupt::AI:
-      mi.miIntr.ai = false;
+      miIntr.ai = false;
       break;
     case Interrupt::DP:
-      mi.miIntr.dp = false;
+      miIntr.dp = false;
       break;
     case Interrupt::SP:
-      mi.miIntr.sp = false;
+      miIntr.sp = false;
       break;
   }
 
-  UpdateInterrupt(mi, regs);
+  UpdateInterrupt();
 }
-void UpdateInterrupt(MI &mi, Registers &regs) {
-  bool interrupt = mi.miIntr.raw & mi.miIntrMask.raw;
+
+void MI::UpdateInterrupt() {
+  bool interrupt = miIntr.raw & miIntrMask.raw;
   regs.cop0.cause.ip2 = interrupt;
 }
 }

@@ -66,7 +66,7 @@ void Core::Run(float volumeL, float volumeR) {
       mmio.vi.current = (i << 1) + field;
 
       if ((mmio.vi.current & 0x3FE) == mmio.vi.intr) {
-        InterruptRaise(mmio.mi, regs, Interrupt::VI);
+        mmio.mi.InterruptRaise(MI::Interrupt::VI);
       }
 
       for(; cycles < mem.mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
@@ -98,7 +98,7 @@ void Core::Run(float volumeL, float volumeR) {
     }
 
     if ((mmio.vi.current & 0x3FE) == mmio.vi.intr) {
-      InterruptRaise(mmio.mi, regs, Interrupt::VI);
+      mmio.mi.InterruptRaise(MI::Interrupt::VI);
     }
 
     mmio.ai.Step(cpu->mem, regs, frameCycles, volumeL, volumeR);

@@ -474,7 +474,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
     } break;
     case 0x04600010:
       if(val & 2) {
-        InterruptLower(mi, regs, Interrupt::PI);
+        mi.InterruptLower(MI::Interrupt::PI);
       } break;
     case 0x04600014: pi_bsd_dom1_lat = val & 0xff; break;
     case 0x04600018: pi_bsd_dom1_pwd = val & 0xff; break;

@@ -94,9 +94,9 @@ void RSP::WriteStatus(MI& mi, Registers& regs, u32 value) {
   }
   if(write.clearBroke) spStatus.broke = false;
   if(write.clearIntr && !write.setIntr)
-    InterruptLower(mi, regs, Interrupt::SP);
+    mi.InterruptLower(MI::Interrupt::SP);
   if(write.setIntr && !write.clearIntr)
-    InterruptRaise(mi, regs, Interrupt::SP);
+    mi.InterruptRaise(MI::Interrupt::SP);
   CLEAR_SET(spStatus.singleStep, write.clearSstep, write.setSstep);
   CLEAR_SET(spStatus.interruptOnBreak, write.clearIntrOnBreak, write.setIntrOnBreak);
   CLEAR_SET(spStatus.signal0, write.clearSignal0, write.setSignal0);

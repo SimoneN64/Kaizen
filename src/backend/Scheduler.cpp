@@ -37,7 +37,7 @@ void Scheduler::tick(u64 t, n64::Mem& mem, n64::Registers& regs) {
         si.DMA(mem, regs);
         break;
       case PI_DMA_COMPLETE:
-        InterruptRaise(mi, regs, n64::Interrupt::PI);
+        mi.InterruptRaise(n64::MI::Interrupt::PI);
         pi.dmaBusy = false;
         break;
       case PI_BUS_WRITE_COMPLETE:

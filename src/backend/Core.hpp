@@ -11,6 +11,7 @@ struct Core {
   Core();
   void Stop();
   void LoadROM(const std::string&);
+  bool LoadTAS(const fs::path&);
   void Run(float volumeL, float volumeR);
   void Serialize();
   void Deserialize();

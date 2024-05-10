@@ -204,6 +204,6 @@ void RDP::OnFullSync(MI& mi, Registers& regs) {
   dpc.status.pipeBusy = false;
   dpc.status.startGclk = false;
   dpc.status.cbufReady = false;
-  InterruptRaise(mi, regs, Interrupt::DP);
+  mi.InterruptRaise(MI::Interrupt::DP);
 }
 }

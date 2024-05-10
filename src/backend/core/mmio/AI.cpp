@@ -43,7 +43,7 @@ void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
     case 0x04500004: {
       u32 len = (val & 0x3FFFF) & ~7;
       if(dmaCount < 2) {
-        if(dmaCount == 0) InterruptRaise(mem.mmio.mi, regs, Interrupt::AI);
+        if(dmaCount == 0) mem.mmio.mi.InterruptRaise(MI::Interrupt::AI);
         dmaLen[dmaCount] = len;
         dmaCount++;
       }
@@ -52,7 +52,7 @@ void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       dmaEnable = val & 1;
       break;
     case 0x0450000C:
-      InterruptLower(mem.mmio.mi, regs, Interrupt::AI);
+      mem.mmio.mi.InterruptLower(MI::Interrupt::AI);
       break;
     case 0x04500010: {
       u32 oldDacFreq = dac.freq;
@@ -97,7 +97,7 @@ void AI::Step(Mem& mem, Registers& regs, u32 cpuCycles, float volumeL, float vol
 
     if(!dmaLen[0]) {
       if(--dmaCount > 0) {
-        InterruptRaise(mem.mmio.mi, regs, Interrupt::AI);
+        mem.mmio.mi.InterruptRaise(MI::Interrupt::AI);
         dmaAddr[0] = dmaAddr[1];
         dmaLen[0] = dmaLen[1];
       }

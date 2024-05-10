@@ -6,7 +6,7 @@
 #define MI_VERSION_REG 0x02020102
 
 namespace n64 {
-MI::MI() {
+MI::MI(Registers& regs) : regs(regs) {
   Reset();
 }
 
@@ -49,7 +49,7 @@ void MI::Write(Registers& regs, u32 paddr, u32 val) {
       }
 
       if (val & (1 << 11)) {
-        InterruptLower(*this, regs, Interrupt::DP);
+        InterruptLower(Interrupt::DP);
       }
 
       if (val & (1 << 12)) {
@@ -75,7 +75,7 @@ void MI::Write(Registers& regs, u32 paddr, u32 val) {
         }
       }
 
-      UpdateInterrupt(*this, regs);
+      UpdateInterrupt();
       break;
     default:
       Util::panic("Unhandled MI[{:08X}] write ({:08X})", val, paddr);

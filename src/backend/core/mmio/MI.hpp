@@ -19,12 +19,20 @@ union MIIntr {
 struct Registers;
 
 struct MI {
-  MI();
+  enum class Interrupt : u8 {
+    VI, SI, PI, AI, DP, SP
+  };
+
+  MI(Registers&);
   void Reset();
   [[nodiscard]] auto Read(u32) const -> u32;
   void Write(Registers& regs, u32, u32);
+  void InterruptRaise(Interrupt intr);
+  void InterruptLower(Interrupt intr);
+  void UpdateInterrupt();
 
   u32 miMode{};
   MIIntr miIntr{}, miIntrMask{};
+  Registers& regs;
 };
 }

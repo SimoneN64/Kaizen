@@ -48,7 +48,7 @@ void SI::DMA(Mem& mem, Registers& regs) const {
     Util::trace("SI DMA from RDRAM to PIF RAM ({:08X} to {:08X})", si.dramAddr, si.pifAddr);
     si.pif.ProcessCommands(mem);
   }
-  InterruptRaise(mem.mmio.mi, regs, Interrupt::SI);
+  mem.mmio.mi.InterruptRaise(MI::Interrupt::SI);
 }
 
 void SI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
@@ -69,7 +69,7 @@ void SI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       scheduler.enqueueRelative(SI_DMA_DELAY, SI_DMA);
     } break;
     case 0x04800018:
-      InterruptLower(mem.mmio.mi, regs, Interrupt::SI);
+      mem.mmio.mi.InterruptLower(MI::Interrupt::SI);
       break;
     default:
       Util::panic("Unhandled SI[{:08X}] write ({:08X})", addr, val);

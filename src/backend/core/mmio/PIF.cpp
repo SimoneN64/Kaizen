@@ -60,7 +60,7 @@ void PIF::MaybeLoadMempak() {
   }
 }
 
-FORCE_INLINE size_t getSaveSize(SaveType saveType) {
+FORCE_INLINE size_t GetSaveSize(SaveType saveType) {
   switch (saveType) {
     case SAVE_NONE:
       return 0;
@@ -87,7 +87,7 @@ void PIF::LoadEeprom(SaveType saveType, const std::string& path) {
       eeprom.unmap();
     }
 
-    eepromSize = getSaveSize(saveType);
+    eepromSize = GetSaveSize(saveType);
     FILE *f = fopen(eepromPath.c_str(), "rb");
     if (!f) {
       f = fopen(eepromPath.c_str(), "wb");
@@ -133,11 +133,11 @@ void PIF::CICChallenge() {
   }
 }
 
-FORCE_INLINE u8 data_crc(const u8* data) {
+FORCE_INLINE u8 DataCRC(const u8* data) {
   u8 crc = 0;
   for (int i = 0; i <= 32; i++) {
     for (int j = 7; j >= 0; j--) {
-      u8 xor_val = ((crc & 0x80) != 0) ? 0x85 : 0x00;
+      u8 xorVal = ((crc & 0x80) != 0) ? 0x85 : 0x00;
 
       crc <<= 1;
       if (i < 32) {
@@ -146,7 +146,7 @@ FORCE_INLINE u8 data_crc(const u8* data) {
         }
       }
 
-      crc ^= xor_val;
+      crc ^= xorVal;
     }
   }
 
@@ -260,7 +260,7 @@ void PIF::MempakRead(const u8* cmd, u8* res) {
   // offset must be 32-byte aligned
   offset &= ~0x1F;
 
-  switch (getAccessoryType()) {
+  switch (GetAccessoryType()) {
     case ACCESSORY_NONE:
       break;
     case ACCESSORY_MEMPACK:
@@ -274,7 +274,7 @@ void PIF::MempakRead(const u8* cmd, u8* res) {
   }
 
   // CRC byte
-  res[32] = data_crc(res);
+  res[32] = DataCRC(res);
 }
 
 void PIF::MempakWrite(u8* cmd, u8* res) {
@@ -288,7 +288,7 @@ void PIF::MempakWrite(u8* cmd, u8* res) {
   // offset must be 32-byte aligned
   offset &= ~0x1F;
 
-  switch (getAccessoryType()) {
+  switch (GetAccessoryType()) {
     case ACCESSORY_NONE:
       break;
     case ACCESSORY_MEMPACK:
@@ -299,14 +299,14 @@ void PIF::MempakWrite(u8* cmd, u8* res) {
     case ACCESSORY_RUMBLE_PACK: break;
   }
   // CRC byte
-  res[0] = data_crc(&cmd[5]);
+  res[0] = DataCRC(&cmd[5]);
 }
 
 void PIF::EepromRead(const u8* cmd, u8* res, const Mem& mem) const {
   assert(mem.saveType == SAVE_EEPROM_4k || mem.saveType == SAVE_EEPROM_16k);
   if (channel == 4) {
     u8 offset = cmd[3];
-    if ((offset * 8) >= getSaveSize(mem.saveType)) {
+    if ((offset * 8) >= GetSaveSize(mem.saveType)) {
       Util::panic("Out of range EEPROM read! offset: {:02X}", offset);
     }
 
@@ -320,7 +320,7 @@ void PIF::EepromWrite(const u8* cmd, u8* res, const Mem& mem) {
   assert(mem.saveType == SAVE_EEPROM_4k || mem.saveType == SAVE_EEPROM_16k);
   if (channel == 4) {
     u8 offset = cmd[3];
-    if ((offset * 8) >= getSaveSize(mem.saveType)) {
+    if ((offset * 8) >= GetSaveSize(mem.saveType)) {
       Util::panic("Out of range EEPROM write! offset: {:02X}", offset);
     }
 

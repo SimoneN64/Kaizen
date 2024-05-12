@@ -3,23 +3,23 @@
 #include <log.hpp>
 
 namespace n64 {
-void Cop0::mtc0(Registers& regs, u32 instr) {
+void Cop0::mtc0(u32 instr) {
   SetReg32(RD(instr), regs.gpr[RT(instr)]);
 }
 
-void Cop0::dmtc0(Registers& regs, u32 instr) {
+void Cop0::dmtc0(u32 instr) {
   SetReg64(RD(instr), regs.gpr[RT(instr)]);
 }
 
-void Cop0::mfc0(Registers& regs, u32 instr) {
+void Cop0::mfc0(u32 instr) {
   regs.gpr[RT(instr)] = s32(GetReg32(RD(instr)));
 }
 
-void Cop0::dmfc0(Registers& regs, u32 instr) const {
+void Cop0::dmfc0(u32 instr) const {
   regs.gpr[RT(instr)] = s64(GetReg64(RD(instr)));
 }
 
-void Cop0::eret(Registers& regs) {
+void Cop0::eret() {
   if(status.erl) {
     regs.SetPC64(ErrorEPC);
     status.erl = false;
@@ -69,9 +69,9 @@ void Cop0::tlbw(int index_) {
   tlb[index_].initialized = true;
 }
 
-void Cop0::tlbp(Registers& regs) {
+void Cop0::tlbp() {
   int match = -1;
-  TLBEntry* entry = TLBTryMatch(regs, entryHi.raw, &match);
+  TLBEntry* entry = TLBTryMatch(entryHi.raw, &match);
   if(entry && match >= 0) {
     index.raw = match;
   } else {

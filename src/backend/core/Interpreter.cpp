@@ -28,22 +28,22 @@ int Interpreter::Step() {
   regs.delaySlot = false;
 
   if(check_address_error(0b11, u64(regs.pc))) [[unlikely]] {
-    HandleTLBException(regs, regs.pc);
-    FireException(regs, ExceptionCode::AddressErrorLoad, 0, regs.pc);
+    regs.cop0.HandleTLBException(regs.pc);
+    regs.cop0.FireException(ExceptionCode::AddressErrorLoad, 0, regs.pc);
     return 1;
   }
 
   u32 paddr = 0;
-  if(!MapVAddr(regs, LOAD, regs.pc, paddr)) {
-    HandleTLBException(regs, regs.pc);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.pc);
+  if(!regs.cop0.MapVAddr(Cop0::LOAD, regs.pc, paddr)) {
+    regs.cop0.HandleTLBException(regs.pc);
+    regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.pc);
     return 1;
   }
 
   u32 instruction = mem.Read<u32>(regs, paddr);
 
   if(ShouldServiceInterrupt()) {
-    FireException(regs, ExceptionCode::Interrupt, 0, regs.pc);
+    regs.cop0.FireException(ExceptionCode::Interrupt, 0, regs.pc);
     return 1;
   }
 

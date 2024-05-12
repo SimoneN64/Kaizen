@@ -58,7 +58,7 @@ FORCE_INLINE bool FireFPUException(Registers& regs) {
   FCR31& fcr31 = regs.cop1.fcr31;
   u32 enable = fcr31.enable | (1 << 5);
   if(fcr31.cause & enable) {
-    FireException(regs, ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return true;
   }
 
@@ -982,9 +982,9 @@ void Cop1::lwc1Interp(Registers& regs, Mem& mem, u32 instr) {
   u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
 
   u32 physical;
-  if(!MapVAddr(regs, LOAD, addr, physical)) {
-    HandleTLBException(regs, addr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
+  if(!regs.cop0.MapVAddr(Cop0::LOAD, addr, physical)) {
+    regs.cop0.HandleTLBException(addr);
+    regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.oldPC);
   } else {
     u32 data = mem.Read<u32>(regs, physical);
     FGR<u32>(regs.cop0.status, FT(instr)) = data;
@@ -995,9 +995,9 @@ void Cop1::swc1Interp(Registers& regs, Mem& mem, u32 instr) {
   u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
 
   u32 physical;
-  if(!MapVAddr(regs, STORE, addr, physical)) {
-    HandleTLBException(regs, addr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
+  if(!regs.cop0.MapVAddr(Cop0::STORE, addr, physical)) {
+    regs.cop0.HandleTLBException(addr);
+    regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::STORE), 0, regs.oldPC);
   } else {
     mem.Write<u32>(regs, physical, FGR<u32>(regs.cop0.status, FT(instr)));
   }
@@ -1013,9 +1013,9 @@ void Cop1::ldc1Interp(Registers& regs, Mem& mem, u32 instr) {
   u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
 
   u32 physical;
-  if(!MapVAddr(regs, LOAD, addr, physical)) {
-    HandleTLBException(regs, addr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, LOAD), 0, regs.oldPC);
+  if(!regs.cop0.MapVAddr(Cop0::LOAD, addr, physical)) {
+    regs.cop0.HandleTLBException(addr);
+    regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.oldPC);
   } else {
     u64 data = mem.Read<u64>(regs, physical);
     FGR<u64>(regs.cop0.status, FT(instr)) = data;
@@ -1026,9 +1026,9 @@ void Cop1::sdc1Interp(Registers& regs, Mem& mem, u32 instr) {
   u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
 
   u32 physical;
-  if(!MapVAddr(regs, STORE, addr, physical)) {
-    HandleTLBException(regs, addr);
-    FireException(regs, GetTLBExceptionCode(regs.cop0.tlbError, STORE), 0, regs.oldPC);
+  if(!regs.cop0.MapVAddr(Cop0::STORE, addr, physical)) {
+    regs.cop0.HandleTLBException(addr);
+    regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::STORE), 0, regs.oldPC);
   } else {
     mem.Write(regs, physical, FGR<u64>(regs.cop0.status, FT(instr)));
   }

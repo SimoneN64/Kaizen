@@ -189,8 +189,6 @@ enum class ExceptionCode : u8 {
   Watch = 23
 };
 
-void FireException(Registers& regs, ExceptionCode code, int cop, s64 pc);
-
 union Cop0Context {
   u64 raw;
   struct {
@@ -211,7 +209,7 @@ union Cop0XContext {
 };
 
 struct Cop0 {
-  Cop0();
+  Cop0(Registers&);
 
   u32 GetReg32(u8);
   [[nodiscard]] u64 GetReg64(u8) const;
@@ -221,10 +219,10 @@ struct Cop0 {
 
   void Reset();
 
-  bool kernel_mode{true};
-  bool supervisor_mode{false};
-  bool user_mode{false};
-  bool is_64bit_addressing{false};
+  bool kernelMode{true};
+  bool supervisorMode{false};
+  bool userMode{false};
+  bool is64BitAddressing{false};
   bool llbit{};
 
   PageMask pageMask{};
@@ -267,47 +265,45 @@ struct Cop0 {
   FORCE_INLINE void Update() {
     bool exception = status.exl || status.erl;
 
-    kernel_mode     =  exception || status.ksu == 0;
-    supervisor_mode = !exception && status.ksu == 1;
-    user_mode       = !exception && status.ksu == 2;
-    is_64bit_addressing =
-      (kernel_mode && status.kx)
-      || (supervisor_mode && status.sx)
-      || (user_mode && status.ux);
+    kernelMode     =  exception || status.ksu == 0;
+    supervisorMode = !exception && status.ksu == 1;
+    userMode       = !exception && status.ksu == 2;
+    is64BitAddressing =
+      (kernelMode && status.kx)
+      || (supervisorMode && status.sx)
+      || (userMode && status.ux);
   }
+
+  enum TLBAccessType {
+    LOAD, STORE
+  };
+
+  bool ProbeTLB(TLBAccessType access_type, u64 vaddr, u32& paddr, int* match);
+  void FireException(ExceptionCode code, int cop, s64 pc);
+  bool MapVAddr(TLBAccessType accessType, u64 vaddr, u32& paddr);
+  bool UserMapVAddr32(TLBAccessType accessType, u64 vaddr, u32& paddr);
+  bool MapVAddr32(TLBAccessType accessType, u64 vaddr, u32& paddr);
+  bool UserMapVAddr64(TLBAccessType accessType, u64 vaddr, u32& paddr);
+  bool MapVAddr64(TLBAccessType accessType, u64 vaddr, u32& paddr);
+
+  TLBEntry* TLBTryMatch(u64 vaddr, int* match);
+  void HandleTLBException(u64 vaddr);
+  ExceptionCode GetTLBExceptionCode(TLBError error, TLBAccessType access_type);
 private:
+  Registers& regs;
   [[nodiscard]] FORCE_INLINE u32 GetWired() const { return wired & 0x3F; }
   [[nodiscard]] FORCE_INLINE u32 GetCount() const { return u32(u64(count >> 1)); }
 
-  void decodeInterp(Registers&, u32);
+  void decodeInterp(u32);
   void decodeJIT(JIT&, u32);
-  void mtc0(Registers&, u32);
-  void dmtc0(Registers&, u32);
-  void mfc0(Registers&, u32);
-  void dmfc0(Registers&, u32) const;
-  void eret(Registers&);
+  void mtc0(u32);
+  void dmtc0(u32);
+  void mfc0(u32);
+  void dmfc0(u32) const;
+  void eret();
 
   void tlbr();
   void tlbw(int);
-  void tlbp(n64::Registers&);
+  void tlbp();
 };
-
-struct Registers;
-enum class ExceptionCode : u8;
-
-enum TLBAccessType {
-  LOAD, STORE
-};
-
-bool ProbeTLB(Registers& regs, TLBAccessType access_type, u64 vaddr, u32& paddr, int* match);
-
-bool MapVAddr(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr);
-bool UserMapVAddr32(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr);
-bool MapVAddr32(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr);
-bool UserMapVAddr64(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr);
-bool MapVAddr64(Registers& regs, TLBAccessType accessType, u64 vaddr, u32& paddr);
-
-TLBEntry* TLBTryMatch(Registers& regs, u64 vaddr, int* match);
-void HandleTLBException(Registers& regs, u64 vaddr);
-ExceptionCode GetTLBExceptionCode(TLBError error, TLBAccessType access_type);
 }

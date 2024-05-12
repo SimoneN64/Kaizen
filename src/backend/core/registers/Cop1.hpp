@@ -89,7 +89,7 @@ struct JIT;
 struct Registers;
 
 struct Cop1 {
-#define CheckFPUUsable_PreserveCause() do { if(!regs.cop0.status.cu1) { FireException(regs, ExceptionCode::CoprocessorUnusable, 1, regs.oldPC); return; } } while(0)
+#define CheckFPUUsable_PreserveCause() do { if(!regs.cop0.status.cu1) { regs.cop0.FireException(ExceptionCode::CoprocessorUnusable, 1, regs.oldPC); return; } } while(0)
 #define CheckFPUUsable() do { CheckFPUUsable_PreserveCause(); regs.cop1.fcr31.cause = 0; } while(0)
   Cop1();
   u32 fcr0{};

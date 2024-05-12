@@ -191,7 +191,7 @@ struct PIF {
     ram[addr & PIF_RAM_DSIZE] = val;
   }
 
-  FORCE_INLINE AccessoryType getAccessoryType() const {
+  FORCE_INLINE AccessoryType GetAccessoryType() const {
     if (channel >= 4 || joybusDevices[channel].type != JOYBUS_CONTROLLER) {
       return ACCESSORY_NONE;
     } else {

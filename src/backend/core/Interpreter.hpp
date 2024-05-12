@@ -12,7 +12,7 @@ struct Interpreter : BaseCPU {
 private:
   u64 cop2Latch{};
   friend struct Cop1;
-#define check_address_error(mask, vaddr) (((!regs.cop0.is_64bit_addressing) && (s32)(vaddr) != (vaddr)) || (((vaddr) & (mask)) != 0))
+#define check_address_error(mask, vaddr) (((!regs.cop0.is64BitAddressing) && (s32)(vaddr) != (vaddr)) || (((vaddr) & (mask)) != 0))
   bool ShouldServiceInterrupt() override;
   void CheckCompareInterrupt() override;
   std::vector<u8> Serialize() override;

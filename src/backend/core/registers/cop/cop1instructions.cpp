@@ -915,9 +915,8 @@ void Cop1::truncld(u32 instr) {
 template<class T>
 void Cop1::lwc1(T &cpu, Mem &mem, u32 instr) {
   if constexpr(std::is_same_v<decltype(cpu), Interpreter&>) {
-    Registers& regs = cpu.regs;
     CheckFPUUsable_PreserveCause();
-    lwc1Interp(cpu.regs, mem, instr);
+    lwc1Interp(mem, instr);
   } else if constexpr (std::is_same_v<decltype(cpu), JIT&>) {
     lwc1JIT(cpu, mem, instr);
   } else {
@@ -931,9 +930,8 @@ template void Cop1::lwc1<JIT>(JIT&, Mem&, u32);
 template<class T>
 void Cop1::swc1(T &cpu, Mem &mem, u32 instr) {
   if constexpr(std::is_same_v<decltype(cpu), Interpreter&>) {
-    Registers& regs = cpu.regs;
     CheckFPUUsable_PreserveCause();
-    swc1Interp(cpu.regs, mem, instr);
+    swc1Interp(mem, instr);
   } else if constexpr (std::is_same_v<decltype(cpu), JIT&>) {
     swc1JIT(cpu, mem, instr);
   } else {
@@ -947,9 +945,8 @@ template void Cop1::swc1<JIT>(JIT&, Mem&, u32);
 template<class T>
 void Cop1::ldc1(T &cpu, Mem &mem, u32 instr) {
   if constexpr(std::is_same_v<decltype(cpu), Interpreter&>) {
-    Registers& regs = cpu.regs;
     CheckFPUUsable_PreserveCause();
-    ldc1Interp(cpu.regs, mem, instr);
+    ldc1Interp(mem, instr);
   } else if constexpr (std::is_same_v<decltype(cpu), JIT&>) {
     ldc1JIT(cpu, mem, instr);
   } else {
@@ -963,9 +960,8 @@ template void Cop1::ldc1<JIT>(JIT&, Mem&, u32);
 template<class T>
 void Cop1::sdc1(T &cpu, Mem &mem, u32 instr) {
   if constexpr(std::is_same_v<decltype(cpu), Interpreter&>) {
-    Registers& regs = cpu.regs;
     CheckFPUUsable_PreserveCause();
-    sdc1Interp(cpu.regs, mem, instr);
+    sdc1Interp(mem, instr);
   } else if constexpr (std::is_same_v<decltype(cpu), JIT&>) {
     sdc1JIT(cpu, mem, instr);
   } else {

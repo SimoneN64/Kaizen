@@ -8,7 +8,7 @@ EmuThread::EmuThread(std::unique_ptr<QtInstanceFactory>&& instance, std::unique_
 
 [[noreturn]] void EmuThread::run() noexcept {
   LoadWSIPlatform(instance.get(), std::move(wsiPlatform), std::move(windowInfo));
-  LoadParallelRDP(core->cpu->mem.GetRDRAM());
+  LoadParallelRDP(core->cpu->mem.GetRDRAMPtr());
 
   while (true) {
     if (!core->pause) {

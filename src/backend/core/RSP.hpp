@@ -4,6 +4,7 @@
 #include <MemoryRegions.hpp>
 #include <MemoryHelpers.hpp>
 #include <Interrupt.hpp>
+#include <array>
 
 #define RSP_BYTE(addr) (dmem[BYTE_ADDRESS(addr) & 0xFFF])
 #define GET_RSP_HALF(addr) ((RSP_BYTE(addr) << 8) | RSP_BYTE((addr) + 1))
@@ -134,7 +135,8 @@ struct RSP {
   SPDMASPAddr lastSuccessfulSPAddr{};
   SPDMADRAMAddr lastSuccessfulDRAMAddr{};
   SPDMALen spDMALen{};
-  u8 dmem[DMEM_SIZE]{}, imem[IMEM_SIZE]{};
+  std::array<u8, DMEM_SIZE> dmem{};
+  std::array<u8, IMEM_SIZE> imem{};
   VPR vpr[32]{};
   s32 gpr[32]{};
   VPR vce{};
@@ -356,31 +358,50 @@ struct RSP {
   void mfc2(u32 instr);
   void mtc2(u32 instr);
 
-  template <bool isDRAMdest>
-  FORCE_INLINE void DMA(SPDMALen len, u8* rdram, RSP& rsp, bool bank) {
+  FORCE_INLINE void DMAtoRDRAM(SPDMALen len, std::vector<u8>& rdram, RSP& rsp, bool bank) {
     u32 length = len.len + 1;
 
     length = (length + 0x7) & ~0x7;
 
-    u8* dst, *src;
-    if constexpr (isDRAMdest) {
-      dst = rdram;
-      src = bank ? rsp.imem : rsp.dmem;
-    } else {
-      src = rdram;
-      dst = bank ? rsp.imem : rsp.dmem;
-    }
+    std::vector<u8>& dst = rdram;
+    std::array<u8, DMEM_SIZE>& src = bank ? rsp.imem : rsp.dmem;
 
     u32 mem_address = rsp.spDMASPAddr.address & 0xFF8;
     u32 dram_address = rsp.spDMADRAMAddr.address & 0xFFFFF8;
 
     for (u32 i = 0; i < len.count + 1; i++) {
       for(u32 j = 0; j < length; j++) {
-        if constexpr (isDRAMdest) {
-          dst[dram_address + j] = src[(mem_address + j) & 0xFFF];
-        } else {
-          dst[(mem_address + j) & 0xFFF] = src[dram_address + j];
-        }
+        dst[dram_address + j] = src[(mem_address + j) & 0xFFF];
+      }
+
+      int skip = i == len.count ? 0 : len.skip;
+
+      dram_address += (length + skip);
+      dram_address &= 0xFFFFF8;
+      mem_address += length;
+      mem_address &= 0xFF8;
+    }
+
+    rsp.lastSuccessfulSPAddr.address = mem_address;
+    rsp.lastSuccessfulSPAddr.bank = bank;
+    rsp.lastSuccessfulDRAMAddr.address = dram_address;
+    rsp.spDMALen.raw = 0xFF8 | (rsp.spDMALen.skip << 20);
+  }
+
+  FORCE_INLINE void DMAtoRSP(SPDMALen len, std::vector<u8>& rdram, RSP& rsp, bool bank) {
+    u32 length = len.len + 1;
+
+    length = (length + 0x7) & ~0x7;
+
+    std::vector<u8>& src = rdram;
+    std::array<u8, DMEM_SIZE>& dst = bank ? rsp.imem : rsp.dmem;
+
+    u32 mem_address = rsp.spDMASPAddr.address & 0xFF8;
+    u32 dram_address = rsp.spDMADRAMAddr.address & 0xFFFFF8;
+
+    for (u32 i = 0; i < len.count + 1; i++) {
+      for(u32 j = 0; j < length; j++) {
+        dst[(mem_address + j) & 0xFFF] = src[dram_address + j];
       }
 
       int skip = i == len.count ? 0 : len.skip;

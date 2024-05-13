@@ -19,11 +19,12 @@ Mem::Mem(Registers& regs) : flash(saveData), mmio(*this, regs) {
     writePages[i] = pointer;
   }
 
-  rom.cart = (u8*)calloc(CART_SIZE, 1);
+  rom.cart.resize(CART_SIZE);
+  std::fill(rom.cart.begin(), rom.cart.end(), 0);
 }
 
 void Mem::Reset() {
-  memset(rom.cart, 0, CART_SIZE);
+  std::fill(rom.cart.begin(), rom.cart.end(), 0);
   flash.Reset();
   if (saveData.is_mapped()) {
     std::error_code error;
@@ -46,9 +47,7 @@ void Mem::LoadSRAM(SaveType save_type, fs::path path) {
 
     FILE *f = fopen(sramPath.c_str(), "rb");
     if (!f) {
-      f = fopen(sramPath.c_str(), "wb");
-      u8* dummy = (u8*)calloc(SRAM_SIZE, 1);
-      fwrite(dummy, 1, SRAM_SIZE, f);
+      Util::panic("Could not open {}", sramPath);
     }
 
     fseek(f, 0, SEEK_END);
@@ -60,7 +59,7 @@ void Mem::LoadSRAM(SaveType save_type, fs::path path) {
     fclose(f);
     saveData = mio::make_mmap_sink(
       sramPath, 0, mio::map_entire_file, error);
-    if (error) { Util::panic("Could not open {}", sramPath); }
+    if (error) { Util::panic("Could not mmap {}", sramPath); }
   }
 }
 
@@ -99,13 +98,13 @@ std::vector<u8> Mem::OpenArchive(const std::string &path, size_t& sizeAdjusted) 
 
   std::vector<u8> buf{};
 
-  std::string rom_exts[] = {".n64",".z64",".v64",".N64",".Z64",".V64"};
+  std::vector<std::string> rom_exts{".n64",".z64",".v64",".N64",".Z64",".V64"};
 
   while(ar_parse_entry(archive)) {
     auto filename = ar_entry_get_name(archive);
     auto extension = fs::path(filename).extension();
 
-    if(std::any_of(std::begin(rom_exts), std::end(rom_exts), [&](auto x) {
+    if(std::any_of(rom_exts.begin(), rom_exts.end(), [&](auto x) {
       return extension == x;
     })) {
       auto size = ar_entry_get_size(archive);
@@ -133,27 +132,23 @@ std::vector<u8> Mem::OpenROM(const std::string& filename, size_t& sizeAdjusted) 
 
 void Mem::LoadROM(bool isArchive, const std::string& filename) {
   size_t sizeAdjusted;
-  u8* buf;
-  std::vector<u8> temp{};
-  if(isArchive) {
-    temp = OpenArchive(filename, sizeAdjusted);
-  } else {
-    temp = OpenROM(filename, sizeAdjusted);
+  u32 endianness;
+  {
+    std::vector<u8> buf{};
+    if (isArchive) {
+      buf = OpenArchive(filename, sizeAdjusted);
+    } else {
+      buf = OpenROM(filename, sizeAdjusted);
+    }
+
+    endianness = be32toh(*reinterpret_cast<u32*>(buf.data()));
+    Util::SwapN64Rom<true>(buf, endianness);
+
+    std::copy(buf.begin(), buf.end(), rom.cart.begin());
+    rom.mask = sizeAdjusted - 1;
+    memcpy(&rom.header, buf.data(), sizeof(ROMHeader));
   }
-
-  buf = (u8*)calloc(sizeAdjusted, 1);
-  std::copy(temp.begin(), temp.end(), buf);
-
-  u32 endianness = be32toh(*reinterpret_cast<u32*>(buf));
-  Util::SwapN64Rom<true>(sizeAdjusted, buf, endianness);
-
-  memcpy(rom.cart, buf, sizeAdjusted);
-  rom.size = sizeAdjusted;
-  rom.mask = sizeAdjusted - 1;
-  memcpy(&rom.header, buf, sizeof(ROMHeader));
   memcpy(rom.gameNameCart, rom.header.imageName, sizeof(rom.header.imageName));
-
-  free(buf);
 
   rom.header.clockRate = be32toh(rom.header.clockRate);
   rom.header.programCounter = be32toh(rom.header.programCounter);
@@ -176,8 +171,8 @@ void Mem::LoadROM(bool isArchive, const std::string& filename) {
 
   u32 checksum = Util::crc32(0, &rom.cart[0x40], 0x9c0);
   SetROMCIC(checksum, rom);
-  endianness = be32toh(*reinterpret_cast<u32*>(rom.cart));
-  Util::SwapN64Rom(sizeAdjusted, rom.cart, endianness);
+  endianness = be32toh(*reinterpret_cast<u32*>(rom.cart.data()));
+  Util::SwapN64Rom(rom.cart, endianness);
   rom.pal = IsROMPAL();
 }
 
@@ -194,13 +189,8 @@ template<> u8 Mem::Read(n64::Registers &regs, u32 paddr) {
       case RDRAM_REGION:
         return mmio.rdp.rdram[BYTE_ADDRESS(paddr)];
       case RSP_MEM_REGION: {
-        u32 mirrAddr = paddr & 0x1FFF;
-        if(mirrAddr & 0x1000) {
-          mirrAddr -= 0x1000;
-          return mmio.rsp.imem[BYTE_ADDRESS(mirrAddr)];
-        } else {
-          return mmio.rsp.dmem[BYTE_ADDRESS(mirrAddr)];
-        }
+        auto& src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+        return src[BYTE_ADDRESS(paddr & 0xfff)];
       }
       case REGION_CART:
         return mmio.pi.BusRead<u8, false>(*this, paddr);
@@ -242,13 +232,8 @@ template<> u16 Mem::Read(n64::Registers &regs, u32 paddr) {
       case RDRAM_REGION:
         return Util::ReadAccess<u16>(mmio.rdp.rdram, HALF_ADDRESS(paddr));
       case RSP_MEM_REGION: {
-        u32 mirrAddr = paddr & 0x1FFF;
-        if(mirrAddr & 0x1000) {
-          mirrAddr -= 0x1000;
-          return Util::ReadAccess<u16>(mmio.rsp.imem, HALF_ADDRESS(mirrAddr));
-        } else {
-          return Util::ReadAccess<u16>(mmio.rsp.dmem, HALF_ADDRESS(mirrAddr));
-        }
+        auto& src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+        return Util::ReadAccess<u16>(src, HALF_ADDRESS(paddr & 0xfff));
       }
       case MMIO_REGION:
         return mmio.Read(paddr);
@@ -282,13 +267,8 @@ template<> u32 Mem::Read(n64::Registers &regs, u32 paddr) {
       case RDRAM_REGION:
         return Util::ReadAccess<u32>(mmio.rdp.rdram, paddr);
       case RSP_MEM_REGION: {
-        u32 mirrAddr = paddr & 0x1FFF;
-        if(mirrAddr & 0x1000) {
-          mirrAddr -= 0x1000;
-          return Util::ReadAccess<u32>(mmio.rsp.imem, mirrAddr);
-        } else {
-          return Util::ReadAccess<u32>(mmio.rsp.dmem, mirrAddr);
-        }
+        auto& src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+        return Util::ReadAccess<u32>(src, paddr & 0xfff);
       }
       case MMIO_REGION:
         return mmio.Read(paddr);
@@ -319,13 +299,8 @@ template<> u64 Mem::Read(n64::Registers &regs, u32 paddr) {
       case RDRAM_REGION:
         return Util::ReadAccess<u64>(mmio.rdp.rdram, paddr);
       case RSP_MEM_REGION: {
-        u32 mirrAddr = paddr & 0x1FFF;
-        if(mirrAddr & 0x1000) {
-          mirrAddr -= 0x1000;
-          return Util::ReadAccess<u64>(mmio.rsp.imem, mirrAddr);
-        } else {
-          return Util::ReadAccess<u64>(mmio.rsp.dmem, mirrAddr);
-        }
+        auto& src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+        return Util::ReadAccess<u64>(src, paddr & 0xfff);
       }
       case MMIO_REGION:
         return mmio.Read(paddr);
@@ -360,14 +335,10 @@ template<> void Mem::Write<u8>(Registers& regs, u32 paddr, u32 val) {
         mmio.rdp.rdram[BYTE_ADDRESS(paddr)] = val;
         break;
       case RSP_MEM_REGION: {
-        u32 mirrAddr = paddr & 0x1FFF;
-        val = val << (8 * (3 - (mirrAddr & 3)));
-        mirrAddr = (mirrAddr & 0xFFF) & ~3;
-        if(mirrAddr & 0x1000) {
-          Util::WriteAccess<u32>(mmio.rsp.imem, mirrAddr, val);
-        } else {
-          Util::WriteAccess<u32>(mmio.rsp.dmem, mirrAddr, val);
-        }
+        val = val << (8 * (3 - (paddr & 3)));
+        auto& dest = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+        paddr = (paddr & 0xFFF) & ~3;
+        Util::WriteAccess<u32>(dest, paddr, val);
       } break;
       case REGION_CART:
         Util::trace("BusWrite<u8> @ {:08X} = {:02X}", paddr, val);
@@ -409,14 +380,10 @@ template<> void Mem::Write<u16>(Registers& regs, u32 paddr, u32 val) {
         Util::WriteAccess<u16>(mmio.rdp.rdram, HALF_ADDRESS(paddr), val);
         break;
       case RSP_MEM_REGION: {
-        u32 mirrAddr = paddr & 0x1FFF;
-        val = val << (16 * !(mirrAddr & 2));
-        mirrAddr = (mirrAddr & 0xFFF) & ~3;
-        if(mirrAddr & 0x1000) {
-          Util::WriteAccess<u32>(mmio.rsp.imem, mirrAddr, val);
-        } else {
-          Util::WriteAccess<u32>(mmio.rsp.dmem, mirrAddr, val);
-        }
+        val = val << (16 * !(paddr & 2));
+        auto& dest = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+        paddr = (paddr & 0xFFF) & ~3;
+        Util::WriteAccess<u32>(dest, paddr, val);
       } break;
       case REGION_CART:
         Util::trace("BusWrite<u8> @ {:08X} = {:04X}", paddr, val);
@@ -458,12 +425,8 @@ template<> void Mem::Write<u32>(Registers& regs, u32 paddr, u32 val) {
         Util::WriteAccess<u32>(mmio.rdp.rdram, paddr, val);
         break;
       case RSP_MEM_REGION: {
-        u32 mirrAddr = paddr & 0x1FFF;
-        if(mirrAddr & 0x1000) {
-          Util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
-        } else {
-          Util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
-        }
+        auto& dest = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+        Util::WriteAccess<u32>(dest, paddr & 0xfff, val);
       } break;
       case REGION_CART:
         Util::trace("BusWrite<u8> @ {:08X} = {:08X}", paddr, val);
@@ -501,13 +464,9 @@ void Mem::Write(Registers& regs, u32 paddr, u64 val) {
         Util::WriteAccess<u64>(mmio.rdp.rdram, paddr, val);
         break;
       case RSP_MEM_REGION: {
-        u32 mirrAddr = paddr & 0x1FFF;
+        auto& dest = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
         val >>= 32;
-        if(mirrAddr & 0x1000) {
-          Util::WriteAccess<u32>(mmio.rsp.imem, paddr & IMEM_DSIZE, val);
-        } else {
-          Util::WriteAccess<u32>(mmio.rsp.dmem, paddr & DMEM_DSIZE, val);
-        }
+        Util::WriteAccess<u32>(dest, paddr & 0xfff, val);
       } break;
       case REGION_CART:
         Util::trace("BusWrite<u8> @ {:08X} = {:016X}", paddr, val);

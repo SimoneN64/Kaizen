@@ -6,14 +6,14 @@
 
 namespace n64 {
 RDP::RDP() {
-  rdram = (u8*)calloc(RDRAM_SIZE, 1);
+  rdram.resize(RDRAM_SIZE);
   memset(cmd_buf, 0, 0x100000);
   dpc.status.raw = 0x80;
 }
 
 void RDP::Reset() {
   dpc.status.raw = 0x80;
-  memset(rdram, 0, RDRAM_SIZE);
+  rdram = {};
   memset(cmd_buf, 0, 0x100000);
 }
 

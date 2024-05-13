@@ -7,6 +7,7 @@
 #include <Registers.hpp>
 #include <algorithm>
 #include <GameDB.hpp>
+#include <File.hpp>
 
 namespace n64 {
 struct ROMHeader {
@@ -26,8 +27,7 @@ struct ROMHeader {
 };
 
 struct ROM {
-  u8* cart;
-  size_t size;
+  std::vector<u8> cart;
   size_t mask;
   ROMHeader header;
   CICType cicType;
@@ -50,7 +50,7 @@ struct Flash {
   u64 status{};
   size_t eraseOffs{};
   size_t writeOffs{};
-  u8 writeBuf[128]{};
+  std::array<u8, 128> writeBuf{};
   std::string flashPath{};
   mio::mmap_sink& saveData;
 
@@ -87,7 +87,11 @@ struct Mem {
   static std::vector<u8> OpenROM(const std::string&, size_t&);
   static std::vector<u8> OpenArchive(const std::string&, size_t&);
   void LoadROM(bool, const std::string&);
-  [[nodiscard]] auto GetRDRAM() const -> u8* {
+  [[nodiscard]] auto GetRDRAMPtr() -> u8* {
+    return mmio.rdp.rdram.data();
+  }
+
+  [[nodiscard]] auto GetRDRAM() -> std::vector<u8>& {
     return mmio.rdp.rdram;
   }
 
@@ -108,33 +112,25 @@ struct Mem {
   MMIO mmio;
 
   FORCE_INLINE void DumpRDRAM() const {
-    FILE *fp = fopen("rdram.dump", "wb");
-    u8 *temp = (u8*)calloc(RDRAM_SIZE, 1);
-    memcpy(temp, mmio.rdp.rdram, RDRAM_SIZE);
-    Util::SwapBuffer32(RDRAM_SIZE, temp);
-    fwrite(temp, 1, RDRAM_SIZE, fp);
-    free(temp);
-    fclose(fp);
+    std::vector<u8> temp{};
+    temp.resize(RDRAM_SIZE);
+    std::copy(mmio.rdp.rdram.begin(), mmio.rdp.rdram.end(), temp.begin());
+    Util::SwapBuffer32(temp);
+    Util::WriteFileBinary(temp, "rdram.bin");
   }
 
   FORCE_INLINE void DumpIMEM() const {
-    FILE *fp = fopen("imem.bin", "wb");
-    u8 *temp = (u8*)calloc(IMEM_SIZE, 1);
-    memcpy(temp, mmio.rsp.imem, IMEM_SIZE);
-    Util::SwapBuffer32(IMEM_SIZE, temp);
-    fwrite(temp, 1, IMEM_SIZE, fp);
-    free(temp);
-    fclose(fp);
+    std::array<u8, IMEM_SIZE> temp{};
+    std::copy(mmio.rsp.imem.begin(), mmio.rsp.imem.end(), temp.begin());
+    Util::SwapBuffer32(temp);
+    Util::WriteFileBinary(temp, "imem.bin");
   }
 
   FORCE_INLINE void DumpDMEM() const {
-    FILE *fp = fopen("dmem.dump", "wb");
-    u8 *temp = (u8*)calloc(DMEM_SIZE, 1);
-    memcpy(temp, mmio.rsp.dmem, DMEM_SIZE);
-    Util::SwapBuffer32(DMEM_SIZE, temp);
-    fwrite(temp, 1, DMEM_SIZE, fp);
-    free(temp);
-    fclose(fp);
+    std::array<u8, DMEM_SIZE> temp{};
+    std::copy(mmio.rsp.dmem.begin(), mmio.rsp.dmem.end(), temp.begin());
+    Util::SwapBuffer32(temp);
+    Util::WriteFileBinary(temp, "dmem.bin");
   }
   uintptr_t writePages[PAGE_COUNT]{}, readPages[PAGE_COUNT]{};
   ROM rom;

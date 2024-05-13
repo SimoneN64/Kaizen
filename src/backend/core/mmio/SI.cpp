@@ -3,7 +3,7 @@
 #include <Scheduler.hpp>
 
 namespace n64 {
-SI::SI() {
+SI::SI(Mem& mem, Registers& regs) : pif(mem, regs) {
   Reset();
 }
 

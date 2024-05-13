@@ -13,7 +13,7 @@ struct Mem;
 struct Registers;
 
 struct MMIO {
-  MMIO(Registers& regs) : mi(regs) {}
+  MMIO(Mem& mem, Registers& regs) : mi(regs), si(mem, regs) {}
   void Reset();
 
   VI vi;

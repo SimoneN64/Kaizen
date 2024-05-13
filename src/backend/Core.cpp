@@ -50,7 +50,7 @@ void Core::LoadROM(const std::string& rom_) {
   cpu->mem.mmio.si.pif.LoadEeprom(cpu->mem.saveType, rom);
   cpu->mem.flash.Load(cpu->mem.saveType, rom);
   cpu->mem.LoadSRAM(cpu->mem.saveType, rom);
-  PIF::ExecutePIF(cpu->mem, cpu->regs);
+  cpu->mem.mmio.si.pif.Execute();
   pause = false;
   render = true;
 }

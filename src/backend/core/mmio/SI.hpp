@@ -21,7 +21,7 @@ union SIStatus {
 struct Mem;
 
 struct SI {
-  SI();
+  SI(Mem&, Registers&);
   void Reset();
   SIStatus status{};
   u32 dramAddr{};

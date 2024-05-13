@@ -152,7 +152,7 @@ enum CICType {
 };
 
 struct PIF {
-  PIF() = default;
+  PIF(Mem& mem, Registers& regs) : mem(mem), regs(regs) {}
   ~PIF() = default;
   void Reset();
   void MaybeLoadMempak();
@@ -160,8 +160,8 @@ struct PIF {
   void ProcessCommands(Mem&);
   void InitDevices(SaveType);
   void CICChallenge();
-  static void ExecutePIF(Mem& mem, Registers& regs);
-  static void DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType);
+  void Execute();
+  void HLE(bool pal, CICType cicType);
   bool ReadButtons(u8*);
   void ControllerID(u8*) const;
   void MempakRead(const u8*, u8*);
@@ -178,6 +178,8 @@ struct PIF {
   std::string mempakPath{}, eepromPath{};
   size_t eepromSize{};
   MupenMovie movie;
+  Mem& mem;
+  Registers& regs;
 
   FORCE_INLINE u8 Read(u32 addr) {
     addr &= 0x7FF;

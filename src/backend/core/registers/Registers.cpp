@@ -1,7 +1,7 @@
 #include <core/registers/Registers.hpp>
 
 namespace n64 {
-Registers::Registers() : cop0(*this) {
+Registers::Registers() : cop0(*this), cop1(*this) {
   Reset();
 }
 

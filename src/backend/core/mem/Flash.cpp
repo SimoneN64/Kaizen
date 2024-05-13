@@ -22,9 +22,7 @@ void Flash::Load(SaveType saveType, const std::string& path) {
 
     FILE *f = fopen(flashPath.c_str(), "rb");
     if (!f) {
-      f = fopen(flashPath.c_str(), "wb");
-      u8* dummy = (u8*)calloc(FLASH_SIZE, 1);
-      fwrite(dummy, 1, FLASH_SIZE, f);
+      Util::panic("Could not open {}", flashPath);
     }
 
     fseek(f, 0, SEEK_END);
@@ -37,7 +35,7 @@ void Flash::Load(SaveType saveType, const std::string& path) {
 
     saveData = mio::make_mmap_sink(
       flashPath, 0, mio::map_entire_file, error);
-    if (error) { Util::panic("Could not open {}", path); }
+    if (error) { Util::panic("Could not make mmap {}", flashPath); }
   }
 }
 

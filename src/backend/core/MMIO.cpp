@@ -32,7 +32,7 @@ u32 MMIO::Read(u32 addr) {
 
 void MMIO::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
   switch (addr) {
-    case RSP_REGION: rsp.Write(mem, regs, addr, val); break;
+    case RSP_REGION: rsp.Write(addr, val); break;
     case RDP_REGION: rdp.Write(mi, regs, rsp, addr, val); break;
     case MI_REGION: mi.Write(regs, addr, val); break;
     case VI_REGION: vi.Write(mi, regs, addr, val); break;

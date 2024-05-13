@@ -60,13 +60,13 @@ FORCE_INLINE void SetCop0Reg(Registers& regs, Mem& mem, u8 index, u32 val) {
     case 1: rsp.spDMADRAMAddr.raw = val; break;
     case 2:
       rsp.spDMALen.raw = val;
-      rsp.DMAtoRSP(rsp.spDMALen, mem.GetRDRAM(), rsp, rsp.spDMASPAddr.bank);
+      rsp.DMAtoRSP(mem.GetRDRAM());
       break;
     case 3:
       rsp.spDMALen.raw = val;
-      rsp.DMAtoRDRAM(rsp.spDMALen, mem.GetRDRAM(), rsp, rsp.spDMASPAddr.bank);
+      rsp.DMAtoRDRAM(mem.GetRDRAM());
       break;
-    case 4: rsp.WriteStatus(mi, regs, val); break;
+    case 4: rsp.WriteStatus(val); break;
     case 7:
       if(val == 0) {
         ReleaseSemaphore(rsp);
@@ -1776,7 +1776,7 @@ void RSP::mfc0(RDP& rdp, u32 instr) {
   gpr[RT(instr)] = GetCop0Reg(*this, rdp, RD(instr));
 }
 
-void RSP::mtc0(Registers& regs, Mem& mem, u32 instr) {
+void RSP::mtc0(u32 instr) {
   SetCop0Reg(regs, mem, RD(instr), gpr[RT(instr)]);
 }
 

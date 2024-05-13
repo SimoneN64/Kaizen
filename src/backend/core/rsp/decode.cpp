@@ -177,7 +177,7 @@ FORCE_INLINE void cop0(Registers& regs, Mem& mem, u32 instr) {
   if((instr & 0x7FF) == 0) {
     switch (mask) {
       case 0x00: rsp.mfc0(rdp, instr); break;
-      case 0x04: rsp.mtc0(regs, mem, instr); break;
+      case 0x04: rsp.mtc0(instr); break;
       default: Util::panic("Unhandled RSP COP0 ({:05b})", mask);
     }
   } else {
@@ -185,7 +185,7 @@ FORCE_INLINE void cop0(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void RSP::Exec(Registers &regs, Mem& mem, u32 instr) {
+void RSP::Exec(u32 instr) {
   u8 mask = (instr >> 26) & 0x3F;
   MMIO& mmio = mem.mmio;
   MI& mi = mmio.mi;

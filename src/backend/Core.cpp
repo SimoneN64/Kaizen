@@ -85,7 +85,7 @@ void Core::Run(float volumeL, float volumeR) {
 
           while(mmio.rsp.steps > 0) {
             mmio.rsp.steps--;
-            mmio.rsp.Step(regs, mem);
+            mmio.rsp.Step();
           }
         }
 

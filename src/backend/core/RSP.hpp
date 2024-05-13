@@ -113,21 +113,21 @@ struct Registers;
 } while(0)
 
 struct RSP {
-  RSP();
+  RSP(Mem&, Registers&);
   void Reset();
 
-  FORCE_INLINE void Step(Registers& regs, Mem& mem) {
+  FORCE_INLINE void Step() {
     gpr[0] = 0;
     u32 instr = Util::ReadAccess<u32>(imem, pc & IMEM_DSIZE);
     oldPC = pc & 0xFFC;
     pc = nextPC & 0xFFC;
     nextPC += 4;
 
-    Exec(regs, mem, instr);
+    Exec(instr);
   }
   auto Read(u32 addr) -> u32;
-  void Write(Mem& mem, Registers& regs, u32 addr, u32 value);
-  void Exec(Registers& regs, Mem& mem, u32 instr);
+  void Write(u32 addr, u32 value);
+  void Exec(u32 instr);
   SPStatus spStatus{};
   u16 oldPC{}, pc{}, nextPC{};
   SPDMASPAddr spDMASPAddr{};
@@ -354,72 +354,16 @@ struct RSP {
   void vnor(u32 instr);
   void vzero(u32 instr);
   void mfc0(RDP& rdp, u32 instr);
-  void mtc0(Registers& regs, Mem& mem, u32 instr);
+  void mtc0(u32 instr);
   void mfc2(u32 instr);
   void mtc2(u32 instr);
 
-  FORCE_INLINE void DMAtoRDRAM(SPDMALen len, std::vector<u8>& rdram, RSP& rsp, bool bank) {
-    u32 length = len.len + 1;
-
-    length = (length + 0x7) & ~0x7;
-
-    std::vector<u8>& dst = rdram;
-    std::array<u8, DMEM_SIZE>& src = bank ? rsp.imem : rsp.dmem;
-
-    u32 mem_address = rsp.spDMASPAddr.address & 0xFF8;
-    u32 dram_address = rsp.spDMADRAMAddr.address & 0xFFFFF8;
-
-    for (u32 i = 0; i < len.count + 1; i++) {
-      for(u32 j = 0; j < length; j++) {
-        dst[dram_address + j] = src[(mem_address + j) & 0xFFF];
-      }
-
-      int skip = i == len.count ? 0 : len.skip;
-
-      dram_address += (length + skip);
-      dram_address &= 0xFFFFF8;
-      mem_address += length;
-      mem_address &= 0xFF8;
-    }
-
-    rsp.lastSuccessfulSPAddr.address = mem_address;
-    rsp.lastSuccessfulSPAddr.bank = bank;
-    rsp.lastSuccessfulDRAMAddr.address = dram_address;
-    rsp.spDMALen.raw = 0xFF8 | (rsp.spDMALen.skip << 20);
-  }
-
-  FORCE_INLINE void DMAtoRSP(SPDMALen len, std::vector<u8>& rdram, RSP& rsp, bool bank) {
-    u32 length = len.len + 1;
-
-    length = (length + 0x7) & ~0x7;
-
-    std::vector<u8>& src = rdram;
-    std::array<u8, DMEM_SIZE>& dst = bank ? rsp.imem : rsp.dmem;
-
-    u32 mem_address = rsp.spDMASPAddr.address & 0xFF8;
-    u32 dram_address = rsp.spDMADRAMAddr.address & 0xFFFFF8;
-
-    for (u32 i = 0; i < len.count + 1; i++) {
-      for(u32 j = 0; j < length; j++) {
-        dst[(mem_address + j) & 0xFFF] = src[dram_address + j];
-      }
-
-      int skip = i == len.count ? 0 : len.skip;
-
-      dram_address += (length + skip);
-      dram_address &= 0xFFFFF8;
-      mem_address += length;
-      mem_address &= 0xFF8;
-    }
-
-    rsp.lastSuccessfulSPAddr.address = mem_address;
-    rsp.lastSuccessfulSPAddr.bank = bank;
-    rsp.lastSuccessfulDRAMAddr.address = dram_address;
-    rsp.spDMALen.raw = 0xFF8 | (rsp.spDMALen.skip << 20);
-  }
-
-  void WriteStatus(MI& mi, Registers& regs, u32 value);
+  void DMAtoRDRAM(std::vector<u8>& rdram);
+  void DMAtoRSP(std::vector<u8>& rdram);
+  void WriteStatus(u32 value);
 private:
+  Registers& regs;
+  Mem& mem;
   FORCE_INLINE void branch(u16 address, bool cond) {
     if(cond) {
       nextPC = address & 0xFFC;

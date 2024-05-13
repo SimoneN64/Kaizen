@@ -4,7 +4,7 @@
 #include <core/registers/Registers.hpp>
 
 namespace n64 {
-RSP::RSP() {
+RSP::RSP(Mem& mem, Registers& regs) : mem(mem), regs(regs) {
   Reset();
 }
 
@@ -83,7 +83,8 @@ auto RSP::Read(u32 addr) -> u32{
   }
 }
 
-void RSP::WriteStatus(MI& mi, Registers& regs, u32 value) {
+void RSP::WriteStatus(u32 value) {
+  MI& mi = mem.mmio.mi;
   auto write = SPStatusWrite{.raw = value};
   if(write.clearHalt && !write.setHalt) {
     spStatus.halt = false;
@@ -109,20 +110,19 @@ void RSP::WriteStatus(MI& mi, Registers& regs, u32 value) {
   CLEAR_SET(spStatus.signal7, write.clearSignal7, write.setSignal7);
 }
 
-void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
-  MI& mi = mem.mmio.mi;
+void RSP::Write(u32 addr, u32 value) {
   switch (addr) {
     case 0x04040000: spDMASPAddr.raw = value & 0x1FF8; break;
     case 0x04040004: spDMADRAMAddr.raw = value & 0xFFFFF8; break;
     case 0x04040008: {
       spDMALen.raw = value;
-      DMAtoRSP(spDMALen, mem.GetRDRAM(), *this, spDMASPAddr.bank);
+      DMAtoRSP(mem.GetRDRAM());
     } break;
     case 0x0404000C: {
       spDMALen.raw = value;
-      DMAtoRDRAM(spDMALen, mem.GetRDRAM(), *this, spDMASPAddr.bank);
+      DMAtoRDRAM(mem.GetRDRAM());
     } break;
-    case 0x04040010: WriteStatus(mi, regs, value); break;
+    case 0x04040010: WriteStatus(value); break;
     case 0x0404001C: ReleaseSemaphore(); break;
     case 0x04080000:
       if(spStatus.halt) {
@@ -131,5 +131,65 @@ void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
     default:
       Util::panic("Unimplemented SP register write {:08X}, val: {:08X}", addr, value);
   }
+}
+
+void RSP::DMAtoRDRAM(std::vector<u8>& rdram) {
+  u32 length = spDMALen.len + 1;
+
+  length = (length + 0x7) & ~0x7;
+
+  std::vector<u8>& dst = rdram;
+  std::array<u8, DMEM_SIZE>& src = spDMASPAddr.bank ? imem : dmem;
+
+  u32 mem_address = spDMASPAddr.address & 0xFF8;
+  u32 dram_address = spDMADRAMAddr.address & 0xFFFFF8;
+
+  for (u32 i = 0; i < spDMALen.count + 1; i++) {
+    for(u32 j = 0; j < length; j++) {
+      dst[dram_address + j] = src[(mem_address + j) & 0xFFF];
+    }
+
+    int skip = i == spDMALen.count ? 0 : spDMALen.skip;
+
+    dram_address += (length + skip);
+    dram_address &= 0xFFFFF8;
+    mem_address += length;
+    mem_address &= 0xFF8;
+  }
+
+  lastSuccessfulSPAddr.address = mem_address;
+  lastSuccessfulSPAddr.bank = spDMASPAddr.bank;
+  lastSuccessfulDRAMAddr.address = dram_address;
+  spDMALen.raw = 0xFF8 | (spDMALen.skip << 20);
+}
+
+void RSP::DMAtoRSP(std::vector<u8>& rdram) {
+  u32 length = spDMALen.len + 1;
+
+  length = (length + 0x7) & ~0x7;
+
+  std::vector<u8>& src = rdram;
+  std::array<u8, DMEM_SIZE>& dst = spDMASPAddr.bank ? imem : dmem;
+
+  u32 mem_address = spDMASPAddr.address & 0xFF8;
+  u32 dram_address = spDMADRAMAddr.address & 0xFFFFF8;
+
+  for (u32 i = 0; i < spDMALen.count + 1; i++) {
+    for(u32 j = 0; j < length; j++) {
+      dst[(mem_address + j) & 0xFFF] = src[dram_address + j];
+    }
+
+    int skip = i == spDMALen.count ? 0 : spDMALen.skip;
+
+    dram_address += (length + skip);
+    dram_address &= 0xFFFFF8;
+    mem_address += length;
+    mem_address &= 0xFF8;
+  }
+
+  lastSuccessfulSPAddr.address = mem_address;
+  lastSuccessfulSPAddr.bank = spDMASPAddr.bank;
+  lastSuccessfulDRAMAddr.address = dram_address;
+  spDMALen.raw = 0xFF8 | (spDMALen.skip << 20);
 }
 }

@@ -19,8 +19,8 @@ void RSP::Reset() {
   spDMASPAddr.raw = 0;
   spDMADRAMAddr.raw = 0;
   spDMALen.raw = 0;
-  memset(dmem, 0, DMEM_SIZE);
-  memset(imem, 0, IMEM_SIZE);
+  dmem = {};
+  imem = {};
   memset(vpr, 0, 32 * sizeof(VPR));
   memset(gpr, 0, 32 * sizeof(u32));
   memset(&vce, 0, sizeof(VPR));
@@ -116,11 +116,11 @@ void RSP::Write(Mem& mem, Registers& regs, u32 addr, u32 value) {
     case 0x04040004: spDMADRAMAddr.raw = value & 0xFFFFF8; break;
     case 0x04040008: {
       spDMALen.raw = value;
-      DMA<false>(spDMALen, mem.GetRDRAM(), *this, spDMASPAddr.bank);
+      DMAtoRSP(spDMALen, mem.GetRDRAM(), *this, spDMASPAddr.bank);
     } break;
     case 0x0404000C: {
       spDMALen.raw = value;
-      DMA<true>(spDMALen, mem.GetRDRAM(), *this, spDMASPAddr.bank);
+      DMAtoRDRAM(spDMALen, mem.GetRDRAM(), *this, spDMASPAddr.bank);
     } break;
     case 0x04040010: WriteStatus(mi, regs, value); break;
     case 0x0404001C: ReleaseSemaphore(); break;

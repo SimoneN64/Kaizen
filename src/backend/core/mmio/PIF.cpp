@@ -593,7 +593,7 @@ void PIF::HLE(bool pal, CICType cicType) {
   regs.gpr[22] = (cicSeeds[cicType] >> 8) & 0xFF;
   regs.cop0.Reset();
   mem.Write<u32>(regs, 0x04300004, 0x01010101);
-  memcpy(mem.mmio.rsp.dmem, mem.rom.cart, 0x1000);
+  std::copy(mem.rom.cart.begin(), mem.rom.cart.begin() + 0x1000, mem.mmio.rsp.dmem.begin());
   regs.SetPC32(s32(0xA4000040));
 }
 

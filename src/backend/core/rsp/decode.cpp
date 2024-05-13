@@ -221,13 +221,7 @@ void RSP::Exec(Registers &regs, Mem& mem, u32 instr) {
     case 0x32: lwc2(*this, instr); break;
     case 0x3A: swc2(*this, instr); break;
     default:
-      FILE *fp = fopen("imem.bin", "wb");
-      u8 *temp = (u8*)calloc(IMEM_SIZE, 1);
-      memcpy(temp, imem, IMEM_SIZE);
-      Util::SwapBuffer32(IMEM_SIZE, temp);
-      fwrite(temp, 1, IMEM_SIZE, fp);
-      free(temp);
-      fclose(fp);
+      mem.DumpIMEM();
       Util::panic("Unhandled RSP instruction ({:06b}, {:04X})", mask, oldPC);
   }
 }

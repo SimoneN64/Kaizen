@@ -8,7 +8,7 @@ namespace Util {
 #define V64 0x37800012
 
 template <bool toBE = false>
-FORCE_INLINE void SwapN64Rom(size_t size, u8 *rom, u32 endianness) {
+FORCE_INLINE void SwapN64Rom(std::vector<u8> &rom, u32 endianness) {
   u8 altByteShift = 0;
   if((endianness >> 24) != 0x80) {
     if((endianness & 0xFF) != 0x80) {
@@ -28,17 +28,17 @@ FORCE_INLINE void SwapN64Rom(size_t size, u8 *rom, u32 endianness) {
 
   switch (endianness) {
     case V64:
-      SwapBuffer16(size, rom);
+      SwapBuffer16(rom);
       if constexpr(!toBE)
-        SwapBuffer32(size, rom);
+        SwapBuffer32(rom);
       break;
     case N64:
       if constexpr(toBE)
-        SwapBuffer32(size, rom);
+        SwapBuffer32(rom);
       break;
     case Z64:
       if constexpr(!toBE)
-        SwapBuffer32(size, rom);
+        SwapBuffer32(rom);
       break;
     default:
       panic("Unrecognized rom format! Make sure this is a valid Nintendo 64 ROM dump!");

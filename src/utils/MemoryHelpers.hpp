@@ -6,7 +6,7 @@
 
 namespace Util {
 template<typename T>
-static FORCE_INLINE T ReadAccess(const u8 *data, u32 index) {
+static FORCE_INLINE T ReadAccess(const u8* data, u32 index) {
   if constexpr (sizeof(T) == 8) {
     u32 hi = *reinterpret_cast<const u32*>(&data[index + 0]);
     u32 lo = *reinterpret_cast<const u32*>(&data[index + 4]);
@@ -14,6 +14,56 @@ static FORCE_INLINE T ReadAccess(const u8 *data, u32 index) {
     return result;
   } else {
     return *reinterpret_cast<const T*>(&data[index]);
+  }
+}
+
+template<typename T>
+static FORCE_INLINE T ReadAccess(const std::vector<u8>& data, u32 index) {
+  if constexpr (sizeof(T) == 8) {
+    u32 hi = *reinterpret_cast<const u32*>(&data[index + 0]);
+    u32 lo = *reinterpret_cast<const u32*>(&data[index + 4]);
+    T result = ((T)hi << 32) | (T)lo;
+    return result;
+  } else {
+    return *reinterpret_cast<const T*>(&data[index]);
+  }
+}
+
+template<typename T, size_t Size>
+static FORCE_INLINE T ReadAccess(const std::array<u8, Size>& data, u32 index) {
+  if constexpr (sizeof(T) == 8) {
+    u32 hi = *reinterpret_cast<const u32*>(&data[index + 0]);
+    u32 lo = *reinterpret_cast<const u32*>(&data[index + 4]);
+    T result = ((T)hi << 32) | (T)lo;
+    return result;
+  } else {
+    return *reinterpret_cast<const T*>(&data[index]);
+  }
+}
+
+template<typename T, size_t Size>
+static FORCE_INLINE void WriteAccess(std::array<u8, Size>& data, u32 index, T val) {
+  if constexpr (sizeof(T) == 8) {
+    u32 hi = val >> 32;
+    u32 lo = val;
+
+    *reinterpret_cast<u32*>(&data[index + 0]) = hi;
+    *reinterpret_cast<u32*>(&data[index + 4]) = lo;
+  } else {
+    *reinterpret_cast<T*>(&data[index]) = val;
+  }
+}
+
+template<typename T>
+static FORCE_INLINE void WriteAccess(std::vector<u8>& data, u32 index, T val) {
+  if constexpr (sizeof(T) == 8) {
+    u32 hi = val >> 32;
+    u32 lo = val;
+
+    *reinterpret_cast<u32*>(&data[index + 0]) = hi;
+    *reinterpret_cast<u32*>(&data[index + 4]) = lo;
+  } else {
+    *reinterpret_cast<T*>(&data[index]) = val;
   }
 }
 
@@ -30,15 +80,31 @@ static FORCE_INLINE void WriteAccess(u8 *data, u32 index, T val) {
   }
 }
 
-FORCE_INLINE void SwapBuffer32(size_t size, u8 *data) {
-  for (size_t i = 0; i < size; i += 4) {
+FORCE_INLINE void SwapBuffer32(std::vector<u8> &data) {
+  for (size_t i = 0; i < data.size(); i += 4) {
     u32 original = *(u32 *) &data[i];
     *(u32 *) &data[i] = bswap_32(original);
   }
 }
 
-FORCE_INLINE void SwapBuffer16(size_t size, u8 *data) {
-  for (size_t i = 0; i < size; i += 2) {
+FORCE_INLINE void SwapBuffer16(std::vector<u8> &data) {
+  for (size_t i = 0; i < data.size(); i += 2) {
+    u16 original = *(u16 *) &data[i];
+    *(u16 *) &data[i] = bswap_16(original);
+  }
+}
+
+template <size_t Size>
+FORCE_INLINE void SwapBuffer32(std::array<u8, Size> &data) {
+  for (size_t i = 0; i < Size; i += 4) {
+    u32 original = *(u32 *) &data[i];
+    *(u32 *) &data[i] = bswap_32(original);
+  }
+}
+
+template <size_t Size>
+FORCE_INLINE void SwapBuffer16(std::array<u8, Size> &data) {
+  for (size_t i = 0; i < Size; i += 2) {
     u16 original = *(u16 *) &data[i];
     *(u16 *) &data[i] = bswap_16(original);
   }

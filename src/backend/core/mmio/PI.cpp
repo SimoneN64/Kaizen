@@ -62,8 +62,8 @@ template<> auto PI::BusRead<u8, true>(Mem& mem, u32 addr) -> u8 {
     case REGION_PI_ROM: {
       // round to nearest 4 byte boundary, keeping old LSB
       u32 index = BYTE_ADDRESS(addr) - SREGION_PI_ROM;
-      if (index >= mem.rom.size) {
-        Util::warn("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM! ({}/0x{:016X})", addr, index, index, mem.rom.size, mem.rom.size);
+      if (index >= mem.rom.cart.size()) {
+        Util::warn("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM! ({}/0x{:016X})", addr, index, index, mem.rom.cart.size(), mem.rom.cart.size());
         return 0xFF;
       }
       return mem.rom.cart[index];
@@ -92,8 +92,8 @@ template<> auto PI::BusRead<u8, false>(Mem& mem, u32 addr) -> u8 {
       addr = (addr + 2) & ~2;
       // round to nearest 4 byte boundary, keeping old LSB
       u32 index = BYTE_ADDRESS(addr) - SREGION_PI_ROM;
-      if (index >= mem.rom.size) {
-        Util::warn("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM! ({}/0x{:016X})", addr, index, index, mem.rom.size, mem.rom.size);
+      if (index >= mem.rom.cart.size()) {
+        Util::warn("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM! ({}/0x{:016X})", addr, index, index, mem.rom.cart.size(), mem.rom.cart.size());
         return 0xFF;
       }
       return mem.rom.cart[index];
@@ -154,7 +154,7 @@ template <> auto PI::BusRead<u16, false>(Mem& mem, u32 addr) -> u16 {
     case REGION_PI_ROM: {
       addr = (addr + 2) & ~3;
       u32 index = HALF_ADDRESS(addr) - SREGION_PI_ROM;
-      if (index > mem.rom.size - 1) {
+      if (index > mem.rom.cart.size() - 1) {
         Util::panic("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM!", addr, index, index);
       }
       return Util::ReadAccess<u16>(mem.rom.cart, index);
@@ -213,7 +213,7 @@ template <> auto PI::BusRead<u32, false>(Mem& mem, u32 addr) -> u32 {
       return mem.BackupRead<u32>(addr);
     case REGION_PI_ROM: {
       u32 index = addr - SREGION_PI_ROM;
-      if (index > mem.rom.size - 3) { // -3 because we're reading an entire word
+      if (index > mem.rom.cart.size() - 3) { // -3 because we're reading an entire word
         switch (addr) {
           case REGION_CART_ISVIEWER_BUFFER:
             return htobe32(Util::ReadAccess<u32>(mem.isviewer, addr - SREGION_CART_ISVIEWER_BUFFER));
@@ -313,7 +313,7 @@ template <> auto PI::BusRead<u64, false>(Mem& mem, u32 addr) -> u64 {
       Util::panic("Reading dword from address 0x{:08X} in unsupported region: REGION_PI_SRAM", addr);
     case REGION_PI_ROM: {
       u32 index = addr - SREGION_PI_ROM;
-      if (index > mem.rom.size - 7) { // -7 because we're reading an entire dword
+      if (index > mem.rom.cart.size() - 7) { // -7 because we're reading an entire dword
         Util::panic("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM!", addr, index, index);
       }
       return Util::ReadAccess<u64>(mem.rom.cart, index);

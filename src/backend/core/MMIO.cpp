@@ -71,7 +71,7 @@ std::vector<u8> MMIO::Serialize() {
   index += sizeof(DPC);
   memcpy(res.data() + index, rdp.cmd_buf, 0xFFFFF);
   index += 0xFFFFF;
-  memcpy(res.data() + index, rdp.rdram, RDRAM_SIZE);
+  std::copy(rdp.rdram.begin(), rdp.rdram.end(), res.begin() + index);
   index += RDRAM_SIZE;
   memcpy(res.data() + index, &mi, sizeof(MI));
   index += sizeof(MI);
@@ -102,7 +102,7 @@ void MMIO::Deserialize(const std::vector<u8> &data) {
   index += sizeof(DPC);
   memcpy(rdp.cmd_buf, data.data() + index, 0xFFFFF);
   index += 0xFFFFF;
-  memcpy(rdp.rdram, data.data() + index, RDRAM_SIZE);
+  std::copy(data.begin() + index, data.begin() + index + RDRAM_SIZE, rdp.rdram.begin());
   index += RDRAM_SIZE;
   memcpy(&mi, data.data() + index, sizeof(MI));
   index += sizeof(MI);

@@ -117,7 +117,7 @@ std::vector<u8> Flash::Serialize() {
   index += sizeof(eraseOffs);
   memcpy(res.data() + index, &writeOffs, sizeof(writeOffs));
   index += sizeof(writeOffs);
-  memcpy(res.data() + index, writeBuf, 128);
+  std::copy(writeBuf.begin(), writeBuf.end(), res.begin() + index);
 
   return res;
 }
@@ -132,7 +132,7 @@ void Flash::Deserialize(const std::vector<u8>& data) {
   index += sizeof(eraseOffs);
   memcpy(&writeOffs, data.data() + index, sizeof(writeOffs));
   index += sizeof(writeOffs);
-  memcpy(writeBuf, data.data() + index, 128);
+  std::copy(data.begin() + index, data.begin() + index + 128, writeBuf.begin());
 }
 
 template <> void Flash::Write<u32>(u32 index, u32 val) {

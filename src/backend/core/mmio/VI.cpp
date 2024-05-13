@@ -1,11 +1,11 @@
 #include <core/mmio/VI.hpp>
 #include <log.hpp>
 #include <core/registers/Registers.hpp>
-#include <core/mmio/MI.hpp>
+#include <core/Mem.hpp>
 #include <core/mmio/Interrupt.hpp>
 
 namespace n64 {
-VI::VI () {
+VI::VI (Mem& mem, Registers& regs) : mem(mem), regs(regs) {
   Reset();
 }
 
@@ -43,7 +43,7 @@ u32 VI::Read(u32 paddr) const {
   }
 }
 
-void VI::Write(MI& mi, Registers& regs, u32 paddr, u32 val) {
+void VI::Write(u32 paddr, u32 val) {
   switch(paddr) {
     case 0x04400000:
       status.raw = val;
@@ -63,7 +63,7 @@ void VI::Write(MI& mi, Registers& regs, u32 paddr, u32 val) {
       intr = val & 0x3FF;
     } break;
     case 0x04400010:
-      mi.InterruptLower(MI::Interrupt::VI);
+      mem.mmio.mi.InterruptLower(MI::Interrupt::VI);
       break;
     case 0x04400014: burst.raw = val; break;
     case 0x04400018: {

@@ -4,7 +4,7 @@
 #include <Scheduler.hpp>
 
 namespace n64 {
-PI::PI() {
+PI::PI(Mem& mem, Registers& regs) : mem(mem), regs(regs) {
   Reset();
 }
 
@@ -42,13 +42,13 @@ bool PI::WriteLatch(u32 value) {
 bool PI::ReadLatch() {
   if (ioBusy) [[unlikely]] {
     ioBusy = false;
-    CpuStall(scheduler.Remove(PI_BUS_WRITE_COMPLETE));
+    regs.CpuStall(scheduler.Remove(PI_BUS_WRITE_COMPLETE));
     return false;
   }
   return true;
 }
 
-template<> auto PI::BusRead<u8, true>(Mem& mem, u32 addr) -> u8 {
+template<> auto PI::BusRead<u8, true>(u32 addr) -> u8 {
   switch (addr) {
     case REGION_PI_UNKNOWN:
       Util::panic("Reading byte from address 0x{:08X} in unsupported region: REGION_PI_UNKNOWN - This is the N64DD, returning FF because it is not emulated", addr);
@@ -73,7 +73,7 @@ template<> auto PI::BusRead<u8, true>(Mem& mem, u32 addr) -> u8 {
   }
 }
 
-template<> auto PI::BusRead<u8, false>(Mem& mem, u32 addr) -> u8 {
+template<> auto PI::BusRead<u8, false>(u32 addr) -> u8 {
   if (!ReadLatch()) [[unlikely]] {
     return latch >> 24;
   }
@@ -103,7 +103,7 @@ template<> auto PI::BusRead<u8, false>(Mem& mem, u32 addr) -> u8 {
   }
 }
 
-template<> void PI::BusWrite<u8, true>(Mem& mem, u32 addr, u32 val) {
+template<> void PI::BusWrite<u8, true>(u32 addr, u32 val) {
   switch (addr) {
     case REGION_PI_UNKNOWN:
       Util::panic("Writing byte 0x{:02X} to address 0x{:08X} in unsupported region: REGION_PI_UNKNOWN", val, addr);
@@ -127,17 +127,17 @@ template<> void PI::BusWrite<u8, true>(Mem& mem, u32 addr, u32 val) {
   }
 }
 
-template<> void PI::BusWrite<u8, false>(Mem& mem, u32 addr, u32 val) {
+template<> void PI::BusWrite<u8, false>(u32 addr, u32 val) {
   u8 latch_shift = 24 - (addr & 1) * 8;
 
   if (!WriteLatch(val << latch_shift) && addr != 0x05000020) [[unlikely]] {
     return;
   }
 
-  BusWrite<u8, true>(mem, addr, val);
+  BusWrite<u8, true>(addr, val);
 }
 
-template <> auto PI::BusRead<u16, false>(Mem& mem, u32 addr) -> u16 {
+template <> auto PI::BusRead<u16, false>(u32 addr) -> u16 {
   if (!ReadLatch()) [[unlikely]] {
     return latch >> 16;
   }
@@ -164,11 +164,11 @@ template <> auto PI::BusRead<u16, false>(Mem& mem, u32 addr) -> u16 {
   }
 }
 
-template <> auto PI::BusRead<u16, true>(Mem& mem, u32 addr) -> u16 {
-  return BusRead<u16, false>(mem, addr);
+template <> auto PI::BusRead<u16, true>(u32 addr) -> u16 {
+  return BusRead<u16, false>(addr);
 }
 
-template <> void PI::BusWrite<u16, false>(Mem&, u32 addr, u32 val) {
+template <> void PI::BusWrite<u16, false>(u32 addr, u32 val) {
   if (!WriteLatch(val << 16)) [[unlikely]] {
     return;
   }
@@ -190,11 +190,11 @@ template <> void PI::BusWrite<u16, false>(Mem&, u32 addr, u32 val) {
   }
 }
 
-template <> void PI::BusWrite<u16, true>(Mem& mem, u32 addr, u32 val) {
-  BusWrite<u16, false>(mem, addr, val);
+template <> void PI::BusWrite<u16, true>(u32 addr, u32 val) {
+  BusWrite<u16, false>(addr, val);
 }
 
-template <> auto PI::BusRead<u32, false>(Mem& mem, u32 addr) -> u32 {
+template <> auto PI::BusRead<u32, false>(u32 addr) -> u32 {
   if (!ReadLatch()) [[unlikely]] {
     return latch;
   }
@@ -232,11 +232,11 @@ template <> auto PI::BusRead<u32, false>(Mem& mem, u32 addr) -> u32 {
   }
 }
 
-template <> auto PI::BusRead<u32, true>(Mem& mem, u32 addr) -> u32 {
-  return BusRead<u32, false>(mem, addr);
+template <> auto PI::BusRead<u32, true>(u32 addr) -> u32 {
+  return BusRead<u32, false>(addr);
 }
 
-template <> void PI::BusWrite<u32, false>(Mem& mem, u32 addr, u32 val) {
+template <> void PI::BusWrite<u32, false>(u32 addr, u32 val) {
   switch (addr) {
     case REGION_PI_UNKNOWN:
       if (!WriteLatch(val)) [[unlikely]] {
@@ -293,11 +293,11 @@ template <> void PI::BusWrite<u32, false>(Mem& mem, u32 addr, u32 val) {
 }
 
 template <>
-void PI::BusWrite<u32, true>(Mem& mem, u32 addr, u32 val) {
-  BusWrite<u32, false>(mem, addr, val);
+void PI::BusWrite<u32, true>(u32 addr, u32 val) {
+  BusWrite<u32, false>(addr, val);
 }
 
-template <> auto PI::BusRead<u64, false>(Mem& mem, u32 addr) -> u64 {
+template <> auto PI::BusRead<u64, false>(u32 addr) -> u64 {
   if (!ReadLatch()) [[unlikely]] {
     return (u64)latch << 32;
   }
@@ -323,11 +323,11 @@ template <> auto PI::BusRead<u64, false>(Mem& mem, u32 addr) -> u64 {
   }
 }
 
-template <> auto PI::BusRead<u64, true>(Mem& mem, u32 addr) -> u64 {
-  return BusRead<u64, false>(mem, addr);
+template <> auto PI::BusRead<u64, true>(u32 addr) -> u64 {
+  return BusRead<u64, false>(addr);
 }
 
-template <> void PI::BusWrite<false>(Mem&, u32 addr, u64 val) {
+template <> void PI::BusWrite<false>(u32 addr, u64 val) {
   if (!WriteLatch(val >> 32)) [[unlikely]] {
     return;
   }
@@ -349,11 +349,11 @@ template <> void PI::BusWrite<false>(Mem&, u32 addr, u64 val) {
   }
 }
 
-template <> void PI::BusWrite<true>(Mem& mem, u32 addr, u64 val) {
-  BusWrite<false>(mem, addr, val);
+template <> void PI::BusWrite<true>(u32 addr, u64 val) {
+  BusWrite<false>(addr, val);
 }
 
-auto PI::Read(MI& mi, u32 addr) const -> u32 {
+auto PI::Read(u32 addr) const -> u32 {
   switch(addr) {
     case 0x04600000: return dramAddr;
     case 0x04600004: return cartAddr;
@@ -364,7 +364,7 @@ auto PI::Read(MI& mi, u32 addr) const -> u32 {
       value |= (dmaBusy << 0); // Is PI DMA active? No, because it's instant
       value |= (ioBusy << 1); // Is PI IO busy? No, because it's instant
       value |= (0 << 2); // PI IO error?
-      value |= (mi.miIntr.pi << 3); // PI interrupt?
+      value |= (mem.mmio.mi.miIntr.pi << 3); // PI interrupt?
       return value;
     }
     case 0x04600014: return piBsdDom1Lat;
@@ -427,7 +427,7 @@ u32 PI::AccessTiming(u8 domain, u32 length) const {
   return cycles * 1.5; // Converting RCP clock speed to CPU clock speed
 }
 
-void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
+void PI::Write(u32 addr, u32 val) {
   MI& mi = mem.mmio.mi;
   switch(addr) {
     case 0x04600000: dramAddr = val & 0xFFFFFF; break;
@@ -444,7 +444,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
         Util::panic("PI DMA RDRAM->CART ADDRESS TOO HIGH");
       }
       for (int i = 0; i < len; i++) {
-        BusWrite<u8, true>(mem, cartAddrInternal + i, mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE]);
+        BusWrite<u8, true>(cartAddrInternal + i, mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE]);
       }
       Util::trace("PI DMA from RDRAM to CARTRIDGE (size: {} B, {:08X} to {:08X})", len, dramAddr, cartAddr);
       dmaBusy = true;
@@ -465,7 +465,7 @@ void PI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
       }
 
       for(u32 i = 0; i < len; i++) {
-        mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE] = BusRead<u8, true>(mem, cartAddrInternal + i);
+        mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE] = BusRead<u8, true>(cartAddrInternal + i);
       }
       dmaBusy = true;
       Util::trace("PI DMA from CARTRIDGE to RDRAM (size: {} B, {:08X} to {:08X})", len, cartAddr, dramAddr);

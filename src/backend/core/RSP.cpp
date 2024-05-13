@@ -110,26 +110,26 @@ void RSP::WriteStatus(u32 value) {
   CLEAR_SET(spStatus.signal7, write.clearSignal7, write.setSignal7);
 }
 
-void RSP::Write(u32 addr, u32 value) {
+void RSP::Write(u32 addr, u32 val) {
   switch (addr) {
-    case 0x04040000: spDMASPAddr.raw = value & 0x1FF8; break;
-    case 0x04040004: spDMADRAMAddr.raw = value & 0xFFFFF8; break;
+    case 0x04040000: spDMASPAddr.raw = val & 0x1FF8; break;
+    case 0x04040004: spDMADRAMAddr.raw = val & 0xFFFFF8; break;
     case 0x04040008: {
-      spDMALen.raw = value;
+      spDMALen.raw = val;
       DMAtoRSP(mem.GetRDRAM());
     } break;
     case 0x0404000C: {
-      spDMALen.raw = value;
+      spDMALen.raw = val;
       DMAtoRDRAM(mem.GetRDRAM());
     } break;
-    case 0x04040010: WriteStatus(value); break;
+    case 0x04040010: WriteStatus(val); break;
     case 0x0404001C: ReleaseSemaphore(); break;
     case 0x04080000:
       if(spStatus.halt) {
-        SetPC(value);
+        SetPC(val);
       } break;
     default:
-      Util::panic("Unimplemented SP register write {:08X}, val: {:08X}", addr, value);
+      Util::panic("Unimplemented SP register write {:08X}, val: {:08X}", addr, val);
   }
 }
 

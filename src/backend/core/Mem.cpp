@@ -193,7 +193,7 @@ template<> u8 Mem::Read(n64::Registers &regs, u32 paddr) {
         return src[BYTE_ADDRESS(paddr & 0xfff)];
       }
       case REGION_CART:
-        return mmio.pi.BusRead<u8, false>(*this, paddr);
+        return mmio.pi.BusRead<u8, false>(paddr);
       case 0x04040000 ... 0x040FFFFF:
       case 0x04100000 ... 0x041FFFFF:
       case 0x04600000 ... 0x048FFFFF:
@@ -238,7 +238,7 @@ template<> u16 Mem::Read(n64::Registers &regs, u32 paddr) {
       case MMIO_REGION:
         return mmio.Read(paddr);
       case REGION_CART:
-        return mmio.pi.BusRead<u16, false>(*this, paddr);
+        return mmio.pi.BusRead<u16, false>(paddr);
       case PIF_ROM_REGION:
         return Util::ReadAccess<u16>(si.pif.bootrom, HALF_ADDRESS(paddr) - PIF_ROM_REGION_START);
       case PIF_RAM_REGION:
@@ -273,7 +273,7 @@ template<> u32 Mem::Read(n64::Registers &regs, u32 paddr) {
       case MMIO_REGION:
         return mmio.Read(paddr);
       case REGION_CART:
-        return mmio.pi.BusRead<u32, false>(*this, paddr);
+        return mmio.pi.BusRead<u32, false>(paddr);
       case PIF_ROM_REGION:
         return Util::ReadAccess<u32>(si.pif.bootrom, paddr - PIF_ROM_REGION_START);
       case PIF_RAM_REGION:
@@ -305,7 +305,7 @@ template<> u64 Mem::Read(n64::Registers &regs, u32 paddr) {
       case MMIO_REGION:
         return mmio.Read(paddr);
       case REGION_CART:
-        return mmio.pi.BusRead<u64, false>(*this, paddr);
+        return mmio.pi.BusRead<u64, false>(paddr);
       case PIF_ROM_REGION:
         return Util::ReadAccess<u64>(si.pif.bootrom, paddr - PIF_ROM_REGION_START);
       case PIF_RAM_REGION:
@@ -342,7 +342,7 @@ template<> void Mem::Write<u8>(Registers& regs, u32 paddr, u32 val) {
       } break;
       case REGION_CART:
         Util::trace("BusWrite<u8> @ {:08X} = {:02X}", paddr, val);
-        mmio.pi.BusWrite<u8, false>(*this, paddr, val);
+        mmio.pi.BusWrite<u8, false>(paddr, val);
         break;
       case MMIO_REGION:
         Util::panic("MMIO Write<u8>!");
@@ -387,7 +387,7 @@ template<> void Mem::Write<u16>(Registers& regs, u32 paddr, u32 val) {
       } break;
       case REGION_CART:
         Util::trace("BusWrite<u8> @ {:08X} = {:04X}", paddr, val);
-        mmio.pi.BusWrite<u16, false>(*this, paddr, val);
+        mmio.pi.BusWrite<u16, false>(paddr, val);
         break;
       case MMIO_REGION:
         Util::panic("MMIO Write<u16>!");
@@ -430,10 +430,10 @@ template<> void Mem::Write<u32>(Registers& regs, u32 paddr, u32 val) {
       } break;
       case REGION_CART:
         Util::trace("BusWrite<u8> @ {:08X} = {:08X}", paddr, val);
-        mmio.pi.BusWrite<u32, false>(*this, paddr, val);
+        mmio.pi.BusWrite<u32, false>(paddr, val);
         break;
       case MMIO_REGION:
-        mmio.Write(*this, regs, paddr, val);
+        mmio.Write(paddr, val);
         break;
       case PIF_RAM_REGION:
         Util::WriteAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe32(val));
@@ -470,7 +470,7 @@ void Mem::Write(Registers& regs, u32 paddr, u64 val) {
       } break;
       case REGION_CART:
         Util::trace("BusWrite<u8> @ {:08X} = {:016X}", paddr, val);
-        mmio.pi.BusWrite<false>(*this, paddr, val);
+        mmio.pi.BusWrite<false>(paddr, val);
         break;
       case MMIO_REGION:
         Util::panic("MMIO Write!");

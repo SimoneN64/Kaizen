@@ -30,8 +30,4 @@ struct Core {
   size_t memSize{}, cpuSize{}, verSize{};
   int slot = 0;
 };
-
-extern u32 extraCycles;
-void CpuStall(u32 cycles);
-u32 PopStalledCycles();
 }

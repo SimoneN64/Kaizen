@@ -28,10 +28,13 @@ struct SI {
   u32 pifAddr{};
   bool toDram = false;
 
-  auto Read(MI&, u32) const -> u32;
-  void Write(Mem&, Registers&, u32, u32);
-  void DMA(Mem&, Registers&) const;
+  auto Read(u32) const -> u32;
+  void Write(u32, u32);
+  void DMA();
   PIF pif;
+private:
+  Mem& mem;
+  Registers& regs;
 };
 
 #define SI_DMA_DELAY (65536 * 2)

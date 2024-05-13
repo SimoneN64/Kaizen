@@ -13,7 +13,7 @@ struct Mem;
 struct Registers;
 
 struct MMIO {
-  MMIO(Mem& mem, Registers& regs) : mi(regs), si(mem, regs), rsp(mem, regs) {}
+  MMIO(Mem& mem, Registers& regs) : vi(mem, regs), mi(regs), ai(mem, regs), pi(mem, regs), si(mem, regs), rsp(mem, regs), rdp(mem, regs) {}
   void Reset();
 
   VI vi;
@@ -26,7 +26,7 @@ struct MMIO {
   RDP rdp;
 
   u32 Read(u32);
-  void Write(Mem&, Registers&, u32, u32);
+  void Write(u32, u32);
   std::vector<u8> Serialize();
   void Deserialize(const std::vector<u8>&);
 };

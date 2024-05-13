@@ -5,7 +5,7 @@
 namespace n64 {
 
 struct RSP;
-struct MI;
+struct Mem;
 struct Registers;
 
 union DPCStatusWrite {
@@ -54,15 +54,15 @@ struct RDP {
   DPC dpc{};
   u32 cmd_buf[0xFFFFF]{};
 
-  RDP();
+  RDP(Mem&, Registers&);
   void Reset();
 
   std::vector<u8> rdram{};
   [[nodiscard]] auto Read(u32 addr) const -> u32;
-  void Write(MI& mi, Registers& regs, RSP& rsp, u32 addr, u32 val);
-  void WriteStatus(MI& mi, Registers& regs, RSP& rsp, u32 val);
-  void RunCommand(MI& mi, Registers& regs, RSP& rsp);
-  void OnFullSync(MI& mi, Registers& regs);
+  void Write(u32 addr, u32 val);
+  void WriteStatus(u32 val);
+  void RunCommand();
+  void OnFullSync();
 
   FORCE_INLINE void WriteStart(u32 val) {
     if(!dpc.status.startValid) {
@@ -71,13 +71,16 @@ struct RDP {
     dpc.status.startValid = true;
   }
 
-  FORCE_INLINE void WriteEnd(MI& mi, Registers& regs, RSP& rsp, u32 val) {
+  FORCE_INLINE void WriteEnd(u32 val) {
     dpc.end = val & 0xFFFFF8;
     if(dpc.status.startValid) {
       dpc.current = dpc.start;
       dpc.status.startValid = false;
     }
-    RunCommand(mi, regs, rsp);
+    RunCommand();
   }
+private:
+  Mem& mem;
+  Registers& regs;
 };
 } // backend

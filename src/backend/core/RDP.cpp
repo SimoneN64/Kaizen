@@ -5,7 +5,7 @@
 #include <core/mmio/Interrupt.hpp>
 
 namespace n64 {
-RDP::RDP() {
+RDP::RDP(Mem& mem, Registers& regs) : mem(mem), regs(regs) {
   rdram.resize(RDRAM_SIZE);
   memset(cmd_buf, 0, 0x100000);
   dpc.status.raw = 0x80;
@@ -40,17 +40,17 @@ auto RDP::Read(u32 addr) const -> u32 {
   }
 }
 
-void RDP::Write(MI& mi, Registers& regs, RSP& rsp, u32 addr, u32 val) {
+void RDP::Write(u32 addr, u32 val) {
   switch(addr) {
     case 0x04100000: WriteStart(val); break;
-    case 0x04100004: WriteEnd(mi, regs, rsp, val); break;
-    case 0x0410000C: WriteStatus(mi, regs, rsp, val); break;
+    case 0x04100004: WriteEnd(val); break;
+    case 0x0410000C: WriteStatus(val); break;
     default:
       Util::panic("Unhandled DP Command Registers write (addr: {:08X}, val: {:08X})", addr, val);
   }
 }
 
-void RDP::WriteStatus(MI& mi, Registers& regs, RSP& rsp, u32 val) {
+void RDP::WriteStatus(u32 val) {
   DPCStatusWrite temp{};
   temp.raw = val;
 
@@ -69,7 +69,7 @@ void RDP::WriteStatus(MI& mi, Registers& regs, RSP& rsp, u32 val) {
   CLEAR_SET(dpc.status.tmemBusy, temp.clearTmem, false);
 
   if(!dpc.status.freeze) {
-    RunCommand(mi, regs, rsp);
+    RunCommand();
   }
 }
 /*
@@ -114,7 +114,7 @@ FORCE_INLINE void logCommand(u8 cmd) {
 }
  */
 
-void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
+void RDP::RunCommand() {
   if (dpc.status.freeze) {
     return;
   }
@@ -138,7 +138,7 @@ void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
 
     if (dpc.status.xbusDmemDma) {
       for (int i = 0; i < len; i += 4) {
-        u32 cmd = Util::ReadAccess<u32>(rsp.dmem, (current + i) & 0xFFF);
+        u32 cmd = Util::ReadAccess<u32>(mem.mmio.rsp.dmem, (current + i) & 0xFFF);
         cmd_buf[remaining_cmds + (i >> 2)] = cmd;
       }
     } else {
@@ -181,7 +181,7 @@ void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
       }
 
       if (cmd == 0x29) {
-        OnFullSync(mi, regs);
+        OnFullSync();
       }
 
       buf_index += cmd_len;
@@ -198,12 +198,12 @@ void RDP::RunCommand(MI& mi, Registers& regs, RSP& rsp) {
   dpc.status.cbufReady = true;
 }
 
-void RDP::OnFullSync(MI& mi, Registers& regs) {
+void RDP::OnFullSync() {
   ParallelRdpOnFullSync();
 
   dpc.status.pipeBusy = false;
   dpc.status.startGclk = false;
   dpc.status.cbufReady = false;
-  mi.InterruptRaise(MI::Interrupt::DP);
+  mem.mmio.mi.InterruptRaise(MI::Interrupt::DP);
 }
 }

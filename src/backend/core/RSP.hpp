@@ -126,7 +126,7 @@ struct RSP {
     Exec(instr);
   }
   auto Read(u32 addr) -> u32;
-  void Write(u32 addr, u32 value);
+  void Write(u32 addr, u32 val);
   void Exec(u32 instr);
   SPStatus spStatus{};
   u16 oldPC{}, pc{}, nextPC{};

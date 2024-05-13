@@ -3,7 +3,7 @@
 #include <Scheduler.hpp>
 
 namespace n64 {
-SI::SI(Mem& mem, Registers& regs) : pif(mem, regs) {
+SI::SI(Mem& mem, Registers& regs) : mem(mem), regs(regs), pif(mem, regs) {
   Reset();
 }
 
@@ -14,7 +14,7 @@ void SI::Reset() {
   pif.Reset();
 }
 
-auto SI::Read(MI& mi, u32 addr) const -> u32 {
+auto SI::Read(u32 addr) const -> u32 {
   switch(addr) {
     case 0x04800000: return dramAddr;
     case 0x04800004: case 0x04800010: return pifAddr;
@@ -24,7 +24,7 @@ auto SI::Read(MI& mi, u32 addr) const -> u32 {
       val |= status.dmaBusy;
       val |= (0 << 1);
       val |= (0 << 3);
-      val |= (mi.miIntr.si << 12);
+      val |= (mem.mmio.mi.miIntr.si << 12);
       return val;
     }
     default:
@@ -32,26 +32,25 @@ auto SI::Read(MI& mi, u32 addr) const -> u32 {
   }
 }
 
-void SI::DMA(Mem& mem, Registers& regs) const {
-  SI& si = mem.mmio.si;
-  si.status.dmaBusy = false;
+void SI::DMA() {
+  status.dmaBusy = false;
   if (toDram) {
-    si.pif.ProcessCommands(mem);
+    pif.ProcessCommands(mem);
     for(int i = 0; i < 64; i++) {
-      mem.mmio.rdp.rdram[BYTE_ADDRESS(si.dramAddr + i)] = si.pif.Read(si.pifAddr + i);
+      mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddr + i)] = pif.Read(pifAddr + i);
     }
-    Util::trace("SI DMA from PIF RAM to RDRAM ({:08X} to {:08X})", si.pifAddr, si.dramAddr);
+    Util::trace("SI DMA from PIF RAM to RDRAM ({:08X} to {:08X})", pifAddr, dramAddr);
   } else {
     for(int i = 0; i < 64; i++) {
-      si.pif.Write(si.pifAddr + i, mem.mmio.rdp.rdram[BYTE_ADDRESS(si.dramAddr + i)]);
+      pif.Write(pifAddr + i, mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddr + i)]);
     }
-    Util::trace("SI DMA from RDRAM to PIF RAM ({:08X} to {:08X})", si.dramAddr, si.pifAddr);
-    si.pif.ProcessCommands(mem);
+    Util::trace("SI DMA from RDRAM to PIF RAM ({:08X} to {:08X})", dramAddr, pifAddr);
+    pif.ProcessCommands(mem);
   }
   mem.mmio.mi.InterruptRaise(MI::Interrupt::SI);
 }
 
-void SI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
+void SI::Write(u32 addr, u32 val) {
   switch(addr) {
     case 0x04800000:
       dramAddr = val & RDRAM_DSIZE;

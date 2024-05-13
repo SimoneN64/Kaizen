@@ -75,8 +75,8 @@ FORCE_INLINE void SetCop0Reg(Registers& regs, Mem& mem, u8 index, u32 val) {
       }
       break;
     case 8: rdp.WriteStart(val); break;
-    case 9: rdp.WriteEnd(mi, regs, rsp, val); break;
-    case 11: rdp.WriteStatus(mi, regs, rsp, val); break;
+    case 9: rdp.WriteEnd(val); break;
+    case 11: rdp.WriteStatus(val); break;
     default: Util::panic("Unhandled RSP COP0 register write at index {}", index);
   }
 }

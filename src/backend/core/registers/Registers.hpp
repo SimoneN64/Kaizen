@@ -14,5 +14,16 @@ struct Registers {
   s64 hi{}, lo{};
   bool prevDelaySlot{}, delaySlot{};
   int steps = 0;
+  u32 extraCycles = 0;
+
+  void CpuStall(u32 cycles) {
+    extraCycles += cycles;
+  }
+
+  u32 PopStalledCycles() {
+    u32 ret = extraCycles;
+    extraCycles = 0;
+    return ret;
+  }
 };
 }

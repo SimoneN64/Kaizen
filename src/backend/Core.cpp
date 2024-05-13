@@ -3,18 +3,6 @@
 #include <ParallelRDPWrapper.hpp>
 
 namespace n64 {
-u32 extraCycles = 0;
-
-void CpuStall(u32 cycles) {
-  extraCycles += cycles;
-}
-
-u32 PopStalledCycles() {
-  u32 ret = extraCycles;
-  extraCycles = 0;
-  return ret;
-}
-
 Core::Core() : cpu(std::make_unique<Interpreter>()) {}
 
 void Core::Stop() {
@@ -71,7 +59,7 @@ void Core::Run(float volumeL, float volumeR) {
 
       for(; cycles < mem.mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
         u32 taken = cpu->Step();
-        taken += PopStalledCycles();
+        taken += regs.PopStalledCycles();
         static u32 cpuSteps = 0;
         cpuSteps += taken;
         if(mmio.rsp.spStatus.halt) {
@@ -91,7 +79,7 @@ void Core::Run(float volumeL, float volumeR) {
 
         cycles += taken;
         frameCycles += taken;
-        scheduler.Tick(taken, mem, regs);
+        scheduler.Tick(taken, mem);
       }
 
       cycles -= mmio.vi.cyclesPerHalfline;
@@ -101,8 +89,8 @@ void Core::Run(float volumeL, float volumeR) {
       mmio.mi.InterruptRaise(MI::Interrupt::VI);
     }
 
-    mmio.ai.Step(cpu->mem, regs, frameCycles, volumeL, volumeR);
-    scheduler.Tick(frameCycles, mem, regs);
+    mmio.ai.Step(frameCycles, volumeL, volumeR);
+    scheduler.Tick(frameCycles, mem);
   }
 }
 

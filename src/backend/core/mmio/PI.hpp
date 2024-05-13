@@ -8,18 +8,18 @@ struct Mem;
 struct Registers;
 
 struct PI {
-  PI();
+  PI(Mem&, Registers&);
   void Reset();
-  auto Read(MI&, u32) const -> u32;
-  void Write(Mem&, Registers&, u32, u32);
+  auto Read(u32) const -> u32;
+  void Write(u32, u32);
 
   template<typename T, bool isDma>
-  void BusWrite(Mem&, u32, u32);
+  void BusWrite(u32, u32);
   template<bool isDma>
-  void BusWrite(Mem&, u32, u64);
+  void BusWrite(u32, u64);
 
   template<typename T, bool isDma>
-  auto BusRead(Mem&, u32) -> T;
+  auto BusRead(u32) -> T;
 
   bool ReadLatch();
   bool WriteLatch(u32 val);
@@ -34,5 +34,8 @@ struct PI {
   u32 piBsdDom1Pwd{}, piBsdDom2Pwd{};
   u32 piBsdDom1Pgs{}, piBsdDom2Pgs{};
   u32 piBsdDom1Rls{}, piBsdDom2Rls{};
+private:
+  Mem& mem;
+  Registers& regs;
 };
 }

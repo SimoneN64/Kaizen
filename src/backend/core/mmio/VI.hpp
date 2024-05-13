@@ -72,14 +72,14 @@ union AxisStart {
   };
 };
 
-struct MI;
+struct Mem;
 struct Registers;
 
 struct VI {
-  VI();
+  VI(Mem&, Registers&);
   void Reset();
   [[nodiscard]] u32 Read(u32) const;
-  void Write(MI&, Registers&, u32, u32);
+  void Write(u32, u32);
   AxisScale xscale{}, yscale{};
   VIHsyncLeap hsyncLeap{};
   VIStatus status{};
@@ -93,5 +93,8 @@ struct VI {
   int numHalflines{};
   int numFields{};
   int cyclesPerHalfline{};
+private:
+  Mem& mem;
+  Registers& regs;
 };
 } // backend

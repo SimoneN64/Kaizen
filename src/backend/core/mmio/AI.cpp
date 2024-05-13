@@ -4,6 +4,8 @@
 #include <core/registers/Registers.hpp>
 
 namespace n64 {
+AI::AI(Mem &mem, Registers &regs) : mem(mem), regs(regs) { }
+
 void AI::Reset() {
   dmaEnable = false;
   dacRate = 0;
@@ -33,7 +35,7 @@ auto AI::Read(u32 addr) const -> u32 {
   return dmaLen[0];
 }
 
-void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
+void AI::Write(u32 addr, u32 val) {
   switch(addr) {
     case 0x04500000:
       if(dmaCount < 2) {
@@ -72,7 +74,7 @@ void AI::Write(Mem& mem, Registers& regs, u32 addr, u32 val) {
   }
 }
 
-void AI::Step(Mem& mem, Registers& regs, u32 cpuCycles, float volumeL, float volumeR) {
+void AI::Step(u32 cpuCycles, float volumeL, float volumeR) {
   cycles += cpuCycles;
   while(cycles > dac.period) {
     if (dmaCount == 0) {

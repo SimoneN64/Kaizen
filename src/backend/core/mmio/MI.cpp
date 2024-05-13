@@ -27,7 +27,7 @@ auto MI::Read(u32 paddr) const -> u32 {
   }
 }
 
-void MI::Write(Registers& regs, u32 paddr, u32 val) {
+void MI::Write(u32 paddr, u32 val) {
   switch(paddr & 0xF) {
     case 0x0:
       miMode &= 0xFFFFFF80;

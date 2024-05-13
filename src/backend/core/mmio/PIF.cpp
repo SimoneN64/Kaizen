@@ -332,7 +332,7 @@ void PIF::EepromWrite(const u8* cmd, u8* res, const Mem& mem) {
   }
 }
 
-void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
+void PIF::HLE(bool pal, CICType cicType) {
   mem.Write<u32>(regs, PIF_RAM_REGION_START + 0x24, cicSeeds[cicType]);
 
   switch(cicType) {
@@ -597,7 +597,7 @@ void PIF::DoPIFHLE(Mem& mem, Registers& regs, bool pal, CICType cicType) {
   regs.SetPC32(s32(0xA4000040));
 }
 
-void PIF::ExecutePIF(Mem& mem, Registers& regs) {
+void PIF::Execute() {
   CICType cicType = mem.rom.cicType;
   bool pal = mem.rom.pal;
   mem.Write<u32>(regs, PIF_RAM_REGION_START + 0x24, cicSeeds[cicType]);
@@ -615,7 +615,7 @@ void PIF::ExecutePIF(Mem& mem, Registers& regs) {
       break;
   }
 
-  DoPIFHLE(mem, regs, pal, cicType);
+  HLE(pal, cicType);
 }
 
 std::vector<u8> PIF::Serialize() {

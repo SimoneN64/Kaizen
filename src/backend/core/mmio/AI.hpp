@@ -1,7 +1,7 @@
 #pragma once
 #include <common.hpp>
 #include <core/mmio/Interrupt.hpp>
-#include "Audio.hpp"
+#include <core/mmio/Audio.hpp>
 
 namespace n64 {
 struct Mem;

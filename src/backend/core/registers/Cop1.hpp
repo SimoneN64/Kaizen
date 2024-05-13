@@ -90,8 +90,8 @@ struct Registers;
 
 struct Cop1 {
 #define CheckFPUUsable_PreserveCause() do { if(!regs.cop0.status.cu1) { regs.cop0.FireException(ExceptionCode::CoprocessorUnusable, 1, regs.oldPC); return; } } while(0)
-#define CheckFPUUsable() do { CheckFPUUsable_PreserveCause(); regs.cop1.fcr31.cause = 0; } while(0)
-  Cop1();
+#define CheckFPUUsable() do { CheckFPUUsable_PreserveCause(); fcr31.cause = 0; } while(0)
+  Cop1(Registers&);
   u32 fcr0{};
   FCR31 fcr31{};
   FloatingPointReg fgr[32]{};
@@ -100,6 +100,18 @@ struct Cop1 {
   void decode(T&, u32);
   friend struct Interpreter;
 
+  bool FireException();
+
+  template <typename T>
+  void SetCauseOnResult(T& d);
+  template <typename T>
+  void SetCauseByArg(T f);
+  template <typename T>
+  void SetCauseByArgLCVT(T f);
+  template <typename T>
+  void SetCauseByArgWCVT(T f);
+  void SetCauseRaised(int);
+  void SetCauseRaisedCVT(int);
   void SetCauseUnimplemented();
   void SetCauseUnderflow();
   void SetCauseInexact();
@@ -111,79 +123,79 @@ private:
   auto FGR(Cop0Status&, u32) -> T&;
   void decodeInterp(Interpreter&, u32);
   void decodeJIT(JIT&, u32);
-  void absd(Registers&, u32 instr);
-  void abss(Registers&, u32 instr);
-  void adds(Registers&, u32 instr);
-  void addd(Registers&, u32 instr);
-  void subs(Registers&, u32 instr);
-  void subd(Registers&, u32 instr);
-  void ceills(Registers&, u32 instr);
-  void ceilws(Registers&, u32 instr);
-  void ceilld(Registers&, u32 instr);
-  void ceilwd(Registers&, u32 instr);
-  void cfc1(Registers&, u32 instr) const;
-  void ctc1(Registers&, u32 instr);
-  void unimplemented(Registers&);
-  void roundls(Registers&, u32 instr);
-  void roundld(Registers&, u32 instr);
-  void roundws(Registers&, u32 instr);
-  void roundwd(Registers&, u32 instr);
-  void floorls(Registers&, u32 instr);
-  void floorld(Registers&, u32 instr);
-  void floorws(Registers&, u32 instr);
-  void floorwd(Registers&, u32 instr);
-  void cvtls(Registers&, u32 instr);
-  void cvtws(Registers&, u32 instr);
-  void cvtds(Registers&, u32 instr);
-  void cvtsw(Registers&, u32 instr);
-  void cvtdw(Registers&, u32 instr);
-  void cvtsd(Registers&, u32 instr);
-  void cvtwd(Registers&, u32 instr);
-  void cvtld(Registers&, u32 instr);
-  void cvtdl(Registers&, u32 instr);
-  void cvtsl(Registers&, u32 instr);
+  void absd(u32 instr);
+  void abss(u32 instr);
+  void adds(u32 instr);
+  void addd(u32 instr);
+  void subs(u32 instr);
+  void subd(u32 instr);
+  void ceills(u32 instr);
+  void ceilws(u32 instr);
+  void ceilld(u32 instr);
+  void ceilwd(u32 instr);
+  void cfc1(u32 instr) const;
+  void ctc1(u32 instr);
+  void unimplemented();
+  void roundls(u32 instr);
+  void roundld(u32 instr);
+  void roundws(u32 instr);
+  void roundwd(u32 instr);
+  void floorls(u32 instr);
+  void floorld(u32 instr);
+  void floorws(u32 instr);
+  void floorwd(u32 instr);
+  void cvtls(u32 instr);
+  void cvtws(u32 instr);
+  void cvtds(u32 instr);
+  void cvtsw(u32 instr);
+  void cvtdw(u32 instr);
+  void cvtsd(u32 instr);
+  void cvtwd(u32 instr);
+  void cvtld(u32 instr);
+  void cvtdl(u32 instr);
+  void cvtsl(u32 instr);
   template <typename T>
-  void cf(Registers&, u32 instr);
+  void cf(u32 instr);
   template <typename T>
-  void cun(Registers&, u32 instr);
+  void cun(u32 instr);
   template <typename T>
-  void ceq(Registers&, u32 instr);
+  void ceq(u32 instr);
   template <typename T>
-  void cueq(Registers&, u32 instr);
+  void cueq(u32 instr);
   template <typename T>
-  void colt(Registers&, u32 instr);
+  void colt(u32 instr);
   template <typename T>
-  void cult(Registers&, u32 instr);
+  void cult(u32 instr);
   template <typename T>
-  void cole(Registers&, u32 instr);
+  void cole(u32 instr);
   template <typename T>
-  void cule(Registers&, u32 instr);
+  void cule(u32 instr);
   template <typename T>
-  void csf(Registers&, u32 instr);
+  void csf(u32 instr);
   template <typename T>
-  void cngle(Registers&, u32 instr);
+  void cngle(u32 instr);
   template <typename T>
-  void cseq(Registers&, u32 instr);
+  void cseq(u32 instr);
   template <typename T>
-  void cngl(Registers&, u32 instr);
+  void cngl(u32 instr);
   template <typename T>
-  void clt(Registers&, u32 instr);
+  void clt(u32 instr);
   template <typename T>
-  void cnge(Registers&, u32 instr);
+  void cnge(u32 instr);
   template <typename T>
-  void cle(Registers&, u32 instr);
+  void cle(u32 instr);
   template <typename T>
-  void cngt(Registers&, u32 instr);
-  void divs(Registers&, u32 instr);
-  void divd(Registers&, u32 instr);
-  void muls(Registers&, u32 instr);
-  void muld(Registers&, u32 instr);
-  void movs(Registers&, u32 instr);
-  void movd(Registers&, u32 instr);
-  void negs(Registers&, u32 instr);
-  void negd(Registers&, u32 instr);
-  void sqrts(Registers&, u32 instr);
-  void sqrtd(Registers&, u32 instr);
+  void cngt(u32 instr);
+  void divs(u32 instr);
+  void divd(u32 instr);
+  void muls(u32 instr);
+  void muld(u32 instr);
+  void movs(u32 instr);
+  void movd(u32 instr);
+  void negs(u32 instr);
+  void negd(u32 instr);
+  void sqrts(u32 instr);
+  void sqrtd(u32 instr);
   template<class T>
   void lwc1(T&, Mem&, u32);
   template<class T>
@@ -193,10 +205,10 @@ private:
   template<class T>
   void sdc1(T&, Mem&, u32);
 
-  void lwc1Interp(Registers&, Mem&, u32);
-  void swc1Interp(Registers&, Mem&, u32);
-  void ldc1Interp(Registers&, Mem&, u32);
-  void sdc1Interp(Registers&, Mem&, u32);
+  void lwc1Interp(Mem&, u32);
+  void swc1Interp(Mem&, u32);
+  void ldc1Interp(Mem&, u32);
+  void sdc1Interp(Mem&, u32);
   void lwc1JIT(JIT&, Mem&, u32) {
     Util::panic("[JIT]: lwc1 not implemented!");
   }
@@ -209,13 +221,15 @@ private:
   void sdc1JIT(JIT&, Mem&, u32) {
     Util::panic("[JIT]: sdc1 not implemented!");
   }
-  void mfc1(Registers&, u32 instr);
-  void dmfc1(Registers&, u32 instr);
-  void mtc1(Registers&, u32 instr);
-  void dmtc1(Registers&, u32 instr);
-  void truncws(Registers&, u32 instr);
-  void truncwd(Registers&, u32 instr);
-  void truncls(Registers&, u32 instr);
-  void truncld(Registers&, u32 instr);
+  void mfc1(u32 instr);
+  void dmfc1(u32 instr);
+  void mtc1(u32 instr);
+  void dmtc1(u32 instr);
+  void truncws(u32 instr);
+  void truncwd(u32 instr);
+  void truncls(u32 instr);
+  void truncld(u32 instr);
+
+  Registers& regs;
 };
 }

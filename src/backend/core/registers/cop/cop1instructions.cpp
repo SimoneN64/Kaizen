@@ -54,8 +54,7 @@ template<> auto Cop1::FGR<double>(Cop0Status& status, u32 index) -> double& {
   }
 }
 
-FORCE_INLINE bool FireFPUException(Registers& regs) {
-  FCR31& fcr31 = regs.cop1.fcr31;
+bool Cop1::FireException() {
   u32 enable = fcr31.enable | (1 << 5);
   if(fcr31.cause & enable) {
     regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
@@ -65,7 +64,7 @@ FORCE_INLINE bool FireFPUException(Registers& regs) {
   return false;
 }
 
-#define CheckFPUException() do { if(FireFPUException(regs)) { return; } } while(0)
+#define CheckFPUException() do { if(FireException()) { return; } } while(0)
 
 FORCE_INLINE int PushRoundingMode(const FCR31& fcr31) {
   int og = fegetround();
@@ -120,8 +119,8 @@ void Cop1::SetCauseInvalid() {
 
 #define PUSHROUNDING int orig_round = PushRoundingMode(fcr31)
 #define POPROUNDING fesetround(orig_round)
-#define OP_CheckExcept(op) do { feclearexcept(FE_ALL_EXCEPT); PUSHROUNDING; op; SetFPUCauseRaised(regs, fetestexcept(FE_ALL_EXCEPT)); POPROUNDING; } while(0)
-#define CVT_OP_CheckExcept(op) do { feclearexcept(FE_ALL_EXCEPT); op; SetFPUCauseCVTRaised(regs, fetestexcept(FE_ALL_EXCEPT)); CheckFPUException(); } while(0)
+#define OP_CheckExcept(op) do { feclearexcept(FE_ALL_EXCEPT); PUSHROUNDING; op; SetCauseRaised(fetestexcept(FE_ALL_EXCEPT)); POPROUNDING; } while(0)
+#define CVT_OP_CheckExcept(op) do { feclearexcept(FE_ALL_EXCEPT); op; SetCauseRaisedCVT(fetestexcept(FE_ALL_EXCEPT)); CheckFPUException(); } while(0)
 
 #define OP(T, op) do { \
   CheckFPUUsable(); \
@@ -136,19 +135,19 @@ void Cop1::SetCauseInvalid() {
 } while(0)
 
 template <typename T>
-FORCE_INLINE void SetCauseByArgWCVT(Registers& regs, T f) {
+void Cop1::SetCauseByArgWCVT(T f) {
   switch (std::fpclassify(f)) {
     case FP_NAN:
     case FP_INFINITE:
     case FP_SUBNORMAL:
-      regs.cop1.SetCauseUnimplemented();
+      SetCauseUnimplemented();
       CheckFPUException();
       break;
 
     case FP_NORMAL:
       // Check overflow
       if (f >= 2147483648.0f || f < -2147483648.0f) {
-        regs.cop1.SetCauseUnimplemented();
+        SetCauseUnimplemented();
         CheckFPUException();
       }
       break;
@@ -159,19 +158,19 @@ FORCE_INLINE void SetCauseByArgWCVT(Registers& regs, T f) {
 }
 
 template <typename T>
-FORCE_INLINE void SetCauseByArgLCVT(Registers& regs, T f) {
+void Cop1::SetCauseByArgLCVT(T f) {
   switch (std::fpclassify(f)) {
     case FP_NAN:
     case FP_INFINITE:
     case FP_SUBNORMAL:
-      regs.cop1.SetCauseUnimplemented();
+      SetCauseUnimplemented();
       CheckFPUException();
       break;
 
     case FP_NORMAL:
       // Check overflow
       if (f >= 9007199254740992.000000 || f <= -9007199254740992.000000) {
-        regs.cop1.SetCauseUnimplemented();
+        SetCauseUnimplemented();
         CheckFPUException();
       }
       break;
@@ -181,47 +180,47 @@ FORCE_INLINE void SetCauseByArgLCVT(Registers& regs, T f) {
   }
 }
 
-#define CheckWCVTArg(f) do { SetCauseByArgWCVT(regs, f); CheckFPUException(); } while(0)
-#define CheckLCVTArg(f) do { SetCauseByArgLCVT(regs, f); CheckFPUException(); } while(0)
+#define CheckWCVTArg(f) do { SetCauseByArgWCVT(f); CheckFPUException(); } while(0)
+#define CheckLCVTArg(f) do { SetCauseByArgLCVT(f); CheckFPUException(); } while(0)
 
-FORCE_INLINE void SetFPUCauseRaised(Registers& regs, int raised) {
+void Cop1::SetCauseRaised(int raised) {
   if (raised == 0) {
     return;
   }
 
   if (raised & FE_UNDERFLOW) {
-    if (!regs.cop1.fcr31.fs || regs.cop1.fcr31.enable_underflow || regs.cop1.fcr31.enable_inexact_operation) {
-      regs.cop1.SetCauseUnimplemented();
+    if (!fcr31.fs || fcr31.enable_underflow || fcr31.enable_inexact_operation) {
+      SetCauseUnimplemented();
       return;
     } else {
-      regs.cop1.SetCauseUnderflow();
+      SetCauseUnderflow();
     }
   }
 
   if (raised & FE_INEXACT) {
-    regs.cop1.SetCauseInexact();
+    SetCauseInexact();
   }
 
   if (raised & FE_DIVBYZERO) {
-    regs.cop1.SetCauseDivisionByZero();
+    SetCauseDivisionByZero();
   }
 
   if (raised & FE_OVERFLOW) {
-    regs.cop1.SetCauseOverflow();
+    SetCauseOverflow();
   }
 
   if (raised & FE_INVALID) {
-    regs.cop1.SetCauseInvalid();
+    SetCauseInvalid();
   }
 }
 
-FORCE_INLINE void SetFPUCauseCVTRaised(Registers& regs, int raised) {
+void Cop1::SetCauseRaisedCVT(int raised) {
   if(raised & FE_INVALID) {
-    regs.cop1.SetCauseUnimplemented();
+    SetCauseUnimplemented();
     return;
   }
 
-  SetFPUCauseRaised(regs, raised);
+  SetCauseRaised(raised);
 }
 
 #define F_TO_U32(f) (*((u32*)(&(f))))
@@ -243,20 +242,20 @@ FORCE_INLINE bool isqnan(T f) {
 }
 
 template <typename T>
-FORCE_INLINE void SetCauseByArg(Registers& regs, T f) {
+void Cop1::SetCauseByArg(T f) {
   auto fp_class = std::fpclassify(f);
   switch(fp_class) {
     case FP_NAN:
       if(isqnan(f)) {
-        regs.cop1.SetCauseInvalid();
+        SetCauseInvalid();
         CheckFPUException();
       } else {
-        regs.cop1.SetCauseUnimplemented();
+        SetCauseUnimplemented();
         CheckFPUException();
       }
       break;
     case FP_SUBNORMAL:
-      regs.cop1.SetCauseUnimplemented();
+      SetCauseUnimplemented();
       CheckFPUException();
       break;
     case FP_INFINITE:
@@ -268,11 +267,10 @@ FORCE_INLINE void SetCauseByArg(Registers& regs, T f) {
   }
 }
 
-#define CheckArg(f) do { SetCauseByArg(regs, f); CheckFPUException(); } while(0)
+#define CheckArg(f) do { SetCauseByArg(f); CheckFPUException(); } while(0)
 
 template <typename T>
-FORCE_INLINE void SetCauseOnResult(Registers& regs, T& d) {
-  Cop1& cop1 = regs.cop1;
+void Cop1::SetCauseOnResult(T& d) {
   auto fp_class = std::fpclassify(d);
   T magic, min;
   if constexpr(std::is_same_v<T, float>) {
@@ -289,14 +287,14 @@ FORCE_INLINE void SetCauseOnResult(Registers& regs, T& d) {
       d = magic; // set result to sNAN
       break;
     case FP_SUBNORMAL:
-      if (!cop1.fcr31.fs || cop1.fcr31.enable_underflow || cop1.fcr31.enable_inexact_operation) {
-        regs.cop1.SetCauseUnimplemented();
+      if (!fcr31.fs || fcr31.enable_underflow || fcr31.enable_inexact_operation) {
+        SetCauseUnimplemented();
         CheckFPUException();
       } else {
         // Since the if statement checks for the corresponding enable bits, it's safe to turn these cause bits on here.
-        regs.cop1.SetCauseUnderflow();
-        regs.cop1.SetCauseInexact();
-        switch (cop1.fcr31.rounding_mode) {
+        SetCauseUnderflow();
+        SetCauseInexact();
+        switch (fcr31.rounding_mode) {
           case 0:
           case 1:
             d = std::copysign(0, d);
@@ -327,7 +325,7 @@ FORCE_INLINE void SetCauseOnResult(Registers& regs, T& d) {
   }
 }
 
-#define CheckResult(f) do { SetCauseOnResult(regs, (f)); CheckFPUException(); } while(0)
+#define CheckResult(f) do { SetCauseOnResult((f)); CheckFPUException(); } while(0)
 
 #define any_unordered(fs, ft) (std::isnan(fs) || std::isnan(ft))
 #define CheckRound(a, b) do { if ((a) != (b)) { SetCauseInexact(); } CheckFPUException(); } while(0)
@@ -347,35 +345,35 @@ FORCE_INLINE bool is_nan(T f) {
 
 #define checknanregs(fs, ft) do { \
   if(is_nan(fs) || is_nan(ft)) {                                       \
-    regs.cop1.SetCauseInvalid();                                           \
+    SetCauseInvalid();                                           \
     CheckFPUException();                                             \
   }                                                                  \
 } while(0)
 
 #define checkqnanregs(fs, ft) do { \
   if(isqnan(fs) || isqnan(ft)) {                                     \
-    regs.cop1.SetCauseInvalid();                                           \
+    SetCauseInvalid();                                           \
     CheckFPUException();                                             \
   }                                                                  \
 } while(0)
 
-void Cop1::absd(Registers& regs, u32 instr) {
+void Cop1::absd(u32 instr) {
   OP(double, std::fabs(fs));
 }
 
-void Cop1::abss(Registers& regs, u32 instr) {
+void Cop1::abss(u32 instr) {
   OP(float, std::fabs(fs));
 }
 
-void Cop1::adds(Registers& regs, u32 instr) {
+void Cop1::adds(u32 instr) {
   OP(float, fs + ft);
 }
 
-void Cop1::addd(Registers& regs, u32 instr) {
+void Cop1::addd(u32 instr) {
   OP(double, fs + ft);
 }
 
-void Cop1::ceills(Registers& regs, u32 instr) {
+void Cop1::ceills(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<float>(regs.cop0.status, FS(instr));
   CheckLCVTArg(fs);
@@ -385,7 +383,7 @@ void Cop1::ceills(Registers& regs, u32 instr) {
   FGR<s64>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::ceilws(Registers& regs, u32 instr) {
+void Cop1::ceilws(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<float>(regs.cop0.status, FS(instr));
   CheckWCVTArg(fs);
@@ -395,7 +393,7 @@ void Cop1::ceilws(Registers& regs, u32 instr) {
   FGR<s32>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::ceilld(Registers& regs, u32 instr) {
+void Cop1::ceilld(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<double>(regs.cop0.status, FS(instr));
   CheckLCVTArg(fs);
@@ -405,7 +403,7 @@ void Cop1::ceilld(Registers& regs, u32 instr) {
   FGR<s64>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::ceilwd(Registers& regs, u32 instr) {
+void Cop1::ceilwd(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<double>(regs.cop0.status, FS(instr));
   CheckWCVTArg(fs);
@@ -415,7 +413,7 @@ void Cop1::ceilwd(Registers& regs, u32 instr) {
   FGR<s32>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::cfc1(Registers& regs, u32 instr) const {
+void Cop1::cfc1(u32 instr) const {
   CheckFPUUsable_PreserveCause();
   u8 fd = RD(instr);
   s32 val = 0;
@@ -429,7 +427,7 @@ void Cop1::cfc1(Registers& regs, u32 instr) const {
   regs.gpr[RT(instr)] = val;
 }
 
-void Cop1::ctc1(Registers& regs, u32 instr) {
+void Cop1::ctc1(u32 instr) {
   CheckFPUUsable_PreserveCause();
   u8 fs = RD(instr);
   u32 val = regs.gpr[RT(instr)];
@@ -452,7 +450,7 @@ void Cop1::ctc1(Registers& regs, u32 instr) {
   }
 }
 
-void Cop1::cvtds(Registers& regs, u32 instr) {
+void Cop1::cvtds(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<float>(regs.cop0.status, FS(instr));
   CheckArg(fs);
@@ -462,7 +460,7 @@ void Cop1::cvtds(Registers& regs, u32 instr) {
   FGR<double>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::cvtsd(Registers& regs, u32 instr) {
+void Cop1::cvtsd(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<double>(regs.cop0.status, FS(instr));
   CheckArg(fs);
@@ -472,7 +470,7 @@ void Cop1::cvtsd(Registers& regs, u32 instr) {
   FGR<float>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::cvtsw(Registers& regs, u32 instr) {
+void Cop1::cvtsw(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<s32>(regs.cop0.status, FS(instr));
   float result;
@@ -481,7 +479,7 @@ void Cop1::cvtsw(Registers& regs, u32 instr) {
   FGR<float>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::cvtsl(Registers& regs, u32 instr) {
+void Cop1::cvtsl(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<s64>(regs.cop0.status, FS(instr));
   if (fs >= s64(0x0080000000000000) || fs < s64(0xff80000000000000)) {
@@ -494,7 +492,7 @@ void Cop1::cvtsl(Registers& regs, u32 instr) {
   FGR<float>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::cvtwd(Registers& regs, u32 instr) {
+void Cop1::cvtwd(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<double>(regs.cop0.status, FS(instr));
   CheckWCVTArg(fs);
@@ -506,7 +504,7 @@ void Cop1::cvtwd(Registers& regs, u32 instr) {
   FGR<s32>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::cvtws(Registers& regs, u32 instr) {
+void Cop1::cvtws(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<float>(regs.cop0.status, FS(instr));
   CheckWCVTArg(fs);
@@ -518,7 +516,7 @@ void Cop1::cvtws(Registers& regs, u32 instr) {
   FGR<s32>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::cvtls(Registers& regs, u32 instr) {
+void Cop1::cvtls(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<float>(regs.cop0.status, FS(instr));
   CheckLCVTArg(fs);
@@ -530,7 +528,7 @@ void Cop1::cvtls(Registers& regs, u32 instr) {
   FGR<s64>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::cvtdw(Registers& regs, u32 instr) {
+void Cop1::cvtdw(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<s32>(regs.cop0.status, FS(instr));
   double result;
@@ -539,7 +537,7 @@ void Cop1::cvtdw(Registers& regs, u32 instr) {
   FGR<double>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::cvtdl(Registers& regs, u32 instr) {
+void Cop1::cvtdl(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<s64>(regs.cop0.status, FS(instr));
 
@@ -553,7 +551,7 @@ void Cop1::cvtdl(Registers& regs, u32 instr) {
   FGR<double>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::cvtld(Registers& regs, u32 instr) {
+void Cop1::cvtld(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<double>(regs.cop0.status, FS(instr));
   CheckLCVTArg(fs);
@@ -566,7 +564,7 @@ void Cop1::cvtld(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-void Cop1::cf(Registers& regs, u32 instr) {
+void Cop1::cf(u32 instr) {
   CheckFPUUsable();
   T fs = FGR<T>(regs.cop0.status, FS(instr));
   T ft = FGR<T>(regs.cop0.status, FT(instr));
@@ -575,7 +573,7 @@ void Cop1::cf(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-void Cop1::cun(Registers& regs, u32 instr) {
+void Cop1::cun(u32 instr) {
   CheckFPUUsable();
   T fs = FGR<T>(regs.cop0.status, FS(instr));
   T ft = FGR<T>(regs.cop0.status, FT(instr));
@@ -584,7 +582,7 @@ void Cop1::cun(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-void Cop1::ceq(Registers& regs, u32 instr) {
+void Cop1::ceq(u32 instr) {
   CheckFPUUsable();
   T fs = FGR<T>(regs.cop0.status, FS(instr));
   T ft = FGR<T>(regs.cop0.status, FT(instr));
@@ -593,7 +591,7 @@ void Cop1::ceq(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-void Cop1::cueq(Registers& regs, u32 instr) {
+void Cop1::cueq(u32 instr) {
   CheckFPUUsable();
   T fs = FGR<T>(regs.cop0.status, FS(instr));
   T ft = FGR<T>(regs.cop0.status, FT(instr));
@@ -602,7 +600,7 @@ void Cop1::cueq(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-void Cop1::colt(Registers& regs, u32 instr) {
+void Cop1::colt(u32 instr) {
   CheckFPUUsable();
   T fs = FGR<T>(regs.cop0.status, FS(instr));
   T ft = FGR<T>(regs.cop0.status, FT(instr));
@@ -611,7 +609,7 @@ void Cop1::colt(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-void Cop1::cult(Registers& regs, u32 instr) {
+void Cop1::cult(u32 instr) {
   CheckFPUUsable();
   T fs = FGR<T>(regs.cop0.status, FS(instr));
   T ft = FGR<T>(regs.cop0.status, FT(instr));
@@ -620,7 +618,7 @@ void Cop1::cult(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-void Cop1::cole(Registers& regs, u32 instr) {
+void Cop1::cole(u32 instr) {
   CheckFPUUsable();
   T fs = FGR<T>(regs.cop0.status, FS(instr));
   T ft = FGR<T>(regs.cop0.status, FT(instr));
@@ -629,7 +627,7 @@ void Cop1::cole(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-void Cop1::cule(Registers& regs, u32 instr) {
+void Cop1::cule(u32 instr) {
   CheckFPUUsable();
   T fs = FGR<T>(regs.cop0.status, FS(instr));
   T ft = FGR<T>(regs.cop0.status, FT(instr));
@@ -638,7 +636,7 @@ void Cop1::cule(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-void Cop1::csf(Registers& regs, u32 instr) {
+void Cop1::csf(u32 instr) {
   CheckFPUUsable();
   T fs = FGR<T>(regs.cop0.status, FS(instr));
   T ft = FGR<T>(regs.cop0.status, FT(instr));
@@ -647,7 +645,7 @@ void Cop1::csf(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-void Cop1::cngle(Registers& regs, u32 instr) {
+void Cop1::cngle(u32 instr) {
   CheckFPUUsable();
   T fs = FGR<T>(regs.cop0.status, FS(instr));
   T ft = FGR<T>(regs.cop0.status, FT(instr));
@@ -656,7 +654,7 @@ void Cop1::cngle(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-void Cop1::cseq(Registers& regs, u32 instr) {
+void Cop1::cseq(u32 instr) {
   CheckFPUUsable();
   T fs = FGR<T>(regs.cop0.status, FS(instr));
   T ft = FGR<T>(regs.cop0.status, FT(instr));
@@ -665,7 +663,7 @@ void Cop1::cseq(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-void Cop1::cngl(Registers& regs, u32 instr) {
+void Cop1::cngl(u32 instr) {
   CheckFPUUsable();
   T fs = FGR<T>(regs.cop0.status, FS(instr));
   T ft = FGR<T>(regs.cop0.status, FT(instr));
@@ -674,7 +672,7 @@ void Cop1::cngl(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-void Cop1::clt(Registers& regs, u32 instr) {
+void Cop1::clt(u32 instr) {
   CheckFPUUsable();
   T fs = FGR<T>(regs.cop0.status, FS(instr));
   T ft = FGR<T>(regs.cop0.status, FT(instr));
@@ -683,7 +681,7 @@ void Cop1::clt(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-void Cop1::cnge(Registers& regs, u32 instr) {
+void Cop1::cnge(u32 instr) {
   CheckFPUUsable();
   T fs = FGR<T>(regs.cop0.status, FS(instr));
   T ft = FGR<T>(regs.cop0.status, FT(instr));
@@ -692,7 +690,7 @@ void Cop1::cnge(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-void Cop1::cle(Registers& regs, u32 instr) {
+void Cop1::cle(u32 instr) {
   CheckFPUUsable();
   T fs = FGR<T>(regs.cop0.status, FS(instr));
   T ft = FGR<T>(regs.cop0.status, FT(instr));
@@ -701,7 +699,7 @@ void Cop1::cle(Registers& regs, u32 instr) {
 }
 
 template <typename T>
-void Cop1::cngt(Registers& regs, u32 instr) {
+void Cop1::cngt(u32 instr) {
   CheckFPUUsable();
   T fs = FGR<T>(regs.cop0.status, FS(instr));
   T ft = FGR<T>(regs.cop0.status, FT(instr));
@@ -709,92 +707,92 @@ void Cop1::cngt(Registers& regs, u32 instr) {
   fcr31.compare = fs <= ft || any_unordered(fs, ft);
 }
 
-template void Cop1::cf<float>(Registers&, u32 instr);
-template void Cop1::cun<float>(Registers&, u32 instr);
-template void Cop1::ceq<float>(Registers&, u32 instr);
-template void Cop1::cueq<float>(Registers&, u32 instr);
-template void Cop1::colt<float>(Registers&, u32 instr);
-template void Cop1::cult<float>(Registers&, u32 instr);
-template void Cop1::cole<float>(Registers&, u32 instr);
-template void Cop1::cule<float>(Registers&, u32 instr);
-template void Cop1::csf<float>(Registers&, u32 instr);
-template void Cop1::cngle<float>(Registers&, u32 instr);
-template void Cop1::cseq<float>(Registers&, u32 instr);
-template void Cop1::cngl<float>(Registers&, u32 instr);
-template void Cop1::clt<float>(Registers&, u32 instr);
-template void Cop1::cnge<float>(Registers&, u32 instr);
-template void Cop1::cle<float>(Registers&, u32 instr);
-template void Cop1::cngt<float>(Registers&, u32 instr);
-template void Cop1::cf<double>(Registers&, u32 instr);
-template void Cop1::cun<double>(Registers&, u32 instr);
-template void Cop1::ceq<double>(Registers&, u32 instr);
-template void Cop1::cueq<double>(Registers&, u32 instr);
-template void Cop1::colt<double>(Registers&, u32 instr);
-template void Cop1::cult<double>(Registers&, u32 instr);
-template void Cop1::cole<double>(Registers&, u32 instr);
-template void Cop1::cule<double>(Registers&, u32 instr);
-template void Cop1::csf<double>(Registers&, u32 instr);
-template void Cop1::cngle<double>(Registers&, u32 instr);
-template void Cop1::cseq<double>(Registers&, u32 instr);
-template void Cop1::cngl<double>(Registers&, u32 instr);
-template void Cop1::clt<double>(Registers&, u32 instr);
-template void Cop1::cnge<double>(Registers&, u32 instr);
-template void Cop1::cle<double>(Registers&, u32 instr);
-template void Cop1::cngt<double>(Registers&, u32 instr);
+template void Cop1::cf<float>(u32 instr);
+template void Cop1::cun<float>(u32 instr);
+template void Cop1::ceq<float>(u32 instr);
+template void Cop1::cueq<float>(u32 instr);
+template void Cop1::colt<float>(u32 instr);
+template void Cop1::cult<float>(u32 instr);
+template void Cop1::cole<float>(u32 instr);
+template void Cop1::cule<float>(u32 instr);
+template void Cop1::csf<float>(u32 instr);
+template void Cop1::cngle<float>(u32 instr);
+template void Cop1::cseq<float>(u32 instr);
+template void Cop1::cngl<float>(u32 instr);
+template void Cop1::clt<float>(u32 instr);
+template void Cop1::cnge<float>(u32 instr);
+template void Cop1::cle<float>(u32 instr);
+template void Cop1::cngt<float>(u32 instr);
+template void Cop1::cf<double>(u32 instr);
+template void Cop1::cun<double>(u32 instr);
+template void Cop1::ceq<double>(u32 instr);
+template void Cop1::cueq<double>(u32 instr);
+template void Cop1::colt<double>(u32 instr);
+template void Cop1::cult<double>(u32 instr);
+template void Cop1::cole<double>(u32 instr);
+template void Cop1::cule<double>(u32 instr);
+template void Cop1::csf<double>(u32 instr);
+template void Cop1::cngle<double>(u32 instr);
+template void Cop1::cseq<double>(u32 instr);
+template void Cop1::cngl<double>(u32 instr);
+template void Cop1::clt<double>(u32 instr);
+template void Cop1::cnge<double>(u32 instr);
+template void Cop1::cle<double>(u32 instr);
+template void Cop1::cngt<double>(u32 instr);
 
-void Cop1::divs(Registers &regs, u32 instr) {
+void Cop1::divs(u32 instr) {
   OP(float, fs / ft);
 }
 
-void Cop1::divd(Registers &regs, u32 instr) {
+void Cop1::divd(u32 instr) {
   OP(double, fs / ft);
 }
 
-void Cop1::muls(Registers &regs, u32 instr) {
+void Cop1::muls(u32 instr) {
   OP(float, fs * ft);
 }
 
-void Cop1::muld(Registers& regs, u32 instr) {
+void Cop1::muld(u32 instr) {
   OP(double, fs * ft);
 }
 
-void Cop1::subs(Registers &regs, u32 instr) {
+void Cop1::subs(u32 instr) {
   OP(float, fs - ft);
 }
 
-void Cop1::subd(Registers &regs, u32 instr) {
+void Cop1::subd(u32 instr) {
   OP(double, fs - ft);
 }
 
-void Cop1::movs(Registers& regs, u32 instr) {
+void Cop1::movs(u32 instr) {
   CheckFPUUsable_PreserveCause();
   auto val = FGR<u64>(regs.cop0.status, FS(instr));
   FGR<u64>(regs.cop0.status, FD(instr)) = val;
 }
 
-void Cop1::movd(Registers& regs, u32 instr) {
+void Cop1::movd(u32 instr) {
   CheckFPUUsable_PreserveCause();
   auto val = FGR<double>(regs.cop0.status, FS(instr));
   FGR<double>(regs.cop0.status, FD(instr)) = val;
 }
 
-void Cop1::negs(Registers &regs, u32 instr) {
+void Cop1::negs(u32 instr) {
   OP(float, -fs);
 }
 
-void Cop1::negd(Registers &regs, u32 instr) {
+void Cop1::negd(u32 instr) {
   OP(double, -fs);
 }
 
-void Cop1::sqrts(Registers &regs, u32 instr) {
+void Cop1::sqrts(u32 instr) {
   OP(float, std::sqrt(fs));
 }
 
-void Cop1::sqrtd(Registers &regs, u32 instr) {
+void Cop1::sqrtd(u32 instr) {
   OP(double, std::sqrt(fs));
 }
 
-void Cop1::roundls(Registers& regs, u32 instr) {
+void Cop1::roundls(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<float>(regs.cop0.status, FS(instr));
   CheckLCVTArg(fs);
@@ -804,7 +802,7 @@ void Cop1::roundls(Registers& regs, u32 instr) {
   FGR<s64>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::roundld(Registers& regs, u32 instr) {
+void Cop1::roundld(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<double>(regs.cop0.status, FS(instr));
   CheckLCVTArg(fs);
@@ -814,7 +812,7 @@ void Cop1::roundld(Registers& regs, u32 instr) {
   FGR<s64>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::roundws(Registers& regs, u32 instr) {
+void Cop1::roundws(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<float>(regs.cop0.status, FS(instr));
   CheckWCVTArg(fs);
@@ -824,7 +822,7 @@ void Cop1::roundws(Registers& regs, u32 instr) {
   FGR<s32>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::roundwd(Registers& regs, u32 instr) {
+void Cop1::roundwd(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<double>(regs.cop0.status, FS(instr));
   CheckWCVTArg(fs);
@@ -834,7 +832,7 @@ void Cop1::roundwd(Registers& regs, u32 instr) {
   FGR<s32>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::floorls(Registers& regs, u32 instr) {
+void Cop1::floorls(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<float>(regs.cop0.status, FS(instr));
   CheckLCVTArg(fs);
@@ -844,7 +842,7 @@ void Cop1::floorls(Registers& regs, u32 instr) {
   FGR<s64>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::floorld(Registers& regs, u32 instr) {
+void Cop1::floorld(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<double>(regs.cop0.status, FS(instr));
   CheckLCVTArg(fs);
@@ -854,7 +852,7 @@ void Cop1::floorld(Registers& regs, u32 instr) {
   FGR<s64>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::floorws(Registers& regs, u32 instr) {
+void Cop1::floorws(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<float>(regs.cop0.status, FS(instr));
   CheckWCVTArg(fs);
@@ -864,7 +862,7 @@ void Cop1::floorws(Registers& regs, u32 instr) {
   FGR<s32>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::floorwd(Registers& regs, u32 instr) {
+void Cop1::floorwd(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<double>(regs.cop0.status, FS(instr));
   CheckWCVTArg(fs);
@@ -874,7 +872,7 @@ void Cop1::floorwd(Registers& regs, u32 instr) {
   FGR<s32>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::truncws(Registers& regs, u32 instr) {
+void Cop1::truncws(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<float>(regs.cop0.status, FS(instr));
   CheckWCVTArg(fs);
@@ -884,7 +882,7 @@ void Cop1::truncws(Registers& regs, u32 instr) {
   FGR<s32>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::truncwd(Registers& regs, u32 instr) {
+void Cop1::truncwd(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<double>(regs.cop0.status, FS(instr));
   CheckWCVTArg(fs);
@@ -894,7 +892,7 @@ void Cop1::truncwd(Registers& regs, u32 instr) {
   FGR<s32>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::truncls(Registers& regs, u32 instr) {
+void Cop1::truncls(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<float>(regs.cop0.status, FS(instr));
   CheckLCVTArg(fs);
@@ -904,7 +902,7 @@ void Cop1::truncls(Registers& regs, u32 instr) {
   FGR<s64>(regs.cop0.status, FD(instr)) = result;
 }
 
-void Cop1::truncld(Registers& regs, u32 instr) {
+void Cop1::truncld(u32 instr) {
   CheckFPUUsable();
   auto fs = FGR<double>(regs.cop0.status, FS(instr));
   CheckLCVTArg(fs);
@@ -978,7 +976,7 @@ void Cop1::sdc1(T &cpu, Mem &mem, u32 instr) {
 template void Cop1::sdc1<Interpreter>(Interpreter&, Mem&, u32);
 template void Cop1::sdc1<JIT>(JIT&, Mem&, u32);
 
-void Cop1::lwc1Interp(Registers& regs, Mem& mem, u32 instr) {
+void Cop1::lwc1Interp(Mem& mem, u32 instr) {
   u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
 
   u32 physical;
@@ -991,7 +989,7 @@ void Cop1::lwc1Interp(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Cop1::swc1Interp(Registers& regs, Mem& mem, u32 instr) {
+void Cop1::swc1Interp(Mem& mem, u32 instr) {
   u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
 
   u32 physical;
@@ -1003,13 +1001,13 @@ void Cop1::swc1Interp(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Cop1::unimplemented(Registers& regs) {
+void Cop1::unimplemented() {
   CheckFPUUsable();
   fcr31.cause_unimplemented_operation = true;
-  FireFPUException(regs);
+  FireException();
 }
 
-void Cop1::ldc1Interp(Registers& regs, Mem& mem, u32 instr) {
+void Cop1::ldc1Interp(Mem& mem, u32 instr) {
   u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
 
   u32 physical;
@@ -1022,7 +1020,7 @@ void Cop1::ldc1Interp(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Cop1::sdc1Interp(Registers& regs, Mem& mem, u32 instr) {
+void Cop1::sdc1Interp(Mem& mem, u32 instr) {
   u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
 
   u32 physical;
@@ -1034,22 +1032,22 @@ void Cop1::sdc1Interp(Registers& regs, Mem& mem, u32 instr) {
   }
 }
 
-void Cop1::mfc1(Registers& regs, u32 instr) {
+void Cop1::mfc1(u32 instr) {
   CheckFPUUsable_PreserveCause();
   regs.gpr[RT(instr)] = FGR<s32>(regs.cop0.status, FS(instr));
 }
 
-void Cop1::dmfc1(Registers& regs, u32 instr) {
+void Cop1::dmfc1(u32 instr) {
   CheckFPUUsable_PreserveCause();
   regs.gpr[RT(instr)] = FGR<s64>(regs.cop0.status, FS(instr));
 }
 
-void Cop1::mtc1(Registers& regs, u32 instr) {
+void Cop1::mtc1(u32 instr) {
   CheckFPUUsable_PreserveCause();
   FGR<u32>(regs.cop0.status, FS(instr)) = regs.gpr[RT(instr)];
 }
 
-void Cop1::dmtc1(Registers& regs, u32 instr) {
+void Cop1::dmtc1(u32 instr) {
   CheckFPUUsable_PreserveCause();
   FGR<u64>(regs.cop0.status, FS(instr)) = regs.gpr[RT(instr)];
 }

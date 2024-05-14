@@ -33,6 +33,7 @@ public:
   void dragEnterEvent(QDragEnterEvent*) override;
   void keyPressEvent(QKeyEvent*) override;
   void keyReleaseEvent(QKeyEvent*) override;
+  void closeEvent(QCloseEvent*) override;
 private:
   void ConnectMainWindowSignalsToSlots() noexcept;
   std::unique_ptr<MainWindowController> mainWindow;

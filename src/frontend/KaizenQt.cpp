@@ -57,6 +57,10 @@ void KaizenQt::LoadROM(const QString& fileName) noexcept {
   emuThread->core.LoadROM(fileName.toStdString());
 }
 
+void KaizenQt::closeEvent(QCloseEvent*) {
+  emuThread->Stop();
+}
+
 void KaizenQt::LoadTAS(const QString& fileName) noexcept {
   emuThread->core.LoadTAS(fileName.toStdString());
 }

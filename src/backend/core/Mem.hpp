@@ -142,7 +142,7 @@ private:
   friend struct AI;
   friend struct RSP;
   friend struct Core;
-  u8 isviewer[ISVIEWER_SIZE]{};
+  std::array<u8, ISVIEWER_SIZE> isviewer{};
   std::string sramPath{};
   mio::mmap_sink saveData{};
   int mmioSize{}, flashSize{};

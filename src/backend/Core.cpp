@@ -10,7 +10,6 @@ void Core::Stop() {
   pause = true;
   romLoaded = false;
   cpu->Reset();
-  cpu->GetMem().Reset();
 }
 
 bool Core::LoadTAS(const fs::path &path) {

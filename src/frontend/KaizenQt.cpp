@@ -15,7 +15,6 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
     std::move(mainWindow->view.vulkanWidget->windowInfo),
     mainWindow);
   emuThread->core = new n64::Core(emuThread->parallel);
-  emuThread->parallel.Init(emuThread->core->cpu->GetMem().GetRDRAMPtr());
 
   ConnectMainWindowSignalsToSlots();
 

@@ -4,9 +4,11 @@
 #include "Audio.hpp"
 
 EmuThread::EmuThread(std::unique_ptr<QtInstanceFactory>&& instance_, std::unique_ptr<Vulkan::WSIPlatform>&& wsiPlatform_, std::unique_ptr<ParallelRDP::WindowInfo>&& windowInfo_, QObject* parent_object) noexcept
-  : QThread(parent_object), instance(std::move(instance_)), wsiPlatform(std::move(wsiPlatform_)), windowInfo(std::move(windowInfo_)), parallel(instance.get(), std::move(wsiPlatform), std::move(windowInfo)) {}
+  : QThread(parent_object), instance(std::move(instance_)), wsiPlatform(std::move(wsiPlatform_)), windowInfo(std::move(windowInfo_)) {}
 
 [[noreturn]] void EmuThread::run() noexcept {
+  parallel.Init(instance.get(), std::move(wsiPlatform), std::move(windowInfo), core->cpu->GetMem().GetRDRAMPtr());
+
   while (true) {
     if (!core->pause) {
       core->Run(settings->getVolumeL(), settings->getVolumeR());

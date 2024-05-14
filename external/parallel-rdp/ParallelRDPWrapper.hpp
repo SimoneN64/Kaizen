@@ -15,8 +15,8 @@ public:
     virtual ~WindowInfo() = default;
   };
 
-  void Init(const u8*);
-  ParallelRDP(Vulkan::InstanceFactory*, std::unique_ptr<Vulkan::WSIPlatform>&&, std::unique_ptr<WindowInfo>&&);
+  void Init(Vulkan::InstanceFactory*, std::unique_ptr<Vulkan::WSIPlatform>&&, std::unique_ptr<WindowInfo>&&, const u8*);
+  ParallelRDP() = default;
   ~ParallelRDP() {
     delete wsi;
     delete command_processor;

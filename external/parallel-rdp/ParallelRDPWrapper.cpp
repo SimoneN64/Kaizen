@@ -33,7 +33,9 @@ void ParallelRDP::LoadWSIPlatform(Vulkan::InstanceFactory* instanceFactory, std:
   windowInfo = std::move(newWindowInfo);
 }
 
-void ParallelRDP::Init(const u8* rdram) {
+void ParallelRDP::Init(Vulkan::InstanceFactory* factory, std::unique_ptr<Vulkan::WSIPlatform>&& wsiPlatform, std::unique_ptr<WindowInfo>&& newWindowInfo, const u8* rdram) {
+  LoadWSIPlatform(factory, std::move(wsiPlatform), std::move(newWindowInfo));
+
   ResourceLayout vertLayout;
   ResourceLayout fragLayout;
 
@@ -76,10 +78,6 @@ void ParallelRDP::Init(const u8* rdram) {
   if (!command_processor->device_is_supported()) {
     Util::panic("This device probably does not support 8/16-bit storage. Make sure you're using up-to-date drivers!");
   }
-}
-
-ParallelRDP::ParallelRDP(Vulkan::InstanceFactory* factory, std::unique_ptr<Vulkan::WSIPlatform>&& wsi_platform, std::unique_ptr<WindowInfo>&& newWindowInfo) {
-  LoadWSIPlatform(factory, std::move(wsi_platform), std::move(newWindowInfo));
 }
 
 void ParallelRDP::DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image, Util::IntrusivePtr<CommandBuffer> cmd) {

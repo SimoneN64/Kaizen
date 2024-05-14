@@ -35,10 +35,10 @@ static inline nlohmann::json JSONOpenOrCreate(const std::string& path) {
       {"C Down", "K"},
       {"C Left", "J"},
       {"C Right", "L"},
-      {"Analog Up", ""},
-      {"Analog Down", ""},
-      {"Analog Left", ""},
-      {"Analog Right", ""},
+      {"Analog Up", "Up"},
+      {"Analog Down", "Down"},
+      {"Analog Left", "Left"},
+      {"Analog Right", "Right"},
     };
 
     file << json;

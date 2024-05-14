@@ -9,6 +9,7 @@ namespace fs = std::filesystem;
 
 KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   mainWindow = std::make_unique<MainWindowController>();
+  settingsWindow = std::make_unique<SettingsWindow>();
   emuThread = std::make_unique<EmuThread>(
     std::move(mainWindow->view.vulkanWidget->instance),
     std::move(mainWindow->view.vulkanWidget->wsiPlatform),
@@ -22,7 +23,6 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   setFocus();
   grabKeyboard();
   mainWindow->show();
-  settingsWindow = std::make_unique<SettingsWindow>();
   settingsWindow->hide();
   connect(settingsWindow.get(), &SettingsWindow::regrabKeyboard, this, [&]() {
     grabKeyboard();

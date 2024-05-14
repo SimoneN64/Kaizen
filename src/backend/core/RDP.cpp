@@ -5,7 +5,7 @@
 #include <core/mmio/Interrupt.hpp>
 
 namespace n64 {
-RDP::RDP(Mem& mem, Registers& regs, ParallelRDP& parallel) : mem(mem), regs(regs), parallel(parallel) {
+RDP::RDP(Mem& mem, ParallelRDP& parallel) : mem(mem), parallel(parallel) {
   rdram.resize(RDRAM_SIZE);
   memset(cmd_buf, 0, 0x100000);
   dpc.status.raw = 0x80;

@@ -56,7 +56,7 @@ struct RDP {
   DPC dpc{};
   u32 cmd_buf[0xFFFFF]{};
 
-  RDP(Mem&, Registers&, ParallelRDP&);
+  RDP(Mem&, ParallelRDP&);
   void Reset();
 
   std::vector<u8> rdram{};
@@ -83,7 +83,6 @@ struct RDP {
   }
 private:
   Mem& mem;
-  Registers& regs;
   ParallelRDP& parallel;
 };
 } // backend

@@ -24,7 +24,7 @@ static inline nlohmann::json JSONOpenOrCreate(const std::string& path) {
       {"A", "X"},
       {"B", "C"},
       {"Z", "Z"},
-      {"Start", "Enter"},
+      {"Start", "Return"},
       {"L", "A"},
       {"R", "S"},
       {"Dpad Up", ""},

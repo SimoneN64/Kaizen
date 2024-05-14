@@ -29,7 +29,7 @@ struct QtInstanceFactory : Vulkan::InstanceFactory {
   QVulkanInstance qVkInstance;
 };
 
-class QtParallelRdpWindowInfo : public ParallelRdpWindowInfo {
+class QtParallelRdpWindowInfo : public ParallelRDP::WindowInfo {
 public:
   explicit QtParallelRdpWindowInfo(QWindow* window) : window(window) {}
   CoordinatePair get_window_size() override {
@@ -96,7 +96,7 @@ public:
     return nullptr;
   }
 
-  std::unique_ptr<ParallelRdpWindowInfo> windowInfo;
+  std::unique_ptr<ParallelRDP::WindowInfo> windowInfo;
   std::unique_ptr<Vulkan::WSIPlatform> wsiPlatform;
   std::unique_ptr<QtInstanceFactory> instance;
 Q_SIGNALS:

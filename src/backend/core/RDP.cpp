@@ -5,7 +5,7 @@
 #include <core/mmio/Interrupt.hpp>
 
 namespace n64 {
-RDP::RDP(Mem& mem, Registers& regs) : mem(mem), regs(regs) {
+RDP::RDP(Mem& mem, Registers& regs, ParallelRDP& parallel) : mem(mem), regs(regs), parallel(parallel) {
   rdram.resize(RDRAM_SIZE);
   memset(cmd_buf, 0, 0x100000);
   dpc.status.raw = 0x80;
@@ -177,7 +177,7 @@ void RDP::RunCommand() {
       }
 
       if (cmd >= 8) {
-        ParallelRdpEnqueueCommand(cmd_len, &cmd_buf[buf_index]);
+        parallel.EnqueueCommand(cmd_len, &cmd_buf[buf_index]);
       }
 
       if (cmd == 0x29) {
@@ -199,7 +199,7 @@ void RDP::RunCommand() {
 }
 
 void RDP::OnFullSync() {
-  ParallelRdpOnFullSync();
+  parallel.OnFullSync();
 
   dpc.status.pipeBusy = false;
   dpc.status.startGclk = false;

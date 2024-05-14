@@ -5,11 +5,25 @@
 
 namespace n64 {
 struct Core;
-struct Interpreter : BaseCPU {
-  Interpreter() = default;
+struct Interpreter final : BaseCPU {
+  explicit Interpreter(ParallelRDP&);
   ~Interpreter() override = default;
   int Step() override;
+  void Reset() override {
+    regs.Reset();
+    mem.Reset();
+  }
+
+  Mem& GetMem() override {
+    return mem;
+  }
+
+  Registers& GetRegs() override {
+    return regs;
+  }
 private:
+  Registers regs;
+  Mem mem;
   u64 cop2Latch{};
   friend struct Cop1;
 #define check_address_error(mask, vaddr) (((!regs.cop0.is64BitAddressing) && (s32)(vaddr) != (vaddr)) || (((vaddr) & (mask)) != 0))

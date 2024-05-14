@@ -1,6 +1,7 @@
 #include <Core.hpp>
 
 namespace n64 {
+Interpreter::Interpreter(ParallelRDP& parallel) : mem(regs, parallel) { }
 
 bool Interpreter::ShouldServiceInterrupt() {
   bool interrupts_pending = (regs.cop0.status.im & regs.cop0.cause.interruptPending) != 0;

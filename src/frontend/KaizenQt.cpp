@@ -14,6 +14,8 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
     std::move(mainWindow->view.vulkanWidget->wsiPlatform),
     std::move(mainWindow->view.vulkanWidget->windowInfo),
     mainWindow);
+  emuThread->core = new n64::Core(emuThread->parallel);
+  emuThread->parallel.Init(emuThread->core->cpu->GetMem().GetRDRAMPtr());
 
   ConnectMainWindowSignalsToSlots();
 
@@ -27,7 +29,6 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   connect(settingsWindow, &SettingsWindow::regrabKeyboard, this, [&]() {
     grabKeyboard();
   }),
-  emuThread->core = new n64::Core();
   emuThread->settings = settingsWindow;
 }
 
@@ -67,24 +68,24 @@ void KaizenQt::LoadTAS(const QString& fileName) noexcept {
 void KaizenQt::keyPressEvent(QKeyEvent *e) {
   emuThread->core->pause = true;
   auto k = static_cast<Qt::Key>(e->key());
-  if(k == settingsWindow->keyMap[0])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::A, true);
-  if(k == settingsWindow->keyMap[1])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::B, true);
-  if(k == settingsWindow->keyMap[2])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::Z, true);
-  if(k == settingsWindow->keyMap[3])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::Start, true);
-  if(k == settingsWindow->keyMap[4])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::LT, true);
-  if(k == settingsWindow->keyMap[5])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::RT, true);
-  if(k == settingsWindow->keyMap[6])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::DUp, true);
-  if(k == settingsWindow->keyMap[7])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::DDown, true);
-  if(k == settingsWindow->keyMap[8])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::DLeft, true);
-  if(k == settingsWindow->keyMap[9])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::DRight, true);
-  if(k == settingsWindow->keyMap[10]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::CUp, true);
-  if(k == settingsWindow->keyMap[11]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::CDown, true);
-  if(k == settingsWindow->keyMap[12]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::CLeft, true);
-  if(k == settingsWindow->keyMap[13]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::CRight, true);
-  if(k == settingsWindow->keyMap[14]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::Y, 86);
-  if(k == settingsWindow->keyMap[15]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::Y, -86);
-  if(k == settingsWindow->keyMap[16]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::X, -86);
-  if(k == settingsWindow->keyMap[17]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::X, 86);
+  if(k == settingsWindow->keyMap[0])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::A, true);
+  if(k == settingsWindow->keyMap[1])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::B, true);
+  if(k == settingsWindow->keyMap[2])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::Z, true);
+  if(k == settingsWindow->keyMap[3])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::Start, true);
+  if(k == settingsWindow->keyMap[4])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::LT, true);
+  if(k == settingsWindow->keyMap[5])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::RT, true);
+  if(k == settingsWindow->keyMap[6])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::DUp, true);
+  if(k == settingsWindow->keyMap[7])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::DDown, true);
+  if(k == settingsWindow->keyMap[8])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::DLeft, true);
+  if(k == settingsWindow->keyMap[9])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::DRight, true);
+  if(k == settingsWindow->keyMap[10]) emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::CUp, true);
+  if(k == settingsWindow->keyMap[11]) emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::CDown, true);
+  if(k == settingsWindow->keyMap[12]) emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::CLeft, true);
+  if(k == settingsWindow->keyMap[13]) emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::CRight, true);
+  if(k == settingsWindow->keyMap[14]) emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::Y, 86);
+  if(k == settingsWindow->keyMap[15]) emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::Y, -86);
+  if(k == settingsWindow->keyMap[16]) emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::X, -86);
+  if(k == settingsWindow->keyMap[17]) emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::X, 86);
   emuThread->core->pause = false;
   QWidget::keyPressEvent(e);
 }
@@ -92,24 +93,24 @@ void KaizenQt::keyPressEvent(QKeyEvent *e) {
 void KaizenQt::keyReleaseEvent(QKeyEvent *e) {
   emuThread->core->pause = true;
   auto k = static_cast<Qt::Key>(e->key());
-  if (k == settingsWindow->keyMap[0])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::A, false);
-  if (k == settingsWindow->keyMap[1])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::B, false);
-  if (k == settingsWindow->keyMap[2])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::Z, false);
-  if (k == settingsWindow->keyMap[3])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::Start, false);
-  if (k == settingsWindow->keyMap[4])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::LT, false);
-  if (k == settingsWindow->keyMap[5])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::RT, false);
-  if (k == settingsWindow->keyMap[6])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::DUp, false);
-  if (k == settingsWindow->keyMap[7])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::DDown, false);
-  if (k == settingsWindow->keyMap[8])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::DLeft, false);
-  if (k == settingsWindow->keyMap[9])  emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::DRight, false);
-  if (k == settingsWindow->keyMap[10]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::CUp, false);
-  if (k == settingsWindow->keyMap[11]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::CDown, false);
-  if (k == settingsWindow->keyMap[12]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::CLeft, false);
-  if (k == settingsWindow->keyMap[13]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::CRight, false);
-  if (k == settingsWindow->keyMap[14]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::Y, 0);
-  if (k == settingsWindow->keyMap[15]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::Y, 0);
-  if (k == settingsWindow->keyMap[16]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::X, 0);
-  if (k == settingsWindow->keyMap[17]) emuThread->core->cpu->mem.mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::X, 0);
+  if (k == settingsWindow->keyMap[0])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::A, false);
+  if (k == settingsWindow->keyMap[1])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::B, false);
+  if (k == settingsWindow->keyMap[2])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::Z, false);
+  if (k == settingsWindow->keyMap[3])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::Start, false);
+  if (k == settingsWindow->keyMap[4])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::LT, false);
+  if (k == settingsWindow->keyMap[5])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::RT, false);
+  if (k == settingsWindow->keyMap[6])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::DUp, false);
+  if (k == settingsWindow->keyMap[7])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::DDown, false);
+  if (k == settingsWindow->keyMap[8])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::DLeft, false);
+  if (k == settingsWindow->keyMap[9])  emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::DRight, false);
+  if (k == settingsWindow->keyMap[10]) emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::CUp, false);
+  if (k == settingsWindow->keyMap[11]) emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::CDown, false);
+  if (k == settingsWindow->keyMap[12]) emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::CLeft, false);
+  if (k == settingsWindow->keyMap[13]) emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateButton(n64::Controller::Key::CRight, false);
+  if (k == settingsWindow->keyMap[14]) emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::Y, 0);
+  if (k == settingsWindow->keyMap[15]) emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::Y, 0);
+  if (k == settingsWindow->keyMap[16]) emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::X, 0);
+  if (k == settingsWindow->keyMap[17]) emuThread->core->cpu->GetMem().mmio.si.pif.joybusDevices[0].controller.UpdateAxis(n64::Controller::Axis::X, 0);
   emuThread->core->pause = false;
   QWidget::keyPressEvent(e);
 }

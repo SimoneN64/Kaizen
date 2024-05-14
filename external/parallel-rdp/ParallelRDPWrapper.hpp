@@ -1,24 +1,38 @@
 #pragma once
 #include <backend/Core.hpp>
 #include <wsi.hpp>
+#include <rdp_device.hpp>
 
-class ParallelRdpWindowInfo {
+class ParallelRDP {
 public:
-  struct CoordinatePair {
-    float x;
-    float y;
+  class WindowInfo {
+  public:
+    struct CoordinatePair {
+      float x;
+      float y;
+    };
+    virtual CoordinatePair get_window_size() = 0;
+    virtual ~WindowInfo() = default;
   };
-  virtual CoordinatePair get_window_size() = 0;
-  virtual ~ParallelRdpWindowInfo() = default;
+
+  void Init(const u8*);
+  ParallelRDP(Vulkan::InstanceFactory*, std::unique_ptr<Vulkan::WSIPlatform>&&, std::unique_ptr<WindowInfo>&&);
+  ~ParallelRDP() {
+    delete wsi;
+    delete command_processor;
+  }
+
+  void UpdateScreen(n64::VI&, bool = false);
+  void EnqueueCommand(int, u32*);
+  void OnFullSync();
+  bool IsFramerateUnlocked();
+  void SetFramerateUnlocked(bool);
+private:
+  void LoadWSIPlatform(Vulkan::InstanceFactory*, std::unique_ptr<Vulkan::WSIPlatform>&&, std::unique_ptr<WindowInfo>&&);
+  void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Vulkan::Image>, Util::IntrusivePtr<Vulkan::CommandBuffer>);
+  void UpdateScreen(Util::IntrusivePtr<Vulkan::Image>);
+
+  Vulkan::WSI* wsi = nullptr;
+  RDP::CommandProcessor* command_processor;
+  std::unique_ptr<WindowInfo> windowInfo;
 };
-
-static Vulkan::WSI* wsi;
-
-void LoadParallelRDP(const u8* rdram);
-Vulkan::WSI* LoadWSIPlatform(Vulkan::InstanceFactory*, std::unique_ptr<Vulkan::WSIPlatform>&& wsi_platform, std::unique_ptr<ParallelRdpWindowInfo>&& newWindowInfo);
-void UpdateScreenParallelRdp(n64::VI& vi);
-void ParallelRdpEnqueueCommand(int command_length, u32* buffer);
-void ParallelRdpOnFullSync();
-void UpdateScreenParallelRdpNoGame();
-bool IsFramerateUnlocked();
-void SetFramerateUnlocked(bool unlocked);

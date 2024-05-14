@@ -81,7 +81,7 @@ struct Flash {
 
 struct Mem {
   ~Mem() = default;
-  Mem(Registers&);
+  Mem(Registers&, ParallelRDP&);
   void Reset();
   void LoadSRAM(SaveType, fs::path);
   static std::vector<u8> OpenROM(const std::string&, size_t&);

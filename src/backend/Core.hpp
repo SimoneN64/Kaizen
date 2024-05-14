@@ -8,7 +8,7 @@ struct Event;
 namespace n64 {
 struct Core {
   ~Core() { Stop(); }
-  Core();
+  Core(ParallelRDP&);
   void Stop();
   void LoadROM(const std::string&);
   bool LoadTAS(const fs::path&);
@@ -16,7 +16,7 @@ struct Core {
   void Serialize();
   void Deserialize();
   void TogglePause() { pause = !pause; }
-  [[nodiscard]] VI& GetVI() const { return cpu->mem.mmio.vi; }
+  [[nodiscard]] VI& GetVI() const { return cpu->GetMem().mmio.vi; }
 
   u32 breakpoint = 0;
 

@@ -6,14 +6,11 @@
 using namespace Vulkan;
 using namespace RDP;
 
-static CommandProcessor* command_processor;
-static std::unique_ptr<ParallelRdpWindowInfo> windowInfo;
-
-bool IsFramerateUnlocked() {
+bool ParallelRDP::IsFramerateUnlocked() {
   return wsi->get_present_mode() != PresentMode::SyncToVBlank;
 }
 
-void SetFramerateUnlocked(bool unlocked) {
+void ParallelRDP::SetFramerateUnlocked(bool unlocked) {
   if (unlocked) {
     wsi->set_present_mode(PresentMode::UnlockedForceTearing);
   } else {
@@ -23,7 +20,7 @@ void SetFramerateUnlocked(bool unlocked) {
 
 Program* fullscreen_quad_program;
 
-WSI* LoadWSIPlatform(Vulkan::InstanceFactory* instanceFactory, std::unique_ptr<Vulkan::WSIPlatform>&& wsi_platform, std::unique_ptr<ParallelRdpWindowInfo>&& newWindowInfo) {
+void ParallelRDP::LoadWSIPlatform(Vulkan::InstanceFactory* instanceFactory, std::unique_ptr<Vulkan::WSIPlatform>&& wsi_platform, std::unique_ptr<ParallelRDP::WindowInfo>&& newWindowInfo) {
   wsi = new WSI();
   wsi->set_backbuffer_srgb(false);
   wsi->set_platform(wsi_platform.get());
@@ -34,10 +31,9 @@ WSI* LoadWSIPlatform(Vulkan::InstanceFactory* instanceFactory, std::unique_ptr<V
   }
 
   windowInfo = std::move(newWindowInfo);
-  return wsi;
 }
 
-void LoadParallelRDP(const u8* rdram) {
+void ParallelRDP::Init(const u8* rdram) {
   ResourceLayout vertLayout;
   ResourceLayout fragLayout;
 
@@ -59,8 +55,8 @@ void LoadParallelRDP(const u8* rdram) {
   auto sizeFrag = fullscreenQuadFrag.size();
 
   fullscreen_quad_program = wsi->get_device().request_program(reinterpret_cast<u32*>(fullscreenQuadVert.data()), sizeVert,
-                                                              reinterpret_cast<u32*>(fullscreenQuadFrag.data()), sizeFrag,
-                                                              &vertLayout, &fragLayout);
+    reinterpret_cast<u32*>(fullscreenQuadFrag.data()), sizeFrag,
+    &vertLayout, &fragLayout);
 
   auto aligned_rdram = reinterpret_cast<uintptr_t>(rdram);
   uintptr_t offset = 0;
@@ -74,15 +70,19 @@ void LoadParallelRDP(const u8* rdram) {
 
   CommandProcessorFlags flags = 0;
 
-  command_processor = new CommandProcessor(wsi->get_device(), reinterpret_cast<void *>(aligned_rdram),
-                                           offset, 8 * 1024 * 1024, 4 * 1024 * 1024, flags);
+  command_processor = new CommandProcessor(wsi->get_device(), reinterpret_cast<void*>(aligned_rdram),
+    offset, 8 * 1024 * 1024, 4 * 1024 * 1024, flags);
 
   if (!command_processor->device_is_supported()) {
     Util::panic("This device probably does not support 8/16-bit storage. Make sure you're using up-to-date drivers!");
   }
 }
 
-void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image, Util::IntrusivePtr<CommandBuffer> cmd) {
+ParallelRDP::ParallelRDP(Vulkan::InstanceFactory* factory, std::unique_ptr<Vulkan::WSIPlatform>&& wsi_platform, std::unique_ptr<WindowInfo>&& newWindowInfo) {
+  LoadWSIPlatform(factory, std::move(wsi_platform), std::move(newWindowInfo));
+}
+
+void ParallelRDP::DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image, Util::IntrusivePtr<CommandBuffer> cmd) {
   cmd->set_texture(0, 0, image->get_view(), Vulkan::StockSampler::LinearClamp);
   cmd->set_program(fullscreen_quad_program);
   cmd->set_quad_state();
@@ -118,7 +118,7 @@ void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image, Util::Intrusive
   cmd->draw(3, 1);
 }
 
-void UpdateScreen(Util::IntrusivePtr<Image> image) {
+void ParallelRDP::UpdateScreen(Util::IntrusivePtr<Image> image) {
   wsi->begin_frame();
 
   if (!image) {
@@ -153,7 +153,7 @@ void UpdateScreen(Util::IntrusivePtr<Image> image) {
   wsi->end_frame();
 }
 
-void UpdateScreenParallelRdp(n64::VI& vi) {
+void ParallelRDP::UpdateScreen(n64::VI& vi, bool noGame) {
   command_processor->set_vi_register(VIRegister::Control,      vi.status.raw);
   command_processor->set_vi_register(VIRegister::Origin,       vi.origin);
   command_processor->set_vi_register(VIRegister::Width,        vi.width);
@@ -168,29 +168,30 @@ void UpdateScreenParallelRdp(n64::VI& vi) {
   command_processor->set_vi_register(VIRegister::VBurst,       vi.vburst);
   command_processor->set_vi_register(VIRegister::XScale,       vi.xscale.raw);
   command_processor->set_vi_register(VIRegister::YScale,       vi.yscale.raw);
-
-  RDP::ScanoutOptions opts;
-  opts.persist_frame_on_invalid_input = true;
-  opts.vi.aa = true;
-  opts.vi.scale = true;
-  opts.vi.dither_filter = true;
-  opts.vi.divot_filter = true;
-  opts.vi.gamma_dither = true;
-  opts.downscale_steps = true;
-  opts.crop_overscan_pixels = true;
-  Util::IntrusivePtr<Image> image = command_processor->scanout(opts);
-  UpdateScreen(image);
-  command_processor->begin_frame_context();
+  if (!noGame) {
+    RDP::ScanoutOptions opts;
+    opts.persist_frame_on_invalid_input = true;
+    opts.vi.aa = true;
+    opts.vi.scale = true;
+    opts.vi.dither_filter = true;
+    opts.vi.divot_filter = true;
+    opts.vi.gamma_dither = true;
+    opts.downscale_steps = true;
+    opts.crop_overscan_pixels = true;
+    Util::IntrusivePtr<Image> image = command_processor->scanout(opts);
+    UpdateScreen(image);
+    command_processor->begin_frame_context();
+  }
+  else {
+    UpdateScreen(static_cast<Util::IntrusivePtr<Image>>(nullptr));
+    command_processor->begin_frame_context();
+  }
 }
 
-void UpdateScreenParallelRdpNoGame() {
-  UpdateScreen(static_cast<Util::IntrusivePtr<Image>>(nullptr));
-}
-
-void ParallelRdpEnqueueCommand(int command_length, u32* buffer) {
+void ParallelRDP::EnqueueCommand(int command_length, u32* buffer) {
   command_processor->enqueue_command(command_length, buffer);
 }
 
-void ParallelRdpOnFullSync() {
+void ParallelRDP::OnFullSync() {
   command_processor->wait_for_timeline(command_processor->signal_timeline());
 }

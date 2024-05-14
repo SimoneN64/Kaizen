@@ -8,12 +8,14 @@
 #include <core/RSP.hpp>
 #include <core/RDP.hpp>
 
+class ParallelRDP;
+
 namespace n64 {
 struct Mem;
 struct Registers;
 
 struct MMIO {
-  MMIO(Mem& mem, Registers& regs) : vi(mem, regs), mi(regs), ai(mem, regs), pi(mem, regs), si(mem, regs), rsp(mem, regs), rdp(mem, regs) {}
+  MMIO(Mem& mem, Registers& regs, ParallelRDP& parallel) : vi(mem, regs), mi(regs), ai(mem, regs), pi(mem, regs), si(mem, regs), rsp(mem, regs), rdp(mem, regs, parallel) {}
   void Reset();
 
   VI vi;

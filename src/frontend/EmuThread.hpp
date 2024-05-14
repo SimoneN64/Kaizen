@@ -1,25 +1,29 @@
 #pragma once
+#undef signals
+#include <ParallelRDPWrapper.hpp>
 #include <QThread>
 #include <Core.hpp>
 #include <SettingsWindow.hpp>
+#include <memory>
 
 struct QtInstanceFactory;
-class ParallelRdpWindowInfo;
-namespace Vulkan {
-class WSIPlatform;
-}
 
 class EmuThread : public QThread
 {
   Q_OBJECT
   std::unique_ptr<QtInstanceFactory> instance;
   std::unique_ptr<Vulkan::WSIPlatform> wsiPlatform;
-  std::unique_ptr<ParallelRdpWindowInfo> windowInfo;
+  std::unique_ptr<ParallelRDP::WindowInfo> windowInfo;
 public:
-  explicit EmuThread(std::unique_ptr<QtInstanceFactory>&& instance, std::unique_ptr<Vulkan::WSIPlatform>&& wsiPlatform, std::unique_ptr<ParallelRdpWindowInfo>&& windowInfo, QObject* parent_object) noexcept;
+  explicit EmuThread(std::unique_ptr<QtInstanceFactory>&& instance, std::unique_ptr<Vulkan::WSIPlatform>&& wsiPlatform, std::unique_ptr<ParallelRDP::WindowInfo>&& windowInfo, QObject* parent_object) noexcept;
+  ~EmuThread() {
+    delete core;
+    delete settings;
+  }
 
   [[noreturn]] void run() noexcept override;
 
+  ParallelRDP parallel;
   n64::Core* core;
   SettingsWindow* settings;
   bool running = false;

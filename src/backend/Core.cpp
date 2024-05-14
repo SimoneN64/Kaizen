@@ -3,18 +3,18 @@
 #include <ParallelRDPWrapper.hpp>
 
 namespace n64 {
-Core::Core() : cpu(std::make_unique<Interpreter>()) {}
+Core::Core(ParallelRDP& parallel) : cpu(std::make_unique<Interpreter>(parallel)) {}
 
 void Core::Stop() {
   render = false;
   pause = true;
   romLoaded = false;
   cpu->Reset();
-  cpu->mem.Reset();
+  cpu->GetMem().Reset();
 }
 
 bool Core::LoadTAS(const fs::path &path) {
-  return cpu->mem.mmio.si.pif.movie.Load(path);
+  return cpu->GetMem().mmio.si.pif.movie.Load(path);
 }
 
 void Core::LoadROM(const std::string& rom_) {
@@ -30,23 +30,23 @@ void Core::LoadROM(const std::string& rom_) {
     return e == extension;
   });
 
-  cpu->mem.LoadROM(isArchive, rom);
-  GameDB::match(cpu->mem);
-  cpu->mem.mmio.vi.isPal = cpu->mem.IsROMPAL();
-  cpu->mem.mmio.si.pif.InitDevices(cpu->mem.saveType);
-  cpu->mem.mmio.si.pif.mempakPath = rom;
-  cpu->mem.mmio.si.pif.LoadEeprom(cpu->mem.saveType, rom);
-  cpu->mem.flash.Load(cpu->mem.saveType, rom);
-  cpu->mem.LoadSRAM(cpu->mem.saveType, rom);
-  cpu->mem.mmio.si.pif.Execute();
+  cpu->GetMem().LoadROM(isArchive, rom);
+  GameDB::match(cpu->GetMem());
+  cpu->GetMem().mmio.vi.isPal = cpu->GetMem().IsROMPAL();
+  cpu->GetMem().mmio.si.pif.InitDevices(cpu->GetMem().saveType);
+  cpu->GetMem().mmio.si.pif.mempakPath = rom;
+  cpu->GetMem().mmio.si.pif.LoadEeprom(cpu->GetMem().saveType, rom);
+  cpu->GetMem().flash.Load(cpu->GetMem().saveType, rom);
+  cpu->GetMem().LoadSRAM(cpu->GetMem().saveType, rom);
+  cpu->GetMem().mmio.si.pif.Execute();
   pause = false;
   render = true;
 }
 
 void Core::Run(float volumeL, float volumeR) {
-  Mem& mem = cpu->mem;
+  Mem& mem = cpu->GetMem();
   MMIO& mmio = mem.mmio;
-  Registers& regs = cpu->regs;
+  Registers& regs = cpu->GetRegs();
 
   for (int field = 0; field < mmio.vi.numFields; field++) {
     u32 frameCycles = 0;
@@ -95,7 +95,7 @@ void Core::Run(float volumeL, float volumeR) {
 }
 
 void Core::Serialize() {
-  auto sMEM = cpu->mem.Serialize();
+  auto sMEM = cpu->GetMem().Serialize();
   auto sCPU = cpu->Serialize();
   auto sVER = std::vector<u8>{KAIZEN_VERSION >> 8, KAIZEN_VERSION >> 4, KAIZEN_VERSION & 0xFF};
   memSize = sMEM.size();
@@ -114,7 +114,7 @@ void Core::Deserialize() {
     Util::panic("PROBLEMI!");
   }
 
-  cpu->mem.Deserialize(std::vector<u8>(serialized[slot].begin() + verSize, serialized[slot].begin() + verSize + memSize));
+  cpu->GetMem().Deserialize(std::vector<u8>(serialized[slot].begin() + verSize, serialized[slot].begin() + verSize + memSize));
   cpu->Deserialize(std::vector<u8>(serialized[slot].begin() + verSize + memSize, serialized[slot].begin() + verSize + memSize + cpuSize));
   serialized[slot].erase(serialized[slot].begin(), serialized[slot].end());
 }

@@ -115,13 +115,11 @@ FORCE_INLINE u32 crc32(u32 crc, const u8 *buf, size_t len) {
   static int have_table = 0;
   u32 rem;
   u8 octet;
-  int i, j;
-  const u8 *p, *q;
 
   if (have_table == 0) {
-    for (i = 0; i < 256; i++) {
+    for (int i = 0; i < 256; i++) {
       rem = i;
-      for (j = 0; j < 8; j++) {
+      for (int j = 0; j < 8; j++) {
         if (rem & 1) {
           rem >>= 1;
           rem ^= 0xedb88320;
@@ -134,9 +132,8 @@ FORCE_INLINE u32 crc32(u32 crc, const u8 *buf, size_t len) {
   }
 
   crc = ~crc;
-  q = buf + len;
-  for (p = buf; p < q; p++) {
-    octet = *p;  /* Cast to unsigned octet. */
+  for (int i = 0; i < len; i++) {
+    octet = buf[i];  /* Cast to unsigned octet. */
     crc = (crc >> 8) ^ table[(crc & 0xff) ^ octet];
   }
   return ~crc;

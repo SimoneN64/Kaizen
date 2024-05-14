@@ -21,7 +21,7 @@ void ParallelRDP::SetFramerateUnlocked(bool unlocked) {
 Program* fullscreen_quad_program;
 
 void ParallelRDP::LoadWSIPlatform(Vulkan::InstanceFactory* instanceFactory, std::unique_ptr<Vulkan::WSIPlatform>&& wsi_platform, std::unique_ptr<ParallelRDP::WindowInfo>&& newWindowInfo) {
-  wsi = new WSI();
+  wsi = std::make_unique<WSI>();
   wsi->set_backbuffer_srgb(false);
   wsi->set_platform(wsi_platform.get());
   wsi->set_present_mode(PresentMode::SyncToVBlank);
@@ -72,7 +72,7 @@ void ParallelRDP::Init(Vulkan::InstanceFactory* factory, std::unique_ptr<Vulkan:
 
   CommandProcessorFlags flags = 0;
 
-  command_processor = new CommandProcessor(wsi->get_device(), reinterpret_cast<void*>(aligned_rdram),
+  command_processor = std::make_unique<CommandProcessor>(wsi->get_device(), reinterpret_cast<void*>(aligned_rdram),
     offset, 8 * 1024 * 1024, 4 * 1024 * 1024, flags);
 
   if (!command_processor->device_is_supported()) {

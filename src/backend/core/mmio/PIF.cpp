@@ -37,21 +37,14 @@ void PIF::MaybeLoadMempak() {
       if (error) { Util::panic("Could not sync {}", mempakPath); }
       mempak.unmap();
     }
-    FILE *f = fopen(mempakPath.c_str(), "rb");
-    if (!f) {
-      f = fopen(mempakPath.c_str(), "wb");
-      u8 *dummy = (u8 *) calloc(MEMPAK_SIZE, 1);
-      fwrite(dummy, 1, MEMPAK_SIZE, f);
-      free(dummy);
-    }
 
-    fseek(f, 0, SEEK_END);
-    size_t actualSize = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    if (actualSize != MEMPAK_SIZE) {
+    auto mempakVec = Util::ReadFileBinary(mempakPath);
+    if(mempak.empty())
+      Util::WriteFileBinary(std::array<u8, MEMPAK_SIZE>{}, mempakPath);
+
+    if (mempakVec.size() != MEMPAK_SIZE) {
       Util::panic("Corrupt mempak!");
     }
-    fclose(f);
 
     mempak = mio::make_mmap_sink(
     mempakPath, 0, mio::map_entire_file, error);
@@ -88,20 +81,14 @@ void PIF::LoadEeprom(SaveType saveType, const std::string& path) {
     }
 
     eepromSize = GetSaveSize(saveType);
-    FILE *f = fopen(eepromPath.c_str(), "rb");
-    if (!f) {
-      f = fopen(eepromPath.c_str(), "wb");
-      u8* dummy = (u8*)calloc(eepromSize, 1);
-      fwrite(dummy, 1, eepromSize, f);
-    }
 
-    fseek(f, 0, SEEK_END);
-    size_t actualSize = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    if (actualSize != eepromSize) {
+    auto eepromVec = Util::ReadFileBinary(eepromPath);
+    if(eepromVec.empty())
+      Util::WriteFileBinary(std::array<u8, MEMPAK_SIZE>{}, eepromPath);
+
+    if (eepromVec.size() != eepromSize) {
       Util::panic("Corrupt eeprom!");
     }
-    fclose(f);
 
     eeprom = mio::make_mmap_sink(
       eepromPath, 0, mio::map_entire_file, error);

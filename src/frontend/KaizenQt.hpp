@@ -35,7 +35,7 @@ public:
   void keyReleaseEvent(QKeyEvent*) override;
 private:
   void ConnectMainWindowSignalsToSlots() noexcept;
-  MainWindowController* mainWindow;
-  SettingsWindow* settingsWindow;
-  EmuThread* emuThread;
+  std::unique_ptr<MainWindowController> mainWindow;
+  std::unique_ptr<SettingsWindow> settingsWindow;
+  std::unique_ptr<EmuThread> emuThread;
 };

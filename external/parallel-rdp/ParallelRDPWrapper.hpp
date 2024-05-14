@@ -17,10 +17,6 @@ public:
 
   void Init(Vulkan::InstanceFactory*, std::unique_ptr<Vulkan::WSIPlatform>&&, std::unique_ptr<WindowInfo>&&, const u8*);
   ParallelRDP() = default;
-  ~ParallelRDP() {
-    delete wsi;
-    delete command_processor;
-  }
 
   void UpdateScreen(n64::VI&, bool = false);
   void EnqueueCommand(int, u32*);
@@ -32,7 +28,7 @@ private:
   void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Vulkan::Image>, Util::IntrusivePtr<Vulkan::CommandBuffer>);
   void UpdateScreen(Util::IntrusivePtr<Vulkan::Image>);
 
-  Vulkan::WSI* wsi = nullptr;
-  RDP::CommandProcessor* command_processor;
+  std::unique_ptr<Vulkan::WSI> wsi;
+  std::unique_ptr<RDP::CommandProcessor> command_processor;
   std::unique_ptr<WindowInfo> windowInfo;
 };

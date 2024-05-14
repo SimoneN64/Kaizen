@@ -15,22 +15,14 @@ class EmuThread : public QThread
   std::unique_ptr<Vulkan::WSIPlatform> wsiPlatform;
   std::unique_ptr<ParallelRDP::WindowInfo> windowInfo;
 public:
-  explicit EmuThread(std::unique_ptr<QtInstanceFactory>&& instance, std::unique_ptr<Vulkan::WSIPlatform>&& wsiPlatform, std::unique_ptr<ParallelRDP::WindowInfo>&& windowInfo, QObject* parent_object) noexcept;
-  ~EmuThread() {
-    delete core;
-    delete settings;
-  }
+  explicit EmuThread(std::unique_ptr<QtInstanceFactory>&& instance, std::unique_ptr<Vulkan::WSIPlatform>&& wsiPlatform, std::unique_ptr<ParallelRDP::WindowInfo>&& windowInfo, SettingsWindow&) noexcept;
 
   [[noreturn]] void run() noexcept override;
 
   ParallelRDP parallel;
-  n64::Core* core;
-  SettingsWindow* settings;
+  n64::Core core;
+  SettingsWindow& settings;
   bool running = false;
-
-  bool LoadTAS(const fs::path& path) {
-    return core->LoadTAS(path);
-  }
 
   void TogglePause()
   {
@@ -40,15 +32,15 @@ public:
   void Reset()
   {
     running = false;
-    core->Stop();
-    core->LoadROM(core->rom);
+    core.Stop();
+    core.LoadROM(core.rom);
     running = true;
   }
 
   void Stop()
   {
-    core->rom = {};
+    core.rom = {};
     running = false;
-    core->Stop();
+    core.Stop();
   }
 };

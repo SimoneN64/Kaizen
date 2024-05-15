@@ -83,8 +83,11 @@ void PIF::LoadEeprom(SaveType saveType, const std::string& path) {
     eepromSize = GetSaveSize(saveType);
 
     auto eepromVec = Util::ReadFileBinary(eepromPath);
-    if(eepromVec.empty())
-      Util::WriteFileBinary(std::array<u8, MEMPAK_SIZE>{}, eepromPath);
+    if(eepromVec.empty()) {
+      std::vector<u8> dummy{};
+      dummy.resize(GetSaveSize(saveType));
+      Util::WriteFileBinary(dummy, eepromPath);
+    }
 
     if (eepromVec.size() != eepromSize) {
       Util::panic("Corrupt eeprom!");

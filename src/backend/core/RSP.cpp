@@ -146,7 +146,9 @@ void RSP::DMAtoRDRAM(std::vector<u8>& rdram) {
 
   for (u32 i = 0; i < spDMALen.count + 1; i++) {
     for(u32 j = 0; j < length; j++) {
-      dst[dram_address + j] = src[(mem_address + j) & 0xFFF];
+      if((dram_address + j) < RDRAM_SIZE) {
+        dst[dram_address + j] = src[(mem_address + j) & DMEM_DSIZE];
+      }
     }
 
     int skip = i == spDMALen.count ? 0 : spDMALen.skip;
@@ -176,7 +178,11 @@ void RSP::DMAtoRSP(std::vector<u8>& rdram) {
 
   for (u32 i = 0; i < spDMALen.count + 1; i++) {
     for(u32 j = 0; j < length; j++) {
-      dst[(mem_address + j) & 0xFFF] = src[dram_address + j];
+      if((dram_address + j) < RDRAM_SIZE) {
+        dst[(mem_address + j) & DMEM_DSIZE] = src[dram_address + j];
+      } else {
+        dst[(mem_address + j) & DMEM_DSIZE] = 0;
+      }
     }
 
     int skip = i == spDMALen.count ? 0 : spDMALen.skip;

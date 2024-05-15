@@ -78,7 +78,7 @@ void MI::Write(u32 paddr, u32 val) {
       UpdateInterrupt();
       break;
     default:
-      Util::panic("Unhandled MI[{:08X}] write ({:08X})", val, paddr);
+      Util::panic_trace("Unhandled MI write @ 0x{:08X} with value 0x{:08X}", paddr, val);
   }
 }
 }

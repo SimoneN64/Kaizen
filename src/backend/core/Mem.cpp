@@ -208,7 +208,7 @@ template<> u8 Mem::Read(n64::Registers &regs, u32 paddr) {
         return si.pif.bootrom[BYTE_ADDRESS(paddr) - PIF_ROM_REGION_START];
       case PIF_RAM_REGION:
         return si.pif.ram[paddr - PIF_RAM_REGION_START];
-      case 0x00800000 ... 0x03FFFFFF: // unused
+      case 0x00800000 ... 0x03EFFFFF: // unused
       case 0x04200000 ... 0x042FFFFF: // unused
       case 0x04900000 ... 0x04FFFFFF: // unused
       case 0x1FC00800 ... 0xFFFFFFFF: // unused
@@ -243,7 +243,7 @@ template<> u16 Mem::Read(n64::Registers &regs, u32 paddr) {
         return Util::ReadAccess<u16>(si.pif.bootrom, HALF_ADDRESS(paddr) - PIF_ROM_REGION_START);
       case PIF_RAM_REGION:
         return be16toh(Util::ReadAccess<u16>(si.pif.ram, paddr - PIF_RAM_REGION_START));
-      case 0x00800000 ... 0x03FFFFFF:
+      case 0x00800000 ... 0x03EFFFFF:
       case 0x04200000 ... 0x042FFFFF:
       case 0x04900000 ... 0x04FFFFFF:
       case 0x1FC00800 ... 0xFFFFFFFF:
@@ -278,7 +278,7 @@ template<> u32 Mem::Read(n64::Registers &regs, u32 paddr) {
         return Util::ReadAccess<u32>(si.pif.bootrom, paddr - PIF_ROM_REGION_START);
       case PIF_RAM_REGION:
         return be32toh(Util::ReadAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START));
-      case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
+      case 0x00800000 ... 0x03EFFFFF: case 0x04200000 ... 0x042FFFFF:
       case 0x04900000 ... 0x04FFFFFF: case 0x1FC00800 ... 0xFFFFFFFF: return 0;
       default:
         Util::panic("Unimplemented 32-bit read at address {:08X} (PC = {:016X})", paddr, (u64) regs.pc);
@@ -310,7 +310,7 @@ template<> u64 Mem::Read(n64::Registers &regs, u32 paddr) {
         return Util::ReadAccess<u64>(si.pif.bootrom, paddr - PIF_ROM_REGION_START);
       case PIF_RAM_REGION:
         return be64toh(Util::ReadAccess<u64>(si.pif.ram, paddr - PIF_RAM_REGION_START));
-      case 0x00800000 ... 0x03FFFFFF:
+      case 0x00800000 ... 0x03EFFFFF:
       case 0x04200000 ... 0x042FFFFF:
       case 0x04900000 ... 0x04FFFFFF:
       case 0x1FC00800 ... 0xFFFFFFFF:
@@ -352,7 +352,7 @@ template<> void Mem::Write<u8>(Registers& regs, u32 paddr, u32 val) {
         Util::WriteAccess<u32>(si.pif.ram, paddr, htobe32(val));
         si.pif.ProcessCommands(*this);
         break;
-      case 0x00800000 ... 0x03FFFFFF:
+      case 0x00800000 ... 0x03EFFFFF:
       case 0x04200000 ... 0x042FFFFF:
       case 0x04900000 ... 0x04FFFFFF:
       case PIF_ROM_REGION:
@@ -397,7 +397,7 @@ template<> void Mem::Write<u16>(Registers& regs, u32 paddr, u32 val) {
         Util::WriteAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe32(val));
         si.pif.ProcessCommands(*this);
         break;
-      case 0x00800000 ... 0x03FFFFFF:
+      case 0x00800000 ... 0x03EFFFFF:
       case 0x04200000 ... 0x042FFFFF:
       case 0x04900000 ... 0x04FFFFFF:
       case PIF_ROM_REGION:
@@ -439,7 +439,7 @@ template<> void Mem::Write<u32>(Registers& regs, u32 paddr, u32 val) {
         Util::WriteAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe32(val));
         si.pif.ProcessCommands(*this);
         break;
-      case 0x00800000 ... 0x03FFFFFF:
+      case 0x00800000 ... 0x03EFFFFF:
       case 0x04200000 ... 0x042FFFFF:
       case 0x04900000 ... 0x04FFFFFF:
       case PIF_ROM_REGION:
@@ -478,7 +478,7 @@ void Mem::Write(Registers& regs, u32 paddr, u64 val) {
         Util::WriteAccess<u64>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe64(val));
         si.pif.ProcessCommands(*this);
         break;
-      case 0x00800000 ... 0x03FFFFFF:
+      case 0x00800000 ... 0x03EFFFFF:
       case 0x04200000 ... 0x042FFFFF:
       case 0x04900000 ... 0x04FFFFFF:
       case 0x1FC00000 ... 0x1FC007BF:

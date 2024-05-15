@@ -20,6 +20,7 @@ if(${CMAKE_BUILD_TYPE} MATCHES Debug)
   add_compile_definitions(VULKAN_DEBUG)
   #add_compile_options(-fsanitize=address -fsanitize=undefined)
   #add_link_options(-fsanitize=address -fsanitize=undefined)
+  add_link_options(-Wl,--export-dynamic)
 endif()
 
 find_package(Qt6 COMPONENTS Core Gui Widgets)

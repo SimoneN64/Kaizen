@@ -39,8 +39,10 @@ void PIF::MaybeLoadMempak() {
     }
 
     auto mempakVec = Util::ReadFileBinary(mempakPath);
-    if(mempak.empty())
+    if(mempak.empty()) {
       Util::WriteFileBinary(std::array<u8, MEMPAK_SIZE>{}, mempakPath);
+      mempakVec = Util::ReadFileBinary(mempakPath);
+    }
 
     if (mempakVec.size() != MEMPAK_SIZE) {
       Util::panic("Corrupt mempak!");
@@ -87,6 +89,7 @@ void PIF::LoadEeprom(SaveType saveType, const std::string& path) {
       std::vector<u8> dummy{};
       dummy.resize(GetSaveSize(saveType));
       Util::WriteFileBinary(dummy, eepromPath);
+      eepromVec = Util::ReadFileBinary(eepromPath);
     }
 
     if (eepromVec.size() != eepromSize) {

@@ -20,18 +20,17 @@ void Flash::Load(SaveType saveType, const std::string& path) {
       saveData.unmap();
     }
 
-    FILE *f = fopen(flashPath.c_str(), "rb");
-    if (!f) {
-      Util::panic("Could not open {}", flashPath);
+    auto flashVec = Util::ReadFileBinary(flashPath);
+    if(flashVec.empty()) {
+      std::vector<u8> dummy{};
+      dummy.resize(FLASH_SIZE);
+      Util::WriteFileBinary(dummy, flashPath);
+      flashVec = Util::ReadFileBinary(flashPath);
     }
 
-    fseek(f, 0, SEEK_END);
-    size_t actualSize = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    if (actualSize != FLASH_SIZE) {
-      Util::panic("Corrupt flash!");
+    if (flashVec.size() != FLASH_SIZE) {
+      Util::panic("Corrupt SRAM!");
     }
-    fclose(f);
 
     saveData = mio::make_mmap_sink(
       flashPath, 0, mio::map_entire_file, error);

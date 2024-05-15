@@ -45,18 +45,16 @@ void Mem::LoadSRAM(SaveType save_type, fs::path path) {
       saveData.unmap();
     }
 
-    FILE *f = fopen(sramPath.c_str(), "rb");
-    if (!f) {
-      Util::panic("Could not open {}", sramPath);
+    auto sramVec = Util::ReadFileBinary(sramPath);
+    if(sramVec.empty()) {
+      Util::WriteFileBinary(std::array<u8, SRAM_SIZE>{}, sramPath);
+      sramVec = Util::ReadFileBinary(sramPath);
     }
 
-    fseek(f, 0, SEEK_END);
-    size_t actualSize = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    if (actualSize != SRAM_SIZE) {
+    if (sramVec.size() != SRAM_SIZE) {
       Util::panic("Corrupt SRAM!");
     }
-    fclose(f);
+
     saveData = mio::make_mmap_sink(
       sramPath, 0, mio::map_entire_file, error);
     if (error) { Util::panic("Could not mmap {}", sramPath); }

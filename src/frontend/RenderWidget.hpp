@@ -5,7 +5,6 @@
 #include <QWindow>
 #include <QVulkanInstance>
 #include <QVulkanWindow>
-#include <EmuThread.hpp>
 
 struct QtInstanceFactory : Vulkan::InstanceFactory {
   VkInstance create_instance(const VkInstanceCreateInfo *info) override {

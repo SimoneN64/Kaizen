@@ -1,12 +1,9 @@
 #pragma once
-#undef signals
-#include <ParallelRDPWrapper.hpp>
+#include <RenderWidget.hpp>
 #include <QThread>
 #include <Core.hpp>
 #include <SettingsWindow.hpp>
 #include <memory>
-
-struct QtInstanceFactory;
 
 class EmuThread : public QThread
 {

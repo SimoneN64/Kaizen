@@ -32,7 +32,6 @@ include_directories(
   ../../external/imgui/imgui
   ../../external/imgui/imgui/backends
   ../../external/unarr
-  ${SDL2_INCLUDE_DIRS}
 )
 
 option(RAPIDJSON_BUILD_DOC "Build rapidjson documentation." OFF)
@@ -72,8 +71,7 @@ add_executable(kaizen-qt
   InputSettings.hpp
   InputSettings.cpp)
 
-target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets fmt mio nlohmann_json nfd SDL2::SDL2 parallel-rdp backend)
-target_compile_definitions(kaizen-qt PUBLIC SDL_MAIN_HANDLED)
+target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets fmt mio nlohmann_json nfd parallel-rdp backend)
 
 file(COPY ../../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)
 file(REMOVE

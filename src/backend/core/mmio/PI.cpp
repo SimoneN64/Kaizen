@@ -438,11 +438,15 @@ void PI::Write(u32 addr, u32 val) {
         len -= dramAddrInternal & 0x7;
       }
       rdLen = len;
-      if(dramAddrInternal >= 0x800000) {
-        Util::panic("PI DMA RDRAM->CART ADDRESS TOO HIGH");
-      }
+
       for (int i = 0; i < len; i++) {
-        BusWrite<u8, true>(cartAddrInternal + i, mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE]);
+        u32 addr = BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE;
+        if (addr < RDRAM_SIZE) {
+          BusWrite<u8, true>(cartAddrInternal + i, mem.mmio.rdp.rdram[addr]);
+        }
+        else {
+          BusWrite<u8, true>(cartAddrInternal + i, 0);
+        }
       }
       Util::trace("PI DMA from RDRAM to CARTRIDGE (size: {} B, {:08X} to {:08X})", len, dramAddr, cartAddr);
       dmaBusy = true;
@@ -463,7 +467,10 @@ void PI::Write(u32 addr, u32 val) {
       }
 
       for(u32 i = 0; i < len; i++) {
-        mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE] = BusRead<u8, true>(cartAddrInternal + i);
+        u32 addr = BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE;
+        if (addr < mem.mmio.rdp.rdram.size()) {
+          mem.mmio.rdp.rdram[addr] = BusRead<u8, true>(cartAddrInternal + i);
+        }
       }
       dmaBusy = true;
       Util::trace("PI DMA from CARTRIDGE to RDRAM (size: {} B, {:08X} to {:08X})", len, cartAddr, dramAddr);

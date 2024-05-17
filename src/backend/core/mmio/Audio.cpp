@@ -32,6 +32,8 @@ AudioDevice::AudioDevice() {
   SDL_InitSubSystem(SDL_INIT_AUDIO);
   AdjustSampleRate(AUDIO_SAMPLE_RATE);
 
+  audioStreamMutex = SDL_CreateMutex();
+
   request.freq = AUDIO_SAMPLE_RATE;
   request.format = SYSTEM_SAMPLE_FORMAT;
   request.channels = 2;
@@ -48,8 +50,6 @@ AudioDevice::AudioDevice() {
   }
 
   SDL_PauseAudioDevice(handle, false);
-
-  audioStreamMutex = SDL_CreateMutex();
 
   if(!audioStreamMutex) {
     Util::panic("Unable to initialize audio mutex: {}", SDL_GetError());

@@ -3,7 +3,7 @@
 #include <fmt/format.h>
 #include <fmt/color.h>
 #include <string>
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(_WIN32)
 #include <dlfcn.h>
 #endif
 
@@ -78,7 +78,7 @@ constexpr void trace(const std::string& fmt, Args... args) {
 
 template <typename ...Args>
 constexpr void panic_trace(const std::string& fmt, Args... args) {
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(_WIN32)
   Dl_info info;
   auto tmp = fmt::format(fmt + '\n', args...);
   tmp += "Called by:\n";

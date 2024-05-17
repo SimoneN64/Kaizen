@@ -13,10 +13,12 @@ struct AudioDevice {
   void PushSample(float, float, float, float);
   void AdjustSampleRate(int);
   void LockMutex() {
-    SDL_LockMutex(audioStreamMutex);
+    if(audioStreamMutex)
+      SDL_LockMutex(audioStreamMutex);
   }
   void UnlockMutex() {
-    SDL_UnlockMutex(audioStreamMutex);
+    if (audioStreamMutex)
+      SDL_UnlockMutex(audioStreamMutex);
   }
 
   SDL_AudioStream* GetStream() { return audioStream; }

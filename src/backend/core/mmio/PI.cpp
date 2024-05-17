@@ -468,7 +468,7 @@ void PI::Write(u32 addr, u32 val) {
 
       for(u32 i = 0; i < len; i++) {
         u32 addr = BYTE_ADDRESS(dramAddrInternal + i) & RDRAM_DSIZE;
-        if (addr < mem.mmio.rdp.rdram.size()) {
+        if (addr < RDRAM_SIZE) {
           mem.mmio.rdp.rdram[addr] = BusRead<u8, true>(cartAddrInternal + i);
         }
       }

@@ -16,7 +16,6 @@ if (HAS_SSE4_1)
   add_compile_options(-msse3 -msse4.1)
 endif ()
 
-add_compile_definitions(SDL_MAIN_HANDLED)
 if(${CMAKE_BUILD_TYPE} MATCHES Debug)
   add_compile_definitions(VULKAN_DEBUG)
   #add_compile_options(-fsanitize=address -fsanitize=undefined)

@@ -4,9 +4,10 @@ project(kaizen-qt)
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
-find_package(SDL2 REQUIRED)
+find_package(SDL2 CONFIG REQUIRED)
 
 include_directories(
+	${SDL2_INCLUDE_DIRS}
   .
   ../
   ../utils

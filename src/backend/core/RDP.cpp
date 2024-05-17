@@ -7,13 +7,14 @@
 namespace n64 {
 RDP::RDP(Mem& mem, ParallelRDP& parallel) : mem(mem), parallel(parallel) {
   rdram.resize(RDRAM_SIZE);
+  std::fill(rdram.begin(), rdram.end(), 0);
   memset(cmd_buf, 0, 0x100000);
   dpc.status.raw = 0x80;
 }
 
 void RDP::Reset() {
   dpc.status.raw = 0x80;
-  rdram = {};
+  std::fill(rdram.begin(), rdram.end(), 0);
   memset(cmd_buf, 0, 0x100000);
 }
 

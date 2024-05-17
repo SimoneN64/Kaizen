@@ -30,9 +30,13 @@ void audioCallback(void* user, Uint8* stream, int length) {
 
 AudioDevice::AudioDevice() {
   SDL_InitSubSystem(SDL_INIT_AUDIO);
-  AdjustSampleRate(AUDIO_SAMPLE_RATE);
+  audioStream = SDL_NewAudioStream(SYSTEM_SAMPLE_FORMAT, 2, AUDIO_SAMPLE_RATE, SYSTEM_SAMPLE_FORMAT, 2, AUDIO_SAMPLE_RATE);
 
   audioStreamMutex = SDL_CreateMutex();
+
+  if(!audioStreamMutex) {
+    Util::panic("Unable to initialize audio mutex: {}", SDL_GetError());
+  }
 
   request.freq = AUDIO_SAMPLE_RATE;
   request.format = SYSTEM_SAMPLE_FORMAT;
@@ -41,19 +45,13 @@ AudioDevice::AudioDevice() {
   request.callback = audioCallback;
   request.userdata = (void*)this;
 
-  if(!handle) {
-    handle = SDL_OpenAudioDevice(nullptr, 0, &request, &audioSpec, 0);
-  }
+  handle = SDL_OpenAudioDevice(nullptr, 0, &request, &audioSpec, 0);
 
   if(!handle) {
     Util::panic("Failed to initialize SDL Audio: {}", SDL_GetError());
   }
 
   SDL_PauseAudioDevice(handle, false);
-
-  if(!audioStreamMutex) {
-    Util::panic("Unable to initialize audio mutex: {}", SDL_GetError());
-  }
 }
 
 void AudioDevice::PushSample(float left, float volumeL, float right, float volumeR) {
@@ -61,7 +59,7 @@ void AudioDevice::PushSample(float left, float volumeL, float right, float volum
   float adjustedR = right * volumeR;
   float samples[2]{ adjustedL, adjustedR };
 
-  float availableBytes = SDL_AudioStreamAvailable(audioStream);
+  auto availableBytes = (float)SDL_AudioStreamAvailable(audioStream);
   if(availableBytes <= BYTES_PER_HALF_SECOND) {
     SDL_AudioStreamPut(audioStream, samples, 2 * sizeof(float));
   }
@@ -71,7 +69,7 @@ void AudioDevice::AdjustSampleRate(int sampleRate) {
   LockMutex();
   if(audioStream) SDL_FreeAudioStream(audioStream);
 
-  audioStream = SDL_NewAudioStream(AUDIO_F32SYS, 2, sampleRate, SYSTEM_SAMPLE_FORMAT, 2, AUDIO_SAMPLE_RATE);
+  audioStream = SDL_NewAudioStream(SYSTEM_SAMPLE_FORMAT, 2, sampleRate, SYSTEM_SAMPLE_FORMAT, 2, AUDIO_SAMPLE_RATE);
   UnlockMutex();
 }
 }

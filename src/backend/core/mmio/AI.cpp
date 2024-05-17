@@ -59,7 +59,7 @@ void AI::Write(u32 addr, u32 val) {
     case 0x04500010: {
       u32 oldDacFreq = dac.freq;
       dacRate = val & 0x3FFF;
-      dac.freq = std::max(1u, GetVideoFrequency(mem.IsROMPAL()) / (dacRate + 1));
+      dac.freq = std::max(1.f, (float)GetVideoFrequency(mem.IsROMPAL()) / (dacRate + 1)) * 1.037;
       dac.period = N64_CPU_FREQ / dac.freq;
       if(oldDacFreq != dac.freq) {
         device.AdjustSampleRate(dac.freq);
@@ -81,7 +81,8 @@ void AI::Step(u32 cpuCycles, float volumeL, float volumeR) {
       return;
     }
 
-    if(dmaLen[0] && dmaEnable) {u32 addrHi = ((dmaAddr[0] >> 13) + dmaAddrCarry) & 0x7FF;
+    if(dmaLen[0] && dmaEnable) {
+      u32 addrHi = ((dmaAddr[0] >> 13) + dmaAddrCarry) & 0x7FF;
       dmaAddr[0] = (addrHi << 13) | (dmaAddr[0] & 0x1FFF);
       u32 data = Util::ReadAccess<u32>(mem.mmio.rdp.rdram, dmaAddr[0] & RDRAM_DSIZE);
       s16 l = s16(data >> 16);

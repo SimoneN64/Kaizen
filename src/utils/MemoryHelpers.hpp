@@ -3,8 +3,43 @@
 #include <cstring>
 #include <portable_endian_bswap.h>
 #include <log.hpp>
+#include <functional>
 
 namespace Util {
+template <class T, typename... Args>
+struct AutoRelease {
+  AutoRelease(void (*dtor)(T*)) : dtor(dtor) { }
+
+  AutoRelease(T* (*ctor)(Args...), void (*dtor)(T*), Args... args) : dtor(dtor) {
+    thing = ctor(args...);
+  }
+
+  T* get() { return thing; }
+
+  void Construct(T* (*ctor)(Args...), Args... args) {
+    if(thing) {
+      dtor(thing);
+    }
+
+    thing = ctor(args...);
+  }
+
+  void Destroy() {
+    if(thing) {
+      dtor(thing);
+    }
+  }
+
+  ~AutoRelease() {
+    if(thing) {
+      dtor(thing);
+    }
+  }
+private:
+  T* thing = nullptr;
+  void (*dtor)(T*) = nullptr;
+};
+
 template<typename T>
 static FORCE_INLINE T ReadAccess(const u8* data, u32 index) {
   if constexpr (sizeof(T) == 8) {

@@ -62,8 +62,8 @@ InputSettings::InputSettings(nlohmann::json& settings) : settings(settings), QWi
 
   for (int i = 0; i < 18; i++) {
     connect(kb_buttons[i], &QPushButton::pressed, this, [&, i]() {
-      for (int i = 0; i < 18; i++) {
-        kb_buttons[i]->setEnabled(false);
+      for (auto kb_button : kb_buttons) {
+        kb_button->setEnabled(false);
       }
       grabKeyboard();
       grabbing = true;
@@ -71,16 +71,16 @@ InputSettings::InputSettings(nlohmann::json& settings) : settings(settings), QWi
     });
   }
 
-  QHBoxLayout* AB = new QHBoxLayout;
-  QHBoxLayout* ZStart = new QHBoxLayout;
-  QHBoxLayout* LR = new QHBoxLayout;
-  QHBoxLayout* DupDdown = new QHBoxLayout;
-  QHBoxLayout* DleftDright = new QHBoxLayout;
-  QHBoxLayout* CupCdown = new QHBoxLayout;
-  QHBoxLayout* CleftCright = new QHBoxLayout;
-  QHBoxLayout* AupAdown = new QHBoxLayout;
-  QHBoxLayout* AleftAright = new QHBoxLayout;
-  QVBoxLayout* mainLayout = new QVBoxLayout;
+  auto AB = new QHBoxLayout;
+  auto ZStart = new QHBoxLayout;
+  auto LR = new QHBoxLayout;
+  auto DupDdown = new QHBoxLayout;
+  auto DleftDright = new QHBoxLayout;
+  auto CupCdown = new QHBoxLayout;
+  auto CleftCright = new QHBoxLayout;
+  auto AupAdown = new QHBoxLayout;
+  auto AleftAright = new QHBoxLayout;
+  auto mainLayout = new QVBoxLayout;
 
   AB->addWidget(n64_button_labels[0]);
   AB->addWidget(kb_buttons[0]);
@@ -139,8 +139,8 @@ void InputSettings::keyPressEvent(QKeyEvent* e) {
     kb_buttons[which_grabbing]->setText(k);
     grabbing = false;
     which_grabbing = -1;
-    for (int i = 0; i < 18; i++) {
-      kb_buttons[i]->setEnabled(true);
+    for (auto kb_button : kb_buttons) {
+      kb_button->setEnabled(true);
     }
     releaseKeyboard();
     emit modified();

@@ -4,6 +4,7 @@
 #include <Core.hpp>
 #include <SettingsWindow.hpp>
 #include <memory>
+#include <SDL2/SDL.h>
 
 class EmuThread : public QThread
 {
@@ -16,6 +17,7 @@ public:
 
   [[noreturn]] void run() noexcept override;
 
+  Util::AutoRelease<SDL_GameController, int> controller;
   ParallelRDP parallel;
   n64::Core core;
   SettingsWindow& settings;

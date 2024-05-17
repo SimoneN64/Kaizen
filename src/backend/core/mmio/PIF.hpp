@@ -169,6 +169,13 @@ struct PIF {
   void EepromRead(const u8*, u8*, const Mem&) const;
   void EepromWrite(const u8*, u8*, const Mem&);
   std::vector<u8> Serialize();
+  void UpdateButton(int index, Controller::Key k, bool state) {
+    joybusDevices[index].controller.UpdateButton(k, state);
+  }
+
+  void UpdateAxis(int index, Controller::Axis a, s8 state) {
+    joybusDevices[index].controller.UpdateAxis(a, state);
+  }
 
   bool mempakOpen = false;
   JoybusDevice joybusDevices[6]{};

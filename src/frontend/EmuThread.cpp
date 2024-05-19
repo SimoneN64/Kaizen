@@ -14,6 +14,10 @@ EmuThread::EmuThread(std::unique_ptr<QtInstanceFactory>&& instance_, std::unique
   SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
   bool controllerConnected = false;
 
+  if(SDL_GameControllerAddMappingsFromFile("resources/gamecontrollerdb.txt") < 0) {
+    Util::warn("[SDL] Could not load game controller DB");
+  }
+
   auto pollEvents = [&]() {
     SDL_Event e;
     while(SDL_PollEvent(&e)) {

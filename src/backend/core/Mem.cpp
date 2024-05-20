@@ -38,6 +38,9 @@ void Mem::Reset() {
 void Mem::LoadSRAM(SaveType save_type, fs::path path) {
   if(save_type == SAVE_SRAM_256k) {
     std::error_code error;
+    if (!savePath.empty()) {
+      path = savePath / path.filename();
+    }
     sramPath = path.replace_extension(".sram").string();
     if(saveData.is_mapped()) {
       saveData.sync(error);

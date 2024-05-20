@@ -16,6 +16,7 @@ static inline nlohmann::json JSONOpenOrCreate(const std::string& path) {
   } else {
     auto file = std::fstream(path, std::fstream::in | std::fstream::out | std::fstream::trunc);
     nlohmann::json json;
+    json["general"]["savePath"] = "";
     json["audio"]["volumeL"] = 0.5;
     json["audio"]["volumeR"] = 0.5;
     json["audio"]["lock"] = true;

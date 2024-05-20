@@ -30,7 +30,11 @@ void PIF::Reset() {
 
 void PIF::MaybeLoadMempak() {
   if(!mempakOpen) {
-    mempakPath = fs::path(mempakPath).replace_extension(".mempak").string();
+    fs::path mempakPath_ = mempakPath;
+    if (!savePath.empty()) {
+      mempakPath_ = savePath / mempakPath_.filename();
+    }
+    mempakPath = mempakPath_.replace_extension(".mempak").string();
     std::error_code error;
     if (mempak.is_mapped()) {
       mempak.sync(error);
@@ -74,7 +78,11 @@ FORCE_INLINE size_t GetSaveSize(SaveType saveType) {
 
 void PIF::LoadEeprom(SaveType saveType, const std::string& path) {
   if(saveType == SAVE_EEPROM_16k || saveType == SAVE_EEPROM_4k) {
-    eepromPath = fs::path(path).replace_extension(".eeprom").string();
+    fs::path eepromPath_ = path;
+    if (!savePath.empty()) {
+      eepromPath_ = savePath / eepromPath_.filename();
+    }
+    eepromPath = eepromPath_.replace_extension(".eeprom").string();
     std::error_code error;
     if (eeprom.is_mapped()) {
       eeprom.sync(error);

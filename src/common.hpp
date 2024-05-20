@@ -19,6 +19,7 @@ using m128i = __m128i;
 
 constexpr u32 N64_CPU_FREQ = 93750000;
 constexpr u16 KAIZEN_VERSION = 0x010;
+extern std::string savePath;
 
 static FORCE_INLINE constexpr u32 GetCyclesPerFrame(bool pal) {
   if (pal) {

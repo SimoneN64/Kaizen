@@ -12,7 +12,11 @@ void Flash::Reset() {
 
 void Flash::Load(SaveType saveType, const std::string& path) {
   if(saveType == SAVE_FLASH_1m) {
-    flashPath = fs::path(path).replace_extension(".flash").string();
+    fs::path flashPath_ = path;
+    if (!savePath.empty()) {
+      flashPath_ = savePath / flashPath_.filename();
+    }
+    flashPath = flashPath_.replace_extension(".flash").string();
     std::error_code error;
     if (saveData.is_mapped()) {
       saveData.sync(error);

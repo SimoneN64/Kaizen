@@ -6,7 +6,7 @@
 EmuThread::EmuThread(std::unique_ptr<QtInstanceFactory>&& instance_, std::unique_ptr<Vulkan::WSIPlatform>&& wsiPlatform_, std::unique_ptr<ParallelRDP::WindowInfo>&& windowInfo_, SettingsWindow& settings) noexcept
   : instance(std::move(instance_)), wsiPlatform(std::move(wsiPlatform_)),
     windowInfo(std::move(windowInfo_)),
-    controller(SDL_GameControllerClose),
+    controller(SDL_GameControllerClose, "GameController"),
     core(parallel), settings(settings) {}
 
 [[noreturn]] void EmuThread::run() noexcept {

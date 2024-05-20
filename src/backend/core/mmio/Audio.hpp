@@ -1,30 +1,28 @@
 #pragma once
-#include <common.hpp>
+#include <MemoryHelpers.hpp>
 #include <SDL2/SDL.h>
 
 namespace n64 {
 struct AudioDevice {
   AudioDevice();
-  ~AudioDevice() {
-    SDL_FreeAudioStream(audioStream);
-    SDL_DestroyMutex(audioStreamMutex);
-  }
 
   void PushSample(float, float, float, float);
   void AdjustSampleRate(int);
   void LockMutex() {
-    if(audioStreamMutex)
-      SDL_LockMutex(audioStreamMutex);
+    if(audioStreamMutex.get())
+      SDL_LockMutex(audioStreamMutex.get());
   }
   void UnlockMutex() {
-    if (audioStreamMutex)
-      SDL_UnlockMutex(audioStreamMutex);
+    if (audioStreamMutex.get())
+      SDL_UnlockMutex(audioStreamMutex.get());
   }
 
-  SDL_AudioStream* GetStream() { return audioStream; }
+  Util::AutoRelease<SDL_AudioStream, const SDL_AudioFormat, const Uint8, const int, const SDL_AudioFormat,
+                    const Uint8, const int>& GetStream() { return audioStream; }
 private:
-  SDL_AudioStream* audioStream = nullptr;
-  SDL_mutex* audioStreamMutex = nullptr;
+  Util::AutoRelease<SDL_AudioStream, const SDL_AudioFormat, const Uint8, const int, const SDL_AudioFormat,
+                  const Uint8, const int> audioStream;
+  Util::AutoRelease<SDL_mutex> audioStreamMutex;
   SDL_AudioSpec audioSpec{};
   SDL_AudioSpec request{};
   SDL_AudioDeviceID handle{};

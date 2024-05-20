@@ -7,7 +7,6 @@ struct Event;
 
 namespace n64 {
 struct Core {
-  ~Core() { Stop(); }
   Core(ParallelRDP&);
   void Stop();
   void LoadROM(const std::string&);

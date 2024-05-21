@@ -7,9 +7,20 @@ struct Registers {
   void Reset();
   void SetPC64(s64);
   void SetPC32(s32);
-  
+
+  bool IsRegConstant(u32 index) {
+    if(index == 0) return true;
+    return gprIsConstant[index];
+  }
+
+  template <typename... Args>
+  bool IsRegConstant(Args... indices) {
+    return IsRegConstant(indices...);
+  }
+
   s64 gpr[32]{};
   bool gprIsConstant[32]{};
+  bool loIsConstant = false, hiIsConstant = false;
   Cop0 cop0;
   Cop1 cop1;
   s64 oldPC{}, pc{}, nextPC{};

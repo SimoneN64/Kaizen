@@ -2,7 +2,10 @@
 #include <jit/helpers.hpp>
 
 namespace n64 {
-JIT::JIT(ParallelRDP& parallel) : mem(regs, parallel) { }
+JIT::JIT(ParallelRDP& parallel) : mem(regs, parallel) {
+  regs.gpr[0] = 0;
+  regs.gprIsConstant[0] = true;
+}
 
 bool JIT::ShouldServiceInterrupt() {
   bool interrupts_pending = (regs.cop0.status.im & regs.cop0.cause.interruptPending) != 0;
@@ -24,46 +27,40 @@ void JIT::CheckCompareInterrupt() {
 }
 
 int JIT::Step() {
-  CheckCompareInterrupt();
+  u32 instruction;
+  s64 pc = regs.pc;
 
-  regs.prevDelaySlot = regs.delaySlot;
-  regs.delaySlot = false;
+  do {
+    //CheckCompareInterrupt();
 
-  if (check_address_error(0b11, u64(regs.pc))) [[unlikely]] {
-    regs.cop0.HandleTLBException(regs.pc);
-    regs.cop0.FireException(ExceptionCode::AddressErrorLoad, 0, regs.pc);
-    return 1;
-  }
+    //regs.prevDelaySlot = regs.delaySlot;
+    //regs.delaySlot = false;
 
-  u32 paddr = 0;
-  if (!regs.cop0.MapVAddr(Cop0::LOAD, regs.pc, paddr)) {
-    regs.cop0.HandleTLBException(regs.pc);
-    regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.pc);
-    return 1;
-  }
-
-  u32 instruction = mem.Read<u32>(regs, paddr);
-  while (!InstrEndsBlock(instr)) {
-    
-    if (!regs.cop0.MapVAddr(Cop0::LOAD, regs.pc, paddr)) {
-      regs.cop0.HandleTLBException(regs.pc);
-      regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.pc);
+    /*if (check_address_error(0b11, u64(pc))) [[unlikely]] {
+      regs.cop0.HandleTLBException(pc);
+      regs.cop0.FireException(ExceptionCode::AddressErrorLoad, 0, pc);
       return 1;
+    }*/
+
+    u32 paddr = 0;
+    if (!regs.cop0.MapVAddr(Cop0::LOAD, pc, paddr)) {
+      /*regs.cop0.HandleTLBException(pc);
+      regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, pc);
+      return 1;*/
+      Util::panic("[JIT]: Unhandled exception TLB exception {} when retrieving PC physical address!", regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD));
     }
 
     instruction = mem.Read<u32>(regs, paddr);
-  }
 
-  if(ShouldServiceInterrupt()) {
-    regs.cop0.FireException(ExceptionCode::Interrupt, 0, regs.pc);
-    return 1;
-  }
+    /*if(ShouldServiceInterrupt()) {
+      regs.cop0.FireException(ExceptionCode::Interrupt, 0, regs.pc);
+      return 1;
+    }*/
 
-  regs.oldPC = regs.pc;
-  regs.pc = regs.nextPC;
-  regs.nextPC += 4;
+    pc += 4;
 
-  Exec(instruction);
+    //Exec(instruction);
+  } while (!InstrEndsBlock(instruction));
 
   return 1;
 }

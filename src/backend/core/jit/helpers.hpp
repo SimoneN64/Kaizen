@@ -17,7 +17,8 @@ static inline bool InstrEndsBlock(u32 instr) {
   case SPECIAL: return SpecialEndsBlock(instr);
   case REGIMM: case J: case JAL: case BEQ:
   case BNE: case BLEZ: case BGTZ: case BEQL:
-  case BNEL: case BLEZL: case BGTZL: return true:
+  case BNEL: case BLEZL: case BGTZL: return true;
+  default: return false;
   }
 }
 }

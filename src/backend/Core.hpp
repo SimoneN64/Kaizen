@@ -1,5 +1,6 @@
 #pragma once
 #include <backend/core/Interpreter.hpp>
+#include <backend/core/JIT.hpp>
 #include <string>
 
 struct Window;

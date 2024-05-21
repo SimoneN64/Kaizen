@@ -3,7 +3,7 @@
 #include <ParallelRDPWrapper.hpp>
 
 namespace n64 {
-Core::Core(ParallelRDP& parallel) : cpu(std::make_unique<Interpreter>(parallel)) {}
+Core::Core(ParallelRDP& parallel) : cpu(std::make_unique<JIT>(parallel)) {}
 
 void Core::Stop() {
   render = false;

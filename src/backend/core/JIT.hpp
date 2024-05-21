@@ -5,8 +5,8 @@
 
 namespace n64 {
 struct Core;
-struct Interpreter : BaseCPU {
-  explicit Interpreter(ParallelRDP&);
+struct JIT : BaseCPU {
+  explicit JIT(ParallelRDP&);
   ~Interpreter() override = default;
   int Step() override;
   void Reset() override {

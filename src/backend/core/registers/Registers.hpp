@@ -7,7 +7,9 @@ struct Registers {
   void Reset();
   void SetPC64(s64);
   void SetPC32(s32);
+  
   s64 gpr[32]{};
+  bool gprIsConstant[32]{};
   Cop0 cop0;
   Cop1 cop1;
   s64 oldPC{}, pc{}, nextPC{};

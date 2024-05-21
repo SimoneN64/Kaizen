@@ -7,7 +7,7 @@ namespace n64 {
 struct Core;
 struct JIT : BaseCPU {
   explicit JIT(ParallelRDP&);
-  ~Interpreter() override = default;
+  ~JIT() override = default;
   int Step() override;
   void Reset() override {
     regs.Reset();

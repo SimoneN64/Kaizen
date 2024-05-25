@@ -1,6 +1,6 @@
 #pragma once
 #include <MemoryHelpers.hpp>
-#include <SDL2/SDL.h>
+#include <SDL2/SDL_audio.h>
 
 namespace n64 {
 struct AudioDevice {

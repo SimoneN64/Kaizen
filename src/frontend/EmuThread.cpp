@@ -2,6 +2,7 @@
 #include <RenderWidget.hpp>
 #include <ParallelRDPWrapper.hpp>
 #include "Audio.hpp"
+#include <SDL2/SDL.h>
 
 EmuThread::EmuThread(std::unique_ptr<QtInstanceFactory>&& instance_, std::unique_ptr<Vulkan::WSIPlatform>&& wsiPlatform_, std::unique_ptr<ParallelRDP::WindowInfo>&& windowInfo_, SettingsWindow& settings) noexcept
   : instance(std::move(instance_)), wsiPlatform(std::move(wsiPlatform_)),

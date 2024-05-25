@@ -1,5 +1,6 @@
 #include <Audio.hpp>
 #include <log.hpp>
+#include <SDL2/SDL.h>
 
 namespace n64 {
 #define AUDIO_SAMPLE_RATE 44100

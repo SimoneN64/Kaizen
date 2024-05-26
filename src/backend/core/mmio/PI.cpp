@@ -271,7 +271,7 @@ template <> void PI::BusWrite<u32, false>(u32 addr, u32 val) {
           if (val < CART_ISVIEWER_SIZE) {
             std::string message(val + 1, 0);
             std::copy(mem.isviewer.begin(), mem.isviewer.begin() + val, message.begin());
-            Util::print("{}", message);
+            Util::always("{}", message);
           } else {
             Util::panic("ISViewer buffer size is emulated at {} bytes, but received a flush command for {} bytes!", CART_ISVIEWER_SIZE, val);
           }

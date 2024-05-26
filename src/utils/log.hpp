@@ -9,7 +9,7 @@
 
 namespace Util {
 enum LogLevel : u8 {
-  Trace, Debug, Info, Warn, Error
+  Trace, Debug, Info, Warn, Error, Always
 };
 
 #ifndef NDEBUG
@@ -26,7 +26,7 @@ constexpr void print(const std::string& fmt, Args... args) {
       fmt::print(fmt::emphasis::bold | fg(fmt::color::red), fmt, args...);
     } else if constexpr(messageType == Warn) {
       fmt::print(fg(fmt::color::yellow), fmt, args...);
-    } else if constexpr(messageType == Info || messageType == Trace) {
+    } else if constexpr(messageType == Info || messageType == Trace || messageType == Always) {
       fmt::print(fmt, args...);
     } else if constexpr(messageType == Debug) {
 #ifndef NDEBUG
@@ -74,6 +74,11 @@ constexpr void debug(const std::string& fmt, Args... args) {
 template <typename ...Args>
 constexpr void trace(const std::string& fmt, Args... args) {
   print<Trace>("[TRACE] " + fmt + "\n", args...);
+}
+
+template <typename ...Args>
+constexpr void always(const std::string& fmt, Args... args) {
+  print<Always>(fmt + "\n", args...);
 }
 
 template <typename ...Args>

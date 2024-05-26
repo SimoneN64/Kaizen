@@ -13,7 +13,7 @@ struct Registers {
   s64 oldPC{}, pc{}, nextPC{};
   s64 hi{}, lo{};
   bool prevDelaySlot{}, delaySlot{};
-  int steps = 0;
+  u32 steps = 0;
   u32 extraCycles = 0;
 
   void CpuStall(u32 cycles) {

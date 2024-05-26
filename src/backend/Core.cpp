@@ -59,15 +59,15 @@ void Core::Run(float volumeL, float volumeR) {
       for(; cycles < mem.mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
         u32 taken = cpu->Step();
         taken += regs.PopStalledCycles();
-        static u32 cpuSteps = 0;
-        cpuSteps += taken;
+
+        regs.steps += taken;
         if(mmio.rsp.spStatus.halt) {
-          cpuSteps = 0;
+          regs.steps = 0;
           mmio.rsp.steps = 0;
         } else {
-          while(cpuSteps > 2) {
+          while(regs.steps > 2) {
             mmio.rsp.steps += 2;
-            cpuSteps -= 3;
+            regs.steps -= 3;
           }
 
           while(mmio.rsp.steps > 0) {

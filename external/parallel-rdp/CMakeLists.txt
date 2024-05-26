@@ -41,6 +41,8 @@ add_library(parallel-rdp
   parallel-rdp-standalone/util/logging.hpp
   parallel-rdp-standalone/util/thread_id.cpp
   parallel-rdp-standalone/util/thread_id.hpp
+  parallel-rdp-standalone/util/environment.cpp
+  parallel-rdp-standalone/util/environment.hpp
   # C
   parallel-rdp-standalone/volk/volk.c
 )

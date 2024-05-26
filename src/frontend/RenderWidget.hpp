@@ -72,6 +72,7 @@ public:
   }
 
   void poll_input() override {}
+  void poll_input_async(Granite::InputTrackerHandler* handler) override {}
 
   void event_frame_tick(double frame, double elapsed) override { }
 

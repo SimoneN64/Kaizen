@@ -10,7 +10,6 @@ Rewrite of my Nintendo 64 emulator "[shibumi](https://github.com/SimoneN64/shibu
 ## Pre-built binaries
 | Release                                                                                    |
 |--------------------------------------------------------------------------------------------|
-| [Windows](https://nightly.link/SimoneN64/Kaizen/workflows/build/master/kaizen-windows.zip) |
 | [ Linux ](https://nightly.link/SimoneN64/Kaizen/workflows/build/master/kaizen-linux.zip)   |
 
 ## Socials
@@ -28,23 +27,6 @@ We have a [Discord server](https://discord.gg/htzNd2rRF6)
 
 ## Build instructions:
 First clone the repository: `git clone --recursive https://github.com/SimoneN64/Kaizen`
-
-### Windows
-
-This build uses Visual Studio with Vcpkg and Clang-cl
-
-Dependencies:
-- CMake 3.20 or higher
-- SDL2 (install it by making sure that you're choosing the "vulkan" extension of the package and the x64-windows triplet: `vcpkg install sdl2[vulkan]:x64-windows`)
-- Qt6 (install it with `vcpkg install qtbase[core,gui,widgets,vulkan]:x64-windows`)
-
-```
-cd path/to/kaizen
-mkdir build
-cd build
-cmake -T clangcl -DCMAKE_TOOLCHAIN_FILE=path/to/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release -S ../src
-cmake --build . --config Release
-```
 
 ### Linux
 
@@ -82,6 +64,7 @@ Your GPU needs to support Vulkan 1.1+, because the RDP is implemented via [ParaL
 - [ ] TAS tools: TAS input, recording (using Mupen's format), save-states, rewind and frame-advance
 - [ ] Cheat support
 - [ ] Allow to optionally pass a PIF image for the boot process (it's HLE'd at the moment)
+- [ ] Windows support when it stops being a pain in the rectum.
 
 This list will probably grow with time!
 
@@ -91,7 +74,7 @@ This list will probably grow with time!
 - [WhoBrokeTheBuild](https://github.com/WhoBrokeTheBuild) for the shader that allows letterboxing :rocket:
 - [Kelpsy](https://github.com/kelpsyberry), [fleroviux](https://github.com/fleroviux), [Kim-Dewelski](https://github.com/Kim-Dewelski), [Peach](https://github.com/wheremyfoodat/),
   [kivan](https://github.com/kivan117), [liuk](https://github.com/liuk7071) and [Skyler](https://github.com/skylersaleh) for the general support and motivation :heart:
-- [Spec](https://github.com/spec-chum/) for help with testing on Windows, that helped form the final build instructions :heart:
+- [Spec](https://github.com/spec-chum/) for being an awesome person in general :heart:
 
 ## Copyright
 

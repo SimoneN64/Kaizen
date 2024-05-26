@@ -2,17 +2,12 @@ cmake_minimum_required(VERSION 3.20)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_compile_definitions(SIMD_SUPPORT)
-if(WIN32)
-  add_definitions(-DNOMINMAX)
-  add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-endif ()
-
 include(CheckCCompilerFlag)
 
 check_c_compiler_flag(-msse4.1 HAS_SSE4_1)
 
 if (HAS_SSE4_1)
+  add_compile_definitions(SIMD_SUPPORT)
   add_compile_options(-msse3 -msse4.1)
 endif ()
 

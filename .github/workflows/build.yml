@@ -30,35 +30,3 @@ jobs:
           name: kaizen-linux
           path: upload
           if-no-files-found: error
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@master
-        with:
-          submodules: recursive
-      - name: Setup dependencies
-        run: |
-          vcpkg install sdl2[vulkan]:x64-windows
-      - name: Setup Qt
-        uses: jurplel/install-qt-action@v3
-        with:
-          arch: win64_msvc2019_64
-          version: 6.6.*
-      - name: Build Kaizen
-        run: |
-          cmake -B build -T clangcl -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release
-          cmake --build build --config Release
-      - name: Collect artifacts
-        run: |
-          mkdir upload
-          cp build/src/frontend/Release/kaizen-qt.exe upload
-          mkdir upload/resources
-          cp resources/* upload/resources
-          cp build/src/frontend/Release/SDL2.dll upload
-          windeployqt --dir upload upload/kaizen-qt.exe
-      - name: Upload artifacts
-        uses: actions/upload-artifact@master
-        with:
-          name: kaizen-windows
-          path: upload
-          if-no-files-found: error

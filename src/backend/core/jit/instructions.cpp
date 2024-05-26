@@ -513,24 +513,61 @@ void JIT::mtlo(u32 instr) {
   }
 }
 
-void JIT::nor(u32) {
-
+void JIT::nor(u32 instr) {
+  if(regs.IsRegConstant(RS(instr), RT(instr))) {
+    if (RD(instr) != 0) [[likely]] {
+      regs.gpr[RD(instr)] = ~(regs.gpr[RS(instr)] | regs.gpr[RT(instr)]);
+      regs.gprIsConstant[RD(instr)] = true;
+    }
+  } else {
+    Util::panic("[JIT]: Implement non constant NOR!");
+  }
 }
 
-void JIT::slti(u32) {
-
+void JIT::slti(u32 instr) {
+  if(regs.IsRegConstant(RS(instr))) {
+    s16 imm = instr;
+    if (RT(instr) != 0) [[likely]] {
+      regs.gpr[RT(instr)] = regs.gpr[RS(instr)] < imm;
+      regs.gprIsConstant[RT(instr)] = true;
+    }
+  } else {
+    Util::panic("[JIT]: Implement non constant SLTI!");
+  }
 }
 
-void JIT::sltiu(u32) {
-
+void JIT::sltiu(u32 instr) {
+  if(regs.IsRegConstant(RS(instr))) {
+    s16 imm = instr;
+    if (RT(instr) != 0) [[likely]] {
+      regs.gpr[RT(instr)] = (u64) regs.gpr[RS(instr)] < imm;
+      regs.gprIsConstant[RT(instr)] = true;
+    }
+  } else {
+    Util::panic("[JIT]: Implement non constant SLTIU!");
+  }
 }
 
-void JIT::slt(u32) {
-
+void JIT::slt(u32 instr) {
+  if(regs.IsRegConstant(RS(instr), RT(instr))) {
+    if (RD(instr) != 0) [[likely]] {
+      regs.gpr[RD(instr)] = regs.gpr[RS(instr)] < regs.gpr[RT(instr)];
+      regs.gprIsConstant[RD(instr)] = true;
+    }
+  } else {
+    Util::panic("[JIT]: Implement non constant SLT!");
+  }
 }
 
-void JIT::sltu(u32) {
-
+void JIT::sltu(u32 instr) {
+  if(regs.IsRegConstant(RS(instr), RT(instr))) {
+    if (RD(instr) != 0) [[likely]] {
+      regs.gpr[RD(instr)] = (u64)regs.gpr[RS(instr)] < (u64)regs.gpr[RT(instr)];
+      regs.gprIsConstant[RD(instr)] = true;
+    }
+  } else {
+    Util::panic("[JIT]: Implement non constant SLT!");
+  }
 }
 
 void JIT::sll(u32) {

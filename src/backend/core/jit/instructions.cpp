@@ -264,54 +264,188 @@ void JIT::divu(u32 instr) {
 }
 
 void JIT::dmult(u32 instr) {
-
+  if(regs.IsRegConstant(RT(instr), RS(instr))) {
+    s64 rt = regs.gpr[RT(instr)];
+    s64 rs = regs.gpr[RS(instr)];
+    s128 result = (s128)rt * (s128)rs;
+    regs.lo = result & 0xFFFFFFFFFFFFFFFF;
+    regs.hi = result >> 64;
+    regs.hiIsConstant = true;
+    regs.loIsConstant = true;
+  } else {
+    Util::panic("[JIT]: Implement non constant DMULT!");
+  }
 }
 
 void JIT::dmultu(u32 instr) {
-
+  if(regs.IsRegConstant(RT(instr), RS(instr))) {
+    u64 rt = regs.gpr[RT(instr)];
+    u64 rs = regs.gpr[RS(instr)];
+    u128 result = (u128)rt * (u128)rs;
+    regs.lo = s64(result & 0xFFFFFFFFFFFFFFFF);
+    regs.hi = s64(result >> 64);
+    regs.hiIsConstant = true;
+    regs.loIsConstant = true;
+  } else {
+    Util::panic("[JIT]: Implement non constant DMULT!");
+  }
 }
 
 void JIT::dsll(u32 instr) {
-
+  if(regs.IsRegConstant(RT(instr))) {
+    if (RD(instr) != 0) [[likely]] {
+      u8 sa = ((instr >> 6) & 0x1f);
+      s64 result = regs.gpr[RT(instr)] << sa;
+      regs.gpr[RD(instr)] = result;
+      regs.gprIsConstant[RD(instr)] = true;
+    }
+  } else {
+    Util::panic("[JIT]: Implement non constant DSLL!");
+  }
 }
 
 void JIT::dsllv(u32 instr) {
-
+  if(regs.IsRegConstant(RT(instr), RS(instr))) {
+    if (RD(instr) != 0) [[likely]] {
+      s64 sa = regs.gpr[RS(instr)] & 63;
+      s64 result = regs.gpr[RT(instr)] << sa;
+      regs.gpr[RD(instr)] = result;
+      regs.gprIsConstant[RD(instr)] = true;
+    }
+  } else {
+    Util::panic("[JIT]: Implement non constant DSLLV!");
+  }
 }
 
 void JIT::dsll32(u32 instr) {
-
+  if(regs.IsRegConstant(RT(instr))) {
+    if (RD(instr) != 0) [[likely]] {
+      u8 sa = ((instr >> 6) & 0x1f);
+      s64 result = regs.gpr[RT(instr)] << (sa + 32);
+      regs.gpr[RD(instr)] = result;
+      regs.gprIsConstant[RD(instr)] = true;
+    }
+  } else {
+    Util::panic("[JIT]: Implement non constant DSLL32!");
+  }
 }
 
 void JIT::dsra(u32 instr) {
-
+  if(regs.IsRegConstant(RT(instr))) {
+    if (RD(instr) != 0) [[likely]] {
+      s64 rt = regs.gpr[RT(instr)];
+      u8 sa = ((instr >> 6) & 0x1f);
+      s64 result = rt >> sa;
+      regs.gpr[RD(instr)] = result;
+      regs.gprIsConstant[RD(instr)] = true;
+    }
+  } else {
+    Util::panic("[JIT]: Implement non constant DSRA!");
+  }
 }
 
 void JIT::dsrav(u32 instr) {
-
+  if(regs.IsRegConstant(RT(instr), RS(instr))) {
+    if (RD(instr) != 0) [[likely]] {
+      s64 rt = regs.gpr[RT(instr)];
+      s64 rs = regs.gpr[RS(instr)];
+      s64 sa = rs & 63;
+      s64 result = rt >> sa;
+      regs.gpr[RD(instr)] = result;
+      regs.gprIsConstant[RD(instr)] = true;
+    }
+  } else {
+    Util::panic("[JIT]: Implement non constant DSRAV!");
+  }
 }
 
 void JIT::dsra32(u32 instr) {
-
+  if(regs.IsRegConstant(RT(instr))) {
+    if (RD(instr) != 0) [[likely]] {
+      s64 rt = regs.gpr[RT(instr)];
+      u8 sa = ((instr >> 6) & 0x1f);
+      s64 result = rt >> (sa + 32);
+      regs.gpr[RD(instr)] = result;
+      regs.gprIsConstant[RD(instr)] = true;
+    }
+  } else {
+    Util::panic("[JIT]: Implement non constant DSRA32!");
+  }
 }
 
 void JIT::dsrl(u32 instr) {
-
+  if(regs.IsRegConstant(RT(instr))) {
+    if (RD(instr) != 0) [[likely]] {
+      u64 rt = regs.gpr[RT(instr)];
+      u8 sa = ((instr >> 6) & 0x1f);
+      u64 result = rt >> sa;
+      regs.gpr[RD(instr)] = s64(result);
+      regs.gprIsConstant[RD(instr)] = true;
+    }
+  } else {
+    Util::panic("[JIT]: Implement non constant DSRL!");
+  }
 }
 
 void JIT::dsrlv(u32 instr) {
-
+  if(regs.IsRegConstant(RT(instr), RS(instr))) {
+    if (RD(instr) != 0) [[likely]] {
+      u8 amount = (regs.gpr[RS(instr)] & 63);
+      u64 rt = regs.gpr[RT(instr)];
+      u64 result = rt >> amount;
+      regs.gpr[RD(instr)] = s64(result);
+      regs.gprIsConstant[RD(instr)] = true;
+    }
+  } else {
+    Util::panic("[JIT]: Implement non constant DSRLV!");
+  }
 }
 
 void JIT::dsrl32(u32 instr) {
-
+  if(regs.IsRegConstant(RT(instr))) {
+    if (RD(instr) != 0) [[likely]] {
+      u64 rt = regs.gpr[RT(instr)];
+      u8 sa = ((instr >> 6) & 0x1f);
+      u64 result = rt >> (sa + 32);
+      regs.gpr[RD(instr)] = s64(result);
+      regs.gprIsConstant[RD(instr)] = true;
+    }
+  } else {
+    Util::panic("[JIT]: Implement non constant DSRL32!");
+  }
 }
 
 void JIT::dsub(u32 instr) {
-
+  if(regs.IsRegConstant(RT(instr), RS(instr))) {
+    s64 rt = regs.gpr[RT(instr)];
+    s64 rs = regs.gpr[RS(instr)];
+    s64 result = rs - rt;
+    if (check_signed_underflow(rs, rt, result)) {
+      // regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
+      Util::panic("[JIT]: Unhandled Overflow exception in DSUB!");
+    } else {
+      if (RD(instr) != 0) [[likely]] {
+        regs.gpr[RD(instr)] = result;
+        regs.gprIsConstant[RD(instr)] = true;
+      }
+    }
+  } else {
+    Util::panic("[JIT]: Implement non constant DSUB!");
+  }
 }
 
 void JIT::dsubu(u32 instr) {
+  if(regs.IsRegConstant(RT(instr), RS(instr))) {
+    s64 rt = regs.gpr[RT(instr)];
+    s64 rs = regs.gpr[RS(instr)];
+    s64 result = rs - rt;
 
+    if (RD(instr) != 0) [[likely]] {
+      regs.gpr[RD(instr)] = result;
+      regs.gprIsConstant[RD(instr)] = true;
+    }
+  } else {
+    Util::panic("[JIT]: Implement non constant DSUBU!");
+  }
 }
 }

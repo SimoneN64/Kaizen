@@ -47,7 +47,7 @@ int JIT::Step() {
       /*regs.cop0.HandleTLBException(pc);
       regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, pc);
       return 1;*/
-      Util::panic("[JIT]: Unhandled exception TLB exception {} when retrieving PC physical address!", regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD));
+      Util::panic("[JIT]: Unhandled exception TLB exception {} when retrieving PC physical address!", static_cast<int>(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD)));
     }
 
     instruction = mem.Read<u32>(regs, paddr);

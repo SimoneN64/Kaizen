@@ -448,4 +448,136 @@ void JIT::dsubu(u32 instr) {
     Util::panic("[JIT]: Implement non constant DSUBU!");
   }
 }
+
+void JIT::mfhi(u32 instr) {
+  if(regs.hiIsConstant) {
+    regs.gpr[RD(instr)] = regs.hi;
+    regs.gprIsConstant[RD(instr)] = true;
+  } else {
+    Util::panic("[JIT]: Implement non constant MFHI!");
+  }
+}
+
+void JIT::mflo(u32 instr) {
+  if(regs.loIsConstant) {
+    regs.gpr[RD(instr)] = regs.lo;
+    regs.gprIsConstant[RD(instr)] = true;
+  } else {
+    Util::panic("[JIT]: Implement non constant MFLO!");
+  }
+}
+
+void JIT::mult(u32 instr) {
+  if(regs.IsRegConstant(RT(instr), RS(instr))) {
+    s32 rt = regs.gpr[RT(instr)];
+    s32 rs = regs.gpr[RS(instr)];
+    s64 result = (s64) rt * (s64) rs;
+    regs.lo = (s64) ((s32) result);
+    regs.loIsConstant = true;
+    regs.hi = (s64) ((s32) (result >> 32));
+    regs.hiIsConstant = true;
+  } else {
+    Util::panic("[JIT]: Implement non constant MULT!");
+  }
+}
+
+void JIT::multu(u32 instr) {
+  if(regs.IsRegConstant(RT(instr), RS(instr))) {
+    u32 rt = regs.gpr[RT(instr)];
+    u32 rs = regs.gpr[RS(instr)];
+    u64 result = (u64)rt * (u64)rs;
+    regs.lo = (s64)((s32)result);
+    regs.loIsConstant = true;
+    regs.hi = (s64)((s32)(result >> 32));
+    regs.hiIsConstant = true;
+  } else {
+    Util::panic("[JIT]: Implement non constant MULTU!");
+  }
+}
+
+void JIT::mthi(u32 instr) {
+  if(regs.IsRegConstant(RS(instr))) {
+    regs.hi = regs.gpr[RS(instr)];
+    regs.hiIsConstant = true;
+  } else {
+    Util::panic("[JIT]: Implement non constant MTHI!");
+  }
+}
+
+void JIT::mtlo(u32 instr) {
+  if(regs.IsRegConstant(RS(instr))) {
+    regs.lo = regs.gpr[RS(instr)];
+    regs.loIsConstant = true;
+  } else {
+    Util::panic("[JIT]: Implement non constant MTLO!");
+  }
+}
+
+void JIT::nor(u32) {
+
+}
+
+void JIT::slti(u32) {
+
+}
+
+void JIT::sltiu(u32) {
+
+}
+
+void JIT::slt(u32) {
+
+}
+
+void JIT::sltu(u32) {
+
+}
+
+void JIT::sll(u32) {
+
+}
+
+void JIT::sllv(u32) {
+
+}
+
+void JIT::sub(u32) {
+
+}
+
+void JIT::subu(u32) {
+
+}
+
+void JIT::sra(u32) {
+
+}
+
+void JIT::srav(u32) {
+
+}
+
+void JIT::srl(u32) {
+
+}
+
+void JIT::srlv(u32) {
+
+}
+
+void JIT::or_(u32) {
+
+}
+
+void JIT::ori(u32) {
+
+}
+
+void JIT::xor_(u32) {
+
+}
+
+void JIT::xori(u32) {
+
+}
 }

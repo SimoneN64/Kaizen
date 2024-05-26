@@ -13,9 +13,8 @@ struct Registers {
     return gprIsConstant[index];
   }
 
-  template <typename... Args>
-  bool IsRegConstant(Args... indices) {
-    return IsRegConstant(indices...);
+  bool IsRegConstant(u32 first, u32 second) {
+    return IsRegConstant(first) && IsRegConstant(second);
   }
 
   s64 gpr[32]{};

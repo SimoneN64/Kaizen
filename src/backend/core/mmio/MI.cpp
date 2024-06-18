@@ -60,7 +60,7 @@ void MI::Write(u32 paddr, u32 val) {
         miMode |= 1 << 9;
       }
       break;
-    case 0x4: break;
+    case 0x4: case 0x8: break;
     case 0xC:
       for (int bit = 0; bit < 6; bit++) {
         int clearbit = bit << 1;

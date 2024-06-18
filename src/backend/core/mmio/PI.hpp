@@ -28,7 +28,7 @@ struct PI {
   [[nodiscard]] u32 AccessTiming(u8 domain, u32 length) const;
   bool dmaBusy{}, ioBusy{}, toCart{};
   u32 latch{};
-  u32 dramAddr{}, cartAddr{}, dramAddrInternal{}, cartAddrInternal{};
+  u32 dramAddr{}, cartAddr{};
   u32 rdLen{}, wrLen{};
   u32 piBsdDom1Lat{}, piBsdDom2Lat{};
   u32 piBsdDom1Pwd{}, piBsdDom2Pwd{};

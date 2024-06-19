@@ -353,8 +353,8 @@ auto PI::Read(u32 addr) const -> u32 {
   switch(addr) {
     case 0x04600000: return dramAddr & 0x00FFFFFE;
     case 0x04600004: return cartAddr & 0xFFFFFFFE;
-    case 0x04600008: return 0x7F;
-    case 0x0460000C: return 0x7F;
+    case 0x04600008: return rdLen;
+    case 0x0460000C: return wrLen;
     case 0x04600010: {
       u32 value = 0;
       value |= (dmaBusy << 0); // Is PI DMA active? No, because it's instant

@@ -432,11 +432,6 @@ void PI::Write(u32 addr, u32 val) {
       rdLen = val & 0x00FFFFFF;
       s32 len = val + 1;
 
-      s32 misalign = dramAddr & 7;
-      s32 distEndOfRow = 0x800-(dramAddr&0x7ff);
-      s32 blockLen = std::min(128-misalign, distEndOfRow);
-      s32 curLen = std::min(len, blockLen);
-
       for (int i = 0; i < len; i++) {
         u32 address = BYTE_ADDRESS(dramAddr + i) & RDRAM_DSIZE;
         if (address < RDRAM_SIZE) {
@@ -448,7 +443,8 @@ void PI::Write(u32 addr, u32 val) {
       }
       dramAddr += len;
       dramAddr = (dramAddr + 7) & ~7;
-      for(s32 i = 0; i < curLen; i+=2) cartAddr += 2;
+      cartAddr += len;
+      if(cartAddr & 1) cartAddr += 1;
       Util::trace("PI DMA from RDRAM to CARTRIDGE (size: {} B, {:08X} to {:08X})", len, dramAddr, cartAddr);
       dmaBusy = true;
       toCart = true;
@@ -457,11 +453,6 @@ void PI::Write(u32 addr, u32 val) {
     case 0x0460000C: {
       wrLen = val & 0x00FFFFFF;
       s32 len = wrLen + 1;
-
-      s32 misalign = dramAddr & 7;
-      s32 distEndOfRow = 0x800-(dramAddr&0x7ff);
-      s32 blockLen = std::min(128-misalign, distEndOfRow);
-      s32 curLen = std::min(len, blockLen);
 
       if(mem.saveType == SAVE_FLASH_1m && cartAddr >= SREGION_PI_SRAM && cartAddr < 0x08010000) {
         cartAddr = SREGION_PI_SRAM | ((cartAddr & 0xFFFFF) << 1);
@@ -475,7 +466,8 @@ void PI::Write(u32 addr, u32 val) {
       }
       dramAddr += len;
       dramAddr = (dramAddr + 7) & ~7;
-      for(s32 i = 0; i < curLen; i+=2) cartAddr += 2;
+      cartAddr += len;
+      if(cartAddr & 1) cartAddr += 1;
       dmaBusy = true;
       Util::trace("PI DMA from CARTRIDGE to RDRAM (size: {} B, {:08X} to {:08X})", len, cartAddr, dramAddr);
       toCart = false;

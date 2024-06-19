@@ -452,7 +452,7 @@ void PI::Write(u32 addr, u32 val) {
     } break;
     case 0x0460000C: {
       wrLen = val & 0x00FFFFFF;
-      s32 len = wrLen + 1;
+      s32 len = val + 1;
 
       if(mem.saveType == SAVE_FLASH_1m && cartAddr >= SREGION_PI_SRAM && cartAddr < 0x08010000) {
         cartAddr = SREGION_PI_SRAM | ((cartAddr & 0xFFFFF) << 1);

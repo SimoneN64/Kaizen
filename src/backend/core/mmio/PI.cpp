@@ -438,9 +438,9 @@ void PI::Write(u32 addr, u32 val) {
       s32 curLen = std::min(len, blockLen);
 
       for (int i = 0; i < len; i++) {
-        u32 addr = BYTE_ADDRESS(dramAddr + i) & RDRAM_DSIZE;
-        if (addr < RDRAM_SIZE) {
-          BusWrite<u8, true>(cartAddr + i, mem.mmio.rdp.rdram[addr]);
+        u32 address = BYTE_ADDRESS(dramAddr + i) & RDRAM_DSIZE;
+        if (address < RDRAM_SIZE) {
+          BusWrite<u8, true>(cartAddr + i, mem.mmio.rdp.rdram[address]);
         }
         else {
           BusWrite<u8, true>(cartAddr + i, 0);
@@ -468,9 +468,9 @@ void PI::Write(u32 addr, u32 val) {
       }
 
       for(u32 i = 0; i < len; i++) {
-        u32 addr = BYTE_ADDRESS(dramAddr + i) & RDRAM_DSIZE;
-        if (addr < RDRAM_SIZE) {
-          mem.mmio.rdp.rdram[addr] = BusRead<u8, true>(cartAddr + i);
+        u32 address = BYTE_ADDRESS(dramAddr + i) & RDRAM_DSIZE;
+        if (address < RDRAM_SIZE) {
+          mem.mmio.rdp.rdram[address] = BusRead<u8, true>(cartAddr + i);
         }
       }
       dramAddr += len;

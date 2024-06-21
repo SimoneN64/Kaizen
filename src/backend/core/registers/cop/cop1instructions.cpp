@@ -189,14 +189,14 @@ void Cop1::SetCauseByArgWCVT(T f) {
     case FP_INFINITE:
     case FP_SUBNORMAL:
       SetCauseUnimplemented();
-      CheckFPUException();
+      //CheckFPUException();
       break;
 
     case FP_NORMAL:
       // Check overflow
       if (f >= 2147483648.0f || f < -2147483648.0f) {
         SetCauseUnimplemented();
-        CheckFPUException();
+        //CheckFPUException();
       }
       break;
 
@@ -212,14 +212,14 @@ void Cop1::SetCauseByArgLCVT(T f) {
     case FP_INFINITE:
     case FP_SUBNORMAL:
       SetCauseUnimplemented();
-      CheckFPUException();
+      //CheckFPUException();
       break;
 
     case FP_NORMAL:
       // Check overflow
       if (f >= 9007199254740992.000000 || f <= -9007199254740992.000000) {
         SetCauseUnimplemented();
-        CheckFPUException();
+        //CheckFPUException();
       }
       break;
 
@@ -296,15 +296,15 @@ void Cop1::SetCauseByArg(T f) {
     case FP_NAN:
       if(isqnan(f)) {
         SetCauseInvalid();
-        CheckFPUException();
+        //CheckFPUException();
       } else {
         SetCauseUnimplemented();
-        CheckFPUException();
+        //CheckFPUException();
       }
       break;
     case FP_SUBNORMAL:
       SetCauseUnimplemented();
-      CheckFPUException();
+      //CheckFPUException();
       break;
     case FP_INFINITE:
     case FP_ZERO:
@@ -337,7 +337,7 @@ void Cop1::SetCauseOnResult(T& d) {
     case FP_SUBNORMAL:
       if (!fcr31.fs || fcr31.enable_underflow || fcr31.enable_inexact_operation) {
         SetCauseUnimplemented();
-        CheckFPUException();
+        //CheckFPUException();
       } else {
         // Since the if statement checks for the corresponding enable bits, it's safe to turn these cause bits on here.
         SetCauseUnderflow();

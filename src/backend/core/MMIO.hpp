@@ -15,7 +15,9 @@ struct Mem;
 struct Registers;
 
 struct MMIO {
-  MMIO(Mem& mem, Registers& regs, ParallelRDP& parallel) : vi(mem, regs), mi(regs), ai(mem, regs), pi(mem, regs), si(mem, regs), rsp(mem, regs), rdp(mem, parallel) {}
+  MMIO(Mem& mem, Registers& regs, ParallelRDP& parallel) : vi(mem, regs), mi(regs), ai(mem, regs), pi(mem, regs), si(mem, regs), rsp(mem, regs), rdp(mem, parallel) {
+    Reset();
+  }
   void Reset();
 
   VI vi;

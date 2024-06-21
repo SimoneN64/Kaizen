@@ -9,6 +9,7 @@ PI::PI(Mem& mem, Registers& regs) : mem(mem), regs(regs) {
 }
 
 void PI::Reset() {
+  toCart = false;
   dmaBusy = false;
   ioBusy = false;
   latch = 0;

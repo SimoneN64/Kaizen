@@ -12,6 +12,7 @@ struct Interpreter final : BaseCPU {
   void Reset() override {
     regs.Reset();
     mem.Reset();
+    cop2Latch = {};
   }
 
   Mem& GetMem() override {

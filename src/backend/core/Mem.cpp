@@ -33,6 +33,15 @@ void Mem::Reset() {
     saveData.unmap();
   }
   mmio.Reset();
+  memset(readPages, 0, PAGE_COUNT);
+  memset(writePages, 0, PAGE_COUNT);
+
+  for(u64 i = 0; i < RDRAM_SIZE / PAGE_SIZE; i++) {
+    const auto addr = (i * PAGE_SIZE) & RDRAM_DSIZE;
+    const auto pointer = (uintptr_t) &mmio.rdp.rdram[addr];
+    readPages[i] = pointer;
+    writePages[i] = pointer;
+  }
 }
 
 void Mem::LoadSRAM(SaveType save_type, fs::path path) {

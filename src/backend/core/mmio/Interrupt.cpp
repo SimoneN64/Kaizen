@@ -1,4 +1,3 @@
-#include <core/mmio/Interrupt.hpp>
 #include <core/mmio/MI.hpp>
 #include <core/registers/Registers.hpp>
 

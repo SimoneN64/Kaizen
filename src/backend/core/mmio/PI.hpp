@@ -1,6 +1,5 @@
 #pragma once
 #include <common.hpp>
-#include <core/mmio/Interrupt.hpp>
 
 namespace n64 {
 

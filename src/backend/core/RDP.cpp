@@ -2,7 +2,6 @@
 #include <log.hpp>
 #include <core/RSP.hpp>
 #include <parallel-rdp/ParallelRDPWrapper.hpp>
-#include <core/mmio/Interrupt.hpp>
 
 namespace n64 {
 RDP::RDP(Mem& mem, ParallelRDP& parallel) : mem(mem), parallel(parallel) {
@@ -13,6 +12,7 @@ RDP::RDP(Mem& mem, ParallelRDP& parallel) : mem(mem), parallel(parallel) {
 }
 
 void RDP::Reset() {
+  dpc = {};
   dpc.status.raw = 0x80;
   std::fill(rdram.begin(), rdram.end(), 0);
   memset(cmd_buf, 0, 0x100000);

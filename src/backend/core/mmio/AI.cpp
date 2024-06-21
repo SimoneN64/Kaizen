@@ -13,8 +13,8 @@ void AI::Reset() {
   dmaCount = 0;
   dmaAddrCarry = false;
   cycles = 0;
-  memset(dmaLen, 0, 2);
-  memset(dmaAddr, 0, 2);
+  dmaLen = {};
+  dmaAddr = {};
   dac = {44100, N64_CPU_FREQ / dac.freq, 16};
 }
 

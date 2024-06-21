@@ -11,6 +11,12 @@ void Registers::Reset() {
   delaySlot = false;
   prevDelaySlot = false;
   memset(gpr, 0, 32*sizeof(s64));
+
+  cop0.Reset();
+  cop1.Reset();
+
+  steps = 0;
+  extraCycles = 0;
 }
 
 void Registers::SetPC64(s64 val) {

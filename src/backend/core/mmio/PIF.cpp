@@ -10,9 +10,9 @@
 
 namespace n64 {
 void PIF::Reset() {
-  memset(joybusDevices, 0, sizeof(JoybusDevice) * 6);
-  memset(bootrom, 0, PIF_BOOTROM_SIZE);
-  memset(ram, 0, PIF_RAM_SIZE);
+  joybusDevices = {};
+  bootrom = {};
+  ram = {};
   std::error_code error;
   if(mempak.is_mapped()) {
     mempak.sync(error);
@@ -26,6 +26,7 @@ void PIF::Reset() {
   }
 
   mempakOpen = false;
+  channel = 0;
 }
 
 void PIF::MaybeLoadMempak() {
@@ -630,11 +631,11 @@ std::vector<u8> PIF::Serialize() {
     sizeof(int));
 
   u32 index = 0;
-  memcpy(res.data() + index, joybusDevices, 6*sizeof(JoybusDevice));
+  memcpy(res.data() + index, joybusDevices.data(), 6*sizeof(JoybusDevice));
   index += 6*sizeof(JoybusDevice);
-  memcpy(res.data() + index, bootrom, PIF_BOOTROM_SIZE);
+  memcpy(res.data() + index, bootrom.data(), PIF_BOOTROM_SIZE);
   index += PIF_BOOTROM_SIZE;
-  memcpy(res.data() + index, ram, PIF_RAM_SIZE);
+  memcpy(res.data() + index, ram.data(), PIF_RAM_SIZE);
   index += PIF_RAM_SIZE;
   memcpy(res.data() + index, mempak.data(), mempak.size());
   index += mempak.size();

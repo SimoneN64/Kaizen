@@ -3,7 +3,6 @@
 #include <core/RDP.hpp>
 #include <MemoryRegions.hpp>
 #include <MemoryHelpers.hpp>
-#include <Interrupt.hpp>
 #include <array>
 
 #define RSP_BYTE(addr) (dmem[BYTE_ADDRESS(addr) & 0xFFF])

@@ -11,6 +11,7 @@ void SI::Reset() {
   status.raw = 0;
   dramAddr = 0;
   pifAddr = 0;
+  toDram = false;
   pif.Reset();
 }
 

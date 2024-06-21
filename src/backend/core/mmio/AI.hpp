@@ -1,6 +1,5 @@
 #pragma once
 #include <common.hpp>
-#include <core/mmio/Interrupt.hpp>
 #include <core/mmio/Audio.hpp>
 
 namespace n64 {
@@ -17,8 +16,8 @@ struct AI {
   u16 dacRate{};
   u8 bitrate{};
   int dmaCount{};
-  u32 dmaLen[2]{};
-  u32 dmaAddr[2]{};
+  std::array<u32, 2> dmaLen{};
+  std::array<u32, 2> dmaAddr{};
   bool dmaAddrCarry{};
   u32 cycles{};
   AudioDevice device;

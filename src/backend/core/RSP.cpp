@@ -31,6 +31,7 @@ void RSP::Reset() {
   divIn = 0;
   divOut = 0;
   divInLoaded = false;
+  steps = 0;
 }
 
 /*

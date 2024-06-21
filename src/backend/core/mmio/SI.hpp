@@ -1,6 +1,5 @@
 #pragma once
 #include <common.hpp>
-#include <core/mmio/Interrupt.hpp>
 #include <core/mmio/MI.hpp>
 #include <core/mmio/PIF.hpp>
 

@@ -20,6 +20,29 @@ void Cop0::Reset() {
   wired = 0;
   index.raw = 63;
   badVaddr = 0xFFFFFFFFFFFFFFFF;
+
+  kernelMode = {true};
+  supervisorMode = {false};
+  userMode = {false};
+  is64BitAddressing = {false};
+  llbit = {};
+
+  pageMask = {};
+  entryHi = {};
+  entryLo0 = {}, entryLo1 = {};
+  context = {};
+  wired = {}, r7 = {};
+  count = {};
+  compare = {};
+  LLAddr = {}, WatchLo = {}, WatchHi = {};
+  xcontext = {};
+  r21 = {}, r22 = {}, r23 = {}, r24 = {}, r25 = {};
+  ParityError = {}, CacheError = {}, TagLo = {}, TagHi = {};
+  ErrorEPC = {};
+  r31 = {};
+  memset(tlb, 0, sizeof(TLBEntry)*32);
+  tlbError = NONE;
+  openbus = {};
 }
 
 u32 Cop0::GetReg32(u8 addr) {

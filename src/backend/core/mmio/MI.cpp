@@ -1,7 +1,6 @@
 #include <core/mmio/MI.hpp>
 #include <core/registers/Registers.hpp>
 #include <log.hpp>
-#include <core/mmio/Interrupt.hpp>
 
 #define MI_VERSION_REG 0x02020102
 

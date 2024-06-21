@@ -2,7 +2,6 @@
 #include <log.hpp>
 #include <core/registers/Registers.hpp>
 #include <core/Mem.hpp>
-#include <core/mmio/Interrupt.hpp>
 
 namespace n64 {
 VI::VI (Mem& mem, Registers& regs) : mem(mem), regs(regs) {
@@ -20,6 +19,11 @@ void VI::Reset() {
   numHalflines = 262;
   numFields = 1;
   cyclesPerHalfline = 1000;
+  xscale = {}, yscale = {};
+  hsyncLeap = {}, burst = {}, vburst = {};
+  hstart = {}, vstart = {};
+  isPal = false;
+  swaps = {};
 }
 
 u32 VI::Read(u32 paddr) const {

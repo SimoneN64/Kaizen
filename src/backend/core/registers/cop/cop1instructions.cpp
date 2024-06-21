@@ -1078,7 +1078,7 @@ void Cop1::sdc1Interp(Mem& mem, u32 instr) {
 
 void Cop1::mfc1(u32 instr) {
   CheckFPUUsable_PreserveCause();
-  regs.gpr[RT(instr)] = FGR_S<s32>(regs.cop0.status, FS(instr));
+  regs.gpr[RT(instr)] = FGR_T<s32>(regs.cop0.status, FS(instr));
 }
 
 void Cop1::dmfc1(u32 instr) {
@@ -1088,7 +1088,7 @@ void Cop1::dmfc1(u32 instr) {
 
 void Cop1::mtc1(u32 instr) {
   CheckFPUUsable_PreserveCause();
-  FGR_S<u32>(regs.cop0.status, FS(instr)) = regs.gpr[RT(instr)];
+  FGR_T<s32>(regs.cop0.status, FS(instr)) = regs.gpr[RT(instr)];
 }
 
 void Cop1::dmtc1(u32 instr) {

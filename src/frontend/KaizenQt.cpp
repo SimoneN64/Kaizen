@@ -38,6 +38,9 @@ void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept {
   });
   connect(mainWindow.get(), &MainWindowController::Reset, emuThread.get(), &EmuThread::Reset);
   connect(mainWindow.get(), &MainWindowController::Stop, emuThread.get(), &EmuThread::Stop);
+  connect(mainWindow.get(), &MainWindowController::Stop, this, [this]() {
+    mainWindow->setWindowTitle("Kaizen");
+  });
   connect(mainWindow.get(), &MainWindowController::Pause, emuThread.get(), &EmuThread::TogglePause);
 }
 
@@ -55,6 +58,7 @@ void KaizenQt::dropEvent(QDropEvent* event) {
 void KaizenQt::LoadROM(const QString& fileName) noexcept {
   emuThread->start();
   emuThread->core.LoadROM(fileName.toStdString());
+  mainWindow->setWindowTitle(emuThread->core.cpu->GetMem().rom.gameNameDB.c_str());
 }
 
 void KaizenQt::closeEvent(QCloseEvent*) {

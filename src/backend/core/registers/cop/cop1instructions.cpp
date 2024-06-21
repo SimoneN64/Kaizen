@@ -239,6 +239,7 @@ void Cop1::SetCauseRaised(int raised) {
   if (raised & FE_UNDERFLOW) {
     if (!fcr31.fs || fcr31.enable_underflow || fcr31.enable_inexact_operation) {
       SetCauseUnimplemented();
+      CheckFPUException();
       return;
     } else {
       SetCauseUnderflow();
@@ -260,6 +261,8 @@ void Cop1::SetCauseRaised(int raised) {
   if (raised & FE_INVALID) {
     SetCauseInvalid();
   }
+
+  CheckFPUException();
 }
 
 void Cop1::SetCauseRaisedCVT(int raised) {

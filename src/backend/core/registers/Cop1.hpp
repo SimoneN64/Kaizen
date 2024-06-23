@@ -89,35 +89,45 @@ struct JIT;
 struct Registers;
 
 struct Cop1 {
-#define CheckFPUUsable_PreserveCause() do { if(!regs.cop0.status.cu1) { regs.cop0.FireException(ExceptionCode::CoprocessorUnusable, 1, regs.oldPC); return; } } while(0)
-#define CheckFPUUsable() do { CheckFPUUsable_PreserveCause(); fcr31.cause = 0; } while(0)
-  Cop1(Registers&);
+  explicit Cop1(Registers&);
   u32 fcr0{};
   FCR31 fcr31{};
   FloatingPointReg fgr[32]{};
+
   void Reset();
   template <class T> // either JIT or Interpreter
   void decode(T&, u32);
   friend struct Interpreter;
 
+  bool CheckFPUException();
   bool FireException();
+  template <bool preserveCause = false>
+  bool CheckFPUUsable();
+  template <typename T>
+  bool CheckResult(T&);
+  template <typename T>
+  bool CheckArg(T&);
+  template <typename T>
+  bool CheckArgs(T&, T&);
+
+  template<typename T, bool quiet, bool cf>
+  bool XORDERED(T fs, T ft);
 
   template <typename T>
-  void SetCauseOnResult(T& d);
+  bool CheckCVTArg(float &f);
+  template <typename T>
+  bool CheckCVTArg(double &f);
+
   template <typename T>
   void SetCauseByArg(T f);
-  template <typename T>
-  void SetCauseByArgLCVT(T f);
-  template <typename T>
-  void SetCauseByArgWCVT(T f);
-  void SetCauseRaised(int);
-  void SetCauseRaisedCVT(int);
-  void SetCauseUnimplemented();
-  void SetCauseUnderflow();
-  void SetCauseInexact();
-  void SetCauseDivisionByZero();
-  void SetCauseOverflow();
-  void SetCauseInvalid();
+  template <bool cvt = false>
+  bool TestExceptions();
+  bool SetCauseUnimplemented();
+  bool SetCauseUnderflow();
+  bool SetCauseInexact();
+  bool SetCauseDivisionByZero();
+  bool SetCauseOverflow();
+  bool SetCauseInvalid();
 private:
   template <typename T>
   auto FGR_T(Cop0Status&, u32) -> T&;
@@ -137,7 +147,7 @@ private:
   void ceilws(u32 instr);
   void ceilld(u32 instr);
   void ceilwd(u32 instr);
-  void cfc1(u32 instr) const;
+  void cfc1(u32 instr);
   void ctc1(u32 instr);
   void unimplemented();
   void roundls(u32 instr);

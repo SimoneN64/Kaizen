@@ -273,22 +273,23 @@ bool Cop1::CheckFPUException() {
 template <typename T>
 FORCE_INLINE T FlushResult(T f, u32 round) {
   switch (round) {
-  case 0: case 1: return std::copysign(T(), f);
-  case 2: return std::signbit(f) ? -T() : std::numeric_limits<T>::min();
-  case 3: return std::signbit(f) ? -std::numeric_limits<T>::min() : T();
+  case FE_TONEAREST: case FE_TOWARDZERO: return std::copysign(T(), f);
+  case FE_UPWARD: return std::signbit(f) ? -T() : std::numeric_limits<T>::min();
+  case FE_DOWNWARD: return std::signbit(f) ? -std::numeric_limits<T>::min() : T();
   }
 }
 
-template <> bool Cop1::CheckResult<float>(float& f) {
+template <>
+bool Cop1::CheckResult<float>(float& f) {
   switch (fpclassify(f)) {
     case FP_SUBNORMAL:
       if(!fcr31.fs || fcr31.enable_underflow || fcr31.enable_inexact_operation) {
-        if(SetCauseUnimplemented()) FireException();
+        if(SetCauseUnimplemented()) regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
         return false;
       }
       SetCauseUnderflow();
       SetCauseInexact();
-      f = FlushResult(f, fegetround());
+      f = FlushResult(f, std::fegetround());
       return true;
     case FP_NAN: {
       uint32_t v = 0x7fbf'ffff;
@@ -299,7 +300,8 @@ template <> bool Cop1::CheckResult<float>(float& f) {
   return true;
 }
 
-template <> bool Cop1::CheckResult<double>(double& f) {
+template <>
+bool Cop1::CheckResult<double>(double& f) {
   switch (fpclassify(f)) {
     case FP_SUBNORMAL:
       if(!fcr31.fs || fcr31.enable_underflow || fcr31.enable_inexact_operation) {
@@ -356,78 +358,37 @@ bool Cop1::SetCauseUnimplemented() {
 
 bool Cop1::SetCauseUnderflow() {
   fcr31.cause_underflow = true;
-  if(!fcr31.enable_underflow) {
-    fcr31.flag_underflow = true;
-    return false;
-  }
-
-  return true;
+  if(fcr31.enable_underflow) return true;
+  fcr31.flag_underflow = true;
+  return false;
 }
 
 bool Cop1::SetCauseInexact() {
   fcr31.cause_inexact_operation = true;
-  if(!fcr31.enable_inexact_operation) {
-    fcr31.flag_inexact_operation = true;
-    return false;
-  }
-
-  return true;
+  if(fcr31.enable_inexact_operation) return true;
+  fcr31.flag_inexact_operation = true;
+  return false;
 }
 
 bool Cop1::SetCauseDivisionByZero() {
   fcr31.cause_division_by_zero = true;
-  if(!fcr31.enable_division_by_zero) {
-    fcr31.flag_division_by_zero = true;
-    return false;
-  }
-
-  return true;
+  if(fcr31.enable_division_by_zero) return true;
+  fcr31.flag_division_by_zero = true;
+  return false;
 }
 
 bool Cop1::SetCauseOverflow() {
   fcr31.cause_overflow = true;
-  if(!fcr31.enable_overflow) {
-    fcr31.flag_overflow = true;
-    return false;
-  }
-
-  return true;
+  if(fcr31.enable_overflow) return true;
+  fcr31.flag_overflow = true;
+  return false;
 }
 
 bool Cop1::SetCauseInvalid() {
   fcr31.cause_invalid_operation = true;
-  if(!fcr31.enable_invalid_operation) {
-    fcr31.flag_invalid_operation = true;
-    return false;
-  }
-
-  return true;
-}
-
-template <typename T>
-void Cop1::SetCauseByArg(T f) {
-  auto fp_class = std::fpclassify(f);
-  switch(fp_class) {
-    case FP_NAN:
-      if(isqnan(f)) {
-        SetCauseInvalid();
-        //CheckFPUException();
-      } else {
-        SetCauseUnimplemented();
-        //CheckFPUException();
-      }
-      break;
-    case FP_SUBNORMAL:
-      SetCauseUnimplemented();
-      //CheckFPUException();
-      break;
-    case FP_INFINITE:
-    case FP_ZERO:
-    case FP_NORMAL:
-      break; // No-op, these are fine.
-    default:
-      Util::panic("Unknown floating point classification: {}", fp_class);
-  }
+  if(fcr31.enable_invalid_operation) return true;
+  fcr31.flag_invalid_operation = true;
+  return false;
 }
 
 #define CHECK_FPE_IMPL(type, res, operation, convert) \
@@ -1179,5 +1140,4 @@ void Cop1::dmtc1(u32 instr) {
   if(!CheckFPUUsable<true>()) return;
   FGR_S<u64>(regs.cop0.status, FS(instr)) = regs.gpr[RT(instr)];
 }
-
 }

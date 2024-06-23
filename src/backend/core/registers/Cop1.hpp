@@ -118,8 +118,6 @@ struct Cop1 {
   template <typename T>
   bool CheckCVTArg(double &f);
 
-  template <typename T>
-  void SetCauseByArg(T f);
   template <bool cvt = false>
   bool TestExceptions();
   bool SetCauseUnimplemented();

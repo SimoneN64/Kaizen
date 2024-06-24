@@ -1,4 +1,5 @@
 #include <Core.hpp>
+#include "Scheduler.hpp"
 
 namespace n64 {
 Interpreter::Interpreter(ParallelRDP& parallel) : mem(regs, parallel) { }
@@ -57,6 +58,26 @@ int Interpreter::Step() {
   return 1;
 }
 
+int Interpreter::RunCached() {
+  const InstructionCache& cache = **currentCache;
+  for(int i = 0; i < cache.instructions.size(); i++) {
+    const auto& instr = cache.instructions[i];
+    if(scheduler.ShouldRun()) [[unlikely]] {
+      scheduler.Tick(1, mem);
+      return i;
+    }
+
+    regs.oldPC = regs.pc;
+    regs.pc = regs.nextPC;
+    regs.nextPC += 4;
+
+    (this->*instr.funcPointer)(instr.instruction);
+    if(!currentCache) [[unlikely]] return i;
+  }
+
+  return cache.instructions.size();
+}
+
 std::vector<u8> Interpreter::Serialize() {
   std::vector<u8> res{};
 
@@ -69,5 +90,23 @@ std::vector<u8> Interpreter::Serialize() {
 
 void Interpreter::Deserialize(const std::vector<u8> &data) {
   memcpy(&regs, data.data(), sizeof(Registers));
+}
+
+constexpr std::unique_ptr<InstructionCache> *Interpreter::GetCache(const u32 address) {
+  switch(address) {
+    case RDRAM_REGION: {
+      const u32 index = (address & RDRAM_DSIZE) >> 1;
+      if ((address & RDRAM_DSIZE) < RDRAM_SIZE) {
+        if (rdramCache[index]) {
+          return &rdramCache[index];
+        }
+        // mark index as filled for faster page clearing
+        // rdramCacheFilled[(address & RDRAM_DSIZE) / CACHE_BLOCK_SIZE].push_back(index);
+        return &rdramCache[index];
+      }
+      return nullptr;
+    }
+    default: return nullptr;
+  }
 }
 }

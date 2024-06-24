@@ -60,7 +60,7 @@ void Core::Run(float volumeL, float volumeR) {
       }
 
       for(; cycles < mem.mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
-        u32 taken = cpu->Step();
+        u32 taken = cpu->RunCached();
         taken += regs.PopStalledCycles();
 
         regs.steps += taken;

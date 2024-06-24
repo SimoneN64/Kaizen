@@ -6,6 +6,8 @@ namespace n64 {
 struct BaseCPU {
   virtual ~BaseCPU() = default;
   virtual int Step() = 0;
+  virtual int StepMakeCache() = 0;
+  virtual int RunCached() = 0;
   virtual void Reset() = 0;
   virtual bool ShouldServiceInterrupt() = 0;
   virtual void CheckCompareInterrupt() = 0;

@@ -31,7 +31,7 @@ void Scheduler::Tick(u64 t, n64::Mem& mem) {
   n64::SI& si = mem.mmio.si;
   n64::PI& pi = mem.mmio.pi;
 
-  while(ticks >= events.top().time) {
+  while(ShouldRun()) {
     switch(auto type = events.top().type) {
       case SI_DMA:
         si.DMA();
@@ -52,4 +52,8 @@ void Scheduler::Tick(u64 t, n64::Mem& mem) {
     }
     events.pop();
   }
+}
+
+bool Scheduler::ShouldRun() {
+  return ticks >= events.top().time;
 }

@@ -54,6 +54,7 @@ struct Scheduler {
   void EnqueueAbsolute(u64, EventType);
   u64 Remove(EventType);
   void Tick(u64 t, n64::Mem&);
+  bool ShouldRun();
 
   IterableEvents events;
   u64 ticks = 0;

@@ -4,11 +4,23 @@
 #include <BaseCPU.hpp>
 
 namespace n64 {
+struct Interpreter;
+struct CachedInstruction {
+  const u32 instruction;
+  const void (Interpreter::*funcPointer)(u32);
+};
+
+struct InstructionCache {
+  const bool deletable;
+  std::vector<CachedInstruction> instructions;
+};
+
 struct Core;
 struct Interpreter final : BaseCPU {
   explicit Interpreter(ParallelRDP&);
   ~Interpreter() override = default;
   int Step() override;
+  int RunCached() override;
   void Reset() override {
     regs.Reset();
     mem.Reset();
@@ -23,6 +35,10 @@ struct Interpreter final : BaseCPU {
     return regs;
   }
 private:
+  std::array<std::unique_ptr<InstructionCache>, (RDRAM_SIZE >> 1)> rdramCache = {};
+  std::unique_ptr<InstructionCache>* currentCache = nullptr;
+  constexpr std::unique_ptr<InstructionCache>* GetCache(const u32 address);
+
   Registers regs;
   Mem mem;
   u64 cop2Latch{};

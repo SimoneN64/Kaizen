@@ -101,9 +101,6 @@ template<> auto Cop1::FGR_D<double>(Cop0Status& status, u32 index) -> double& {
   return FGR_T<double>(status, index);
 }
 
-
-template <typename T> bool isqnan(T);
-
 u32 floatIntegerCast(float f) {
   u32 v;
   memcpy(&v, &f, 4);
@@ -116,11 +113,11 @@ u64 doubleIntegerCast(double f) {
   return v;
 }
 
-template <> bool isqnan(float f) {
+template<> bool Cop1::isqnan<float>(float f) {
   return (floatIntegerCast(f) >> 22) & 1;
 }
 
-template <> bool isqnan(double f) {
+template<> bool Cop1::isqnan<double>(double f) {
   return (doubleIntegerCast(f) >> 51) & 1;
 }
 
@@ -128,12 +125,13 @@ template <> bool Cop1::CheckCVTArg<s32>(float& f) {
   switch (fpclassify(f)) {
     case FP_SUBNORMAL: case FP_INFINITE: case FP_NAN:
     SetCauseUnimplemented();
-    if(FireException()) return false;
-    break;
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    return false;
   }
 
-  if((f >= 0x1p+31f || f < -0x1p+31f) && SetCauseUnimplemented()) {
-    FireException();
+  if(f >= 0x1p+31f || f < -0x1p+31f) {
+    SetCauseUnimplemented();
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return false;
   }
 
@@ -143,14 +141,14 @@ template <> bool Cop1::CheckCVTArg<s32>(float& f) {
 template <> bool Cop1::CheckCVTArg<s32>(double& f) {
   switch (fpclassify(f)) {
     case FP_SUBNORMAL: case FP_INFINITE: case FP_NAN:
-    if(SetCauseUnimplemented()) {
-      FireException();
-      return false;
-    }
+    SetCauseUnimplemented();
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    return false;
   }
 
-  if((f >= 0x1p+31 || f < -0x1p+31) && SetCauseUnimplemented()) {
-    FireException();
+  if((f >= 0x1p+31 || f < -0x1p+31)) {
+    SetCauseUnimplemented();
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return false;
   }
 
@@ -161,12 +159,13 @@ template <> bool Cop1::CheckCVTArg<s64>(float& f) {
   switch (fpclassify(f)) {
   case FP_SUBNORMAL: case FP_INFINITE: case FP_NAN:
     SetCauseUnimplemented();
-    if(FireException()) return false;
-    break;
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    return false;
   }
 
-  if((f >= 0x1p+53f || f < -0x1p+53f) && SetCauseUnimplemented()) {
-    FireException();
+  if((f >= 0x1p+53f || f <= -0x1p+53f)) {
+    SetCauseUnimplemented();
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return false;
   }
 
@@ -176,14 +175,14 @@ template <> bool Cop1::CheckCVTArg<s64>(float& f) {
 template <> bool Cop1::CheckCVTArg<s64>(double& f) {
   switch (fpclassify(f)) {
   case FP_SUBNORMAL: case FP_INFINITE: case FP_NAN:
-    if(SetCauseUnimplemented()) {
-      FireException();
-      return false;
-    }
+    SetCauseUnimplemented();
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    return false;
   }
 
-  if((f >= 0x1p+53 || f < -0x1p+53) && SetCauseUnimplemented()) {
-    FireException();
+  if((f >= 0x1p+53 || f <= -0x1p+53)) {
+    SetCauseUnimplemented();
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return false;
   }
 
@@ -194,34 +193,32 @@ template <typename T>
 bool Cop1::CheckArg(T& f) {
   switch(fpclassify(f)) {
     case FP_SUBNORMAL:
-      if(SetCauseUnimplemented()) {
-        FireException();
-        return false;
-      }
+      SetCauseUnimplemented();
+      regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+      return false;
     case FP_NAN:
-      if(isqnan(f) ? SetCauseInvalid() : SetCauseUnimplemented()) {
-        FireException();
+      if(isqnan(f) ? SetCauseInvalid() : (SetCauseUnimplemented(), true)) {
+        regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
         return false;
       }
+      return true;
   }
   return true;
 }
 
 template <typename T>
 bool Cop1::CheckArgs(T& f1, T& f2) {
-  auto class1 = fpclassify(f1), class2 = fpclassify(f2);
+  auto class1 = std::fpclassify(f1), class2 = std::fpclassify(f2);
   if((class1 == FP_NAN && !isqnan(f1)) || (class2 == FP_NAN && !isqnan(f2))) {
-    if(SetCauseUnimplemented()) {
-      regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
-      return false;
-    }
+    SetCauseUnimplemented();
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    return false;
   }
 
   if(class1 == FP_SUBNORMAL || class2 == FP_SUBNORMAL) {
-    if(SetCauseUnimplemented()) {
-      regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
-      return false;
-    }
+    SetCauseUnimplemented();
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    return false;
   }
 
   if((class1 == FP_NAN && isqnan(f1)) || (class2 == FP_NAN && isqnan(f2))) {
@@ -243,7 +240,7 @@ bool Cop1::CheckFPUUsable() {
     }
   } else {
     if(!CheckFPUUsable<true>()) return false;
-    fcr31.cause = 0;
+    fcr31.cause = {};
   }
 
   return true;
@@ -252,39 +249,24 @@ bool Cop1::CheckFPUUsable() {
 template bool Cop1::CheckFPUUsable<true>();
 template bool Cop1::CheckFPUUsable<false>();
 
-bool Cop1::FireException() {
-  if(CheckFPUException()) {
-    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
-    return true;
-  }
-
-  return false;
-}
-
-bool Cop1::CheckFPUException() {
-  u32 enable = fcr31.enable | (1 << 5);
-  if(fcr31.cause & enable) {
-    return true;
-  }
-
-  return false;
-}
-
 template <typename T>
 FORCE_INLINE T FlushResult(T f, u32 round) {
   switch (round) {
   case FE_TONEAREST: case FE_TOWARDZERO: return std::copysign(T(), f);
   case FE_UPWARD: return std::signbit(f) ? -T() : std::numeric_limits<T>::min();
   case FE_DOWNWARD: return std::signbit(f) ? -std::numeric_limits<T>::min() : T();
+  default:
+    __builtin_unreachable();
   }
 }
 
 template <>
 bool Cop1::CheckResult<float>(float& f) {
-  switch (fpclassify(f)) {
+  switch (std::fpclassify(f)) {
     case FP_SUBNORMAL:
-      if(!fcr31.fs || fcr31.enable_underflow || fcr31.enable_inexact_operation) {
-        if(SetCauseUnimplemented()) regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+      if(!fcr31.fs || fcr31.enable.underflow || fcr31.enable.inexact_operation) {
+        SetCauseUnimplemented();
+        regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
         return false;
       }
       SetCauseUnderflow();
@@ -302,10 +284,11 @@ bool Cop1::CheckResult<float>(float& f) {
 
 template <>
 bool Cop1::CheckResult<double>(double& f) {
-  switch (fpclassify(f)) {
+  switch (std::fpclassify(f)) {
     case FP_SUBNORMAL:
-      if(!fcr31.fs || fcr31.enable_underflow || fcr31.enable_inexact_operation) {
-        if(SetCauseUnimplemented()) FireException();
+      if(!fcr31.fs || fcr31.enable.underflow || fcr31.enable.inexact_operation) {
+        SetCauseUnimplemented();
+        regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
         return false;
       }
       SetCauseUnderflow();
@@ -323,27 +306,31 @@ bool Cop1::CheckResult<double>(double& f) {
 
 template <bool cvt>
 bool Cop1::TestExceptions() {
-  u32 exc = fetestexcept(FE_ALL_EXCEPT);
+  u32 exc = std::fetestexcept(FE_ALL_EXCEPT);
 
   if(!exc) return false;
 
   if constexpr (cvt) {
     if(exc & FE_INVALID) {
-      if(SetCauseUnimplemented()) regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+      SetCauseUnimplemented();
+      regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
       return true;
     }
   }
 
   if(exc & FE_UNDERFLOW) {
-    if(!fcr31.fs || fcr31.enable_underflow || fcr31.enable_inexact_operation) {
-      if(SetCauseUnimplemented()) regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    if(!fcr31.fs || fcr31.enable.underflow || fcr31.enable.inexact_operation) {
+      SetCauseUnimplemented();
+      regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
       return true;
     }
   }
 
   bool raise = false;
   if(exc & FE_DIVBYZERO) raise |= SetCauseDivisionByZero();
-  if(exc & FE_INEXACT)   raise |= SetCauseInexact();
+  if(exc & FE_INEXACT) {
+    raise |= SetCauseInexact();
+  }
   if(exc & FE_UNDERFLOW) raise |= SetCauseUnderflow();
   if(exc & FE_OVERFLOW)  raise |= SetCauseOverflow();
   if(exc & FE_INVALID)   raise |= SetCauseInvalid();
@@ -351,50 +338,52 @@ bool Cop1::TestExceptions() {
   return raise;
 }
 
-bool Cop1::SetCauseUnimplemented() {
-  fcr31.cause_unimplemented_operation = true;
-  return true;
+template bool Cop1::TestExceptions<false>();
+template bool Cop1::TestExceptions<true>();
+
+void Cop1::SetCauseUnimplemented() {
+  fcr31.cause.unimplemented_operation = true;
 }
 
 bool Cop1::SetCauseUnderflow() {
-  fcr31.cause_underflow = true;
-  if(fcr31.enable_underflow) return true;
-  fcr31.flag_underflow = true;
+  fcr31.cause.underflow = true;
+  if(fcr31.enable.underflow) return true;
+  fcr31.flag.underflow = true;
   return false;
 }
 
 bool Cop1::SetCauseInexact() {
-  fcr31.cause_inexact_operation = true;
-  if(fcr31.enable_inexact_operation) return true;
-  fcr31.flag_inexact_operation = true;
+  fcr31.cause.inexact_operation = true;
+  if(fcr31.enable.inexact_operation) return true;
+  fcr31.flag.inexact_operation = true;
   return false;
 }
 
 bool Cop1::SetCauseDivisionByZero() {
-  fcr31.cause_division_by_zero = true;
-  if(fcr31.enable_division_by_zero) return true;
-  fcr31.flag_division_by_zero = true;
+  fcr31.cause.division_by_zero = true;
+  if(fcr31.enable.division_by_zero) return true;
+  fcr31.flag.division_by_zero = true;
   return false;
 }
 
 bool Cop1::SetCauseOverflow() {
-  fcr31.cause_overflow = true;
-  if(fcr31.enable_overflow) return true;
-  fcr31.flag_overflow = true;
+  fcr31.cause.overflow = true;
+  if(fcr31.enable.overflow) return true;
+  fcr31.flag.overflow = true;
   return false;
 }
 
 bool Cop1::SetCauseInvalid() {
-  fcr31.cause_invalid_operation = true;
-  if(fcr31.enable_invalid_operation) return true;
-  fcr31.flag_invalid_operation = true;
+  fcr31.cause.invalid_operation = true;
+  if(fcr31.enable.invalid_operation) return true;
+  fcr31.flag.invalid_operation = true;
   return false;
 }
 
 #define CHECK_FPE_IMPL(type, res, operation, convert) \
-  feclearexcept(FE_ALL_EXCEPT); \
-  volatile type v##res = [&]() __attribute__((noinline)) -> type { return (operation); }(); \
-  if (TestExceptions<convert>()) return; \
+  feclearexcept(FE_ALL_EXCEPT);                       \
+  volatile type v##res = [&]() -> type { return operation; }(); \
+  if (TestExceptions<convert>()) return;              \
   type res = v##res;
 
 #define CHECK_FPE(type, res, operation)      CHECK_FPE_IMPL(type, res, operation, false)
@@ -442,7 +431,7 @@ void Cop1::ceills(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, std::ceil(fs))
+  CHECK_FPE(s64, fd, ceilf32(fs))
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -450,7 +439,7 @@ void Cop1::ceilld(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, std::ceil(fs))
+  CHECK_FPE(s64, fd, ceilf64(fs))
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -458,7 +447,7 @@ void Cop1::ceilws(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, std::ceil(fs))
+  CHECK_FPE_CONV(s32, fd, ceilf32(fs))
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -466,7 +455,7 @@ void Cop1::ceilwd(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, std::ceil(fs))
+  CHECK_FPE_CONV(s32, fd, ceilf64(fs))
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -501,7 +490,12 @@ void Cop1::ctc1(u32 instr) {
           case 3: fesetround(FE_DOWNWARD); break;
         }
       }
-      FireException();
+      if(fcr31.cause.inexact_operation && fcr31.enable.inexact_operation) regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+      if(fcr31.cause.underflow         && fcr31.enable.underflow)         regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+      if(fcr31.cause.overflow          && fcr31.enable.overflow)          regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+      if(fcr31.cause.division_by_zero  && fcr31.enable.division_by_zero)  regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+      if(fcr31.cause.invalid_operation && fcr31.enable.invalid_operation) regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+      if(fcr31.cause.unimplemented_operation)                             regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     } break;
     default: Util::panic("Undefined CTC1 with rd != 0 or 31");
   }
@@ -520,7 +514,7 @@ void Cop1::cvtsd(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckArg(fs)) return;
-  CHECK_FPE(float, fd, fs)
+  CHECK_FPE(float, fd, (float)fs)
   if(!CheckResult(fd)) return;
   FGR_D<float>(regs.cop0.status, FD(instr)) = fd;
 }
@@ -538,7 +532,8 @@ void Cop1::cvtsl(u32 instr) {
   auto fs = FGR_S<s64>(regs.cop0.status, FS(instr));
   if (fs >= s64(0x0080000000000000) || fs < s64(0xff80000000000000)) {
     SetCauseUnimplemented();
-    if(FireException()) return;
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    return;
   }
   CHECK_FPE(float, fd, fs)
   if(!CheckResult(fd)) return;
@@ -549,7 +544,7 @@ void Cop1::cvtwd(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, std::rint(fs))
+  CHECK_FPE_CONV(s32, fd, rintf64(fs))
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -557,7 +552,7 @@ void Cop1::cvtws(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, std::rint(fs))
+  CHECK_FPE_CONV(s32, fd, rintf32(fs))
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -565,7 +560,7 @@ void Cop1::cvtls(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, std::rint(fs))
+  CHECK_FPE(s64, fd, rintf32(fs))
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -583,7 +578,8 @@ void Cop1::cvtdl(u32 instr) {
 
   if (fs >= s64(0x0080000000000000) || fs < s64(0xff80000000000000)) {
     SetCauseUnimplemented();
-    if(FireException()) return;
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    return;
   }
   CHECK_FPE(double, fd, fs)
   if(!CheckResult(fd)) return;
@@ -594,7 +590,7 @@ void Cop1::cvtld(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, std::rint(fs))
+  CHECK_FPE(s64, fd, rintf64(fs))
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -602,11 +598,11 @@ template<typename T, bool quiet, bool cf>
 bool Cop1::XORDERED(T fs, T ft) {
   if(std::isnan(fs) || std::isnan(ft)) {
     if(std::isnan(fs) && (!quiet || isqnan(fs)) && SetCauseInvalid()) {
-      FireException();
+      regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
       return false;
     }
     if(std::isnan(ft) && (!quiet || isqnan(ft)) && SetCauseInvalid()) {
-      FireException();
+      regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
       return false;
     }
     fcr31.compare = cf;
@@ -887,7 +883,7 @@ void Cop1::sqrts(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckArg(fs)) return;
-  CHECK_FPE(float, fd, std::sqrt(fs))
+  CHECK_FPE(float, fd, sqrtf(fs))
   if(!CheckResult(fd)) return;
   FGR_D<float>(regs.cop0.status, FD(instr)) = fd;
 }
@@ -896,7 +892,7 @@ void Cop1::sqrtd(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckArg(fs)) return;
-  CHECK_FPE(double, fd, std::sqrt(fs))
+  CHECK_FPE(double, fd, sqrt(fs))
   if(!CheckResult(fd)) return;
   FGR_D<double>(regs.cop0.status, FD(instr)) = fd;
 }
@@ -905,8 +901,11 @@ void Cop1::roundls(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, std::round(fs))
-  if((float)fd != fs && SetCauseInexact()) { FireException(); return; }
+  CHECK_FPE(s64, fd, roundevenf(fs))
+  if(fd != fs && SetCauseInexact()) {
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    return;
+  }
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -914,8 +913,11 @@ void Cop1::roundld(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, std::round(fs))
-  if((double)fd != fs && SetCauseInexact()) { FireException(); return; }
+  CHECK_FPE(s64, fd, roundeven(fs))
+  if(fd != fs && SetCauseInexact())  {
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    return;
+  }
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -923,8 +925,11 @@ void Cop1::roundws(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, std::round(fs))
-  if(fd != fs && SetCauseInexact()) { FireException(); return; }
+  CHECK_FPE_CONV(s32, fd, roundevenf(fs))
+  if(fd != fs && SetCauseInexact()) {
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    return;
+  }
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -932,8 +937,11 @@ void Cop1::roundwd(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, std::round(fs))
-  if(fd != fs && SetCauseInexact()) { FireException(); return; }
+  CHECK_FPE_CONV(s32, fd, roundeven(fs))
+  if(fd != fs && SetCauseInexact()) {
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    return;
+  }
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -941,7 +949,7 @@ void Cop1::floorls(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, std::floor(fs))
+  CHECK_FPE(s64, fd, floorf32(fs))
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -949,7 +957,7 @@ void Cop1::floorld(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, std::floor(fs))
+  CHECK_FPE(s64, fd, floorf64(fs))
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -957,7 +965,7 @@ void Cop1::floorws(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, std::floor(fs))
+  CHECK_FPE_CONV(s32, fd, floorf32(fs))
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -965,7 +973,7 @@ void Cop1::floorwd(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, std::floor(fs))
+  CHECK_FPE_CONV(s32, fd, floorf64(fs))
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -973,8 +981,11 @@ void Cop1::truncws(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, std::trunc(fs))
-  if((float)fd != fs && SetCauseInexact()) { FireException(); return; }
+  CHECK_FPE_CONV(s32, fd, truncf32(fs))
+  if((float)fd != fs && SetCauseInexact())  {
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    return;
+  }
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -982,8 +993,11 @@ void Cop1::truncwd(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, std::trunc(fs))
-  if((double)fd != fs && SetCauseInexact()) { FireException(); return; }
+  CHECK_FPE_CONV(s32, fd, truncf64(fs))
+  if((double)fd != fs && SetCauseInexact())  {
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    return;
+  }
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -991,8 +1005,11 @@ void Cop1::truncls(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, std::trunc(fs))
-  if((float)fd != fs && SetCauseInexact()) { FireException(); return; }
+  CHECK_FPE(s64, fd, truncf32(fs))
+  if((float)fd != fs && SetCauseInexact())  {
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    return;
+  }
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -1000,8 +1017,11 @@ void Cop1::truncld(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, std::trunc(fs))
-  if((double)fd != fs && SetCauseInexact()) { FireException(); return; }
+  CHECK_FPE(s64, fd, truncf64(fs))
+  if((double)fd != fs && SetCauseInexact())  {
+    regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
+    return;
+  }
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -1092,8 +1112,8 @@ void Cop1::swc1Interp(Mem& mem, u32 instr) {
 
 void Cop1::unimplemented() {
   if(!CheckFPUUsable()) return;
-  fcr31.cause_unimplemented_operation = true;
-  FireException();
+  SetCauseUnimplemented();
+  regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
 }
 
 void Cop1::ldc1Interp(Mem& mem, u32 instr) {

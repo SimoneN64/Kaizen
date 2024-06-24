@@ -9,46 +9,78 @@ union FCR31 {
   FCR31() = default;
   struct {
     unsigned rounding_mode:2;
-    unsigned flag_inexact_operation:1;
-    unsigned flag_underflow:1;
-    unsigned flag_overflow:1;
-    unsigned flag_division_by_zero:1;
-    unsigned flag_invalid_operation:1;
-    unsigned enable_inexact_operation:1;
-    unsigned enable_underflow:1;
-    unsigned enable_overflow:1;
-    unsigned enable_division_by_zero:1;
-    unsigned enable_invalid_operation:1;
-    unsigned cause_inexact_operation:1;
-    unsigned cause_underflow:1;
-    unsigned cause_overflow:1;
-    unsigned cause_division_by_zero:1;
-    unsigned cause_invalid_operation:1;
-    unsigned cause_unimplemented_operation:1;
+    struct {
+      unsigned inexact_operation:1;
+      unsigned underflow:1;
+      unsigned overflow:1;
+      unsigned division_by_zero:1;
+      unsigned invalid_operation:1;
+    } flag;
+    struct {
+      unsigned inexact_operation:1;
+      unsigned underflow:1;
+      unsigned overflow:1;
+      unsigned division_by_zero:1;
+      unsigned invalid_operation:1;
+    } enable;
+    struct {
+      unsigned inexact_operation:1;
+      unsigned underflow:1;
+      unsigned overflow:1;
+      unsigned division_by_zero:1;
+      unsigned invalid_operation:1;
+      unsigned unimplemented_operation:1;
+    } cause;
     unsigned:5;
     unsigned compare:1;
     unsigned fs:1;
     unsigned:7;
   } __attribute__((__packed__));
 
-  struct {
-    unsigned:2;
-    unsigned flag:5;
-    unsigned enable:5;
-    unsigned cause:6;
-    unsigned:14;
-  } __attribute__((__packed__));
-
   [[nodiscard]] u32 read() const {
-    return (fs << 24) | (compare << 23) | (cause << 12) | (enable << 7) | (flag << 2) | rounding_mode;
+    u32 ret = 0;
+    ret |= (u32(fs) << 24);
+    ret |= (u32(compare) << 23);
+    ret |= (u32(cause.unimplemented_operation) << 17);
+    ret |= (u32(cause.invalid_operation) << 16);
+    ret |= (u32(cause.division_by_zero) << 15);
+    ret |= (u32(cause.overflow) << 14);
+    ret |= (u32(cause.underflow) << 13);
+    ret |= (u32(cause.inexact_operation) << 12);
+    ret |= (u32(enable.invalid_operation) << 11);
+    ret |= (u32(enable.division_by_zero) << 10);
+    ret |= (u32(enable.overflow) << 9);
+    ret |= (u32(enable.underflow) << 8);
+    ret |= (u32(enable.inexact_operation) << 7);
+    ret |= (u32(flag.invalid_operation) << 6);
+    ret |= (u32(flag.division_by_zero) << 5);
+    ret |= (u32(flag.overflow) << 4);
+    ret |= (u32(flag.underflow) << 3);
+    ret |= (u32(flag.inexact_operation) << 2);
+    ret |= (u32(rounding_mode) & 3);
+
+    return ret;
   }
 
   void write(u32 val) {
-    fs = (val & 0x01000000) >> 24;
-    compare = (val & 0x00800000) >> 23;
-    cause = (val & 0x0003f000) >> 12;
-    enable = (val & 0x00000f80) >> 7;
-    flag = (val & 0x0000007c) >> 2;
+    fs = val >> 24;
+    compare = val >> 23;
+    cause.unimplemented_operation = val >> 17;
+    cause.invalid_operation = val >> 16;
+    cause.division_by_zero = val >> 15;
+    cause.overflow = val >> 14;
+    cause.underflow = val >> 13;
+    cause.inexact_operation = val >> 12;
+    enable.invalid_operation = val >> 11;
+    enable.division_by_zero = val >> 10;
+    enable.overflow = val >> 9;
+    enable.underflow = val >> 8;
+    enable.inexact_operation = val >> 7;
+    flag.invalid_operation = val >> 6;
+    flag.division_by_zero = val >> 5;
+    flag.overflow = val >> 4;
+    flag.underflow = val >> 3;
+    flag.inexact_operation = val >> 2;
     rounding_mode = val & 3;
   }
 };
@@ -99,8 +131,6 @@ struct Cop1 {
   void decode(T&, u32);
   friend struct Interpreter;
 
-  bool CheckFPUException();
-  bool FireException();
   template <bool preserveCause = false>
   bool CheckFPUUsable();
   template <typename T>
@@ -109,6 +139,8 @@ struct Cop1 {
   bool CheckArg(T&);
   template <typename T>
   bool CheckArgs(T&, T&);
+  template <typename T>
+  bool isqnan(T);
 
   template<typename T, bool quiet, bool cf>
   bool XORDERED(T fs, T ft);
@@ -120,7 +152,7 @@ struct Cop1 {
 
   template <bool cvt = false>
   bool TestExceptions();
-  bool SetCauseUnimplemented();
+  void SetCauseUnimplemented();
   bool SetCauseUnderflow();
   bool SetCauseInexact();
   bool SetCauseDivisionByZero();

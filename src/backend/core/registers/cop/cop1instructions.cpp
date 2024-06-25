@@ -3,6 +3,7 @@
 #include <core/Interpreter.hpp>
 #include <cmath>
 #include <cfenv>
+#include <utils/FloatingPoint.hpp>
 
 namespace n64 {
 template<> auto Cop1::FGR_T<s32>(Cop0Status& status, u32 index) -> s32& {
@@ -431,7 +432,7 @@ void Cop1::ceills(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, ceilf32(fs))
+  CHECK_FPE(s64, fd, Util::roundCeil<s64>(fs))
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -439,7 +440,7 @@ void Cop1::ceilld(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, ceilf64(fs))
+  CHECK_FPE(s64, fd, Util::roundCeil<s64>(fs))
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -447,7 +448,7 @@ void Cop1::ceilws(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, ceilf32(fs))
+  CHECK_FPE_CONV(s32, fd, Util::roundCeil<s32>(fs))
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -455,7 +456,7 @@ void Cop1::ceilwd(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, ceilf64(fs))
+  CHECK_FPE_CONV(s32, fd, Util::roundCeil<s32>(fs))
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -544,7 +545,7 @@ void Cop1::cvtwd(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, rintf64(fs))
+  CHECK_FPE_CONV(s32, fd, Util::roundCurrent<s32>(fs))
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -552,7 +553,7 @@ void Cop1::cvtws(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, rintf32(fs))
+  CHECK_FPE_CONV(s32, fd, Util::roundCurrent<s32>(fs))
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -560,7 +561,7 @@ void Cop1::cvtls(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, rintf32(fs))
+  CHECK_FPE(s64, fd, Util::roundCurrent<s64>(fs))
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -590,7 +591,7 @@ void Cop1::cvtld(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, rintf64(fs))
+  CHECK_FPE(s64, fd, Util::roundCurrent<s64>(fs))
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -901,7 +902,7 @@ void Cop1::roundls(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, roundevenf(fs))
+  CHECK_FPE(s64, fd, Util::roundNearest<s64>(fs))
   if(fd != fs && SetCauseInexact()) {
     regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return;
@@ -913,7 +914,7 @@ void Cop1::roundld(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, roundeven(fs))
+  CHECK_FPE(s64, fd, Util::roundNearest<s64>(fs))
   if(fd != fs && SetCauseInexact())  {
     regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return;
@@ -925,7 +926,7 @@ void Cop1::roundws(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, roundevenf(fs))
+  CHECK_FPE_CONV(s32, fd, Util::roundNearest<s32>(fs))
   if(fd != fs && SetCauseInexact()) {
     regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return;
@@ -937,7 +938,7 @@ void Cop1::roundwd(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, roundeven(fs))
+  CHECK_FPE_CONV(s32, fd, Util::roundNearest<s32>(fs))
   if(fd != fs && SetCauseInexact()) {
     regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return;
@@ -949,7 +950,7 @@ void Cop1::floorls(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, floorf32(fs))
+  CHECK_FPE(s64, fd, Util::roundFloor<s64>(fs))
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -957,7 +958,7 @@ void Cop1::floorld(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, floorf64(fs))
+  CHECK_FPE(s64, fd, Util::roundFloor<s64>(fs))
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -965,7 +966,7 @@ void Cop1::floorws(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, floorf32(fs))
+  CHECK_FPE_CONV(s32, fd, Util::roundFloor<s32>(fs))
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -973,7 +974,7 @@ void Cop1::floorwd(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, floorf64(fs))
+  CHECK_FPE_CONV(s32, fd, Util::roundFloor<s32>(fs))
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -981,7 +982,7 @@ void Cop1::truncws(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, truncf32(fs))
+  CHECK_FPE_CONV(s32, fd, Util::roundTrunc<s32>(fs))
   if((float)fd != fs && SetCauseInexact())  {
     regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return;
@@ -993,7 +994,7 @@ void Cop1::truncwd(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s32>(fs)) return;
-  CHECK_FPE_CONV(s32, fd, truncf64(fs))
+  CHECK_FPE_CONV(s32, fd, Util::roundTrunc<s32>(fs))
   if((double)fd != fs && SetCauseInexact())  {
     regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return;
@@ -1005,7 +1006,7 @@ void Cop1::truncls(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, truncf32(fs))
+  CHECK_FPE(s64, fd, Util::roundTrunc<s64>(fs))
   if((float)fd != fs && SetCauseInexact())  {
     regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return;
@@ -1017,7 +1018,7 @@ void Cop1::truncld(u32 instr) {
   if(!CheckFPUUsable()) return;
   auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if(!CheckCVTArg<s64>(fs)) return;
-  CHECK_FPE(s64, fd, truncf64(fs))
+  CHECK_FPE(s64, fd, Util::roundTrunc<s64>(fs))
   if((double)fd != fs && SetCauseInexact())  {
     regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return;

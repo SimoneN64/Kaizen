@@ -20,21 +20,21 @@ void ParallelRDP::SetFramerateUnlocked(bool unlocked) {
 
 Program* fullscreen_quad_program;
 
-void ParallelRDP::LoadWSIPlatform(Vulkan::InstanceFactory* instanceFactory, std::unique_ptr<Vulkan::WSIPlatform>&& wsi_platform, std::unique_ptr<ParallelRDP::WindowInfo>&& newWindowInfo) {
-  wsi = std::make_unique<WSI>();
+void ParallelRDP::LoadWSIPlatform(const std::shared_ptr<Vulkan::InstanceFactory>& instanceFactory, const std::shared_ptr<Vulkan::WSIPlatform>& wsi_platform, const std::shared_ptr<ParallelRDP::WindowInfo>& newWindowInfo) {
+  wsi = std::make_shared<WSI>();
   wsi->set_backbuffer_srgb(false);
   wsi->set_platform(wsi_platform.get());
   wsi->set_present_mode(PresentMode::SyncToVBlank);
   Context::SystemHandles handles;
-  if (!wsi->init_simple(instanceFactory, 1, handles)) {
+  if (!wsi->init_simple(instanceFactory.get(), 1, handles)) {
     Util::panic("Failed to initialize WSI!");
   }
 
-  windowInfo = std::move(newWindowInfo);
+  windowInfo = newWindowInfo;
 }
 
-void ParallelRDP::Init(Vulkan::InstanceFactory* factory, std::unique_ptr<Vulkan::WSIPlatform>&& wsiPlatform, std::unique_ptr<WindowInfo>&& newWindowInfo, const u8* rdram) {
-  LoadWSIPlatform(factory, std::move(wsiPlatform), std::move(newWindowInfo));
+void ParallelRDP::Init(const std::shared_ptr<Vulkan::InstanceFactory>& factory, const std::shared_ptr<Vulkan::WSIPlatform>& wsiPlatform, const std::shared_ptr<WindowInfo>& newWindowInfo, const u8* rdram) {
+  LoadWSIPlatform(factory, wsiPlatform, newWindowInfo);
 
   ResourceLayout vertLayout;
   ResourceLayout fragLayout;
@@ -63,8 +63,7 @@ void ParallelRDP::Init(Vulkan::InstanceFactory* factory, std::unique_ptr<Vulkan:
   auto aligned_rdram = reinterpret_cast<uintptr_t>(rdram);
   uintptr_t offset = 0;
 
-  if (wsi->get_device().get_device_features().supports_external_memory_host)
-  {
+  if (wsi->get_device().get_device_features().supports_external_memory_host) {
     size_t align = wsi->get_device().get_device_features().host_memory_properties.minImportedHostPointerAlignment;
     offset = aligned_rdram & (align - 1);
     aligned_rdram -= offset;
@@ -72,8 +71,8 @@ void ParallelRDP::Init(Vulkan::InstanceFactory* factory, std::unique_ptr<Vulkan:
 
   CommandProcessorFlags flags = 0;
 
-  command_processor = std::make_unique<CommandProcessor>(wsi->get_device(), reinterpret_cast<void*>(aligned_rdram),
-    offset, 8 * 1024 * 1024, 4 * 1024 * 1024, flags);
+  command_processor = std::make_shared<CommandProcessor>(wsi->get_device(), reinterpret_cast<void*>(aligned_rdram),
+                                                         offset, 8 * 1024 * 1024, 4 * 1024 * 1024, flags);
 
   if (!command_processor->device_is_supported()) {
     Util::panic("This device probably does not support 8/16-bit storage. Make sure you're using up-to-date drivers!");
@@ -101,11 +100,11 @@ void ParallelRDP::DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image, Ut
   float height = (wsi->get_platform().get_surface_height() / windowSize.y) * zoom;
 
   float uniform_data[] = {
-    // Size
-    width, height,
-    // Offset
-    (1.0f - width) * 0.5f,
-    (1.0f - height) * 0.5f};
+      // Size
+      width, height,
+      // Offset
+      (1.0f - width) * 0.5f,
+      (1.0f - height) * 0.5f};
 
   cmd->push_constants(uniform_data, 0, sizeof(uniform_data));
 
@@ -122,7 +121,7 @@ void ParallelRDP::UpdateScreen(Util::IntrusivePtr<Image> image) {
   if (!image) {
     auto info = Vulkan::ImageCreateInfo::immutable_2d_image(800, 600, VK_FORMAT_R8G8B8A8_UNORM);
     info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                 VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     info.misc = IMAGE_MISC_MUTABLE_SRGB_BIT;
     info.initial_layout = VK_IMAGE_LAYOUT_UNDEFINED;
     image = wsi->get_device().create_image(info);
@@ -179,8 +178,7 @@ void ParallelRDP::UpdateScreen(n64::VI& vi, bool noGame) {
     Util::IntrusivePtr<Image> image = command_processor->scanout(opts);
     UpdateScreen(image);
     command_processor->begin_frame_context();
-  }
-  else {
+  } else {
     UpdateScreen(static_cast<Util::IntrusivePtr<Image>>(nullptr));
     command_processor->begin_frame_context();
   }

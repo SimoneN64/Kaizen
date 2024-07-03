@@ -337,6 +337,11 @@ template<> void Mem::Write<u8>(Registers& regs, u32 paddr, u32 val) {
   const auto pointer = writePages[page];
   SI& si = mmio.si;
 
+  if(paddr == 0x0023e650) {
+    //DumpRDRAM();
+    //fmt::print("PC is 0x{:016X}: Writing 0x{:02X} -> 0x{:08X}\n", (u64)regs.oldPC, (u8)val, paddr);
+  }
+
   if(pointer) {
     ((u8*)pointer)[BYTE_ADDRESS(offset)] = val;
   } else {
@@ -381,6 +386,11 @@ template<> void Mem::Write<u16>(Registers& regs, u32 paddr, u32 val) {
   const auto offset = paddr & 0xFFF;
   const auto pointer = writePages[page];
   SI& si = mmio.si;
+
+  if(paddr == 0x0023e650) {
+    //DumpRDRAM();
+    //fmt::print("PC is 0x{:016X}: Writing 0x{:04X} -> 0x{:08X}\n", (u64) regs.oldPC, (u16) val, paddr);
+  }
 
   if(pointer) {
     Util::WriteAccess<u16>((u8*)pointer, HALF_ADDRESS(offset), val);
@@ -427,6 +437,11 @@ template<> void Mem::Write<u32>(Registers& regs, u32 paddr, u32 val) {
   const auto pointer = writePages[page];
   SI& si = mmio.si;
 
+  if(paddr == 0x0023e650) {
+    //DumpRDRAM();
+    //fmt::print("PC is 0x{:016X}: Writing 0x{:08X} -> 0x{:08X}\n", (u64) regs.oldPC, val, paddr);
+  }
+
   if(pointer) {
     Util::WriteAccess<u32>((u8*)pointer, offset, val);
   } else {
@@ -465,6 +480,11 @@ void Mem::Write(Registers& regs, u32 paddr, u64 val) {
   const auto offset = paddr & 0xFFF;
   const auto pointer = writePages[page];
   SI& si = mmio.si;
+
+  if(paddr == 0x0023e650) {
+    //DumpRDRAM();
+    //fmt::print("PC is 0x{:016X}: Writing 0x{:016X} -> 0x{:08X}\n", (u64) regs.oldPC, val, paddr);
+  }
 
   if(pointer) {
     Util::WriteAccess<u64>((u8*)pointer, offset, val);

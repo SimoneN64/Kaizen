@@ -11,19 +11,13 @@ namespace n64 {
 void audioCallback(void* user, Uint8* stream, int length) {
   auto audioDevice = (AudioDevice*)user;
   int gotten = 0, available = 0;
+
   if (audioDevice) {
     audioDevice->LockMutex();
-  }
-
-  if (audioDevice) {
-    available = SDL_AudioStreamAvailable(audioDevice->GetStream().get());
-  }
-
-  if (available > 0 && audioDevice) {
-    gotten = SDL_AudioStreamGet(audioDevice->GetStream().get(), stream, length);
-  }
-
-  if (audioDevice) {
+    available = SDL_AudioStreamAvailable(audioDevice->GetStream());
+    if (available > 0) {
+      gotten = SDL_AudioStreamGet(audioDevice->GetStream(), stream, length);
+    }
     audioDevice->UnlockMutex();
   }
 
@@ -37,11 +31,18 @@ void audioCallback(void* user, Uint8* stream, int length) {
   }
 }
 
-AudioDevice::AudioDevice() : audioStream(SDL_NewAudioStream, SDL_FreeAudioStream, "audioStream", SYSTEM_SAMPLE_FORMAT, 2, AUDIO_SAMPLE_RATE, SYSTEM_SAMPLE_FORMAT, 2, AUDIO_SAMPLE_RATE),
-                             audioStreamMutex(SDL_CreateMutex, SDL_DestroyMutex, "audioStreamMutex") {
+AudioDevice::~AudioDevice() {
+  LockMutex();
+  SDL_FreeAudioStream(GetStream());
+  UnlockMutex();
+  SDL_DestroyMutex(audioStreamMutex);
+}
+
+AudioDevice::AudioDevice() : audioStream(SDL_NewAudioStream(SYSTEM_SAMPLE_FORMAT, 2, AUDIO_SAMPLE_RATE, SYSTEM_SAMPLE_FORMAT, 2, AUDIO_SAMPLE_RATE)),
+                             audioStreamMutex(SDL_CreateMutex()) {
   SDL_InitSubSystem(SDL_INIT_AUDIO);
 
-  if(!audioStreamMutex.get()) {
+  if(!audioStreamMutex) {
     Util::panic("Unable to initialize audio mutex: {}", SDL_GetError());
   }
 
@@ -66,15 +67,16 @@ void AudioDevice::PushSample(float left, float volumeL, float right, float volum
   float adjustedR = right * volumeR;
   float samples[2]{ adjustedL, adjustedR };
 
-  auto availableBytes = (float)SDL_AudioStreamAvailable(audioStream.get());
+  auto availableBytes = (float)SDL_AudioStreamAvailable(audioStream);
   if(availableBytes <= BYTES_PER_HALF_SECOND) {
-    SDL_AudioStreamPut(audioStream.get(), samples, 2 * sizeof(float));
+    SDL_AudioStreamPut(audioStream, samples, 2 * sizeof(float));
   }
 }
 
 void AudioDevice::AdjustSampleRate(int sampleRate) {
   LockMutex();
-  audioStream.Construct(SDL_NewAudioStream, SYSTEM_SAMPLE_FORMAT, 2, sampleRate, SYSTEM_SAMPLE_FORMAT, 2, AUDIO_SAMPLE_RATE);
+  SDL_FreeAudioStream(audioStream);
+  audioStream = SDL_NewAudioStream(SYSTEM_SAMPLE_FORMAT, 2, sampleRate, SYSTEM_SAMPLE_FORMAT, 2, AUDIO_SAMPLE_RATE);
   UnlockMutex();
 }
 }

@@ -31,6 +31,10 @@ void MainWindowController::ConnectSignalsToSlots() noexcept {
     emit Exit();
   });
 
+  connect(this, &MainWindowController::destroyed, this, [this]() {
+    emit Exit();
+  });
+
   connect(view.actionReset, &QAction::triggered, this, [this]() {
     emit Reset();
   });

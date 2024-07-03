@@ -465,15 +465,19 @@ void Interpreter::sb(u32 instr) {
 void Interpreter::sc(u32 instr) {
   u64 address = regs.gpr[RS(instr)] + (s16)instr;
 
-  if (check_address_error(0b11, address)) {
-    regs.cop0.FireException(ExceptionCode::AddressErrorStore, 0, regs.oldPC);
-    return;
-  }
-
   if(regs.cop0.llbit) {
     regs.cop0.llbit = false;
+
+    if (check_address_error(0b11, address)) {
+      regs.gpr[RT(instr)] = 0;
+      regs.cop0.HandleTLBException(address);
+      regs.cop0.FireException(ExceptionCode::AddressErrorStore, 0, regs.oldPC);
+      return;
+    }
+
     u32 paddr = 0;
     if(!regs.cop0.MapVAddr(Cop0::STORE, address, paddr)) {
+      regs.gpr[RT(instr)] = 0;
       regs.cop0.HandleTLBException(address);
       regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::STORE), 0, regs.oldPC);
     } else {
@@ -496,16 +500,20 @@ void Interpreter::scd(u32 instr) {
   }
 
   s64 address = regs.gpr[RS(instr)] + (s16)instr;
-  if (check_address_error(0b111, address)) {
-    regs.cop0.HandleTLBException(address);
-    regs.cop0.FireException(ExceptionCode::AddressErrorStore, 0, regs.oldPC);
-    return;
-  }
 
   if(regs.cop0.llbit) {
     regs.cop0.llbit = false;
+
+    if (check_address_error(0b111, address)) {
+      regs.gpr[RT(instr)] = 0;
+      regs.cop0.HandleTLBException(address);
+      regs.cop0.FireException(ExceptionCode::AddressErrorStore, 0, regs.oldPC);
+      return;
+    }
+
     u32 paddr = 0;
     if(!regs.cop0.MapVAddr(Cop0::STORE, address, paddr)) {
+      regs.gpr[RT(instr)] = 0;
       regs.cop0.HandleTLBException(address);
       regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::STORE), 0, regs.oldPC);
     } else {

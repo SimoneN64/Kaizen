@@ -28,14 +28,13 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
     grabKeyboard();
   });
 }
+
 void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept {
   connect(mainWindow.get(), &MainWindowController::OpenSettings, this, [this]() {
     settingsWindow->show();
   });
   connect(mainWindow.get(), &MainWindowController::OpenROM, this, &KaizenQt::LoadROM);
-  connect(mainWindow.get(), &MainWindowController::Exit, this, []() {
-    QApplication::quit();
-  });
+  connect(mainWindow.get(), &MainWindowController::Exit, this, &KaizenQt::Quit);
   connect(mainWindow.get(), &MainWindowController::Reset, emuThread.get(), &EmuThread::Reset);
   connect(mainWindow.get(), &MainWindowController::Stop, emuThread.get(), &EmuThread::Stop);
   connect(mainWindow.get(), &MainWindowController::Stop, this, [this]() {
@@ -61,8 +60,12 @@ void KaizenQt::LoadROM(const QString& fileName) noexcept {
   mainWindow->setWindowTitle(emuThread->core.cpu->GetMem().rom.gameNameDB.c_str());
 }
 
-void KaizenQt::closeEvent(QCloseEvent*) {
-  emuThread->Stop();
+void KaizenQt::Quit() noexcept {
+  if(emuThread) {
+    emuThread->SetRender(false);
+    emuThread->Stop();
+  }
+  QApplication::quit();
 }
 
 void KaizenQt::LoadTAS(const QString& fileName) noexcept {

@@ -5,24 +5,23 @@
 namespace n64 {
 struct AudioDevice {
   AudioDevice();
+  ~AudioDevice();
 
   void PushSample(float, float, float, float);
   void AdjustSampleRate(int);
   void LockMutex() {
-    if(audioStreamMutex.get())
-      SDL_LockMutex(audioStreamMutex.get());
+    if(audioStreamMutex)
+      SDL_LockMutex(audioStreamMutex);
   }
   void UnlockMutex() {
-    if (audioStreamMutex.get())
-      SDL_UnlockMutex(audioStreamMutex.get());
+    if (audioStreamMutex)
+      SDL_UnlockMutex(audioStreamMutex);
   }
 
-  Util::AutoRelease<SDL_AudioStream, const SDL_AudioFormat, const Uint8, const int, const SDL_AudioFormat,
-                    const Uint8, const int>& GetStream() { return audioStream; }
+  SDL_AudioStream* GetStream() { return audioStream; }
 private:
-  Util::AutoRelease<SDL_AudioStream, const SDL_AudioFormat, const Uint8, const int, const SDL_AudioFormat,
-                  const Uint8, const int> audioStream;
-  Util::AutoRelease<SDL_mutex> audioStreamMutex;
+  SDL_AudioStream* audioStream;
+  SDL_mutex* audioStreamMutex;
   SDL_AudioSpec audioSpec{};
   SDL_AudioSpec request{};
   SDL_AudioDeviceID handle{};

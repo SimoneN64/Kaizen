@@ -15,7 +15,7 @@ public:
     virtual ~WindowInfo() = default;
   };
 
-  void Init(Vulkan::InstanceFactory*, std::unique_ptr<Vulkan::WSIPlatform>&&, std::unique_ptr<WindowInfo>&&, const u8*);
+  void Init(const std::shared_ptr<Vulkan::InstanceFactory>&, const std::shared_ptr<Vulkan::WSIPlatform>&, const std::shared_ptr<WindowInfo>&, const u8*);
   ParallelRDP() = default;
 
   void UpdateScreen(n64::VI&, bool = false);
@@ -24,11 +24,11 @@ public:
   bool IsFramerateUnlocked();
   void SetFramerateUnlocked(bool);
 private:
-  void LoadWSIPlatform(Vulkan::InstanceFactory*, std::unique_ptr<Vulkan::WSIPlatform>&&, std::unique_ptr<WindowInfo>&&);
+  void LoadWSIPlatform(const std::shared_ptr<Vulkan::InstanceFactory>&, const std::shared_ptr<Vulkan::WSIPlatform>&, const std::shared_ptr<WindowInfo>&);
   void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Vulkan::Image>, Util::IntrusivePtr<Vulkan::CommandBuffer>);
   void UpdateScreen(Util::IntrusivePtr<Vulkan::Image>);
 
-  std::unique_ptr<Vulkan::WSI> wsi;
-  std::unique_ptr<RDP::CommandProcessor> command_processor;
-  std::unique_ptr<WindowInfo> windowInfo;
+  std::shared_ptr<Vulkan::WSI> wsi;
+  std::shared_ptr<RDP::CommandProcessor> command_processor;
+  std::shared_ptr<WindowInfo> windowInfo;
 };

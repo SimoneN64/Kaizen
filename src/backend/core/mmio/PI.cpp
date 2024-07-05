@@ -427,20 +427,14 @@ u32 PI::AccessTiming(u8 domain, u32 length) const {
 void PI::Write(u32 addr, u32 val) {
   MI& mi = mem.mmio.mi;
   switch(addr) {
-    case 0x04600000: dramAddr = val & 0x00FFFFFE; break;
+    case 0x04600000: dramAddr = val & 0x00FFFFFC; break;
     case 0x04600004: cartAddr = val & 0xFFFFFFFE; break;
     case 0x04600008: {
       rdLen = val & 0x00FFFFFF;
       s32 len = val + 1;
 
       for (int i = 0; i < len; i++) {
-        u32 address = BYTE_ADDRESS(dramAddr + i) & RDRAM_DSIZE;
-        if (address < RDRAM_SIZE) {
-          BusWrite<u8, true>(cartAddr + i, mem.mmio.rdp.rdram[address]);
-        }
-        else {
-          BusWrite<u8, true>(cartAddr + i, 0);
-        }
+        BusWrite<u8, true>(cartAddr + i, mem.mmio.rdp.ReadRDRAM<u8>(dramAddr + i));
       }
       dramAddr += len;
       dramAddr = (dramAddr + 7) & ~7;
@@ -460,10 +454,7 @@ void PI::Write(u32 addr, u32 val) {
       }
 
       for(u32 i = 0; i < len; i++) {
-        u32 address = BYTE_ADDRESS(dramAddr + i) & RDRAM_DSIZE;
-        if (address < RDRAM_SIZE) {
-          mem.mmio.rdp.rdram[address] = BusRead<u8, true>(cartAddr + i);
-        }
+        mem.mmio.rdp.WriteRDRAM<u8>(dramAddr + i, BusRead<u8, true>(cartAddr + i));
       }
       dramAddr += len;
       dramAddr = (dramAddr + 7) & ~7;

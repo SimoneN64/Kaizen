@@ -59,7 +59,6 @@ struct RDP {
   RDP(Mem&, ParallelRDP&);
   void Reset();
 
-  std::vector<u8> rdram{};
   [[nodiscard]] auto Read(u32 addr) const -> u32;
   void Write(u32 addr, u32 val);
   void WriteStatus(u32 val);
@@ -81,7 +80,16 @@ struct RDP {
     }
     RunCommand();
   }
+
+  template<typename T>
+  void WriteRDRAM(size_t, T);
+  template<typename T>
+  T ReadRDRAM(size_t);
 private:
+  friend struct Mem;
+  friend struct MMIO;
+  std::vector<u8> rdram{};
+
   Mem& mem;
   ParallelRDP& parallel;
 };

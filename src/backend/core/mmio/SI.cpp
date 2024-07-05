@@ -38,20 +38,12 @@ void SI::DMA() {
   if (toDram) {
     pif.ProcessCommands(mem);
     for(int i = 0; i < 64; i++) {
-      u32 addr = dramAddr + i;
-      if(addr < RDRAM_SIZE) {
-        mem.mmio.rdp.rdram[BYTE_ADDRESS(addr)] = pif.Read(pifAddr + i);
-      }
+      mem.mmio.rdp.WriteRDRAM<u8>(dramAddr + i, pif.Read(pifAddr + i));
     }
     Util::trace("SI DMA from PIF RAM to RDRAM ({:08X} to {:08X})", pifAddr, dramAddr);
   } else {
     for(int i = 0; i < 64; i++) {
-      u32 addr = dramAddr + i;
-      if(addr < RDRAM_SIZE) {
-        pif.Write(pifAddr + i, mem.mmio.rdp.rdram[BYTE_ADDRESS(addr)]);
-      } else {
-        pif.Write(pifAddr + i, 0);
-      }
+      pif.Write(pifAddr + i, mem.mmio.rdp.ReadRDRAM<u8>(dramAddr + i));
     }
     Util::trace("SI DMA from RDRAM to PIF RAM ({:08X} to {:08X})", dramAddr, pifAddr);
     pif.ProcessCommands(mem);

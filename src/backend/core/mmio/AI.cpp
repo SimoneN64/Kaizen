@@ -84,7 +84,7 @@ void AI::Step(u32 cpuCycles, float volumeL, float volumeR) {
     if(dmaLen[0] && dmaEnable) {
       u32 addrHi = ((dmaAddr[0] >> 13) + dmaAddrCarry) & 0x7FF;
       dmaAddr[0] = (addrHi << 13) | (dmaAddr[0] & 0x1FFF);
-      u32 data = Util::ReadAccess<u32>(mem.mmio.rdp.rdram, dmaAddr[0] & RDRAM_DSIZE);
+      u32 data = mem.mmio.rdp.ReadRDRAM<u32>(dmaAddr[0]);
       s16 l = s16(data >> 16);
       s16 r = s16(data);
 

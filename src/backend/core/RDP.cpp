@@ -18,6 +18,54 @@ void RDP::Reset() {
   memset(cmd_buf, 0, 0x100000);
 }
 
+template<> void RDP::WriteRDRAM<u8>(size_t idx, u8 v) {
+  size_t real = BYTE_ADDRESS(idx);
+  if(real < RDRAM_SIZE) {
+    rdram[real] = v;
+  }
+}
+
+template<> void RDP::WriteRDRAM<u16>(size_t idx, u16 v) {
+  size_t real = HALF_ADDRESS(idx);
+  if(real < RDRAM_SIZE) {
+    Util::WriteAccess<u16>(rdram, real, v);
+  }
+}
+
+template<> void RDP::WriteRDRAM<u32>(size_t idx, u32 v) {
+  if(idx < RDRAM_SIZE) {
+    Util::WriteAccess<u32>(rdram, idx, v);
+  }
+}
+
+template<> void RDP::WriteRDRAM<u64>(size_t idx, u64 v) {
+  if(idx < RDRAM_SIZE) {
+    Util::WriteAccess<u64>(rdram, idx, v);
+  }
+}
+
+template<> u8 RDP::ReadRDRAM<u8>(size_t idx) {
+  size_t real = BYTE_ADDRESS(idx);
+  if(real >= RDRAM_SIZE) return 0;
+  return rdram[real];
+}
+
+template<> u16 RDP::ReadRDRAM<u16>(size_t idx) {
+  size_t real = HALF_ADDRESS(idx);
+  if(real >= RDRAM_SIZE) return 0;
+  return Util::ReadAccess<u16>(rdram, real);
+}
+
+template<> u32 RDP::ReadRDRAM<u32>(size_t idx) {
+  if(idx >= RDRAM_SIZE) return 0;
+  return Util::ReadAccess<u32>(rdram, idx);
+}
+
+template<> u64 RDP::ReadRDRAM<u64>(size_t idx) {
+  if(idx >= RDRAM_SIZE) return 0;
+  return Util::ReadAccess<u64>(rdram, idx);
+}
+
 static const int cmd_lens[64] = {
   2, 2, 2, 2, 2, 2, 2, 2, 8, 12, 24, 28, 24, 28, 40, 44,
   2, 2, 2, 2, 2, 2, 2, 2, 2, 2,  2,  2,  2,  2,  2,  2,

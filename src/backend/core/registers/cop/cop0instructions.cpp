@@ -4,19 +4,19 @@
 
 namespace n64 {
 void Cop0::mtc0(u32 instr) {
-  SetReg32(RD(instr), regs.gpr[RT(instr)]);
+  SetReg32(RD(instr), regs.Read<u32>(RT(instr)));
 }
 
 void Cop0::dmtc0(u32 instr) {
-  SetReg64(RD(instr), regs.gpr[RT(instr)]);
+  SetReg64(RD(instr), regs.Read<u64>(RT(instr)));
 }
 
 void Cop0::mfc0(u32 instr) {
-  regs.gpr[RT(instr)] = s32(GetReg32(RD(instr)));
+  regs.Write(RT(instr), s32(GetReg32(RD(instr))));
 }
 
 void Cop0::dmfc0(u32 instr) const {
-  regs.gpr[RT(instr)] = s64(GetReg64(RD(instr)));
+  regs.Write(RT(instr), s64(GetReg64(RD(instr))));
 }
 
 void Cop0::eret() {

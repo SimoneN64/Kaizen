@@ -7,7 +7,6 @@ struct Registers {
   void Reset();
   void SetPC64(s64);
   void SetPC32(s32);
-  s64 gpr[32]{};
   Cop0 cop0;
   Cop1 cop1;
   s64 oldPC{}, pc{}, nextPC{};
@@ -25,5 +24,12 @@ struct Registers {
     extraCycles = 0;
     return ret;
   }
+
+  template <typename T>
+  T Read(size_t);
+  template <typename T>
+  void Write(size_t, T);
+private:
+  s64 gpr[32]{};
 };
 }

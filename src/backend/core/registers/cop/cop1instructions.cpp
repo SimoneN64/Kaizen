@@ -471,13 +471,13 @@ void Cop1::cfc1(u32 instr) {
       break;
     default: Util::panic("Undefined CFC1 with rd != 0 or 31");
   }
-  regs.gpr[RT(instr)] = val;
+  regs.Write(RT(instr), val);
 }
 
 void Cop1::ctc1(u32 instr) {
   if(!CheckFPUUsable<true>()) return;
   u8 fs = RD(instr);
-  u32 val = regs.gpr[RT(instr)];
+  u32 val = regs.Read<s64>(RT(instr));
   switch(fs) {
     case 0: break;
     case 31: {
@@ -1087,7 +1087,7 @@ template void Cop1::sdc1<Interpreter>(Interpreter&, Mem&, u32);
 template void Cop1::sdc1<JIT>(JIT&, Mem&, u32);
 
 void Cop1::lwc1Interp(Mem& mem, u32 instr) {
-  u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
+  u64 addr = (s64)(s16)instr + regs.Read<s64>(BASE(instr));
 
   u32 physical;
   if(!regs.cop0.MapVAddr(Cop0::LOAD, addr, physical)) {
@@ -1100,7 +1100,7 @@ void Cop1::lwc1Interp(Mem& mem, u32 instr) {
 }
 
 void Cop1::swc1Interp(Mem& mem, u32 instr) {
-  u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
+  u64 addr = (s64)(s16)instr + regs.Read<s64>(BASE(instr));
 
   u32 physical;
   if(!regs.cop0.MapVAddr(Cop0::STORE, addr, physical)) {
@@ -1118,7 +1118,7 @@ void Cop1::unimplemented() {
 }
 
 void Cop1::ldc1Interp(Mem& mem, u32 instr) {
-  u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
+  u64 addr = (s64)(s16)instr + regs.Read<s64>(BASE(instr));
 
   u32 physical;
   if(!regs.cop0.MapVAddr(Cop0::LOAD, addr, physical)) {
@@ -1131,7 +1131,7 @@ void Cop1::ldc1Interp(Mem& mem, u32 instr) {
 }
 
 void Cop1::sdc1Interp(Mem& mem, u32 instr) {
-  u64 addr = (s64)(s16)instr + regs.gpr[BASE(instr)];
+  u64 addr = (s64)(s16)instr + regs.Read<s64>(BASE(instr));
 
   u32 physical;
   if(!regs.cop0.MapVAddr(Cop0::STORE, addr, physical)) {
@@ -1144,21 +1144,21 @@ void Cop1::sdc1Interp(Mem& mem, u32 instr) {
 
 void Cop1::mfc1(u32 instr) {
   if(!CheckFPUUsable<true>()) return;
-  regs.gpr[RT(instr)] = FGR_T<s32>(regs.cop0.status, FS(instr));
+  regs.Write(RT(instr), FGR_T<s32>(regs.cop0.status, FS(instr)));
 }
 
 void Cop1::dmfc1(u32 instr) {
   if(!CheckFPUUsable<true>()) return;
-  regs.gpr[RT(instr)] = FGR_S<s64>(regs.cop0.status, FS(instr));
+  regs.Write(RT(instr), FGR_S<s64>(regs.cop0.status, FS(instr)));
 }
 
 void Cop1::mtc1(u32 instr) {
   if(!CheckFPUUsable<true>()) return;
-  FGR_T<s32>(regs.cop0.status, FS(instr)) = regs.gpr[RT(instr)];
+  FGR_T<s32>(regs.cop0.status, FS(instr)) = regs.Read<s64>(RT(instr));
 }
 
 void Cop1::dmtc1(u32 instr) {
   if(!CheckFPUUsable<true>()) return;
-  FGR_S<u64>(regs.cop0.status, FS(instr)) = regs.gpr[RT(instr)];
+  FGR_S<u64>(regs.cop0.status, FS(instr)) = regs.Read<s64>(RT(instr));
 }
 }

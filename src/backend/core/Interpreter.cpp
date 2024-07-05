@@ -48,10 +48,6 @@ int Interpreter::Step() {
     return 1;
   }
 
-  if((u64)regs.pc == 0xFFFFFFFF8002070C) {
-    printf("\n");
-  }
-
   regs.oldPC = regs.pc;
   regs.pc = regs.nextPC;
   regs.nextPC += 4;

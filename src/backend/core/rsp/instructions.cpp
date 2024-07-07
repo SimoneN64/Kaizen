@@ -60,11 +60,11 @@ FORCE_INLINE void SetCop0Reg(Registers& regs, Mem& mem, u8 index, u32 val) {
     case 1: rsp.spDMADRAMAddr.raw = val; break;
     case 2:
       rsp.spDMALen.raw = val;
-      rsp.DMAtoRSP(mem.GetRDRAM());
+      rsp.DMA<false>();
       break;
     case 3:
       rsp.spDMALen.raw = val;
-      rsp.DMAtoRDRAM(mem.GetRDRAM());
+      rsp.DMA<true>();
       break;
     case 4: rsp.WriteStatus(val); break;
     case 7:

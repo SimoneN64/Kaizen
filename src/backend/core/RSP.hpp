@@ -357,8 +357,8 @@ struct RSP {
   void mfc2(u32 instr);
   void mtc2(u32 instr);
 
-  void DMAtoRDRAM(std::vector<u8>& rdram);
-  void DMAtoRSP(std::vector<u8>& rdram);
+  template <bool toRdram>
+  void DMA();
   void WriteStatus(u32 value);
 private:
   Registers& regs;

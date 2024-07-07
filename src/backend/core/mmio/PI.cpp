@@ -426,7 +426,7 @@ u32 PI::AccessTiming(u8 domain, u32 length) const {
 // rdram -> cart
 template <> void PI::DMA<false>() {
   s32 len = rdLen + 1;
-  Util::always("PI DMA from RDRAM to CARTRIDGE (size: {} B, {:08X} to {:08X})", len, dramAddr, cartAddr);
+  Util::trace("PI DMA from RDRAM to CARTRIDGE (size: {} B, {:08X} to {:08X})", len, dramAddr, cartAddr);
 
   if(mem.saveType == SAVE_FLASH_1m && cartAddr >= SREGION_PI_SRAM && cartAddr < 0x08010000) {
     cartAddr = SREGION_PI_SRAM | ((cartAddr & 0xFFFFF) << 1);
@@ -440,7 +440,6 @@ template <> void PI::DMA<false>() {
   cartAddr += len;
   if(cartAddr & 1) cartAddr += 1;
 
-  Util::always("Addresses after: Cart: 0x{:08X}, Dram: 0x{:08X}", cartAddr, dramAddr);
   dmaBusy = true;
   scheduler.EnqueueRelative(AccessTiming(GetDomain(cartAddr), rdLen), PI_DMA_COMPLETE);
 }
@@ -448,7 +447,7 @@ template <> void PI::DMA<false>() {
 // cart -> rdram
 template <> void PI::DMA<true>() {
   s32 len = wrLen + 1;
-  Util::always("PI DMA from CARTRIDGE to RDRAM (size: {} B, {:08X} to {:08X})", len, cartAddr, dramAddr);
+  Util::trace("PI DMA from CARTRIDGE to RDRAM (size: {} B, {:08X} to {:08X})", len, cartAddr, dramAddr);
 
   if(mem.saveType == SAVE_FLASH_1m && cartAddr >= SREGION_PI_SRAM && cartAddr < 0x08010000) {
     cartAddr = SREGION_PI_SRAM | ((cartAddr & 0xFFFFF) << 1);
@@ -462,9 +461,6 @@ template <> void PI::DMA<true>() {
   cartAddr += len;
   if(cartAddr & 1) cartAddr += 1;
 
-  mem.DumpRDRAM();
-
-  Util::always("Addresses after: Cart: 0x{:08X}, Dram: 0x{:08X}", cartAddr, dramAddr);
   dmaBusy = true;
   scheduler.EnqueueRelative(AccessTiming(GetDomain(cartAddr), len), PI_DMA_COMPLETE);
 }

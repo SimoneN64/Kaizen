@@ -29,6 +29,8 @@ struct SI {
 
   auto Read(u32) const -> u32;
   void Write(u32, u32);
+  template <bool toDram>
+  void DMA();
   void DMA();
   PIF pif;
 private:

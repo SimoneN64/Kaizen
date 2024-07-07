@@ -25,7 +25,7 @@ struct PI {
 
   static u8 GetDomain(u32 address);
   [[nodiscard]] u32 AccessTiming(u8 domain, u32 length) const;
-  bool dmaBusy{}, ioBusy{}, toCart{};
+  bool dmaBusy{}, ioBusy{};
   u32 latch{};
   u32 dramAddr{}, cartAddr{};
   u32 rdLen{}, wrLen{};
@@ -34,6 +34,9 @@ struct PI {
   u32 piBsdDom1Pgs{}, piBsdDom2Pgs{};
   u32 piBsdDom1Rls{}, piBsdDom2Rls{};
 private:
+  template <bool toDram>
+  void DMA();
+
   Mem& mem;
   Registers& regs;
 };

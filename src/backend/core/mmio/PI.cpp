@@ -9,7 +9,6 @@ PI::PI(Mem& mem, Registers& regs) : mem(mem), regs(regs) {
 }
 
 void PI::Reset() {
-  toCart = false;
   dmaBusy = false;
   ioBusy = false;
   latch = 0;
@@ -424,6 +423,52 @@ u32 PI::AccessTiming(u8 domain, u32 length) const {
   return cycles * 1.5; // Converting RCP clock speed to CPU clock speed
 }
 
+// rdram -> cart
+template <> void PI::DMA<false>() {
+  s32 len = rdLen + 1;
+  Util::always("PI DMA from RDRAM to CARTRIDGE (size: {} B, {:08X} to {:08X})", len, dramAddr, cartAddr);
+
+  if(mem.saveType == SAVE_FLASH_1m && cartAddr >= SREGION_PI_SRAM && cartAddr < 0x08010000) {
+    cartAddr = SREGION_PI_SRAM | ((cartAddr & 0xFFFFF) << 1);
+  }
+
+  for (int i = 0; i < len; i++) {
+    BusWrite<u8, true>(cartAddr + i, mem.mmio.rdp.ReadRDRAM<u8>(dramAddr + i));
+  }
+  dramAddr += len;
+  dramAddr = (dramAddr + 7) & ~7;
+  cartAddr += len;
+  if(cartAddr & 1) cartAddr += 1;
+
+  Util::always("Addresses after: Cart: 0x{:08X}, Dram: 0x{:08X}", cartAddr, dramAddr);
+  dmaBusy = true;
+  scheduler.EnqueueRelative(AccessTiming(GetDomain(cartAddr), rdLen), PI_DMA_COMPLETE);
+}
+
+// cart -> rdram
+template <> void PI::DMA<true>() {
+  s32 len = wrLen + 1;
+  Util::always("PI DMA from CARTRIDGE to RDRAM (size: {} B, {:08X} to {:08X})", len, cartAddr, dramAddr);
+
+  if(mem.saveType == SAVE_FLASH_1m && cartAddr >= SREGION_PI_SRAM && cartAddr < 0x08010000) {
+    cartAddr = SREGION_PI_SRAM | ((cartAddr & 0xFFFFF) << 1);
+  }
+
+  for(u32 i = 0; i < len; i++) {
+    mem.mmio.rdp.WriteRDRAM<u8>(dramAddr + i, BusRead<u8, true>(cartAddr + i));
+  }
+  dramAddr += len;
+  dramAddr = (dramAddr + 7) & ~7;
+  cartAddr += len;
+  if(cartAddr & 1) cartAddr += 1;
+
+  mem.DumpRDRAM();
+
+  Util::always("Addresses after: Cart: 0x{:08X}, Dram: 0x{:08X}", cartAddr, dramAddr);
+  dmaBusy = true;
+  scheduler.EnqueueRelative(AccessTiming(GetDomain(cartAddr), len), PI_DMA_COMPLETE);
+}
+
 void PI::Write(u32 addr, u32 val) {
   MI& mi = mem.mmio.mi;
   switch(addr) {
@@ -431,39 +476,11 @@ void PI::Write(u32 addr, u32 val) {
     case 0x04600004: cartAddr = val & 0xFFFFFFFE; break;
     case 0x04600008: {
       rdLen = val & 0x00FFFFFF;
-      s32 len = val + 1;
-
-      for (int i = 0; i < len; i++) {
-        BusWrite<u8, true>(cartAddr + i, mem.mmio.rdp.ReadRDRAM<u8>(dramAddr + i));
-      }
-      dramAddr += len;
-      dramAddr = (dramAddr + 7) & ~7;
-      cartAddr += len;
-      if(cartAddr & 1) cartAddr += 1;
-      Util::trace("PI DMA from RDRAM to CARTRIDGE (size: {} B, {:08X} to {:08X})", len, dramAddr, cartAddr);
-      dmaBusy = true;
-      toCart = true;
-      scheduler.EnqueueRelative(AccessTiming(GetDomain(cartAddr), len), PI_DMA_COMPLETE);
+      DMA<false>();
     } break;
     case 0x0460000C: {
       wrLen = val & 0x00FFFFFF;
-      s32 len = val + 1;
-
-      if(mem.saveType == SAVE_FLASH_1m && cartAddr >= SREGION_PI_SRAM && cartAddr < 0x08010000) {
-        cartAddr = SREGION_PI_SRAM | ((cartAddr & 0xFFFFF) << 1);
-      }
-
-      for(u32 i = 0; i < len; i++) {
-        mem.mmio.rdp.WriteRDRAM<u8>(dramAddr + i, BusRead<u8, true>(cartAddr + i));
-      }
-      dramAddr += len;
-      dramAddr = (dramAddr + 7) & ~7;
-      cartAddr += len;
-      if(cartAddr & 1) cartAddr += 1;
-      dmaBusy = true;
-      Util::trace("PI DMA from CARTRIDGE to RDRAM (size: {} B, {:08X} to {:08X})", len, cartAddr, dramAddr);
-      toCart = false;
-      scheduler.EnqueueRelative(AccessTiming(GetDomain(cartAddr), len), PI_DMA_COMPLETE);
+      DMA<true>();
     } break;
     case 0x04600010:
       if(val & 2) {

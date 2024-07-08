@@ -119,7 +119,8 @@ template <> void RSP::DMA<true>() {
   std::array<u8, DMEM_SIZE>& src = spDMASPAddr.bank ? imem : dmem;
 
   u32 mem_address = spDMASPAddr.address & 0xFF8;
-  u32 dram_address = spDMADRAMAddr.address & 0xFFFFF8;
+  u32 dram_address = spDMADRAMAddr.address & 0xFFFFFC;
+  Util::trace("SP DMA from RSP to RDRAM (size: {} B, {:08X} to {:08X})", length, mem_address, dram_address);
 
   for (u32 i = 0; i < spDMALen.count + 1; i++) {
     for(u32 j = 0; j < length; j++) {
@@ -129,10 +130,11 @@ template <> void RSP::DMA<true>() {
     int skip = i == spDMALen.count ? 0 : spDMALen.skip;
 
     dram_address += (length + skip);
-    dram_address &= 0xFFFFF8;
+    dram_address &= 0xFFFFFC;
     mem_address += length;
     mem_address &= 0xFF8;
   }
+  Util::trace("Addresses after: RSP: 0x{:08X}, Dram: 0x{:08X}", mem_address, dram_address);
 
   lastSuccessfulSPAddr.address = mem_address;
   lastSuccessfulSPAddr.bank = spDMASPAddr.bank;
@@ -148,7 +150,8 @@ template <> void RSP::DMA<false>() {
   std::array<u8, DMEM_SIZE>& dst = spDMASPAddr.bank ? imem : dmem;
 
   u32 mem_address = spDMASPAddr.address & 0xFF8;
-  u32 dram_address = spDMADRAMAddr.address & 0xFFFFF8;
+  u32 dram_address = spDMADRAMAddr.address & 0xFFFFFC;
+  Util::trace("SP DMA from RDRAM to RSP (size: {} B, {:08X} to {:08X})", length, dram_address, mem_address);
 
   for (u32 i = 0; i < spDMALen.count + 1; i++) {
     for(u32 j = 0; j < length; j++) {
@@ -158,10 +161,11 @@ template <> void RSP::DMA<false>() {
     int skip = i == spDMALen.count ? 0 : spDMALen.skip;
 
     dram_address += (length + skip);
-    dram_address &= 0xFFFFF8;
+    dram_address &= 0xFFFFFC;
     mem_address += length;
     mem_address &= 0xFF8;
   }
+  Util::trace("Addresses after: RSP: 0x{:08X}, Dram: 0x{:08X}", mem_address, dram_address);
 
   lastSuccessfulSPAddr.address = mem_address;
   lastSuccessfulSPAddr.bank = spDMASPAddr.bank;
@@ -172,7 +176,7 @@ template <> void RSP::DMA<false>() {
 void RSP::Write(u32 addr, u32 val) {
   switch (addr) {
     case 0x04040000: spDMASPAddr.raw = val & 0x1FF8; break;
-    case 0x04040004: spDMADRAMAddr.raw = val & 0xFFFFF8; break;
+    case 0x04040004: spDMADRAMAddr.raw = val & 0xFFFFFC; break;
     case 0x04040008: {
       spDMALen.raw = val;
       DMA<false>();

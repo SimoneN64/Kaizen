@@ -1,10 +1,18 @@
 #include <core/RDP.hpp>
 #include <log.hpp>
 #include <core/RSP.hpp>
+#include <core/Mem.hpp>
+#ifdef SOFTRDP
+#include <softRDP/softrdp.hpp>
+#else
 #include <parallel-rdp/ParallelRDPWrapper.hpp>
-
+#endif
 namespace n64 {
-RDP::RDP(Mem& mem, ParallelRDP& parallel) : mem(mem), parallel(parallel) {
+#ifdef SOFTRDP
+RDP::RDP(Mem& mem, SoftwareRDP& rdpImpl) : mem(mem), rdpImpl(rdpImpl) {
+#else
+RDP::RDP(Mem& mem, ParallelRDP& rdpImpl) : mem(mem), rdpImpl(rdpImpl) {
+#endif
   rdram.resize(RDRAM_SIZE);
   std::fill(rdram.begin(), rdram.end(), 0);
   memset(cmd_buf, 0, 0x100000);
@@ -226,7 +234,7 @@ void RDP::RunCommand() {
       }
 
       if (cmd >= 8) {
-        parallel.EnqueueCommand(cmd_len, &cmd_buf[buf_index]);
+        rdpImpl.EnqueueCommand(cmd_len, &cmd_buf[buf_index]);
       }
 
       if (cmd == 0x29) {
@@ -248,7 +256,7 @@ void RDP::RunCommand() {
 }
 
 void RDP::OnFullSync() {
-  parallel.OnFullSync();
+  rdpImpl.OnFullSync();
 
   dpc.status.pipeBusy = false;
   dpc.status.startGclk = false;

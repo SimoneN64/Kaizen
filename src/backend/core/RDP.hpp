@@ -2,7 +2,11 @@
 #include <common.hpp>
 #include <vector>
 
+#ifdef SOFTRDP
+class SoftwareRDP;
+#else
 class ParallelRDP;
+#endif
 
 namespace n64 {
 
@@ -55,8 +59,11 @@ struct DPC {
 struct RDP {
   DPC dpc{};
   u32 cmd_buf[0xFFFFF]{};
-
+#ifdef SOFTRDP
+  RDP(Mem&, SoftwareRDP&);
+#else
   RDP(Mem&, ParallelRDP&);
+#endif
   void Reset();
 
   [[nodiscard]] auto Read(u32 addr) const -> u32;
@@ -91,6 +98,10 @@ private:
   std::vector<u8> rdram{};
 
   Mem& mem;
-  ParallelRDP& parallel;
+#ifdef SOFTRDP
+  SoftwareRDP& rdpImpl;
+#else
+  ParallelRDP& rdpImpl;
+#endif
 };
 } // backend

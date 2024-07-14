@@ -468,7 +468,7 @@ template <> void PI::DMA<true>() {
 void PI::Write(u32 addr, u32 val) {
   MI& mi = mem.mmio.mi;
   switch(addr) {
-    case 0x04600000: dramAddr = val & 0x00FFFFFC; break;
+    case 0x04600000: dramAddr = val & 0x00FFFFFE; break;
     case 0x04600004: cartAddr = val & 0xFFFFFFFE; break;
     case 0x04600008: {
       rdLen = val & 0x00FFFFFF;

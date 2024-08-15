@@ -27,7 +27,7 @@ class KaizenQt : public QWidget {
   Q_OBJECT
 public:
   KaizenQt() noexcept;
-  void LoadTAS(const QString& path) noexcept;
+  void LoadTAS(const QString& path) const noexcept;
   void LoadROM(const QString& path) noexcept;
   void dropEvent(QDropEvent*) override;
   void dragEnterEvent(QDragEnterEvent*) override;

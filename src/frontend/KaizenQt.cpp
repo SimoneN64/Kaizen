@@ -55,6 +55,9 @@ void KaizenQt::dropEvent(QDropEvent* event) {
 }
 
 void KaizenQt::LoadROM(const QString& fileName) noexcept {
+  mainWindow->view.actionPause->setEnabled(true);
+  mainWindow->view.actionReset->setEnabled(true);
+  mainWindow->view.actionStop->setEnabled(true);
   emuThread->start();
   emuThread->core.LoadROM(fileName.toStdString());
   mainWindow->setWindowTitle(emuThread->core.cpu->GetMem().rom.gameNameDB.c_str());
@@ -68,8 +71,8 @@ void KaizenQt::Quit() noexcept {
   QApplication::quit();
 }
 
-void KaizenQt::LoadTAS(const QString& fileName) noexcept {
-  emuThread->core.LoadTAS(fileName.toStdString());
+void KaizenQt::LoadTAS(const QString& fileName) const noexcept {
+  emuThread->core.LoadTAS(fs::path(fileName.toStdString()));
 }
 
 void KaizenQt::keyPressEvent(QKeyEvent *e) {

@@ -249,7 +249,7 @@ template<> u32 Mem::Read(n64::Registers &regs, u32 paddr) {
       return Util::ReadAccess<u32>(si.pif.bootrom, paddr - PIF_ROM_REGION_START);
     case PIF_RAM_REGION:
       return be32toh(Util::ReadAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START));
-    case 0x00800000 ... 0x03EFFFFF: case 0x04200000 ... 0x042FFFFF:
+    case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
     case 0x04900000 ... 0x04FFFFFF: case 0x1FC00800 ... 0xFFFFFFFF: return 0;
     default:
       Util::panic("Unimplemented 32-bit read at address {:08X} (PC = {:016X})", paddr, (u64) regs.pc);

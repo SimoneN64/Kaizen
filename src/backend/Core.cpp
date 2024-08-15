@@ -12,7 +12,7 @@ void Core::Stop() {
   cpu->Reset();
 }
 
-bool Core::LoadTAS(const fs::path &path) {
+bool Core::LoadTAS(const fs::path &path) const {
   return cpu->GetMem().mmio.si.pif.movie.Load(path);
 }
 

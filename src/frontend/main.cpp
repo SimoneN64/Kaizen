@@ -10,15 +10,15 @@ int main(int argc, char** argv) {
   QCommandLineParser parser;
   parser.setApplicationDescription(QCoreApplication::applicationName());
   parser.addHelpOption();
-  parser.addPositionalArgument("rom", "Rom to launch from command-line");
-  parser.addPositionalArgument("m64", "Mupen Movie to replay");
+  parser.addOptions({{"rom", "Rom to launch from command-line", "path"},
+    {"movie", "Mupen Movie to replay", "path"}});
   parser.process(app);
   
   KaizenQt kaizenQt;
-  if (parser.positionalArguments().size() > 0) {
-    kaizenQt.LoadROM(parser.positionalArguments().first());
-    if (parser.positionalArguments().size() > 1) {
-      kaizenQt.LoadTAS(parser.positionalArguments()[1]);
+  if (parser.isSet("rom")) {
+    kaizenQt.LoadROM(parser.value("rom"));
+    if (parser.isSet("movie")) {
+      kaizenQt.LoadTAS(parser.value("movie"));
     }
   }
 

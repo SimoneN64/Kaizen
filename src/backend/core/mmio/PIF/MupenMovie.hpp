@@ -52,8 +52,6 @@ struct MupenMovie {
   n64::Controller NextInputs();
   bool IsLoaded() const { return !loadedTasMovie.empty(); }
 private:
-  std::string filename = "";
-  std::string game = "";
   std::vector<u8> loadedTasMovie = {};
   TASMovieHeader loadedTasMovieHeader = {};
   uint32_t loadedTasMovieIndex = 0;

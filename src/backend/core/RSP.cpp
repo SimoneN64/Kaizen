@@ -70,7 +70,7 @@ FORCE_INLINE void logRSP(const RSP& rsp, const u32 instr) {
 auto RSP::Read(u32 addr) -> u32 {
   switch (addr) {
     case 0x04040000: return lastSuccessfulSPAddr.raw & 0x1FF8;
-    case 0x04040004: return lastSuccessfulDRAMAddr.raw & 0xFFFFF8;
+    case 0x04040004: return lastSuccessfulDRAMAddr.raw & 0xFFFFFC;
     case 0x04040008:
     case 0x0404000C: return spDMALen.raw;
     case 0x04040010: return spStatus.raw;
@@ -130,7 +130,7 @@ template <> void RSP::DMA<true>() {
     int skip = i == spDMALen.count ? 0 : spDMALen.skip;
 
     dram_address += (length + skip);
-    dram_address &= 0xFFFFFE;
+    dram_address &= 0xFFFFFC;
     mem_address += length;
     mem_address &= 0xFF8;
   }
@@ -150,7 +150,7 @@ template <> void RSP::DMA<false>() {
   std::array<u8, DMEM_SIZE>& dst = spDMASPAddr.bank ? imem : dmem;
 
   u32 mem_address = spDMASPAddr.address & 0xFF8;
-  u32 dram_address = spDMADRAMAddr.address & 0xFFFFFE;
+  u32 dram_address = spDMADRAMAddr.address & 0xFFFFFC;
   Util::trace("SP DMA from RDRAM to RSP (size: {} B, {:08X} to {:08X})", length, dram_address, mem_address);
 
   for (u32 i = 0; i < spDMALen.count + 1; i++) {
@@ -161,7 +161,7 @@ template <> void RSP::DMA<false>() {
     int skip = i == spDMALen.count ? 0 : spDMALen.skip;
 
     dram_address += (length + skip);
-    dram_address &= 0xFFFFFE;
+    dram_address &= 0xFFFFFC;
     mem_address += length;
     mem_address &= 0xFF8;
   }
@@ -176,7 +176,7 @@ template <> void RSP::DMA<false>() {
 void RSP::Write(u32 addr, u32 val) {
   switch (addr) {
     case 0x04040000: spDMASPAddr.raw = val & 0x1FF8; break;
-    case 0x04040004: spDMADRAMAddr.raw = val & 0xFFFFFE; break;
+    case 0x04040004: spDMADRAMAddr.raw = val & 0xFFFFFC; break;
     case 0x04040008: {
       spDMALen.raw = val;
       DMA<false>();

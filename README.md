@@ -69,7 +69,7 @@ Your GPU needs to support Vulkan 1.1+, because the RDP is implemented via [ParaL
 This list will probably grow with time!
 
 ## Special thanks:
-
+- [ares](https://github.com/ares-emulator/ares) for being the cleanest and most accurate Nintendo 64 emulator out there. It served as a reference time and time again. Especially regarding FPU accuracy.
 - [Dillonb](https://github.com/Dillonb) and [KieronJ](https://github.com/KieronJ) for bearing with me and my recurring brainfarts, and for the support :heart:
 - [WhoBrokeTheBuild](https://github.com/WhoBrokeTheBuild) for the shader that allows letterboxing :rocket:
 - [Kelpsy](https://github.com/kelpsyberry), [fleroviux](https://github.com/fleroviux), [Kim-Dewelski](https://github.com/Kim-Dewelski), [Peach](https://github.com/wheremyfoodat/),

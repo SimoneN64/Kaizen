@@ -49,11 +49,10 @@ struct MupenMovie {
   MupenMovie() = default;
   MupenMovie(const fs::path&);
   bool Load(const fs::path&);
+  void Reset();
   n64::Controller NextInputs();
   bool IsLoaded() const { return !loadedTasMovie.empty(); }
 private:
-  std::string filename = "";
-  std::string game = "";
   std::vector<u8> loadedTasMovie = {};
   TASMovieHeader loadedTasMovieHeader = {};
   uint32_t loadedTasMovieIndex = 0;

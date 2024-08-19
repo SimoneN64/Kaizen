@@ -1,7 +1,6 @@
 #include <core/RSP.hpp>
 #include <log.hpp>
 #include <core/registers/Registers.hpp>
-#include <Interrupt.hpp>
 #include <Mem.hpp>
 
 namespace n64 {

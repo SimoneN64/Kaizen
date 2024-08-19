@@ -132,7 +132,6 @@ struct Mem {
     Util::SwapBuffer32(temp);
     Util::WriteFileBinary(temp, "dmem.bin");
   }
-  uintptr_t writePages[PAGE_COUNT]{}, readPages[PAGE_COUNT]{};
   ROM rom;
   SaveType saveType = SAVE_NONE;
   Flash flash;

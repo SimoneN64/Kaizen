@@ -8,6 +8,11 @@ Flash::Flash(mio::mmap_sink &saveData) : saveData(saveData) {}
 
 void Flash::Reset() {
   state = FlashState::Idle;
+  writeOffs = {};
+  state = {};
+  status = {};
+  eraseOffs = {};
+  writeBuf = {};
 }
 
 void Flash::Load(SaveType saveType, const std::string& path) {

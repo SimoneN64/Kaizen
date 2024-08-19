@@ -11,6 +11,7 @@ void SI::Reset() {
   status.raw = 0;
   dramAddr = 0;
   pifAddr = 0;
+  toDram = false;
   pif.Reset();
 }
 
@@ -32,21 +33,27 @@ auto SI::Read(u32 addr) const -> u32 {
   }
 }
 
+// pif -> rdram
+template <> void SI::DMA<true>() {
+  pif.ProcessCommands(mem);
+  for(int i = 0; i < 64; i++) {
+    mem.mmio.rdp.WriteRDRAM<u8>(dramAddr + i, pif.Read(pifAddr + i));
+  }
+  Util::trace("SI DMA from PIF RAM to RDRAM ({:08X} to {:08X})", pifAddr, dramAddr);
+}
+
+// rdram -> pif
+template <> void SI::DMA<false>() {
+  for(int i = 0; i < 64; i++) {
+    pif.Write(pifAddr + i, mem.mmio.rdp.ReadRDRAM<u8>(dramAddr + i));
+  }
+  Util::trace("SI DMA from RDRAM to PIF RAM ({:08X} to {:08X})", dramAddr, pifAddr);
+}
+
 void SI::DMA() {
   status.dmaBusy = false;
-  if (toDram) {
-    pif.ProcessCommands(mem);
-    for(int i = 0; i < 64; i++) {
-      mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddr + i)] = pif.Read(pifAddr + i);
-    }
-    Util::trace("SI DMA from PIF RAM to RDRAM ({:08X} to {:08X})", pifAddr, dramAddr);
-  } else {
-    for(int i = 0; i < 64; i++) {
-      pif.Write(pifAddr + i, mem.mmio.rdp.rdram[BYTE_ADDRESS(dramAddr + i)]);
-    }
-    Util::trace("SI DMA from RDRAM to PIF RAM ({:08X} to {:08X})", dramAddr, pifAddr);
-    pif.ProcessCommands(mem);
-  }
+  if (toDram) DMA<true>();
+  else DMA<false>();
   mem.mmio.mi.InterruptRaise(MI::Interrupt::SI);
 }
 

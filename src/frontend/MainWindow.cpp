@@ -19,15 +19,16 @@ void MainWindowController::ConnectSignalsToSlots() noexcept {
       "All supported types (*.zip *.ZIP *.7z *.7Z *.rar *.RAR *.tar *.TAR *.n64 *.N64 *.v64 *.V64 *.z64 *.Z64)");
 
     if (!file_name.isEmpty()) {
-      view.actionPause->setEnabled(true);
-      view.actionReset->setEnabled(true);
-      view.actionStop->setEnabled(true);
       emit OpenROM(file_name);
       view.vulkanWidget->show();
     }
   });
 
   connect(view.actionExit, &QAction::triggered, this, [this]() {
+    emit Exit();
+  });
+
+  connect(this, &MainWindowController::destroyed, this, [this]() {
     emit Exit();
   });
 

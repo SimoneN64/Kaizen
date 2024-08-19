@@ -17,7 +17,6 @@ struct Registers {
     return IsRegConstant(first) && IsRegConstant(second);
   }
 
-  s64 gpr[32]{};
   bool gprIsConstant[32]{};
   bool loIsConstant = false, hiIsConstant = false;
   Cop0 cop0;
@@ -37,5 +36,12 @@ struct Registers {
     extraCycles = 0;
     return ret;
   }
+
+  template <typename T>
+  T Read(size_t);
+  template <typename T>
+  void Write(size_t, T);
+private:
+  s64 gpr[32]{};
 };
 }

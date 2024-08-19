@@ -11,7 +11,7 @@ struct Core {
   Core(ParallelRDP&);
   void Stop();
   void LoadROM(const std::string&);
-  bool LoadTAS(const fs::path&);
+  bool LoadTAS(const fs::path&) const;
   void Run(float volumeL, float volumeR);
   void Serialize();
   void Deserialize();

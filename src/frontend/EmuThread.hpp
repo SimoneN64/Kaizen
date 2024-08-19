@@ -9,37 +9,37 @@
 class EmuThread : public QThread
 {
   Q_OBJECT
-  std::unique_ptr<QtInstanceFactory> instance;
-  std::unique_ptr<Vulkan::WSIPlatform> wsiPlatform;
-  std::unique_ptr<ParallelRDP::WindowInfo> windowInfo;
+  std::shared_ptr<QtInstanceFactory> instance;
+  std::shared_ptr<Vulkan::WSIPlatform> wsiPlatform;
+  std::shared_ptr<ParallelRDP::WindowInfo> windowInfo;
 public:
-  explicit EmuThread(std::unique_ptr<QtInstanceFactory>&& instance, std::unique_ptr<Vulkan::WSIPlatform>&& wsiPlatform, std::unique_ptr<ParallelRDP::WindowInfo>&& windowInfo, SettingsWindow&) noexcept;
+  explicit EmuThread(const std::shared_ptr<QtInstanceFactory>& instance, const std::shared_ptr<Vulkan::WSIPlatform>& wsiPlatform, const std::shared_ptr<ParallelRDP::WindowInfo>& windowInfo, SettingsWindow&) noexcept;
 
   [[noreturn]] void run() noexcept override;
 
-  Util::AutoRelease<SDL_GameController, int> controller;
+  SDL_GameController* controller = nullptr;
   ParallelRDP parallel;
   n64::Core core;
   SettingsWindow& settings;
-  bool running = false;
 
-  void TogglePause()
-  {
-    running = !running;
+  void TogglePause() {
+    core.pause = !core.pause;
   }
 
-  void Reset()
-  {
-    running = false;
+  void SetRender(bool v) {
+    core.render = v;
+  }
+
+  void Reset() {
+    core.pause = true;
     core.Stop();
     core.LoadROM(core.rom);
-    running = true;
+    core.pause = false;
   }
 
-  void Stop()
-  {
+  void Stop() {
     core.rom = {};
-    running = false;
+    core.pause = true;
     core.Stop();
   }
 };

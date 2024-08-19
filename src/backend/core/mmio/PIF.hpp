@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <mio/mmap.hpp>
 #include <vector>
+#include <array>
 #include "MupenMovie.hpp"
 
 namespace fs = std::filesystem;
@@ -178,8 +179,9 @@ struct PIF {
   }
 
   bool mempakOpen = false;
-  JoybusDevice joybusDevices[6]{};
-  u8 bootrom[PIF_BOOTROM_SIZE]{}, ram[PIF_RAM_SIZE]{};
+  std::array<JoybusDevice, 6> joybusDevices{};
+  std::array<u8, PIF_BOOTROM_SIZE> bootrom{};
+  std::array<u8, PIF_RAM_SIZE> ram{};
   mio::mmap_sink mempak, eeprom;
   int channel = 0;
   std::string mempakPath{}, eepromPath{};

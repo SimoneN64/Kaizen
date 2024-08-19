@@ -9,16 +9,6 @@
 
 namespace n64 {
 Mem::Mem(Registers& regs, ParallelRDP& parallel) : flash(saveData), mmio(*this, regs, parallel) {
-  memset(readPages, 0, PAGE_COUNT);
-  memset(writePages, 0, PAGE_COUNT);
-
-  for(u64 i = 0; i < RDRAM_SIZE / PAGE_SIZE; i++) {
-    const auto addr = (i * PAGE_SIZE) & RDRAM_DSIZE;
-    const auto pointer = (uintptr_t) &mmio.rdp.rdram[addr];
-    readPages[i] = pointer;
-    writePages[i] = pointer;
-  }
-
   rom.cart.resize(CART_SIZE);
   std::fill(rom.cart.begin(), rom.cart.end(), 0);
 }
@@ -178,317 +168,261 @@ void Mem::LoadROM(bool isArchive, const std::string& filename) {
 }
 
 template<> u8 Mem::Read(n64::Registers &regs, u32 paddr) {
-  const auto page = paddr >> 12;
-  const auto offset = paddr & 0xFFF;
-  const auto pointer = readPages[page];
   SI& si = mmio.si;
 
-  if(pointer) {
-    return ((u8*)pointer)[BYTE_ADDRESS(offset)];
-  } else {
-    switch (paddr) {
-      case RDRAM_REGION:
-        return mmio.rdp.rdram[BYTE_ADDRESS(paddr)];
-      case RSP_MEM_REGION: {
-        auto& src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
-        return src[BYTE_ADDRESS(paddr & 0xfff)];
-      }
-      case REGION_CART:
-        return mmio.pi.BusRead<u8, false>(paddr);
-      case 0x04040000 ... 0x040FFFFF:
-      case 0x04100000 ... 0x041FFFFF:
-      case 0x04600000 ... 0x048FFFFF:
-      case 0x04300000 ... 0x044FFFFF:
-        Util::panic("MMIO Read<u8>!\n");
-      case AI_REGION: {
-        u32 w = mmio.ai.Read(paddr & ~3);
-        int offs = 3 - (paddr & 3);
-        return (w >> (offs * 8)) & 0xff;
-      }
-      case PIF_ROM_REGION:
-        return si.pif.bootrom[BYTE_ADDRESS(paddr) - PIF_ROM_REGION_START];
-      case PIF_RAM_REGION:
-        return si.pif.ram[paddr - PIF_RAM_REGION_START];
-      case 0x00800000 ... 0x03EFFFFF: // unused
-      case 0x04200000 ... 0x042FFFFF: // unused
-      case 0x04900000 ... 0x04FFFFFF: // unused
-      case 0x1FC00800 ... 0xFFFFFFFF: // unused
-        return 0;
-      default:
-        Util::panic("Unimplemented 8-bit read at address {:08X} (PC = {:016X})", paddr, (u64) regs.pc);
+  switch (paddr) {
+    case RDRAM_REGION:
+      return mmio.rdp.ReadRDRAM<u8>(paddr);
+    case RSP_MEM_REGION: {
+      auto& src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+      return src[BYTE_ADDRESS(paddr & 0xfff)];
     }
+    case REGION_CART:
+      return mmio.pi.BusRead<u8, false>(paddr);
+    case 0x04040000 ... 0x040FFFFF:
+    case 0x04100000 ... 0x041FFFFF:
+    case 0x04600000 ... 0x048FFFFF:
+    case 0x04300000 ... 0x044FFFFF:
+      Util::panic("MMIO Read<u8>!\n");
+    case AI_REGION: {
+      u32 w = mmio.ai.Read(paddr & ~3);
+      int offs = 3 - (paddr & 3);
+      return (w >> (offs * 8)) & 0xff;
+    }
+    case PIF_ROM_REGION:
+      return si.pif.bootrom[BYTE_ADDRESS(paddr) - PIF_ROM_REGION_START];
+    case PIF_RAM_REGION:
+      return si.pif.ram[paddr - PIF_RAM_REGION_START];
+    case 0x00800000 ... 0x03EFFFFF: // unused
+    case 0x04200000 ... 0x042FFFFF: // unused
+    case 0x04900000 ... 0x04FFFFFF: // unused
+    case 0x1FC00800 ... 0xFFFFFFFF: // unused
+      return 0;
+    default:
+      Util::panic("Unimplemented 8-bit read at address {:08X} (PC = {:016X})", paddr, (u64) regs.pc);
   }
 }
 
 template<> u16 Mem::Read(n64::Registers &regs, u32 paddr) {
-  const auto page = paddr >> 12;
-  const auto offset = paddr & 0xFFF;
-  const auto pointer = readPages[page];
   SI& si = mmio.si;
 
-  if(pointer) {
-    return Util::ReadAccess<u16>((u8*)pointer, HALF_ADDRESS(offset));
-  } else {
-    switch (paddr) {
-      case RDRAM_REGION:
-        return Util::ReadAccess<u16>(mmio.rdp.rdram, HALF_ADDRESS(paddr));
-      case RSP_MEM_REGION: {
-        auto& src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
-        return Util::ReadAccess<u16>(src, HALF_ADDRESS(paddr & 0xfff));
-      }
-      case MMIO_REGION:
-        return mmio.Read(paddr);
-      case REGION_CART:
-        return mmio.pi.BusRead<u16, false>(paddr);
-      case PIF_ROM_REGION:
-        return Util::ReadAccess<u16>(si.pif.bootrom, HALF_ADDRESS(paddr) - PIF_ROM_REGION_START);
-      case PIF_RAM_REGION:
-        return be16toh(Util::ReadAccess<u16>(si.pif.ram, paddr - PIF_RAM_REGION_START));
-      case 0x00800000 ... 0x03EFFFFF:
-      case 0x04200000 ... 0x042FFFFF:
-      case 0x04900000 ... 0x04FFFFFF:
-      case 0x1FC00800 ... 0xFFFFFFFF:
-        return 0;
-      default:
-        Util::panic("Unimplemented 16-bit read at address {:08X} (PC = {:016X})", paddr, (u64) regs.pc);
+  switch (paddr) {
+    case RDRAM_REGION:
+      return mmio.rdp.ReadRDRAM<u16>(paddr);
+    case RSP_MEM_REGION: {
+      auto& src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+      return Util::ReadAccess<u16>(src, HALF_ADDRESS(paddr & 0xfff));
     }
+    case MMIO_REGION:
+      return mmio.Read(paddr);
+    case REGION_CART:
+      return mmio.pi.BusRead<u16, false>(paddr);
+    case PIF_ROM_REGION:
+      return Util::ReadAccess<u16>(si.pif.bootrom, HALF_ADDRESS(paddr) - PIF_ROM_REGION_START);
+    case PIF_RAM_REGION:
+      return be16toh(Util::ReadAccess<u16>(si.pif.ram, paddr - PIF_RAM_REGION_START));
+    case 0x00800000 ... 0x03EFFFFF:
+    case 0x04200000 ... 0x042FFFFF:
+    case 0x04900000 ... 0x04FFFFFF:
+    case 0x1FC00800 ... 0xFFFFFFFF:
+      return 0;
+    default:
+      Util::panic("Unimplemented 16-bit read at address {:08X} (PC = {:016X})", paddr, (u64) regs.pc);
   }
 }
 
 template<> u32 Mem::Read(n64::Registers &regs, u32 paddr) {
-  const auto page = paddr >> 12;
-  const auto offset = paddr & 0xFFF;
-  const auto pointer = readPages[page];
   SI& si = mmio.si;
 
-  if(pointer) {
-    return Util::ReadAccess<u32>((u8*)pointer, offset);
-  } else {
-    switch(paddr) {
-      case RDRAM_REGION:
-        return Util::ReadAccess<u32>(mmio.rdp.rdram, paddr);
-      case RSP_MEM_REGION: {
-        auto& src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
-        return Util::ReadAccess<u32>(src, paddr & 0xfff);
-      }
-      case MMIO_REGION:
-        return mmio.Read(paddr);
-      case REGION_CART:
-        return mmio.pi.BusRead<u32, false>(paddr);
-      case PIF_ROM_REGION:
-        return Util::ReadAccess<u32>(si.pif.bootrom, paddr - PIF_ROM_REGION_START);
-      case PIF_RAM_REGION:
-        return be32toh(Util::ReadAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START));
-      case 0x00800000 ... 0x03EFFFFF: case 0x04200000 ... 0x042FFFFF:
-      case 0x04900000 ... 0x04FFFFFF: case 0x1FC00800 ... 0xFFFFFFFF: return 0;
-      default:
-        Util::panic("Unimplemented 32-bit read at address {:08X} (PC = {:016X})", paddr, (u64) regs.pc);
+  switch(paddr) {
+    case RDRAM_REGION:
+      return mmio.rdp.ReadRDRAM<u32>(paddr);
+    case RSP_MEM_REGION: {
+      auto& src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+      return Util::ReadAccess<u32>(src, paddr & 0xfff);
     }
+    case MMIO_REGION:
+      return mmio.Read(paddr);
+    case REGION_CART:
+      return mmio.pi.BusRead<u32, false>(paddr);
+    case PIF_ROM_REGION:
+      return Util::ReadAccess<u32>(si.pif.bootrom, paddr - PIF_ROM_REGION_START);
+    case PIF_RAM_REGION:
+      return be32toh(Util::ReadAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START));
+    case 0x00800000 ... 0x03FFFFFF: case 0x04200000 ... 0x042FFFFF:
+    case 0x04900000 ... 0x04FFFFFF: case 0x1FC00800 ... 0xFFFFFFFF: return 0;
+    default:
+      Util::panic("Unimplemented 32-bit read at address {:08X} (PC = {:016X})", paddr, (u64) regs.pc);
   }
 }
 
 template<> u64 Mem::Read(n64::Registers &regs, u32 paddr) {
-  const auto page = paddr >> 12;
-  const auto offset = paddr & 0xFFF;
-  const auto pointer = readPages[page];
   SI& si = mmio.si;
 
-  if(pointer) {
-    return Util::ReadAccess<u64>((u8*)pointer, offset);
-  } else {
-    switch (paddr) {
-      case RDRAM_REGION:
-        return Util::ReadAccess<u64>(mmio.rdp.rdram, paddr);
-      case RSP_MEM_REGION: {
-        auto& src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
-        return Util::ReadAccess<u64>(src, paddr & 0xfff);
-      }
-      case MMIO_REGION:
-        return mmio.Read(paddr);
-      case REGION_CART:
-        return mmio.pi.BusRead<u64, false>(paddr);
-      case PIF_ROM_REGION:
-        return Util::ReadAccess<u64>(si.pif.bootrom, paddr - PIF_ROM_REGION_START);
-      case PIF_RAM_REGION:
-        return be64toh(Util::ReadAccess<u64>(si.pif.ram, paddr - PIF_RAM_REGION_START));
-      case 0x00800000 ... 0x03EFFFFF:
-      case 0x04200000 ... 0x042FFFFF:
-      case 0x04900000 ... 0x04FFFFFF:
-      case 0x1FC00800 ... 0xFFFFFFFF:
-        return 0;
-      default:
-        Util::panic("Unimplemented 32-bit read at address {:08X} (PC = {:016X})", paddr, (u64) regs.pc);
+  switch (paddr) {
+    case RDRAM_REGION:
+      return mmio.rdp.ReadRDRAM<u64>(paddr);
+    case RSP_MEM_REGION: {
+      auto& src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+      return Util::ReadAccess<u64>(src, paddr & 0xfff);
     }
+    case MMIO_REGION:
+      return mmio.Read(paddr);
+    case REGION_CART:
+      return mmio.pi.BusRead<u64, false>(paddr);
+    case PIF_ROM_REGION:
+      return Util::ReadAccess<u64>(si.pif.bootrom, paddr - PIF_ROM_REGION_START);
+    case PIF_RAM_REGION:
+      return be64toh(Util::ReadAccess<u64>(si.pif.ram, paddr - PIF_RAM_REGION_START));
+    case 0x00800000 ... 0x03EFFFFF:
+    case 0x04200000 ... 0x042FFFFF:
+    case 0x04900000 ... 0x04FFFFFF:
+    case 0x1FC00800 ... 0xFFFFFFFF:
+      return 0;
+    default:
+      Util::panic("Unimplemented 32-bit read at address {:08X} (PC = {:016X})", paddr, (u64) regs.pc);
   }
 }
 
 template<> void Mem::Write<u8>(Registers& regs, u32 paddr, u32 val) {
-  const auto page = paddr >> 12;
-  const auto offset = paddr & 0xFFF;
-  const auto pointer = writePages[page];
   SI& si = mmio.si;
 
-  if(pointer) {
-    ((u8*)pointer)[BYTE_ADDRESS(offset)] = val;
-  } else {
-    switch (paddr) {
-      case RDRAM_REGION:
-        mmio.rdp.rdram[BYTE_ADDRESS(paddr)] = val;
-        break;
-      case RSP_MEM_REGION: {
-        val = val << (8 * (3 - (paddr & 3)));
-        auto& dest = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
-        paddr = (paddr & 0xFFF) & ~3;
-        Util::WriteAccess<u32>(dest, paddr, val);
-      } break;
-      case REGION_CART:
-        Util::trace("BusWrite<u8> @ {:08X} = {:02X}", paddr, val);
-        mmio.pi.BusWrite<u8, false>(paddr, val);
-        break;
-      case MMIO_REGION:
-        Util::panic("MMIO Write<u8>!");
-      case PIF_RAM_REGION:
-        val = val << (8 * (3 - (paddr & 3)));
-        paddr = (paddr - PIF_RAM_REGION_START) & ~3;
-        Util::WriteAccess<u32>(si.pif.ram, paddr, htobe32(val));
-        si.pif.ProcessCommands(*this);
-        break;
-      case 0x00800000 ... 0x03EFFFFF:
-      case 0x04200000 ... 0x042FFFFF:
-      case 0x04900000 ... 0x04FFFFFF:
-      case PIF_ROM_REGION:
-      case 0x1FC00800 ... 0x7FFFFFFF:
-      case 0x80000000 ... 0xFFFFFFFF:
-        break;
-      default:
-        Util::panic("Unimplemented 8-bit write at address {:08X} with value {:02X} (PC = {:016X})", paddr, val,
-                    (u64) regs.pc);
-    }
+  switch (paddr) {
+    case RDRAM_REGION:
+      mmio.rdp.WriteRDRAM<u8>(paddr, val);
+      break;
+    case RSP_MEM_REGION: {
+      val = val << (8 * (3 - (paddr & 3)));
+      auto& dest = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+      paddr = (paddr & 0xFFF) & ~3;
+      Util::WriteAccess<u32>(dest, paddr, val);
+    } break;
+    case REGION_CART:
+      Util::trace("BusWrite<u8> @ {:08X} = {:02X}", paddr, val);
+      mmio.pi.BusWrite<u8, false>(paddr, val);
+      break;
+    case MMIO_REGION:
+      Util::panic("MMIO Write<u8>!");
+    case PIF_RAM_REGION:
+      val = val << (8 * (3 - (paddr & 3)));
+      paddr = (paddr - PIF_RAM_REGION_START) & ~3;
+      Util::WriteAccess<u32>(si.pif.ram, paddr, htobe32(val));
+      si.pif.ProcessCommands(*this);
+      break;
+    case 0x00800000 ... 0x03EFFFFF:
+    case 0x04200000 ... 0x042FFFFF:
+    case 0x04900000 ... 0x04FFFFFF:
+    case PIF_ROM_REGION:
+    case 0x1FC00800 ... 0x7FFFFFFF:
+    case 0x80000000 ... 0xFFFFFFFF:
+      break;
+    default:
+      Util::panic("Unimplemented 8-bit write at address {:08X} with value {:02X} (PC = {:016X})", paddr, val,
+                  (u64) regs.pc);
   }
 }
 
 template<> void Mem::Write<u16>(Registers& regs, u32 paddr, u32 val) {
-  const auto page = paddr >> 12;
-  const auto offset = paddr & 0xFFF;
-  const auto pointer = writePages[page];
   SI& si = mmio.si;
 
-  if(pointer) {
-    Util::WriteAccess<u16>((u8*)pointer, HALF_ADDRESS(offset), val);
-  } else {
-    switch (paddr) {
-      case RDRAM_REGION:
-        Util::WriteAccess<u16>(mmio.rdp.rdram, HALF_ADDRESS(paddr), val);
-        break;
-      case RSP_MEM_REGION: {
-        val = val << (16 * !(paddr & 2));
-        auto& dest = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
-        paddr = (paddr & 0xFFF) & ~3;
-        Util::WriteAccess<u32>(dest, paddr, val);
-      } break;
-      case REGION_CART:
-        Util::trace("BusWrite<u8> @ {:08X} = {:04X}", paddr, val);
-        mmio.pi.BusWrite<u16, false>(paddr, val);
-        break;
-      case MMIO_REGION:
-        Util::panic("MMIO Write<u16>!");
-      case PIF_RAM_REGION:
-        val = val << (16 * !(paddr & 2));
-        paddr &= ~3;
-        Util::WriteAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe32(val));
-        si.pif.ProcessCommands(*this);
-        break;
-      case 0x00800000 ... 0x03EFFFFF:
-      case 0x04200000 ... 0x042FFFFF:
-      case 0x04900000 ... 0x04FFFFFF:
-      case PIF_ROM_REGION:
-      case 0x1FC00800 ... 0x7FFFFFFF:
-      case 0x80000000 ... 0xFFFFFFFF:
-        break;
-      default:
-        Util::panic("Unimplemented 16-bit write at address {:08X} with value {:04X} (PC = {:016X})", paddr, val,
-                    (u64) regs.pc);
-    }
+  switch (paddr) {
+    case RDRAM_REGION:
+      mmio.rdp.WriteRDRAM<u16>(paddr, val);
+      break;
+    case RSP_MEM_REGION: {
+      val = val << (16 * !(paddr & 2));
+      auto& dest = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+      paddr = (paddr & 0xFFF) & ~3;
+      Util::WriteAccess<u32>(dest, paddr, val);
+    } break;
+    case REGION_CART:
+      Util::trace("BusWrite<u8> @ {:08X} = {:04X}", paddr, val);
+      mmio.pi.BusWrite<u16, false>(paddr, val);
+      break;
+    case MMIO_REGION:
+      Util::panic("MMIO Write<u16>!");
+    case PIF_RAM_REGION:
+      val = val << (16 * !(paddr & 2));
+      paddr &= ~3;
+      Util::WriteAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe32(val));
+      si.pif.ProcessCommands(*this);
+      break;
+    case 0x00800000 ... 0x03EFFFFF:
+    case 0x04200000 ... 0x042FFFFF:
+    case 0x04900000 ... 0x04FFFFFF:
+    case PIF_ROM_REGION:
+    case 0x1FC00800 ... 0x7FFFFFFF:
+    case 0x80000000 ... 0xFFFFFFFF:
+      break;
+    default:
+      Util::panic("Unimplemented 16-bit write at address {:08X} with value {:04X} (PC = {:016X})", paddr, val,
+                  (u64) regs.pc);
   }
 }
 
 template<> void Mem::Write<u32>(Registers& regs, u32 paddr, u32 val) {
-  const auto page = paddr >> 12;
-  const auto offset = paddr & 0xFFF;
-  const auto pointer = writePages[page];
   SI& si = mmio.si;
 
-  if(pointer) {
-    Util::WriteAccess<u32>((u8*)pointer, offset, val);
-  } else {
-    switch(paddr) {
-      case RDRAM_REGION:
-        Util::WriteAccess<u32>(mmio.rdp.rdram, paddr, val);
-        break;
-      case RSP_MEM_REGION: {
-        auto& dest = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
-        Util::WriteAccess<u32>(dest, paddr & 0xfff, val);
-      } break;
-      case REGION_CART:
-        Util::trace("BusWrite<u8> @ {:08X} = {:08X}", paddr, val);
-        mmio.pi.BusWrite<u32, false>(paddr, val);
-        break;
-      case MMIO_REGION:
-        mmio.Write(paddr, val);
-        break;
-      case PIF_RAM_REGION:
-        Util::WriteAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe32(val));
-        si.pif.ProcessCommands(*this);
-        break;
-      case 0x00800000 ... 0x03EFFFFF:
-      case 0x04200000 ... 0x042FFFFF:
-      case 0x04900000 ... 0x04FFFFFF:
-      case PIF_ROM_REGION:
-      case 0x1FC00800 ... 0x7FFFFFFF:
-      case 0x80000000 ... 0xFFFFFFFF: break;
-      default: Util::panic("Unimplemented 32-bit write at address {:08X} with value {:0X} (PC = {:016X})", paddr, val, (u64)regs.pc);
-    }
+  switch(paddr) {
+    case RDRAM_REGION:
+      mmio.rdp.WriteRDRAM<u32>(paddr, val);
+      break;
+    case RSP_MEM_REGION: {
+      auto& dest = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+      Util::WriteAccess<u32>(dest, paddr & 0xfff, val);
+    } break;
+    case REGION_CART:
+      Util::trace("BusWrite<u8> @ {:08X} = {:08X}", paddr, val);
+      mmio.pi.BusWrite<u32, false>(paddr, val);
+      break;
+    case MMIO_REGION:
+      mmio.Write(paddr, val);
+      break;
+    case PIF_RAM_REGION:
+      Util::WriteAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe32(val));
+      si.pif.ProcessCommands(*this);
+      break;
+    case 0x00800000 ... 0x03EFFFFF:
+    case 0x04200000 ... 0x042FFFFF:
+    case 0x04900000 ... 0x04FFFFFF:
+    case PIF_ROM_REGION:
+    case 0x1FC00800 ... 0x7FFFFFFF:
+    case 0x80000000 ... 0xFFFFFFFF: break;
+    default: Util::panic("Unimplemented 32-bit write at address {:08X} with value {:0X} (PC = {:016X})", paddr, val, (u64)regs.pc);
   }
 }
 
 void Mem::Write(Registers& regs, u32 paddr, u64 val) {
-  const auto page = paddr >> 12;
-  const auto offset = paddr & 0xFFF;
-  const auto pointer = writePages[page];
   SI& si = mmio.si;
 
-  if(pointer) {
-    Util::WriteAccess<u64>((u8*)pointer, offset, val);
-  } else {
-    switch (paddr) {
-      case RDRAM_REGION:
-        Util::WriteAccess<u64>(mmio.rdp.rdram, paddr, val);
-        break;
-      case RSP_MEM_REGION: {
-        auto& dest = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
-        val >>= 32;
-        Util::WriteAccess<u32>(dest, paddr & 0xfff, val);
-      } break;
-      case REGION_CART:
-        Util::trace("BusWrite<u8> @ {:08X} = {:016X}", paddr, val);
-        mmio.pi.BusWrite<false>(paddr, val);
-        break;
-      case MMIO_REGION:
-        Util::panic("MMIO Write!");
-      case PIF_RAM_REGION:
-        Util::WriteAccess<u64>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe64(val));
-        si.pif.ProcessCommands(*this);
-        break;
-      case 0x00800000 ... 0x03EFFFFF:
-      case 0x04200000 ... 0x042FFFFF:
-      case 0x04900000 ... 0x04FFFFFF:
-      case 0x1FC00000 ... 0x1FC007BF:
-      case 0x1FC00800 ... 0x7FFFFFFF:
-      case 0x80000000 ... 0xFFFFFFFF: break;
-      default:
-        Util::panic("Unimplemented 64-bit write at address {:08X} with value {:0X} (PC = {:016X})", paddr, val,
-                    (u64) regs.pc);
-    }
+  switch (paddr) {
+    case RDRAM_REGION:
+      mmio.rdp.WriteRDRAM<u64>(paddr, val);
+      break;
+    case RSP_MEM_REGION: {
+      auto& dest = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+      val >>= 32;
+      Util::WriteAccess<u32>(dest, paddr & 0xfff, val);
+    } break;
+    case REGION_CART:
+      Util::trace("BusWrite<u8> @ {:08X} = {:016X}", paddr, val);
+      mmio.pi.BusWrite<false>(paddr, val);
+      break;
+    case MMIO_REGION:
+      Util::panic("MMIO Write!");
+    case PIF_RAM_REGION:
+      Util::WriteAccess<u64>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe64(val));
+      si.pif.ProcessCommands(*this);
+      break;
+    case 0x00800000 ... 0x03EFFFFF:
+    case 0x04200000 ... 0x042FFFFF:
+    case 0x04900000 ... 0x04FFFFFF:
+    case 0x1FC00000 ... 0x1FC007BF:
+    case 0x1FC00800 ... 0x7FFFFFFF:
+    case 0x80000000 ... 0xFFFFFFFF: break;
+    default:
+      Util::panic("Unimplemented 64-bit write at address {:08X} with value {:0X} (PC = {:016X})", paddr, val,
+                  (u64) regs.pc);
   }
 }
 

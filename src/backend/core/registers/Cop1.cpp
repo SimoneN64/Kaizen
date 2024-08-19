@@ -43,10 +43,10 @@ void Cop1::decodeInterp(Interpreter &cpu, u32 instr) {
     case 0x07: unimplemented(); break;
     case 0x08:
       switch(mask_branch) {
-        case 0: CheckFPUUsable(); cpu.b(instr, !fcr31.compare); break;
-        case 1: CheckFPUUsable(); cpu.b(instr, fcr31.compare); break;
-        case 2: CheckFPUUsable(); cpu.bl(instr, !fcr31.compare); break;
-        case 3: CheckFPUUsable(); cpu.bl(instr, fcr31.compare); break;
+        case 0: if(!CheckFPUUsable()) return; cpu.b(instr, !fcr31.compare); break;
+        case 1: if(!CheckFPUUsable()) return; cpu.b(instr, fcr31.compare); break;
+        case 2: if(!CheckFPUUsable()) return; cpu.bl(instr, !fcr31.compare); break;
+        case 3: if(!CheckFPUUsable()) return; cpu.bl(instr, fcr31.compare); break;
         default: Util::panic("Undefined BC COP1 {:02X}", mask_branch);
       }
       break;

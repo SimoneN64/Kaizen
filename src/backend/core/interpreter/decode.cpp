@@ -51,12 +51,12 @@ void Interpreter::special(u32 instr) {
     case DADDU: daddu(instr); break;
     case DSUB: dsub(instr); break;
     case DSUBU: dsubu(instr); break;
-    case TGE: trap(regs.gpr[RS(instr)] >= regs.gpr[RT(instr)]); break;
-    case TGEU: trap((u64)regs.gpr[RS(instr)] >= (u64)regs.gpr[RT(instr)]); break;
-    case TLT: trap(regs.gpr[RS(instr)] < regs.gpr[RT(instr)]); break;
-    case TLTU: trap((u64)regs.gpr[RS(instr)] < (u64)regs.gpr[RT(instr)]); break;
-    case TEQ: trap(regs.gpr[RS(instr)] == regs.gpr[RT(instr)]); break;
-    case TNE: trap(regs.gpr[RS(instr)] != regs.gpr[RT(instr)]); break;
+    case TGE: trap(regs.Read<s64>(RS(instr)) >= regs.Read<s64>(RT(instr))); break;
+    case TGEU: trap(regs.Read<u64>(RS(instr)) >= regs.Read<u64>(RT(instr))); break;
+    case TLT: trap(regs.Read<s64>(RS(instr)) < regs.Read<s64>(RT(instr))); break;
+    case TLTU: trap(regs.Read<u64>(RS(instr)) < regs.Read<u64>(RT(instr))); break;
+    case TEQ: trap(regs.Read<s64>(RS(instr)) == regs.Read<s64>(RT(instr))); break;
+    case TNE: trap(regs.Read<s64>(RS(instr)) != regs.Read<s64>(RT(instr))); break;
     case DSLL: dsll(instr); break;
     case DSRL: dsrl(instr); break;
     case DSRA: dsra(instr); break;
@@ -72,20 +72,20 @@ void Interpreter::regimm(u32 instr) {
   u8 mask = ((instr >> 16) & 0x1F);
   // 000r_rccc
   switch (mask) { // TODO: named constants for clearer code
-    case BLTZ: b(instr, regs.gpr[RS(instr)] < 0); break;
-    case BGEZ: b(instr, regs.gpr[RS(instr)] >= 0); break;
-    case BLTZL: bl(instr, regs.gpr[RS(instr)] < 0); break;
-    case BGEZL: bl(instr, regs.gpr[RS(instr)] >= 0); break;
-    case TGEI: trap(regs.gpr[RS(instr)] >= s64(s16(instr))); break;
-    case TGEIU: trap(u64(regs.gpr[RS(instr)]) >= u64(s64(s16(instr)))); break;
-    case TLTI: trap(regs.gpr[RS(instr)] < s64(s16(instr))); break;
-    case TLTIU: trap(u64(regs.gpr[RS(instr)]) < u64(s64(s16(instr)))); break;
-    case TEQI: trap(regs.gpr[RS(instr)] == s64(s16(instr))); break;
-    case TNEI: trap(regs.gpr[RS(instr)] != s64(s16(instr))); break;
-    case BLTZAL: blink(instr, regs.gpr[RS(instr)] < 0); break;
-    case BGEZAL: blink(instr, regs.gpr[RS(instr)] >= 0); break;
-    case BLTZALL: bllink(instr, regs.gpr[RS(instr)] < 0); break;
-    case BGEZALL: bllink(instr, regs.gpr[RS(instr)] >= 0); break;
+    case BLTZ: b(instr, regs.Read<s64>(RS(instr)) < 0); break;
+    case BGEZ: b(instr, regs.Read<s64>(RS(instr)) >= 0); break;
+    case BLTZL: bl(instr, regs.Read<s64>(RS(instr)) < 0); break;
+    case BGEZL: bl(instr, regs.Read<s64>(RS(instr)) >= 0); break;
+    case TGEI: trap(regs.Read<s64>(RS(instr)) >= s64(s16(instr))); break;
+    case TGEIU: trap(regs.Read<u64>(RS(instr)) >= u64(s64(s16(instr)))); break;
+    case TLTI: trap(regs.Read<s64>(RS(instr)) < s64(s16(instr))); break;
+    case TLTIU: trap(regs.Read<u64>(RS(instr)) < u64(s64(s16(instr)))); break;
+    case TEQI: trap(regs.Read<s64>(RS(instr)) == s64(s16(instr))); break;
+    case TNEI: trap(regs.Read<s64>(RS(instr)) != s64(s16(instr))); break;
+    case BLTZAL: blink(instr, regs.Read<s64>(RS(instr)) < 0); break;
+    case BGEZAL: blink(instr, regs.Read<s64>(RS(instr)) >= 0); break;
+    case BLTZALL: bllink(instr, regs.Read<s64>(RS(instr)) < 0); break;
+    case BGEZALL: bllink(instr, regs.Read<s64>(RS(instr)) >= 0); break;
     default:
       Util::panic("Unimplemented regimm {} {} ({:08X}) (pc: {:016X})", (mask >> 3) & 3, mask & 7, instr, (u64)regs.oldPC);
   }
@@ -116,13 +116,10 @@ void Interpreter::Exec(u32 instr) {
     case REGIMM: regimm(instr); break;
     case J: j(instr); break;
     case JAL: jal(instr); break;
-    case BEQ: b(instr, regs.gpr[RS(instr)] == regs.gpr[RT(instr)]); break;
-    case BNE: {
-      //fmt::print("RS: {:016X}, RT: {:016X}", (u64)regs.gpr[RS(instr)], (u64)regs.gpr[RT(instr)]);
-      b(instr, regs.gpr[RS(instr)] != regs.gpr[RT(instr)]);
-    } break;
-    case BLEZ: b(instr, regs.gpr[RS(instr)] <= 0); break;
-    case BGTZ: b(instr, regs.gpr[RS(instr)] > 0); break;
+    case BEQ: b(instr, regs.Read<s64>(RS(instr)) == regs.Read<s64>(RT(instr))); break;
+    case BNE: b(instr, regs.Read<s64>(RS(instr)) != regs.Read<s64>(RT(instr))); break;
+    case BLEZ: b(instr, regs.Read<s64>(RS(instr)) <= 0); break;
+    case BGTZ: b(instr, regs.Read<s64>(RS(instr)) > 0); break;
     case ADDI: addi(instr); break;
     case ADDIU: addiu(instr); break;
     case SLTI: slti(instr); break;
@@ -134,10 +131,10 @@ void Interpreter::Exec(u32 instr) {
     case COP0: regs.cop0.decode(*this, instr); break;
     case COP1: regs.cop1.decode(*this, instr); break;
     case COP2: cop2Decode(instr); break;
-    case BEQL: bl(instr, regs.gpr[RS(instr)] == regs.gpr[RT(instr)]); break;
-    case BNEL: bl(instr, regs.gpr[RS(instr)] != regs.gpr[RT(instr)]); break;
-    case BLEZL: bl(instr, regs.gpr[RS(instr)] <= 0); break;
-    case BGTZL: bl(instr, regs.gpr[RS(instr)] > 0); break;
+    case BEQL: bl(instr, regs.Read<s64>(RS(instr)) == regs.Read<s64>(RT(instr))); break;
+    case BNEL: bl(instr, regs.Read<s64>(RS(instr)) != regs.Read<s64>(RT(instr))); break;
+    case BLEZL: bl(instr, regs.Read<s64>(RS(instr)) <= 0); break;
+    case BGTZL: bl(instr, regs.Read<s64>(RS(instr)) > 0); break;
     case DADDI: daddi(instr); break;
     case DADDIU: daddiu(instr); break;
     case LDL: ldl(instr); break;

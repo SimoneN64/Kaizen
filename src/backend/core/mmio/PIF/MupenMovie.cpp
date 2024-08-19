@@ -35,7 +35,7 @@ bool MupenMovie::Load(const fs::path &path) {
     return false;
   }
 
-  memcpy(&loadedTasMovieHeader, loadedTasMovie.data(), loadedTasMovie.size());
+  memcpy(&loadedTasMovieHeader, loadedTasMovie.data(), sizeof(TASMovieHeader));
 
   if (loadedTasMovieHeader.signature[0] != 0x4D || loadedTasMovieHeader.signature[1] != 0x36 || loadedTasMovieHeader.signature[2] != 0x34 || loadedTasMovieHeader.signature[3] != 0x1A) {
     Util::error("Failed to load movie: incorrect signature. Are you sure this is a valid movie?");
@@ -69,6 +69,12 @@ MupenMovie::MupenMovie(const fs::path &path) {
   if(!Load(path)) {
     Util::panic("");
   }
+}
+
+void MupenMovie::Reset() {
+  if(!IsLoaded()) return;
+
+  loadedTasMovieIndex = sizeof(TASMovieHeader) - 4; // skip header
 }
 
 FORCE_INLINE void LogController(const n64::Controller& controller) {

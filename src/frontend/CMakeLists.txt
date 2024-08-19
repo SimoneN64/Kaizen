@@ -28,7 +28,6 @@ include_directories(
   ../../external/parallel-rdp/parallel-rdp-standalone/vulkan
   ../../external/parallel-rdp/parallel-rdp-standalone/vulkan-headers/include
   ../../external/parallel-rdp/parallel-rdp-standalone/util
-  ../../external/nativefiledialog-extended/src/include
   ../../external/imgui/imgui
   ../../external/imgui/imgui/backends
   ../../external/unarr
@@ -43,7 +42,6 @@ add_subdirectory(../../external/json json)
 add_subdirectory(../../external/fmt fmt)
 add_subdirectory(../../external/mio mio)
 add_subdirectory(../backend backend)
-add_subdirectory(../../external/nativefiledialog-extended nfd)
 add_subdirectory(../../external/parallel-rdp parallel-rdp)
 add_subdirectory(../../external/unarr unarr)
 
@@ -72,7 +70,7 @@ add_executable(kaizen-qt
   InputSettings.hpp
   InputSettings.cpp)
 
-target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets fmt mio nlohmann_json nfd parallel-rdp backend)
+target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets fmt mio nlohmann_json parallel-rdp backend)
 target_compile_definitions(kaizen-qt PUBLIC SDL_MAIN_HANDLED)
 
 file(COPY ../../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)

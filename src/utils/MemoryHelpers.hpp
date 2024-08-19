@@ -6,46 +6,6 @@
 #include <functional>
 
 namespace Util {
-template <class T, typename... Args>
-struct AutoRelease {
-  AutoRelease(void (*dtor)(T*), const char* name = "") : dtor(dtor), name(name) { }
-
-  AutoRelease(T* (*ctor)(Args...), void (*dtor)(T*), const char* name = "", Args... args) : dtor(dtor), name(name) {
-    thing = ctor(args...);
-  }
-
-  T* get() {
-    if (!thing) {
-      Util::panic("AutoRelease::{} is null!", name);
-    }
-    return thing;
-  }
-
-  void Construct(T* (*ctor)(Args...), Args... args) {
-    if(thing) {
-      dtor(thing);
-    }
-
-    thing = ctor(args...);
-  }
-
-  void Destroy() {
-    if(thing) {
-      dtor(thing);
-    }
-  }
-
-  ~AutoRelease() {
-    if(thing) {
-      dtor(thing);
-    }
-  }
-private:
-  const char* name = "";
-  T* thing = nullptr;
-  void (*dtor)(T*) = nullptr;
-};
-
 template<typename T>
 static FORCE_INLINE T ReadAccess(const u8* data, u32 index) {
   if constexpr (sizeof(T) == 8) {

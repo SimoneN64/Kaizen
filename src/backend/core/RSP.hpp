@@ -3,7 +3,6 @@
 #include <core/RDP.hpp>
 #include <MemoryRegions.hpp>
 #include <MemoryHelpers.hpp>
-#include <Interrupt.hpp>
 #include <array>
 
 #define RSP_BYTE(addr) (dmem[BYTE_ADDRESS(addr) & 0xFFF])
@@ -358,8 +357,8 @@ struct RSP {
   void mfc2(u32 instr);
   void mtc2(u32 instr);
 
-  void DMAtoRDRAM(std::vector<u8>& rdram);
-  void DMAtoRSP(std::vector<u8>& rdram);
+  template <bool toRdram>
+  void DMA();
   void WriteStatus(u32 value);
 private:
   Registers& regs;

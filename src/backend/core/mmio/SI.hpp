@@ -1,6 +1,5 @@
 #pragma once
 #include <common.hpp>
-#include <core/mmio/Interrupt.hpp>
 #include <core/mmio/MI.hpp>
 #include <core/mmio/PIF.hpp>
 
@@ -30,6 +29,8 @@ struct SI {
 
   auto Read(u32) const -> u32;
   void Write(u32, u32);
+  template <bool toDram>
+  void DMA();
   void DMA();
   PIF pif;
 private:

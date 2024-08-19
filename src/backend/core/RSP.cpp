@@ -31,6 +31,7 @@ void RSP::Reset() {
   divIn = 0;
   divOut = 0;
   divInLoaded = false;
+  steps = 0;
 }
 
 /*
@@ -66,10 +67,10 @@ FORCE_INLINE void logRSP(const RSP& rsp, const u32 instr) {
 }
 */
 
-auto RSP::Read(u32 addr) -> u32{
+auto RSP::Read(u32 addr) -> u32 {
   switch (addr) {
     case 0x04040000: return lastSuccessfulSPAddr.raw & 0x1FF8;
-    case 0x04040004: return lastSuccessfulDRAMAddr.raw & 0xFFFFF8;
+    case 0x04040004: return lastSuccessfulDRAMAddr.raw & 0xFFFFFC;
     case 0x04040008:
     case 0x0404000C: return spDMALen.raw;
     case 0x04040010: return spStatus.raw;
@@ -110,17 +111,79 @@ void RSP::WriteStatus(u32 value) {
   CLEAR_SET(spStatus.signal7, write.clearSignal7, write.setSignal7);
 }
 
+template <> void RSP::DMA<true>() {
+  u32 length = spDMALen.len + 1;
+
+  length = (length + 0x7) & ~0x7;
+
+  std::array<u8, DMEM_SIZE>& src = spDMASPAddr.bank ? imem : dmem;
+
+  u32 mem_address = spDMASPAddr.address & 0xFF8;
+  u32 dram_address = spDMADRAMAddr.address & 0xFFFFFC;
+  Util::trace("SP DMA from RSP to RDRAM (size: {} B, {:08X} to {:08X})", length, mem_address, dram_address);
+
+  for (u32 i = 0; i < spDMALen.count + 1; i++) {
+    for(u32 j = 0; j < length; j++) {
+      mem.mmio.rdp.WriteRDRAM<u8>(BYTE_ADDRESS(dram_address + j), src[(mem_address + j) & DMEM_DSIZE]);
+    }
+
+    int skip = i == spDMALen.count ? 0 : spDMALen.skip;
+
+    dram_address += (length + skip);
+    dram_address &= 0xFFFFFC;
+    mem_address += length;
+    mem_address &= 0xFF8;
+  }
+  Util::trace("Addresses after: RSP: 0x{:08X}, Dram: 0x{:08X}", mem_address, dram_address);
+
+  lastSuccessfulSPAddr.address = mem_address;
+  lastSuccessfulSPAddr.bank = spDMASPAddr.bank;
+  lastSuccessfulDRAMAddr.address = dram_address;
+  spDMALen.raw = 0xFF8 | (spDMALen.skip << 20);
+}
+
+template <> void RSP::DMA<false>() {
+  u32 length = spDMALen.len + 1;
+
+  length = (length + 0x7) & ~0x7;
+
+  std::array<u8, DMEM_SIZE>& dst = spDMASPAddr.bank ? imem : dmem;
+
+  u32 mem_address = spDMASPAddr.address & 0xFF8;
+  u32 dram_address = spDMADRAMAddr.address & 0xFFFFFC;
+  Util::trace("SP DMA from RDRAM to RSP (size: {} B, {:08X} to {:08X})", length, dram_address, mem_address);
+
+  for (u32 i = 0; i < spDMALen.count + 1; i++) {
+    for(u32 j = 0; j < length; j++) {
+      dst[(mem_address + j) & DMEM_DSIZE] = mem.mmio.rdp.ReadRDRAM<u8>(BYTE_ADDRESS(dram_address + j));
+    }
+
+    int skip = i == spDMALen.count ? 0 : spDMALen.skip;
+
+    dram_address += (length + skip);
+    dram_address &= 0xFFFFFC;
+    mem_address += length;
+    mem_address &= 0xFF8;
+  }
+  Util::trace("Addresses after: RSP: 0x{:08X}, Dram: 0x{:08X}", mem_address, dram_address);
+
+  lastSuccessfulSPAddr.address = mem_address;
+  lastSuccessfulSPAddr.bank = spDMASPAddr.bank;
+  lastSuccessfulDRAMAddr.address = dram_address;
+  spDMALen.raw = 0xFF8 | (spDMALen.skip << 20);
+}
+
 void RSP::Write(u32 addr, u32 val) {
   switch (addr) {
     case 0x04040000: spDMASPAddr.raw = val & 0x1FF8; break;
-    case 0x04040004: spDMADRAMAddr.raw = val & 0xFFFFF8; break;
+    case 0x04040004: spDMADRAMAddr.raw = val & 0xFFFFFC; break;
     case 0x04040008: {
       spDMALen.raw = val;
-      DMAtoRSP(mem.GetRDRAM());
+      DMA<false>();
     } break;
     case 0x0404000C: {
       spDMALen.raw = val;
-      DMAtoRDRAM(mem.GetRDRAM());
+      DMA<true>();
     } break;
     case 0x04040010: WriteStatus(val); break;
     case 0x0404001C: ReleaseSemaphore(); break;
@@ -131,71 +194,5 @@ void RSP::Write(u32 addr, u32 val) {
     default:
       Util::panic("Unimplemented SP register write {:08X}, val: {:08X}", addr, val);
   }
-}
-
-void RSP::DMAtoRDRAM(std::vector<u8>& rdram) {
-  u32 length = spDMALen.len + 1;
-
-  length = (length + 0x7) & ~0x7;
-
-  std::vector<u8>& dst = rdram;
-  std::array<u8, DMEM_SIZE>& src = spDMASPAddr.bank ? imem : dmem;
-
-  u32 mem_address = spDMASPAddr.address & 0xFF8;
-  u32 dram_address = spDMADRAMAddr.address & 0xFFFFF8;
-
-  for (u32 i = 0; i < spDMALen.count + 1; i++) {
-    for(u32 j = 0; j < length; j++) {
-      if((dram_address + j) < RDRAM_SIZE) {
-        dst[dram_address + j] = src[(mem_address + j) & DMEM_DSIZE];
-      }
-    }
-
-    int skip = i == spDMALen.count ? 0 : spDMALen.skip;
-
-    dram_address += (length + skip);
-    dram_address &= 0xFFFFF8;
-    mem_address += length;
-    mem_address &= 0xFF8;
-  }
-
-  lastSuccessfulSPAddr.address = mem_address;
-  lastSuccessfulSPAddr.bank = spDMASPAddr.bank;
-  lastSuccessfulDRAMAddr.address = dram_address;
-  spDMALen.raw = 0xFF8 | (spDMALen.skip << 20);
-}
-
-void RSP::DMAtoRSP(std::vector<u8>& rdram) {
-  u32 length = spDMALen.len + 1;
-
-  length = (length + 0x7) & ~0x7;
-
-  std::vector<u8>& src = rdram;
-  std::array<u8, DMEM_SIZE>& dst = spDMASPAddr.bank ? imem : dmem;
-
-  u32 mem_address = spDMASPAddr.address & 0xFF8;
-  u32 dram_address = spDMADRAMAddr.address & 0xFFFFF8;
-
-  for (u32 i = 0; i < spDMALen.count + 1; i++) {
-    for(u32 j = 0; j < length; j++) {
-      if((dram_address + j) < RDRAM_SIZE) {
-        dst[(mem_address + j) & DMEM_DSIZE] = src[dram_address + j];
-      } else {
-        dst[(mem_address + j) & DMEM_DSIZE] = 0;
-      }
-    }
-
-    int skip = i == spDMALen.count ? 0 : spDMALen.skip;
-
-    dram_address += (length + skip);
-    dram_address &= 0xFFFFF8;
-    mem_address += length;
-    mem_address &= 0xFF8;
-  }
-
-  lastSuccessfulSPAddr.address = mem_address;
-  lastSuccessfulSPAddr.bank = spDMASPAddr.bank;
-  lastSuccessfulDRAMAddr.address = dram_address;
-  spDMALen.raw = 0xFF8 | (spDMALen.skip << 20);
 }
 }

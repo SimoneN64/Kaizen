@@ -71,6 +71,12 @@ MupenMovie::MupenMovie(const fs::path &path) {
   }
 }
 
+void MupenMovie::Reset() {
+  if(!IsLoaded()) return;
+
+  loadedTasMovieIndex = sizeof(TASMovieHeader) - 4; // skip header
+}
+
 FORCE_INLINE void LogController(const n64::Controller& controller) {
   Util::debug("c_right: {}", controller.cRight);
   Util::debug("c_left: {}", controller.cLeft);

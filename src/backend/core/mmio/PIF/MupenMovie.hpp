@@ -49,6 +49,7 @@ struct MupenMovie {
   MupenMovie() = default;
   MupenMovie(const fs::path&);
   bool Load(const fs::path&);
+  void Reset();
   n64::Controller NextInputs();
   bool IsLoaded() const { return !loadedTasMovie.empty(); }
 private:

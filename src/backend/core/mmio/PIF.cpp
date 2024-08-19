@@ -10,6 +10,7 @@
 
 namespace n64 {
 void PIF::Reset() {
+  movie.Reset();
   joybusDevices = {};
   bootrom = {};
   ram = {};

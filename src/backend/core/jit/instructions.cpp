@@ -8,15 +8,15 @@ void JIT::lui(u32 instr) {
   u64 val = s64((s16)instr);
   val <<= 16;
   if (RT(instr) != 0) [[likely]] {
-    regs.gpr[RT(instr)] = val;
+    regs.Write(RT(instr), val);
     regs.gprIsConstant[RT(instr)] = true;
   }
 }
 
 void JIT::add(u32 instr) {
   if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    u32 rs = (s32)regs.gpr[RS(instr)];
-    u32 rt = (s32)regs.gpr[RT(instr)];
+    u32 rs = regs.Read<s32>(RS(instr));
+    u32 rt = regs.Read<s32>(RT(instr));
     u32 result = rs + rt;
     if(check_signed_overflow(rs, rt, result)) {
       //regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
@@ -24,7 +24,7 @@ void JIT::add(u32 instr) {
     }
 
     if (RD(instr) != 0) [[likely]] {
-      regs.gpr[RD(instr)] = s32(result);
+      regs.Write(RD(instr), s32(result));
       regs.gprIsConstant[RD(instr)] = true;
     }
   } else {
@@ -34,12 +34,12 @@ void JIT::add(u32 instr) {
 
 void JIT::addu(u32 instr) {
   if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    s32 rs = (s32) regs.gpr[RS(instr)];
-    s32 rt = (s32) regs.gpr[RT(instr)];
+    s32 rs = regs.Read<s32>(RS(instr));
+    s32 rt = regs.Read<s32>(RT(instr));
     s32 result = rs + rt;
 
     if (RD(instr) != 0) [[likely]] {
-      regs.gpr[RD(instr)] = result;
+      regs.Write(RD(instr), result);
       regs.gprIsConstant[RD(instr)] = true;
     }
   } else {
@@ -49,14 +49,14 @@ void JIT::addu(u32 instr) {
 
 void JIT::addi(u32 instr) {
   if(regs.IsRegConstant(RS(instr))) {
-    u32 rs = regs.gpr[RS(instr)];
+    auto rs = regs.Read<u32>(RS(instr));
     u32 imm = s32(s16(instr));
     u32 result = rs + imm;
     if(check_signed_overflow(rs, imm, result)) {
       Util::panic("[JIT]: Unhandled Overflow exception in ADDI!");
     } else {
       if (RT(instr) != 0) [[likely]] {
-        regs.gpr[RT(instr)] = s32(result);
+        regs.Write(RT(instr), s32(result));
         regs.gprIsConstant[RT(instr)] = true;
       }
     }
@@ -67,12 +67,12 @@ void JIT::addi(u32 instr) {
 
 void JIT::addiu(u32 instr) {
   if(regs.IsRegConstant(RS(instr))) {
-    u32 rs = regs.gpr[RS(instr)];
+    auto rs = regs.Read<u32>(RS(instr));
     u32 imm = s32(s16(instr));
     u32 result = rs + imm;
 
     if (RT(instr) != 0) [[likely]] {
-      regs.gpr[RT(instr)] = s32(result);
+      regs.Write(RT(instr), s32(result));
       regs.gprIsConstant[RT(instr)] = true;
     }
   } else {
@@ -84,7 +84,7 @@ void JIT::andi(u32 instr) {
   s64 imm = (u16)instr;
   if(regs.IsRegConstant(RS(instr))) {
     if (RT(instr) != 0) [[likely]] {
-      regs.gpr[RT(instr)] = regs.gpr[RS(instr)] & imm;
+      regs.Write(RT(instr), regs.Read<s64>(RS(instr)) & imm);
       regs.gprIsConstant[RT(instr)] = true;
     }
   } else {
@@ -95,7 +95,7 @@ void JIT::andi(u32 instr) {
 void JIT::and_(u32 instr) {
   if(regs.IsRegConstant(RS(instr), RT(instr))) {
     if (RD(instr) != 0) [[likely]] {
-      regs.gpr[RD(instr)] = regs.gpr[RS(instr)] & regs.gpr[RT(instr)];
+      regs.Write(RD(instr), regs.Read<s64>(RS(instr)) & regs.Read<s64>(RT(instr)));
       regs.gprIsConstant[RD(instr)] = true;
     }
   } else {
@@ -105,8 +105,8 @@ void JIT::and_(u32 instr) {
 
 void JIT::dadd(u32 instr) {
   if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    u64 rs = regs.gpr[RS(instr)];
-    u64 rt = regs.gpr[RT(instr)];
+    auto rs = regs.Read<u64>(RS(instr));
+    auto rt = regs.Read<u64>(RT(instr));
     u64 result = rt + rs;
     if (check_signed_overflow(rs, rt, result)) {
       //regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
@@ -114,7 +114,7 @@ void JIT::dadd(u32 instr) {
     }
 
     if (RD(instr) != 0) [[likely]] {
-      regs.gpr[RD(instr)] = result;
+      regs.Write(RD(instr), result);
       regs.gprIsConstant[RD(instr)] = true;
     }
   } else {
@@ -125,9 +125,9 @@ void JIT::dadd(u32 instr) {
 void JIT::daddu(u32 instr) {
   if(regs.IsRegConstant(RS(instr), RT(instr))) {
     if (RD(instr) != 0) [[likely]] {
-      s64 rs = regs.gpr[RS(instr)];
-      s64 rt = regs.gpr[RT(instr)];
-      regs.gpr[RD(instr)] = rt + rs;
+      auto rs = regs.Read<s64>(RS(instr));
+      auto rt = regs.Read<s64>(RT(instr));
+        regs.Write(RD(instr), rt + rs);
       regs.gprIsConstant[RD(instr)] = true;
     }
   } else {
@@ -138,7 +138,7 @@ void JIT::daddu(u32 instr) {
 void JIT::daddi(u32 instr) {
   if(regs.IsRegConstant(RS(instr))) {
     u64 imm = s64(s16(instr));
-    u64 rs = regs.gpr[RS(instr)];
+    auto rs = regs.Read<u64>(RS(instr));
     u64 result = imm + rs;
     if (check_signed_overflow(rs, imm, result)) {
       //regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
@@ -146,7 +146,7 @@ void JIT::daddi(u32 instr) {
     }
 
     if (RT(instr) != 0) [[likely]] {
-      regs.gpr[RT(instr)] = result;
+      regs.Write(RT(instr), result);
       regs.gprIsConstant[RT(instr)] = true;
     }
   } else {
@@ -158,8 +158,8 @@ void JIT::daddiu(u32 instr) {
   if(regs.IsRegConstant(RS(instr))) {
     if (RT(instr) != 0) [[likely]] {
       s16 imm = s16(instr);
-      s64 rs = regs.gpr[RS(instr)];
-      regs.gpr[RT(instr)] = imm + rs;
+      auto rs = regs.Read<s64>(RS(instr));
+        regs.Write(RT(instr), imm + rs);
       regs.gprIsConstant[RT(instr)] = true;
     }
   } else {
@@ -169,8 +169,8 @@ void JIT::daddiu(u32 instr) {
 
 void JIT::ddiv(u32 instr) {
   if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    s64 dividend = regs.gpr[RS(instr)];
-    s64 divisor = regs.gpr[RT(instr)];
+    auto dividend = regs.Read<s64>(RS(instr));
+    auto divisor = regs.Read<s64>(RT(instr));
     if (dividend == 0x8000000000000000 && divisor == 0xFFFFFFFFFFFFFFFF) {
       regs.lo = dividend;
       regs.hi = 0;
@@ -197,8 +197,8 @@ void JIT::ddiv(u32 instr) {
 
 void JIT::ddivu(u32 instr) {
   if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    u64 dividend = regs.gpr[RS(instr)];
-    u64 divisor = regs.gpr[RT(instr)];
+    auto dividend = regs.Read<u64>(RS(instr));
+    auto divisor = regs.Read<u64>(RT(instr));
     if (divisor == 0) {
       regs.lo = -1;
       regs.hi = (s64) dividend;
@@ -218,8 +218,8 @@ void JIT::ddivu(u32 instr) {
 
 void JIT::div(u32 instr) {
   if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    s64 dividend = (s32) regs.gpr[RS(instr)];
-    s64 divisor = (s32) regs.gpr[RT(instr)];
+    s64 dividend = regs.Read<s32>(RS(instr));
+    s64 divisor = regs.Read<s32>(RT(instr));
 
     if (divisor == 0) {
       regs.hi = dividend;
@@ -244,8 +244,8 @@ void JIT::div(u32 instr) {
 
 void JIT::divu(u32 instr) {
   if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    u32 dividend = regs.gpr[RS(instr)];
-    u32 divisor = regs.gpr[RT(instr)];
+    auto dividend = regs.Read<u32>(RS(instr));
+    auto divisor = regs.Read<u32>(RT(instr));
     if (divisor == 0) {
       regs.lo = -1;
       regs.hi = (s32) dividend;
@@ -265,8 +265,8 @@ void JIT::divu(u32 instr) {
 
 void JIT::dmult(u32 instr) {
   if(regs.IsRegConstant(RT(instr), RS(instr))) {
-    s64 rt = regs.gpr[RT(instr)];
-    s64 rs = regs.gpr[RS(instr)];
+    auto rt = regs.Read<s64>(RT(instr));
+    auto rs = regs.Read<s64>(RS(instr));
     s128 result = (s128)rt * (s128)rs;
     regs.lo = result & 0xFFFFFFFFFFFFFFFF;
     regs.hi = result >> 64;
@@ -279,8 +279,8 @@ void JIT::dmult(u32 instr) {
 
 void JIT::dmultu(u32 instr) {
   if(regs.IsRegConstant(RT(instr), RS(instr))) {
-    u64 rt = regs.gpr[RT(instr)];
-    u64 rs = regs.gpr[RS(instr)];
+    auto rt = regs.Read<u64>(RT(instr));
+    auto rs = regs.Read<u64>(RS(instr));
     u128 result = (u128)rt * (u128)rs;
     regs.lo = s64(result & 0xFFFFFFFFFFFFFFFF);
     regs.hi = s64(result >> 64);
@@ -295,8 +295,8 @@ void JIT::dsll(u32 instr) {
   if(regs.IsRegConstant(RT(instr))) {
     if (RD(instr) != 0) [[likely]] {
       u8 sa = ((instr >> 6) & 0x1f);
-      s64 result = regs.gpr[RT(instr)] << sa;
-      regs.gpr[RD(instr)] = result;
+      auto result = regs.Read<s64>(RT(instr)) << sa;
+        regs.Write(RD(instr), result);
       regs.gprIsConstant[RD(instr)] = true;
     }
   } else {
@@ -307,9 +307,9 @@ void JIT::dsll(u32 instr) {
 void JIT::dsllv(u32 instr) {
   if(regs.IsRegConstant(RT(instr), RS(instr))) {
     if (RD(instr) != 0) [[likely]] {
-      s64 sa = regs.gpr[RS(instr)] & 63;
-      s64 result = regs.gpr[RT(instr)] << sa;
-      regs.gpr[RD(instr)] = result;
+      auto sa = regs.Read<s64>(RS(instr)) & 63;
+      auto result = regs.Read<s64>(RT(instr)) << sa;
+        regs.Write(RD(instr), result);
       regs.gprIsConstant[RD(instr)] = true;
     }
   } else {
@@ -321,8 +321,8 @@ void JIT::dsll32(u32 instr) {
   if(regs.IsRegConstant(RT(instr))) {
     if (RD(instr) != 0) [[likely]] {
       u8 sa = ((instr >> 6) & 0x1f);
-      s64 result = regs.gpr[RT(instr)] << (sa + 32);
-      regs.gpr[RD(instr)] = result;
+      auto result = regs.Read<s64>(RT(instr)) << (sa + 32);
+        regs.Write(RD(instr), result);
       regs.gprIsConstant[RD(instr)] = true;
     }
   } else {
@@ -333,10 +333,10 @@ void JIT::dsll32(u32 instr) {
 void JIT::dsra(u32 instr) {
   if(regs.IsRegConstant(RT(instr))) {
     if (RD(instr) != 0) [[likely]] {
-      s64 rt = regs.gpr[RT(instr)];
+      auto rt = regs.Read<s64>(RT(instr));
       u8 sa = ((instr >> 6) & 0x1f);
       s64 result = rt >> sa;
-      regs.gpr[RD(instr)] = result;
+        regs.Write(RD(instr), result);
       regs.gprIsConstant[RD(instr)] = true;
     }
   } else {
@@ -347,11 +347,11 @@ void JIT::dsra(u32 instr) {
 void JIT::dsrav(u32 instr) {
   if(regs.IsRegConstant(RT(instr), RS(instr))) {
     if (RD(instr) != 0) [[likely]] {
-      s64 rt = regs.gpr[RT(instr)];
-      s64 rs = regs.gpr[RS(instr)];
+      auto rt = regs.Read<s64>(RT(instr));
+      auto rs = regs.Read<s64>(RS(instr));
       s64 sa = rs & 63;
       s64 result = rt >> sa;
-      regs.gpr[RD(instr)] = result;
+        regs.Write(RD(instr), result);
       regs.gprIsConstant[RD(instr)] = true;
     }
   } else {
@@ -362,10 +362,10 @@ void JIT::dsrav(u32 instr) {
 void JIT::dsra32(u32 instr) {
   if(regs.IsRegConstant(RT(instr))) {
     if (RD(instr) != 0) [[likely]] {
-      s64 rt = regs.gpr[RT(instr)];
+      auto rt = regs.Read<s64>(RT(instr));
       u8 sa = ((instr >> 6) & 0x1f);
       s64 result = rt >> (sa + 32);
-      regs.gpr[RD(instr)] = result;
+        regs.Write(RD(instr), result);
       regs.gprIsConstant[RD(instr)] = true;
     }
   } else {
@@ -376,10 +376,10 @@ void JIT::dsra32(u32 instr) {
 void JIT::dsrl(u32 instr) {
   if(regs.IsRegConstant(RT(instr))) {
     if (RD(instr) != 0) [[likely]] {
-      u64 rt = regs.gpr[RT(instr)];
+      auto rt = regs.Read<u64>(RT(instr));
       u8 sa = ((instr >> 6) & 0x1f);
       u64 result = rt >> sa;
-      regs.gpr[RD(instr)] = s64(result);
+        regs.Write(RD(instr), s64(result));
       regs.gprIsConstant[RD(instr)] = true;
     }
   } else {
@@ -390,10 +390,10 @@ void JIT::dsrl(u32 instr) {
 void JIT::dsrlv(u32 instr) {
   if(regs.IsRegConstant(RT(instr), RS(instr))) {
     if (RD(instr) != 0) [[likely]] {
-      u8 amount = (regs.gpr[RS(instr)] & 63);
-      u64 rt = regs.gpr[RT(instr)];
+      u8 amount = regs.Read<u8>(RS(instr)) & 63;
+      auto rt = regs.Read<u64>(RT(instr));
       u64 result = rt >> amount;
-      regs.gpr[RD(instr)] = s64(result);
+        regs.Write(RD(instr), s64(result));
       regs.gprIsConstant[RD(instr)] = true;
     }
   } else {
@@ -404,10 +404,10 @@ void JIT::dsrlv(u32 instr) {
 void JIT::dsrl32(u32 instr) {
   if(regs.IsRegConstant(RT(instr))) {
     if (RD(instr) != 0) [[likely]] {
-      u64 rt = regs.gpr[RT(instr)];
+      auto rt = regs.Read<u64>(RT(instr));
       u8 sa = ((instr >> 6) & 0x1f);
       u64 result = rt >> (sa + 32);
-      regs.gpr[RD(instr)] = s64(result);
+        regs.Write(RD(instr), s64(result));
       regs.gprIsConstant[RD(instr)] = true;
     }
   } else {
@@ -417,15 +417,15 @@ void JIT::dsrl32(u32 instr) {
 
 void JIT::dsub(u32 instr) {
   if(regs.IsRegConstant(RT(instr), RS(instr))) {
-    s64 rt = regs.gpr[RT(instr)];
-    s64 rs = regs.gpr[RS(instr)];
+    auto rt = regs.Read<s64>(RT(instr));
+    auto rs = regs.Read<s64>(RS(instr));
     s64 result = rs - rt;
     if (check_signed_underflow(rs, rt, result)) {
       // regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
       Util::panic("[JIT]: Unhandled Overflow exception in DSUB!");
     } else {
       if (RD(instr) != 0) [[likely]] {
-        regs.gpr[RD(instr)] = result;
+        regs.Write(RD(instr), result);
         regs.gprIsConstant[RD(instr)] = true;
       }
     }
@@ -436,12 +436,12 @@ void JIT::dsub(u32 instr) {
 
 void JIT::dsubu(u32 instr) {
   if(regs.IsRegConstant(RT(instr), RS(instr))) {
-    s64 rt = regs.gpr[RT(instr)];
-    s64 rs = regs.gpr[RS(instr)];
+    auto rt = regs.Read<s64>(RT(instr));
+    auto rs = regs.Read<s64>(RS(instr));
     s64 result = rs - rt;
 
     if (RD(instr) != 0) [[likely]] {
-      regs.gpr[RD(instr)] = result;
+      regs.Write(RD(instr), result);
       regs.gprIsConstant[RD(instr)] = true;
     }
   } else {
@@ -451,7 +451,7 @@ void JIT::dsubu(u32 instr) {
 
 void JIT::mfhi(u32 instr) {
   if(regs.hiIsConstant) {
-    regs.gpr[RD(instr)] = regs.hi;
+    regs.Write(RD(instr), regs.hi);
     regs.gprIsConstant[RD(instr)] = true;
   } else {
     Util::panic("[JIT]: Implement non constant MFHI!");
@@ -460,7 +460,7 @@ void JIT::mfhi(u32 instr) {
 
 void JIT::mflo(u32 instr) {
   if(regs.loIsConstant) {
-    regs.gpr[RD(instr)] = regs.lo;
+    regs.Write(RD(instr), regs.lo);
     regs.gprIsConstant[RD(instr)] = true;
   } else {
     Util::panic("[JIT]: Implement non constant MFLO!");
@@ -469,8 +469,8 @@ void JIT::mflo(u32 instr) {
 
 void JIT::mult(u32 instr) {
   if(regs.IsRegConstant(RT(instr), RS(instr))) {
-    s32 rt = regs.gpr[RT(instr)];
-    s32 rs = regs.gpr[RS(instr)];
+    auto rt = regs.Read<s32>(RT(instr));
+    auto rs = regs.Read<s32>(RS(instr));
     s64 result = (s64) rt * (s64) rs;
     regs.lo = (s64) ((s32) result);
     regs.loIsConstant = true;
@@ -483,8 +483,8 @@ void JIT::mult(u32 instr) {
 
 void JIT::multu(u32 instr) {
   if(regs.IsRegConstant(RT(instr), RS(instr))) {
-    u32 rt = regs.gpr[RT(instr)];
-    u32 rs = regs.gpr[RS(instr)];
+    auto rt = regs.Read<u32>(RT(instr));
+    auto rs = regs.Read<u32>(RS(instr));
     u64 result = (u64)rt * (u64)rs;
     regs.lo = (s64)((s32)result);
     regs.loIsConstant = true;
@@ -497,7 +497,7 @@ void JIT::multu(u32 instr) {
 
 void JIT::mthi(u32 instr) {
   if(regs.IsRegConstant(RS(instr))) {
-    regs.hi = regs.gpr[RS(instr)];
+    regs.hi = regs.Read<s64>(RS(instr));
     regs.hiIsConstant = true;
   } else {
     Util::panic("[JIT]: Implement non constant MTHI!");
@@ -506,7 +506,7 @@ void JIT::mthi(u32 instr) {
 
 void JIT::mtlo(u32 instr) {
   if(regs.IsRegConstant(RS(instr))) {
-    regs.lo = regs.gpr[RS(instr)];
+    regs.lo = regs.Read<s64>(RS(instr));
     regs.loIsConstant = true;
   } else {
     Util::panic("[JIT]: Implement non constant MTLO!");
@@ -516,7 +516,7 @@ void JIT::mtlo(u32 instr) {
 void JIT::nor(u32 instr) {
   if(regs.IsRegConstant(RS(instr), RT(instr))) {
     if (RD(instr) != 0) [[likely]] {
-      regs.gpr[RD(instr)] = ~(regs.gpr[RS(instr)] | regs.gpr[RT(instr)]);
+      regs.Write(RD(instr), ~(regs.Read<s64>(RS(instr)) | regs.Read<s64>(RT(instr))));
       regs.gprIsConstant[RD(instr)] = true;
     }
   } else {
@@ -528,7 +528,7 @@ void JIT::slti(u32 instr) {
   if(regs.IsRegConstant(RS(instr))) {
     s16 imm = instr;
     if (RT(instr) != 0) [[likely]] {
-      regs.gpr[RT(instr)] = regs.gpr[RS(instr)] < imm;
+      regs.Write(RT(instr), regs.Read<s64>(RS(instr)) < imm);
       regs.gprIsConstant[RT(instr)] = true;
     }
   } else {
@@ -540,7 +540,7 @@ void JIT::sltiu(u32 instr) {
   if(regs.IsRegConstant(RS(instr))) {
     s16 imm = instr;
     if (RT(instr) != 0) [[likely]] {
-      regs.gpr[RT(instr)] = (u64) regs.gpr[RS(instr)] < imm;
+      regs.Write(RT(instr), regs.Read<u64>(RS(instr)) < imm);
       regs.gprIsConstant[RT(instr)] = true;
     }
   } else {
@@ -551,7 +551,7 @@ void JIT::sltiu(u32 instr) {
 void JIT::slt(u32 instr) {
   if(regs.IsRegConstant(RS(instr), RT(instr))) {
     if (RD(instr) != 0) [[likely]] {
-      regs.gpr[RD(instr)] = regs.gpr[RS(instr)] < regs.gpr[RT(instr)];
+      regs.Write(RD(instr), regs.Read<s64>(RS(instr)) < regs.Read<s64>(RT(instr)));
       regs.gprIsConstant[RD(instr)] = true;
     }
   } else {
@@ -562,7 +562,7 @@ void JIT::slt(u32 instr) {
 void JIT::sltu(u32 instr) {
   if(regs.IsRegConstant(RS(instr), RT(instr))) {
     if (RD(instr) != 0) [[likely]] {
-      regs.gpr[RD(instr)] = (u64)regs.gpr[RS(instr)] < (u64)regs.gpr[RT(instr)];
+      regs.Write(RD(instr), regs.Read<u64>(RS(instr)) < regs.Read<u64>(RT(instr)));
       regs.gprIsConstant[RD(instr)] = true;
     }
   } else {

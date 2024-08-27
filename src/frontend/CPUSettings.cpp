@@ -1,11 +1,11 @@
 #include <CPUSettings.hpp>
-#include <QVBoxLayout>
-#include <QLabel>
 #include <JSONUtils.hpp>
+#include <QLabel>
+#include <QVBoxLayout>
 #include <log.hpp>
 
-CPUSettings::CPUSettings(nlohmann::json& settings) : settings(settings), QWidget(nullptr) {
-  cpuTypes->addItems({ "Interpreter", "Dynamic Recompiler" });
+CPUSettings::CPUSettings(nlohmann::json &settings) : settings(settings), QWidget(nullptr) {
+  cpuTypes->addItems({"Interpreter", "Dynamic Recompiler"});
 
   if (JSONGetField<std::string>(settings, "cpu", "type") == "jit") {
     cpuTypes->setCurrentIndex(1);
@@ -25,9 +25,9 @@ CPUSettings::CPUSettings(nlohmann::json& settings) : settings(settings), QWidget
     emit modified();
   });
 
-  QLabel* label = new QLabel("CPU type:");
+  auto label = new QLabel("CPU type:");
 
-  QVBoxLayout* mainLayout = new QVBoxLayout;
+  auto mainLayout = new QVBoxLayout;
   mainLayout->addWidget(label);
   mainLayout->addWidget(cpuTypes);
   mainLayout->addStretch();

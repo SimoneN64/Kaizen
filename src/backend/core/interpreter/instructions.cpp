@@ -8,7 +8,7 @@ void Interpreter::add(u32 instr) {
   u32 rs = regs.Read<s32>(RS(instr));
   u32 rt = regs.Read<s32>(RT(instr));
   u32 result = rs + rt;
-  if(check_signed_overflow(rs, rt, result)) {
+  if (check_signed_overflow(rs, rt, result)) {
     regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
   } else {
     regs.Write(RD(instr), s32(result));
@@ -26,7 +26,7 @@ void Interpreter::addi(u32 instr) {
   u32 rs = regs.Read<s64>(RS(instr));
   u32 imm = s32(s16(instr));
   u32 result = rs + imm;
-  if(check_signed_overflow(rs, imm, result)) {
+  if (check_signed_overflow(rs, imm, result)) {
     regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
   } else {
     regs.Write(RT(instr), s32(result));
@@ -44,7 +44,7 @@ void Interpreter::dadd(u32 instr) {
   u64 rs = regs.Read<s64>(RS(instr));
   u64 rt = regs.Read<s64>(RT(instr));
   u64 result = rt + rs;
-  if(check_signed_overflow(rs, rt, result)) {
+  if (check_signed_overflow(rs, rt, result)) {
     regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
   } else {
     regs.Write(RD(instr), result);
@@ -61,7 +61,7 @@ void Interpreter::daddi(u32 instr) {
   u64 imm = s64(s16(instr));
   u64 rs = regs.Read<s64>(RS(instr));
   u64 result = imm + rs;
-  if(check_signed_overflow(rs, imm, result)) {
+  if (check_signed_overflow(rs, imm, result)) {
     regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
   } else {
     regs.Write(RT(instr), result);
@@ -78,9 +78,9 @@ void Interpreter::div(u32 instr) {
   s64 dividend = regs.Read<s32>(RS(instr));
   s64 divisor = regs.Read<s32>(RT(instr));
 
-  if(divisor == 0) {
+  if (divisor == 0) {
     regs.hi = dividend;
-    if(dividend >= 0) {
+    if (dividend >= 0) {
       regs.lo = s64(-1);
     } else {
       regs.lo = s64(1);
@@ -96,7 +96,7 @@ void Interpreter::div(u32 instr) {
 void Interpreter::divu(u32 instr) {
   u32 dividend = regs.Read<s64>(RS(instr));
   u32 divisor = regs.Read<s64>(RT(instr));
-  if(divisor == 0) {
+  if (divisor == 0) {
     regs.lo = -1;
     regs.hi = (s32)dividend;
   } else {
@@ -113,9 +113,9 @@ void Interpreter::ddiv(u32 instr) {
   if (dividend == 0x8000000000000000 && divisor == 0xFFFFFFFFFFFFFFFF) {
     regs.lo = dividend;
     regs.hi = 0;
-  } else if(divisor == 0) {
+  } else if (divisor == 0) {
     regs.hi = dividend;
-    if(dividend >= 0) {
+    if (dividend >= 0) {
       regs.lo = -1;
     } else {
       regs.lo = 1;
@@ -131,7 +131,7 @@ void Interpreter::ddiv(u32 instr) {
 void Interpreter::ddivu(u32 instr) {
   u64 dividend = regs.Read<s64>(RS(instr));
   u64 divisor = regs.Read<s64>(RT(instr));
-  if(divisor == 0) {
+  if (divisor == 0) {
     regs.lo = -1;
     regs.hi = (s64)dividend;
   } else {
@@ -197,11 +197,11 @@ void Interpreter::lui(u32 instr) {
 void Interpreter::lb(u32 instr) {
   u64 address = regs.Read<s64>(RS(instr)) + (s16)instr;
   u32 paddr = 0;
-  if(!regs.cop0.MapVAddr(Cop0::LOAD, address, paddr)) {
+  if (!regs.cop0.MapVAddr(Cop0::LOAD, address, paddr)) {
     regs.cop0.HandleTLBException(address);
     regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.oldPC);
   } else {
-    regs.Write(RT(instr), (s8) mem.Read<u8>(regs, paddr));
+    regs.Write(RT(instr), (s8)mem.Read<u8>(regs, paddr));
   }
 }
 
@@ -214,11 +214,11 @@ void Interpreter::lh(u32 instr) {
   }
 
   u32 paddr = 0;
-  if(!regs.cop0.MapVAddr(Cop0::LOAD, address, paddr)) {
+  if (!regs.cop0.MapVAddr(Cop0::LOAD, address, paddr)) {
     regs.cop0.HandleTLBException(address);
     regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.oldPC);
   } else {
-    regs.Write(RT(instr), (s16) mem.Read<u16>(regs, paddr));
+    regs.Write(RT(instr), (s16)mem.Read<u16>(regs, paddr));
   }
 }
 
@@ -236,7 +236,7 @@ void Interpreter::lw(u32 instr) {
     regs.cop0.HandleTLBException(address);
     regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.oldPC);
   } else {
-    regs.Write(RT(instr), (s32) mem.Read<u32>(regs, physical));
+    regs.Write(RT(instr), (s32)mem.Read<u32>(regs, physical));
   }
 }
 
@@ -252,7 +252,7 @@ void Interpreter::ll(u32 instr) {
       regs.cop0.FireException(ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
       return;
     }
-    
+
     regs.Write(RT(instr), result);
 
     regs.cop0.llbit = true;
@@ -263,7 +263,7 @@ void Interpreter::ll(u32 instr) {
 void Interpreter::lwl(u32 instr) {
   u64 address = regs.Read<s64>(RS(instr)) + (s16)instr;
   u32 paddr = 0;
-  if(!regs.cop0.MapVAddr(Cop0::LOAD, address, paddr)) {
+  if (!regs.cop0.MapVAddr(Cop0::LOAD, address, paddr)) {
     regs.cop0.HandleTLBException(address);
     regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.oldPC);
   } else {
@@ -278,7 +278,7 @@ void Interpreter::lwl(u32 instr) {
 void Interpreter::lwr(u32 instr) {
   u64 address = regs.Read<s64>(RS(instr)) + (s16)instr;
   u32 paddr = 0;
-  if(!regs.cop0.MapVAddr(Cop0::LOAD, address, paddr)) {
+  if (!regs.cop0.MapVAddr(Cop0::LOAD, address, paddr)) {
     regs.cop0.HandleTLBException(address);
     regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.oldPC);
   } else {
@@ -299,7 +299,7 @@ void Interpreter::ld(u32 instr) {
   }
 
   u32 paddr = 0;
-  if(!regs.cop0.MapVAddr(Cop0::LOAD, address, paddr)) {
+  if (!regs.cop0.MapVAddr(Cop0::LOAD, address, paddr)) {
     regs.cop0.HandleTLBException(address);
     regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.oldPC);
   } else {
@@ -340,7 +340,7 @@ void Interpreter::ldl(u32 instr) {
     s32 shift = 8 * ((address ^ 0) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
     u64 data = mem.Read<u64>(regs, paddr & ~7);
-    s64 result = (s64) ((regs.Read<s64>(RT(instr)) & ~mask) | (data << shift));
+    s64 result = (s64)((regs.Read<s64>(RT(instr)) & ~mask) | (data << shift));
     regs.Write(RT(instr), result);
   }
 }
@@ -355,7 +355,7 @@ void Interpreter::ldr(u32 instr) {
     s32 shift = 8 * ((address ^ 7) & 7);
     u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
     u64 data = mem.Read<u64>(regs, paddr & ~7);
-    s64 result = (s64) ((regs.Read<s64>(RT(instr)) & ~mask) | (data >> shift));
+    s64 result = (s64)((regs.Read<s64>(RT(instr)) & ~mask) | (data >> shift));
     regs.Write(RT(instr), result);
   }
 }
@@ -421,7 +421,7 @@ void Interpreter::sb(u32 instr) {
 void Interpreter::sc(u32 instr) {
   u64 address = regs.Read<s64>(RS(instr)) + (s16)instr;
 
-  if(regs.cop0.llbit) {
+  if (regs.cop0.llbit) {
     regs.cop0.llbit = false;
 
     if (check_address_error(0b11, address)) {
@@ -432,7 +432,7 @@ void Interpreter::sc(u32 instr) {
     }
 
     u32 paddr = 0;
-    if(!regs.cop0.MapVAddr(Cop0::STORE, address, paddr)) {
+    if (!regs.cop0.MapVAddr(Cop0::STORE, address, paddr)) {
       regs.Write(RT(instr), 0);
       regs.cop0.HandleTLBException(address);
       regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::STORE), 0, regs.oldPC);
@@ -453,7 +453,7 @@ void Interpreter::scd(u32 instr) {
 
   s64 address = regs.Read<s64>(RS(instr)) + (s16)instr;
 
-  if(regs.cop0.llbit) {
+  if (regs.cop0.llbit) {
     regs.cop0.llbit = false;
 
     if (check_address_error(0b111, address)) {
@@ -464,7 +464,7 @@ void Interpreter::scd(u32 instr) {
     }
 
     u32 paddr = 0;
-    if(!regs.cop0.MapVAddr(Cop0::STORE, address, paddr)) {
+    if (!regs.cop0.MapVAddr(Cop0::STORE, address, paddr)) {
       regs.Write(RT(instr), 0);
       regs.cop0.HandleTLBException(address);
       regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::STORE), 0, regs.oldPC);
@@ -481,7 +481,7 @@ void Interpreter::sh(u32 instr) {
   s64 address = regs.Read<s64>(RS(instr)) + (s16)instr;
 
   u32 physical;
-  if(!regs.cop0.MapVAddr(Cop0::STORE, address, physical)) {
+  if (!regs.cop0.MapVAddr(Cop0::STORE, address, physical)) {
     regs.cop0.HandleTLBException(address);
     regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::STORE), 0, regs.oldPC);
   } else {
@@ -499,7 +499,7 @@ void Interpreter::sw(u32 instr) {
   }
 
   u32 physical;
-  if(!regs.cop0.MapVAddr(Cop0::STORE, address, physical)) {
+  if (!regs.cop0.MapVAddr(Cop0::STORE, address, physical)) {
     regs.cop0.HandleTLBException(address);
     regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::STORE), 0, regs.oldPC);
   } else {
@@ -516,7 +516,7 @@ void Interpreter::sd(u32 instr) {
   }
 
   u32 physical;
-  if(!regs.cop0.MapVAddr(Cop0::STORE, address, physical)) {
+  if (!regs.cop0.MapVAddr(Cop0::STORE, address, physical)) {
     regs.cop0.HandleTLBException(address);
     regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::STORE), 0, regs.oldPC);
   } else {
@@ -590,13 +590,9 @@ void Interpreter::ori(u32 instr) {
   regs.Write(RT(instr), result);
 }
 
-void Interpreter::or_(u32 instr) {
-  regs.Write(RD(instr), regs.Read<s64>(RS(instr)) | regs.Read<s64>(RT(instr)));
-}
+void Interpreter::or_(u32 instr) { regs.Write(RD(instr), regs.Read<s64>(RS(instr)) | regs.Read<s64>(RT(instr))); }
 
-void Interpreter::nor(u32 instr) {
-  regs.Write(RD(instr), ~(regs.Read<s64>(RS(instr)) | regs.Read<s64>(RT(instr))));
-}
+void Interpreter::nor(u32 instr) { regs.Write(RD(instr), ~(regs.Read<s64>(RS(instr)) | regs.Read<s64>(RT(instr)))); }
 
 void Interpreter::j(u32 instr) {
   s32 target = (instr & 0x3ffffff) << 2;
@@ -632,43 +628,35 @@ void Interpreter::sltiu(u32 instr) {
   regs.Write(RT(instr), regs.Read<u64>(RS(instr)) < imm);
 }
 
-void Interpreter::slt(u32 instr) {
-  regs.Write(RD(instr), regs.Read<s64>(RS(instr)) < regs.Read<s64>(RT(instr)));
-}
+void Interpreter::slt(u32 instr) { regs.Write(RD(instr), regs.Read<s64>(RS(instr)) < regs.Read<s64>(RT(instr))); }
 
-void Interpreter::sltu(u32 instr) {
-  regs.Write(RD(instr), regs.Read<u64>(RS(instr)) < regs.Read<u64>(RT(instr)));
-}
+void Interpreter::sltu(u32 instr) { regs.Write(RD(instr), regs.Read<u64>(RS(instr)) < regs.Read<u64>(RT(instr))); }
 
 void Interpreter::xori(u32 instr) {
   s64 imm = (u16)instr;
   regs.Write(RT(instr), regs.Read<s64>(RS(instr)) ^ imm);
 }
 
-void Interpreter::xor_(u32 instr) {
-  regs.Write(RD(instr), regs.Read<s64>(RT(instr)) ^ regs.Read<s64>(RS(instr)));
-}
+void Interpreter::xor_(u32 instr) { regs.Write(RD(instr), regs.Read<s64>(RT(instr)) ^ regs.Read<s64>(RS(instr))); }
 
 void Interpreter::andi(u32 instr) {
   s64 imm = (u16)instr;
   regs.Write(RT(instr), regs.Read<s64>(RS(instr)) & imm);
 }
 
-void Interpreter::and_(u32 instr) {
-  regs.Write(RD(instr), regs.Read<s64>(RS(instr)) & regs.Read<s64>(RT(instr)));
-}
+void Interpreter::and_(u32 instr) { regs.Write(RD(instr), regs.Read<s64>(RS(instr)) & regs.Read<s64>(RT(instr))); }
 
 void Interpreter::sll(u32 instr) {
   u8 sa = ((instr >> 6) & 0x1f);
   s32 result = regs.Read<s64>(RT(instr)) << sa;
-  regs.Write(RD(instr), (s64) result);
+  regs.Write(RD(instr), (s64)result);
 }
 
 void Interpreter::sllv(u32 instr) {
   u8 sa = (regs.Read<s64>(RS(instr))) & 0x1F;
   u32 rt = regs.Read<s64>(RT(instr));
   s32 result = rt << sa;
-  regs.Write(RD(instr), (s64) result);
+  regs.Write(RD(instr), (s64)result);
 }
 
 void Interpreter::dsll32(u32 instr) {
@@ -693,14 +681,14 @@ void Interpreter::srl(u32 instr) {
   u32 rt = regs.Read<s64>(RT(instr));
   u8 sa = ((instr >> 6) & 0x1f);
   u32 result = rt >> sa;
-  regs.Write(RD(instr), (s32) result);
+  regs.Write(RD(instr), (s32)result);
 }
 
 void Interpreter::srlv(u32 instr) {
   u8 sa = (regs.Read<s64>(RS(instr)) & 0x1F);
   u32 rt = regs.Read<s64>(RT(instr));
   s32 result = rt >> sa;
-  regs.Write(RD(instr), (s64) result);
+  regs.Write(RD(instr), (s64)result);
 }
 
 void Interpreter::dsrl(u32 instr) {
@@ -765,7 +753,7 @@ void Interpreter::dsub(u32 instr) {
   s64 rt = regs.Read<s64>(RT(instr));
   s64 rs = regs.Read<s64>(RS(instr));
   s64 result = rs - rt;
-  if(check_signed_underflow(rs, rt, result)) {
+  if (check_signed_underflow(rs, rt, result)) {
     regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
   } else {
     regs.Write(RD(instr), result);
@@ -783,7 +771,7 @@ void Interpreter::sub(u32 instr) {
   s32 rt = regs.Read<s64>(RT(instr));
   s32 rs = regs.Read<s64>(RS(instr));
   s32 result = rs - rt;
-  if(check_signed_underflow(rs, rt, result)) {
+  if (check_signed_underflow(rs, rt, result)) {
     regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
   } else {
     regs.Write(RD(instr), result);
@@ -794,7 +782,7 @@ void Interpreter::subu(u32 instr) {
   u32 rt = regs.Read<s64>(RT(instr));
   u32 rs = regs.Read<s64>(RS(instr));
   u32 result = rs - rt;
-  regs.Write(RD(instr), (s64) ((s32) result));
+  regs.Write(RD(instr), (s64)((s32)result));
 }
 
 void Interpreter::dmultu(u32 instr) {
@@ -829,50 +817,32 @@ void Interpreter::mult(u32 instr) {
   regs.hi = (s64)((s32)(result >> 32));
 }
 
-void Interpreter::mflo(u32 instr) {
-  regs.Write(RD(instr), regs.lo);
-}
+void Interpreter::mflo(u32 instr) { regs.Write(RD(instr), regs.lo); }
 
-void Interpreter::mfhi(u32 instr) {
-  regs.Write(RD(instr), regs.hi);
-}
+void Interpreter::mfhi(u32 instr) { regs.Write(RD(instr), regs.hi); }
 
-void Interpreter::mtlo(u32 instr) {
-  regs.lo = regs.Read<s64>(RS(instr));
-}
+void Interpreter::mtlo(u32 instr) { regs.lo = regs.Read<s64>(RS(instr)); }
 
-void Interpreter::mthi(u32 instr) {
-  regs.hi = regs.Read<s64>(RS(instr));
-}
+void Interpreter::mthi(u32 instr) { regs.hi = regs.Read<s64>(RS(instr)); }
 
 void Interpreter::trap(bool cond) {
-  if(cond) {
+  if (cond) {
     regs.cop0.FireException(ExceptionCode::Trap, 0, regs.oldPC);
   }
 }
 
-void Interpreter::mtc2(u32 instr) {
-  cop2Latch = regs.Read<s64>(RT(instr));
-}
+void Interpreter::mtc2(u32 instr) { cop2Latch = regs.Read<s64>(RT(instr)); }
 
 void Interpreter::mfc2(u32 instr) {
   s32 value = cop2Latch;
   regs.Write(RT(instr), value);
 }
 
-void Interpreter::dmtc2(u32 instr) {
-  cop2Latch = regs.Read<s64>(RT(instr));
-}
+void Interpreter::dmtc2(u32 instr) { cop2Latch = regs.Read<s64>(RT(instr)); }
 
-void Interpreter::dmfc2(u32 instr) {
-  regs.Write(RT(instr), cop2Latch);
-}
+void Interpreter::dmfc2(u32 instr) { regs.Write(RT(instr), cop2Latch); }
 
-void Interpreter::ctc2(u32) {
+void Interpreter::ctc2(u32) {}
 
-}
-
-void Interpreter::cfc2(u32) {
-
-}
-}
+void Interpreter::cfc2(u32) {}
+} // namespace n64

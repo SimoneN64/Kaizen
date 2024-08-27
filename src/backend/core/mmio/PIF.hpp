@@ -1,21 +1,17 @@
 #pragma once
-#include <MemoryRegions.hpp>
 #include <GameDB.hpp>
+#include <MemoryRegions.hpp>
+#include <array>
 #include <filesystem>
 #include <mio/mmap.hpp>
 #include <vector>
-#include <array>
 #include "MupenMovie.hpp"
 
 namespace fs = std::filesystem;
 
 namespace n64 {
 
-enum AccessoryType : u8 {
-  ACCESSORY_NONE,
-  ACCESSORY_MEMPACK,
-  ACCESSORY_RUMBLE_PACK
-};
+enum AccessoryType : u8 { ACCESSORY_NONE, ACCESSORY_MEMPACK, ACCESSORY_RUMBLE_PACK };
 
 struct Controller {
   union {
@@ -23,27 +19,27 @@ struct Controller {
       union {
         u8 byte1;
         struct {
-          bool dpRight: 1;
-          bool dpLeft: 1;
-          bool dpDown: 1;
-          bool dpUp: 1;
-          bool start: 1;
-          bool z: 1;
-          bool b: 1;
-          bool a: 1;
+          bool dpRight : 1;
+          bool dpLeft : 1;
+          bool dpDown : 1;
+          bool dpUp : 1;
+          bool start : 1;
+          bool z : 1;
+          bool b : 1;
+          bool a : 1;
         };
       };
       union {
         u8 byte2;
         struct {
-          bool cRight: 1;
-          bool cLeft: 1;
-          bool cDown: 1;
-          bool cUp: 1;
-          bool r: 1;
-          bool l: 1;
-          bool zero: 1;
-          bool joyReset: 1;
+          bool cRight : 1;
+          bool cLeft : 1;
+          bool cDown : 1;
+          bool cUp : 1;
+          bool r : 1;
+          bool l : 1;
+          bool zero : 1;
+          bool joyReset : 1;
         };
       };
 
@@ -53,7 +49,7 @@ struct Controller {
 
     u32 raw;
   };
-  Controller& operator=(const Controller& other) {
+  Controller &operator=(const Controller &other) {
     byte1 = other.byte1;
     byte2 = other.byte2;
     joyX = other.joyX;
@@ -62,40 +58,70 @@ struct Controller {
     return *this;
   }
 
-  enum Key {
-    A, B, Z, Start, DUp, DDown, DLeft, DRight, CUp, CDown, CLeft, CRight, LT, RT
-  };
+  enum Key { A, B, Z, Start, DUp, DDown, DLeft, DRight, CUp, CDown, CLeft, CRight, LT, RT };
 
   enum Axis { X, Y };
 
   Controller() = default;
   void UpdateButton(Key k, bool state) {
-    switch(k) {
-      case A: a = state; break;
-      case B: b = state; break;
-      case Z: z = state; break;
-      case Start: start = state; break;
-      case DUp: dpUp = state; break;
-      case DDown: dpDown = state; break;
-      case DLeft: dpLeft = state; break;
-      case DRight: dpRight = state; break;
-      case CUp: cUp = state; break;
-      case CDown: cDown = state; break;
-      case CLeft: cLeft = state; break;
-      case CRight: cRight = state; break;
-      case LT: l = state; break;
-      case RT: r = state; break;
+    switch (k) {
+    case A:
+      a = state;
+      break;
+    case B:
+      b = state;
+      break;
+    case Z:
+      z = state;
+      break;
+    case Start:
+      start = state;
+      break;
+    case DUp:
+      dpUp = state;
+      break;
+    case DDown:
+      dpDown = state;
+      break;
+    case DLeft:
+      dpLeft = state;
+      break;
+    case DRight:
+      dpRight = state;
+      break;
+    case CUp:
+      cUp = state;
+      break;
+    case CDown:
+      cDown = state;
+      break;
+    case CLeft:
+      cLeft = state;
+      break;
+    case CRight:
+      cRight = state;
+      break;
+    case LT:
+      l = state;
+      break;
+    case RT:
+      r = state;
+      break;
     }
   }
 
   void UpdateAxis(Axis a, s8 state) {
-    switch(a) {
-      case X: joyX = state; break;
-      case Y: joyY = state; break;
+    switch (a) {
+    case X:
+      joyX = state;
+      break;
+    case Y:
+      joyY = state;
+      break;
     }
   }
 
-  Controller& operator=(u32 v) {
+  Controller &operator=(u32 v) {
     joyY = v & 0xff;
     joyX = v >> 8;
     byte2 = v >> 16;
@@ -153,30 +179,28 @@ enum CICType {
 };
 
 struct PIF {
-  PIF(Mem& mem, Registers& regs) : mem(mem), regs(regs) {}
+  PIF(Mem &mem, Registers &regs) : mem(mem), regs(regs) {}
   ~PIF() = default;
   void Reset();
   void MaybeLoadMempak();
-  void LoadEeprom(SaveType, const std::string&);
-  void ProcessCommands(Mem&);
+  void LoadEeprom(SaveType, const std::string &);
+  void ProcessCommands(Mem &);
   void InitDevices(SaveType);
   void CICChallenge();
   void Execute();
   void HLE(bool pal, CICType cicType);
-  bool ReadButtons(u8*);
-  void ControllerID(u8*) const;
-  void MempakRead(const u8*, u8*);
-  void MempakWrite(u8*, u8*);
-  void EepromRead(const u8*, u8*, const Mem&) const;
-  void EepromWrite(const u8*, u8*, const Mem&);
+  bool ReadButtons(u8 *);
+  void ControllerID(u8 *) const;
+  void MempakRead(const u8 *, u8 *);
+  void MempakWrite(u8 *, u8 *);
+  void EepromRead(const u8 *, u8 *, const Mem &) const;
+  void EepromWrite(const u8 *, u8 *, const Mem &);
   std::vector<u8> Serialize();
   void UpdateButton(int index, Controller::Key k, bool state) {
     joybusDevices[index].controller.UpdateButton(k, state);
   }
 
-  void UpdateAxis(int index, Controller::Axis a, s8 state) {
-    joybusDevices[index].controller.UpdateAxis(a, state);
-  }
+  void UpdateAxis(int index, Controller::Axis a, s8 state) { joybusDevices[index].controller.UpdateAxis(a, state); }
 
   bool mempakOpen = false;
   std::array<JoybusDevice, 6> joybusDevices{};
@@ -187,18 +211,20 @@ struct PIF {
   std::string mempakPath{}, eepromPath{};
   size_t eepromSize{};
   MupenMovie movie;
-  Mem& mem;
-  Registers& regs;
+  Mem &mem;
+  Registers &regs;
 
   FORCE_INLINE u8 Read(u32 addr) {
     addr &= 0x7FF;
-    if(addr < 0x7c0) return bootrom[addr];
+    if (addr < 0x7c0)
+      return bootrom[addr];
     return ram[addr & PIF_RAM_DSIZE];
   }
 
   FORCE_INLINE void Write(u32 addr, u8 val) {
     addr &= 0x7FF;
-    if(addr < 0x7c0) return;
+    if (addr < 0x7c0)
+      return;
     ram[addr & PIF_RAM_DSIZE] = val;
   }
 
@@ -210,4 +236,4 @@ struct PIF {
     }
   }
 };
-}
+} // namespace n64

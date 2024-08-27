@@ -1,7 +1,7 @@
-#include <RenderWidget.hpp>
 #include <KaizenQt.hpp>
+#include <RenderWidget.hpp>
 
-RenderWidget::RenderWidget(QWidget* parent) : QWidget(parent) {
+RenderWidget::RenderWidget(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_NativeWindow);
   setAttribute(Qt::WA_PaintOnScreen);
   if (GetOSCompositorCategory() == CompositorCategory::Wayland) {
@@ -10,12 +10,11 @@ RenderWidget::RenderWidget(QWidget* parent) : QWidget(parent) {
 
   if (GetOSCompositorCategory() == CompositorCategory::MacOS) {
     windowHandle()->setSurfaceType(QWindow::MetalSurface);
-  }
-  else {
+  } else {
     windowHandle()->setSurfaceType(QWindow::VulkanSurface);
   }
 
-  if(!Vulkan::Context::init_loader(nullptr)) {
+  if (!Vulkan::Context::init_loader(nullptr)) {
     Util::panic("Could not initialize Vulkan ICD");
   }
 

@@ -1,8 +1,8 @@
-#include <SettingsWindow.hpp>
-#include <QGroupBox>
-#include <QVBoxLayout>
 #include <QButtonGroup>
 #include <QFileDialog>
+#include <QGroupBox>
+#include <QVBoxLayout>
+#include <SettingsWindow.hpp>
 #include <fmt/core.h>
 
 std::string savePath = "";
@@ -44,7 +44,7 @@ SettingsWindow::SettingsWindow() : QWidget(nullptr) {
   generalLayoutV->addStretch();
   generalSettings->setLayout(generalLayoutV);
 
-  auto* tabs = new QTabWidget;
+  auto *tabs = new QTabWidget;
   tabs->addTab(generalSettings, tr("General"));
   tabs->addTab(cpuSettings, tr("CPU"));
   tabs->addTab(audioSettings, tr("Audio"));
@@ -52,17 +52,11 @@ SettingsWindow::SettingsWindow() : QWidget(nullptr) {
 
   apply->setEnabled(false);
 
-  connect(cpuSettings, &CPUSettings::modified, this, [&]() {
-    apply->setEnabled(true);
-  });
+  connect(cpuSettings, &CPUSettings::modified, this, [&]() { apply->setEnabled(true); });
 
-  connect(audioSettings, &AudioSettings::modified, this, [&]() {
-    apply->setEnabled(true);
-  });
+  connect(audioSettings, &AudioSettings::modified, this, [&]() { apply->setEnabled(true); });
 
-  connect(inputSettings, &InputSettings::modified, this, [&]() {
-    apply->setEnabled(true);
-  });
+  connect(inputSettings, &InputSettings::modified, this, [&]() { apply->setEnabled(true); });
 
   connect(apply, &QPushButton::pressed, this, [&]() {
     auto newMap = inputSettings->GetMappedKeys();
@@ -78,8 +72,8 @@ SettingsWindow::SettingsWindow() : QWidget(nullptr) {
 
   connect(cancel, &QPushButton::pressed, this, &QWidget::hide);
 
-  QVBoxLayout* mainLayout = new QVBoxLayout;
-  QHBoxLayout* buttonsLayout = new QHBoxLayout;
+  QVBoxLayout *mainLayout = new QVBoxLayout;
+  QHBoxLayout *buttonsLayout = new QHBoxLayout;
   buttonsLayout->addWidget(apply);
   buttonsLayout->addWidget(cancel);
   mainLayout->addWidget(tabs);

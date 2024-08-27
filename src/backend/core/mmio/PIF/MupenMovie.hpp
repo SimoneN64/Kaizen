@@ -47,11 +47,12 @@ static_assert(sizeof(TASMovieHeader) == 1024);
 
 struct MupenMovie {
   MupenMovie() = default;
-  MupenMovie(const fs::path&);
-  bool Load(const fs::path&);
+  MupenMovie(const fs::path &);
+  bool Load(const fs::path &);
   void Reset();
   n64::Controller NextInputs();
   bool IsLoaded() const { return !loadedTasMovie.empty(); }
+
 private:
   std::vector<u8> loadedTasMovie = {};
   TASMovieHeader loadedTasMovieHeader = {};

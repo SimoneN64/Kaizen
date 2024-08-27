@@ -8,19 +8,19 @@ namespace n64 {
 union SIStatus {
   u32 raw{};
   struct {
-    unsigned dmaBusy:1;
-    unsigned ioBusy:1;
-    unsigned reserved:1;
-    unsigned dmaErr:1;
-    unsigned:8;
-    unsigned intr:1;
+    unsigned dmaBusy : 1;
+    unsigned ioBusy : 1;
+    unsigned reserved : 1;
+    unsigned dmaErr : 1;
+    unsigned : 8;
+    unsigned intr : 1;
   };
 };
 
 struct Mem;
 
 struct SI {
-  SI(Mem&, Registers&);
+  SI(Mem &, Registers &);
   void Reset();
   SIStatus status{};
   u32 dramAddr{};
@@ -33,10 +33,11 @@ struct SI {
   void DMA();
   void DMA();
   PIF pif;
+
 private:
-  Mem& mem;
-  Registers& regs;
+  Mem &mem;
+  Registers &regs;
 };
 
 #define SI_DMA_DELAY (65536 * 2)
-}
+} // namespace n64

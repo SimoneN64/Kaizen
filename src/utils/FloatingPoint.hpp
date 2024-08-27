@@ -3,8 +3,8 @@
 //
 
 #pragma once
-#include <common.hpp>
 #include <cmath>
+#include <common.hpp>
 #include <immintrin.h>
 
 namespace Util {
@@ -52,7 +52,7 @@ static inline T roundNearest(double f) {
 #endif
 }
 
-template<typename T>
+template <typename T>
 static inline T roundCurrent(float f) {
 #ifdef SIMD_SUPPORT
   auto t = _mm_set_ss(f);
@@ -63,7 +63,7 @@ static inline T roundCurrent(float f) {
 #endif
 }
 
-template<typename T>
+template <typename T>
 static inline T roundCurrent(double f) {
 #ifdef SIMD_SUPPORT
   auto t = _mm_set_sd(f);
@@ -78,11 +78,11 @@ static inline T roundCurrent(double f) {
 template <typename T>
 static inline T roundFloor(float f) {
 #ifdef SIMD_SUPPORT
-__m128 t = _mm_set_ss(f);
+  __m128 t = _mm_set_ss(f);
   t = _mm_round_ss(t, t, _MM_FROUND_TO_NEG_INF);
   return _mm_cvtss_f32(t);
 #else
-return floor(f);
+  return floor(f);
 #endif
 }
 
@@ -118,4 +118,4 @@ static inline T roundTrunc(double f) {
   return trunc(f);
 #endif
 }
-}
+} // namespace Util

@@ -1,93 +1,103 @@
 #pragma once
-#include <core/mmio/MI.hpp>
-#include <core/RDP.hpp>
-#include <MemoryRegions.hpp>
 #include <MemoryHelpers.hpp>
+#include <MemoryRegions.hpp>
 #include <array>
+#include <core/RDP.hpp>
+#include <core/mmio/MI.hpp>
 
 #define RSP_BYTE(addr) (dmem[BYTE_ADDRESS(addr) & 0xFFF])
 #define GET_RSP_HALF(addr) ((RSP_BYTE(addr) << 8) | RSP_BYTE((addr) + 1))
-#define SET_RSP_HALF(addr, value) do { RSP_BYTE(addr) = ((value) >> 8) & 0xFF; RSP_BYTE((addr) + 1) = (value) & 0xFF;} while(0)
+#define SET_RSP_HALF(addr, value)                                                                                      \
+  do {                                                                                                                 \
+    RSP_BYTE(addr) = ((value) >> 8) & 0xFF;                                                                            \
+    RSP_BYTE((addr) + 1) = (value) & 0xFF;                                                                             \
+  }                                                                                                                    \
+  while (0)
 #define GET_RSP_WORD(addr) ((GET_RSP_HALF(addr) << 16) | GET_RSP_HALF((addr) + 2))
-#define SET_RSP_WORD(addr, value) do { SET_RSP_HALF(addr, ((value) >> 16) & 0xFFFF); SET_RSP_HALF((addr) + 2, (value) & 0xFFFF);} while(0)
+#define SET_RSP_WORD(addr, value)                                                                                      \
+  do {                                                                                                                 \
+    SET_RSP_HALF(addr, ((value) >> 16) & 0xFFFF);                                                                      \
+    SET_RSP_HALF((addr) + 2, (value) & 0xFFFF);                                                                        \
+  }                                                                                                                    \
+  while (0)
 
 namespace n64 {
 union SPStatus {
   u32 raw;
   struct {
-    unsigned halt:1;
-    unsigned broke:1;
-    unsigned dmaBusy:1;
-    unsigned dmaFull:1;
-    unsigned ioFull:1;
-    unsigned singleStep:1;
-    unsigned interruptOnBreak:1;
-    unsigned signal0:1;
-    unsigned signal1:1;
-    unsigned signal2:1;
-    unsigned signal3:1;
-    unsigned signal4:1;
-    unsigned signal5:1;
-    unsigned signal6:1;
-    unsigned signal7:1;
-    unsigned:17;
+    unsigned halt : 1;
+    unsigned broke : 1;
+    unsigned dmaBusy : 1;
+    unsigned dmaFull : 1;
+    unsigned ioFull : 1;
+    unsigned singleStep : 1;
+    unsigned interruptOnBreak : 1;
+    unsigned signal0 : 1;
+    unsigned signal1 : 1;
+    unsigned signal2 : 1;
+    unsigned signal3 : 1;
+    unsigned signal4 : 1;
+    unsigned signal5 : 1;
+    unsigned signal6 : 1;
+    unsigned signal7 : 1;
+    unsigned : 17;
   };
 };
 
 union SPStatusWrite {
   u32 raw;
   struct {
-    unsigned clearHalt:1;
-    unsigned setHalt:1;
-    unsigned clearBroke:1;
-    unsigned clearIntr:1;
-    unsigned setIntr:1;
-    unsigned clearSstep:1;
-    unsigned setSstep:1;
-    unsigned clearIntrOnBreak:1;
-    unsigned setIntrOnBreak:1;
-    unsigned clearSignal0:1;
-    unsigned setSignal0:1;
-    unsigned clearSignal1:1;
-    unsigned setSignal1:1;
-    unsigned clearSignal2:1;
-    unsigned setSignal2:1;
-    unsigned clearSignal3:1;
-    unsigned setSignal3:1;
-    unsigned clearSignal4:1;
-    unsigned setSignal4:1;
-    unsigned clearSignal5:1;
-    unsigned setSignal5:1;
-    unsigned clearSignal6:1;
-    unsigned setSignal6:1;
-    unsigned clearSignal7:1;
-    unsigned setSignal7:1;
-    unsigned:7;
+    unsigned clearHalt : 1;
+    unsigned setHalt : 1;
+    unsigned clearBroke : 1;
+    unsigned clearIntr : 1;
+    unsigned setIntr : 1;
+    unsigned clearSstep : 1;
+    unsigned setSstep : 1;
+    unsigned clearIntrOnBreak : 1;
+    unsigned setIntrOnBreak : 1;
+    unsigned clearSignal0 : 1;
+    unsigned setSignal0 : 1;
+    unsigned clearSignal1 : 1;
+    unsigned setSignal1 : 1;
+    unsigned clearSignal2 : 1;
+    unsigned setSignal2 : 1;
+    unsigned clearSignal3 : 1;
+    unsigned setSignal3 : 1;
+    unsigned clearSignal4 : 1;
+    unsigned setSignal4 : 1;
+    unsigned clearSignal5 : 1;
+    unsigned setSignal5 : 1;
+    unsigned clearSignal6 : 1;
+    unsigned setSignal6 : 1;
+    unsigned clearSignal7 : 1;
+    unsigned setSignal7 : 1;
+    unsigned : 7;
   };
 };
 
 union SPDMALen {
   struct {
-    unsigned len:12;
-    unsigned count:8;
-    unsigned skip:12;
+    unsigned len : 12;
+    unsigned count : 8;
+    unsigned skip : 12;
   };
   u32 raw;
 };
 
 union SPDMASPAddr {
   struct {
-    unsigned address:12;
-    unsigned bank:1;
-    unsigned: 19;
+    unsigned address : 12;
+    unsigned bank : 1;
+    unsigned : 19;
   };
   u32 raw;
 };
 
 union SPDMADRAMAddr {
   struct {
-    unsigned address:24;
-    unsigned:8;
+    unsigned address : 24;
+    unsigned : 8;
   };
   u32 raw;
 };
@@ -106,13 +116,17 @@ struct Mem;
 struct Registers;
 
 #define DE(x) (((x) >> 11) & 0x1F)
-#define CLEAR_SET(val, clear, set) do { \
-  if(clear && !set) (val) = 0; \
-  if(set && !clear) (val) = 1; \
-} while(0)
+#define CLEAR_SET(val, clear, set)                                                                                     \
+  do {                                                                                                                 \
+    if (clear && !set)                                                                                                 \
+      (val) = 0;                                                                                                       \
+    if (set && !clear)                                                                                                 \
+      (val) = 1;                                                                                                       \
+  }                                                                                                                    \
+  while (0)
 
 struct RSP {
-  RSP(Mem&, Registers&);
+  RSP(Mem &, Registers &);
   void Reset();
 
   FORCE_INLINE void Step() {
@@ -161,10 +175,10 @@ struct RSP {
 
   FORCE_INLINE s64 GetACC(int e) const {
     s64 val = u64(acc.h.element[e]) << 32;
-    val    |= u64(acc.m.element[e]) << 16;
-    val    |= u64(acc.l.element[e]) << 00;
-    if((val & 0x0000800000000000) != 0) {
-      val  |= 0xFFFF000000000000;
+    val |= u64(acc.m.element[e]) << 16;
+    val |= u64(acc.l.element[e]) << 00;
+    if ((val & 0x0000800000000000) != 0) {
+      val |= 0xFFFF000000000000;
     }
     return val;
   }
@@ -199,7 +213,7 @@ struct RSP {
 
   FORCE_INLINE u8 GetVCE() const {
     u8 value = 0;
-    for(int i = 0; i < 8; i++) {
+    for (int i = 0; i < 8; i++) {
       bool l = vce.element[ELEMENT_INDEX(i)] != 0;
       value |= (l << i);
     }
@@ -237,7 +251,7 @@ struct RSP {
   }
 
   FORCE_INLINE bool AcquireSemaphore() {
-    if(semaphore) {
+    if (semaphore) {
       return true;
     } else {
       semaphore = true;
@@ -245,9 +259,7 @@ struct RSP {
     }
   }
 
-  FORCE_INLINE void ReleaseSemaphore() {
-    semaphore = false;
-  }
+  FORCE_INLINE void ReleaseSemaphore() { semaphore = false; }
 
   void add(u32 instr);
   void addi(u32 instr);
@@ -352,7 +364,7 @@ struct RSP {
   void vor(u32 instr);
   void vnor(u32 instr);
   void vzero(u32 instr);
-  void mfc0(RDP& rdp, u32 instr);
+  void mfc0(RDP &rdp, u32 instr);
   void mtc0(u32 instr);
   void mfc2(u32 instr);
   void mtc2(u32 instr);
@@ -360,17 +372,18 @@ struct RSP {
   template <bool toRdram>
   void DMA();
   void WriteStatus(u32 value);
+
 private:
-  Registers& regs;
-  Mem& mem;
+  Registers &regs;
+  Mem &mem;
   FORCE_INLINE void branch(u16 address, bool cond) {
-    if(cond) {
+    if (cond) {
       nextPC = address & 0xFFC;
     }
   }
 
   FORCE_INLINE void branch_likely(u16 address, bool cond) {
-    if(cond) {
+    if (cond) {
       nextPC = address & 0xFFC;
     } else {
       pc = nextPC & 0xFFC;
@@ -378,4 +391,4 @@ private:
     }
   }
 };
-}
+} // namespace n64

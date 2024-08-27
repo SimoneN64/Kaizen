@@ -1,10 +1,10 @@
 #include <core/RDP.hpp>
-#include <log.hpp>
 #include <core/RSP.hpp>
+#include <log.hpp>
 #include <parallel-rdp/ParallelRDPWrapper.hpp>
 
 namespace n64 {
-RDP::RDP(Mem& mem, ParallelRDP& parallel) : mem(mem), parallel(parallel) {
+RDP::RDP(Mem &mem, ParallelRDP &parallel) : mem(mem), parallel(parallel) {
   rdram.resize(RDRAM_SIZE);
   std::fill(rdram.begin(), rdram.end(), 0);
   memset(cmd_buf, 0, 0x100000);
@@ -18,84 +18,106 @@ void RDP::Reset() {
   memset(cmd_buf, 0, 0x100000);
 }
 
-template<> void RDP::WriteRDRAM<u8>(size_t idx, u8 v) {
+template <>
+void RDP::WriteRDRAM<u8>(size_t idx, u8 v) {
   size_t real = BYTE_ADDRESS(idx);
-  if(real < RDRAM_SIZE) {
+  if (real < RDRAM_SIZE) {
     rdram[real] = v;
   }
 }
 
-template<> void RDP::WriteRDRAM<u16>(size_t idx, u16 v) {
+template <>
+void RDP::WriteRDRAM<u16>(size_t idx, u16 v) {
   size_t real = HALF_ADDRESS(idx);
-  if(real < RDRAM_SIZE) {
+  if (real < RDRAM_SIZE) {
     Util::WriteAccess<u16>(rdram, real, v);
   }
 }
 
-template<> void RDP::WriteRDRAM<u32>(size_t idx, u32 v) {
-  if(idx < RDRAM_SIZE) {
+template <>
+void RDP::WriteRDRAM<u32>(size_t idx, u32 v) {
+  if (idx < RDRAM_SIZE) {
     Util::WriteAccess<u32>(rdram, idx, v);
   }
 }
 
-template<> void RDP::WriteRDRAM<u64>(size_t idx, u64 v) {
-  if(idx < RDRAM_SIZE) {
+template <>
+void RDP::WriteRDRAM<u64>(size_t idx, u64 v) {
+  if (idx < RDRAM_SIZE) {
     Util::WriteAccess<u64>(rdram, idx, v);
   }
 }
 
-template<> u8 RDP::ReadRDRAM<u8>(size_t idx) {
+template <>
+u8 RDP::ReadRDRAM<u8>(size_t idx) {
   size_t real = BYTE_ADDRESS(idx);
-  if(real >= RDRAM_SIZE) return 0;
+  if (real >= RDRAM_SIZE)
+    return 0;
   return rdram[real];
 }
 
-template<> u16 RDP::ReadRDRAM<u16>(size_t idx) {
+template <>
+u16 RDP::ReadRDRAM<u16>(size_t idx) {
   size_t real = HALF_ADDRESS(idx);
-  if(real >= RDRAM_SIZE) return 0;
+  if (real >= RDRAM_SIZE)
+    return 0;
   return Util::ReadAccess<u16>(rdram, real);
 }
 
-template<> u32 RDP::ReadRDRAM<u32>(size_t idx) {
-  if(idx >= RDRAM_SIZE) return 0;
+template <>
+u32 RDP::ReadRDRAM<u32>(size_t idx) {
+  if (idx >= RDRAM_SIZE)
+    return 0;
   return Util::ReadAccess<u32>(rdram, idx);
 }
 
-template<> u64 RDP::ReadRDRAM<u64>(size_t idx) {
-  if(idx >= RDRAM_SIZE) return 0;
+template <>
+u64 RDP::ReadRDRAM<u64>(size_t idx) {
+  if (idx >= RDRAM_SIZE)
+    return 0;
   return Util::ReadAccess<u64>(rdram, idx);
 }
 
-static const int cmd_lens[64] = {
-  2, 2, 2, 2, 2, 2, 2, 2, 8, 12, 24, 28, 24, 28, 40, 44,
-  2, 2, 2, 2, 2, 2, 2, 2, 2, 2,  2,  2,  2,  2,  2,  2,
-  2, 2, 2, 2, 4, 4, 2, 2, 2, 2,  2,  2,  2,  2,  2,  2,
-  2, 2, 2, 2, 2, 2, 2, 2, 2, 2,  2,  2,  2,  2,  2,  2
-};
+static const int cmd_lens[64] = {2, 2, 2, 2, 2, 2, 2, 2, 8, 12, 24, 28, 24, 28, 40, 44, 2, 2, 2, 2, 2, 2,
+                                 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,  2,  2,  2,  2,  4,  4,  2, 2, 2, 2, 2, 2,
+                                 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,  2,  2,  2,  2,  2,  2,  2, 2, 2, 2};
 
 auto RDP::Read(u32 addr) const -> u32 {
-  switch(addr) {
-    case 0x04100000: return dpc.start;
-    case 0x04100004: return dpc.end;
-    case 0x04100008: return dpc.current;
-    case 0x0410000C:
-      return dpc.status.raw;
-    case 0x04100010: return dpc.clock;
-    case 0x04100014: return dpc.status.cmdBusy;
-    case 0x04100018: return dpc.status.pipeBusy;
-    case 0x0410001C: return dpc.tmem;
-    default:
-      Util::panic("Unhandled DP Command Registers read (addr: {:08X})", addr);
+  switch (addr) {
+  case 0x04100000:
+    return dpc.start;
+  case 0x04100004:
+    return dpc.end;
+  case 0x04100008:
+    return dpc.current;
+  case 0x0410000C:
+    return dpc.status.raw;
+  case 0x04100010:
+    return dpc.clock;
+  case 0x04100014:
+    return dpc.status.cmdBusy;
+  case 0x04100018:
+    return dpc.status.pipeBusy;
+  case 0x0410001C:
+    return dpc.tmem;
+  default:
+    Util::panic("Unhandled DP Command Registers read (addr: {:08X})", addr);
   }
 }
 
 void RDP::Write(u32 addr, u32 val) {
-  switch(addr) {
-    case 0x04100000: WriteStart(val); break;
-    case 0x04100004: WriteEnd(val); break;
-    case 0x0410000C: WriteStatus(val); break;
-    default:
-      Util::panic("Unhandled DP Command Registers write (addr: {:08X}, val: {:08X})", addr, val);
+  switch (addr) {
+  case 0x04100000:
+    WriteStart(val);
+    break;
+  case 0x04100004:
+    WriteEnd(val);
+    break;
+  case 0x0410000C:
+    WriteStatus(val);
+    break;
+  default:
+    Util::panic("Unhandled DP Command Registers write (addr: {:08X}, val: {:08X})", addr, val);
   }
 }
 
@@ -104,20 +126,21 @@ void RDP::WriteStatus(u32 val) {
   temp.raw = val;
 
   CLEAR_SET(dpc.status.xbusDmemDma, temp.clearXbusDmemDma, temp.setXbusDmemDma);
-  if(temp.clearFreeze) {
+  if (temp.clearFreeze) {
     dpc.status.freeze = false;
   }
 
-  if(temp.setFreeze) {
+  if (temp.setFreeze) {
     dpc.status.freeze = true;
   }
   CLEAR_SET(dpc.status.flush, temp.clearFlush, temp.setFlush);
   CLEAR_SET(dpc.status.cmdBusy, temp.clearCmd, false);
-  if(temp.clearClock) dpc.clock = 0;
+  if (temp.clearClock)
+    dpc.clock = 0;
   CLEAR_SET(dpc.status.pipeBusy, temp.clearPipe, false);
   CLEAR_SET(dpc.status.tmemBusy, temp.clearTmem, false);
 
-  if(!dpc.status.freeze) {
+  if (!dpc.status.freeze) {
     RunCommand();
   }
 }
@@ -169,7 +192,7 @@ void RDP::RunCommand() {
   }
   dpc.status.pipeBusy = true;
   dpc.status.startGclk = true;
-  if(dpc.end > dpc.current) {
+  if (dpc.end > dpc.current) {
     dpc.status.freeze = true;
 
     static int remaining_cmds = 0;
@@ -178,7 +201,8 @@ void RDP::RunCommand() {
     const u32 end = dpc.end & 0xFFFFF8;
 
     int len = end - current;
-    if (len <= 0) return;
+    if (len <= 0)
+      return;
 
     if (len + (remaining_cmds * 4) > 0xFFFFF) {
       Util::panic("Too many RDP commands");
@@ -255,4 +279,4 @@ void RDP::OnFullSync() {
   dpc.status.cbufReady = false;
   mem.mmio.mi.InterruptRaise(MI::Interrupt::DP);
 }
-}
+} // namespace n64

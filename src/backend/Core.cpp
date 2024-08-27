@@ -1,9 +1,9 @@
 #include <Core.hpp>
-#include <Scheduler.hpp>
 #include <ParallelRDPWrapper.hpp>
+#include <Scheduler.hpp>
 
 namespace n64 {
-Core::Core(ParallelRDP& parallel) : cpu(std::make_unique<JIT>(parallel)) {}
+Core::Core(ParallelRDP &parallel) : cpu(std::make_unique<JIT>(parallel)) {}
 
 void Core::Stop() {
   render = false;
@@ -12,26 +12,23 @@ void Core::Stop() {
   cpu->Reset();
 }
 
-bool Core::LoadTAS(const fs::path &path) const {
-  return cpu->GetMem().mmio.si.pif.movie.Load(path);
-}
+bool Core::LoadTAS(const fs::path &path) const { return cpu->GetMem().mmio.si.pif.movie.Load(path); }
 
-void Core::LoadROM(const std::string& rom_) {
+void Core::LoadROM(const std::string &rom_) {
   pause = true;
   rom = rom_;
   cpu->Reset();
   romLoaded = true;
 
-  std::string archive_types[] = {".zip",".7z",".rar",".tar"};
+  std::string archive_types[] = {".zip", ".7z", ".rar", ".tar"};
 
   auto extension = fs::path(rom).extension().string();
-  bool isArchive = std::any_of(std::begin(archive_types), std::end(archive_types), [&extension](const auto& e) {
-    return e == extension;
-  });
+  bool isArchive = std::any_of(std::begin(archive_types), std::end(archive_types),
+                               [&extension](const auto &e) { return e == extension; });
 
   cpu->GetMem().LoadROM(isArchive, rom);
   GameDB::match(cpu->GetMem());
-  if(cpu->GetMem().rom.gameNameDB.empty()) {
+  if (cpu->GetMem().rom.gameNameDB.empty()) {
     cpu->GetMem().rom.gameNameDB = fs::path(rom).stem();
   }
   cpu->GetMem().mmio.vi.isPal = cpu->GetMem().IsROMPAL();
@@ -46,9 +43,9 @@ void Core::LoadROM(const std::string& rom_) {
 }
 
 void Core::Run(float volumeL, float volumeR) {
-  Mem& mem = cpu->GetMem();
-  MMIO& mmio = mem.mmio;
-  Registers& regs = cpu->GetRegs();
+  Mem &mem = cpu->GetMem();
+  MMIO &mmio = mem.mmio;
+  Registers &regs = cpu->GetRegs();
 
   for (int field = 0; field < mmio.vi.numFields; field++) {
     u32 frameCycles = 0;
@@ -59,21 +56,21 @@ void Core::Run(float volumeL, float volumeR) {
         mmio.mi.InterruptRaise(MI::Interrupt::VI);
       }
 
-      for(; cycles < mem.mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
+      for (; cycles < mem.mmio.vi.cyclesPerHalfline; cycles++, frameCycles++) {
         u32 taken = cpu->Step();
         taken += regs.PopStalledCycles();
 
         regs.steps += taken;
-        if(mmio.rsp.spStatus.halt) {
+        if (mmio.rsp.spStatus.halt) {
           regs.steps = 0;
           mmio.rsp.steps = 0;
         } else {
-          while(regs.steps > 2) {
+          while (regs.steps > 2) {
             mmio.rsp.steps += 2;
             regs.steps -= 3;
           }
 
-          while(mmio.rsp.steps > 0) {
+          while (mmio.rsp.steps > 0) {
             mmio.rsp.steps--;
             mmio.rsp.Step();
           }
@@ -110,14 +107,14 @@ void Core::Serialize() {
 
 void Core::Deserialize() {
   std::vector<u8> dVER(serialized[slot].begin(), serialized[slot].begin() + verSize);
-  if(dVER[0] != (KAIZEN_VERSION >> 8)
-  || dVER[1] != (KAIZEN_VERSION >> 4)
-  || dVER[2] != (KAIZEN_VERSION & 0xFF)) {
+  if (dVER[0] != (KAIZEN_VERSION >> 8) || dVER[1] != (KAIZEN_VERSION >> 4) || dVER[2] != (KAIZEN_VERSION & 0xFF)) {
     Util::panic("PROBLEMI!");
   }
 
-  cpu->GetMem().Deserialize(std::vector<u8>(serialized[slot].begin() + verSize, serialized[slot].begin() + verSize + memSize));
-  cpu->Deserialize(std::vector<u8>(serialized[slot].begin() + verSize + memSize, serialized[slot].begin() + verSize + memSize + cpuSize));
+  cpu->GetMem().Deserialize(
+    std::vector<u8>(serialized[slot].begin() + verSize, serialized[slot].begin() + verSize + memSize));
+  cpu->Deserialize(std::vector<u8>(serialized[slot].begin() + verSize + memSize,
+                                   serialized[slot].begin() + verSize + memSize + cpuSize));
   serialized[slot].erase(serialized[slot].begin(), serialized[slot].end());
 }
-}
+} // namespace n64

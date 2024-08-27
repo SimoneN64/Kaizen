@@ -5,20 +5,20 @@
 
 union TASMovieControllerData {
   struct {
-    unsigned dpadRight: 1;
-    unsigned dpadLeft: 1;
-    unsigned dpadDown: 1;
-    unsigned dpadUp: 1;
-    unsigned start: 1;
-    unsigned z: 1;
-    unsigned b: 1;
-    unsigned a: 1;
-    unsigned cRight: 1;
-    unsigned cLeft: 1;
-    unsigned cDown: 1;
-    unsigned cUp: 1;
-    unsigned r: 1;
-    unsigned l: 1;
+    unsigned dpadRight : 1;
+    unsigned dpadLeft : 1;
+    unsigned dpadDown : 1;
+    unsigned dpadUp : 1;
+    unsigned start : 1;
+    unsigned z : 1;
+    unsigned b : 1;
+    unsigned a : 1;
+    unsigned cRight : 1;
+    unsigned cLeft : 1;
+    unsigned cDown : 1;
+    unsigned cUp : 1;
+    unsigned r : 1;
+    unsigned l : 1;
     unsigned : 2;
     signed analogX : 8;
     signed analogY : 8;
@@ -30,14 +30,15 @@ static_assert(sizeof(TASMovieControllerData) == 4);
 
 bool MupenMovie::Load(const fs::path &path) {
   loadedTasMovie = Util::ReadFileBinary(path.string());
-  if(!IsLoaded()) {
+  if (!IsLoaded()) {
     Util::error("Error loading movie!");
     return false;
   }
 
   memcpy(&loadedTasMovieHeader, loadedTasMovie.data(), sizeof(TASMovieHeader));
 
-  if (loadedTasMovieHeader.signature[0] != 0x4D || loadedTasMovieHeader.signature[1] != 0x36 || loadedTasMovieHeader.signature[2] != 0x34 || loadedTasMovieHeader.signature[3] != 0x1A) {
+  if (loadedTasMovieHeader.signature[0] != 0x4D || loadedTasMovieHeader.signature[1] != 0x36 ||
+      loadedTasMovieHeader.signature[2] != 0x34 || loadedTasMovieHeader.signature[3] != 0x1A) {
     Util::error("Failed to load movie: incorrect signature. Are you sure this is a valid movie?");
     return false;
   }
@@ -48,7 +49,8 @@ bool MupenMovie::Load(const fs::path &path) {
   }
 
   if (loadedTasMovieHeader.startType != 2) {
-    Util::error("Movie start type is {} - only movies with a start type of 2 are supported (start at power on)", loadedTasMovieHeader.startType);
+    Util::error("Movie start type is {} - only movies with a start type of 2 are supported (start at power on)",
+                loadedTasMovieHeader.startType);
     return false;
   }
 
@@ -66,18 +68,19 @@ bool MupenMovie::Load(const fs::path &path) {
 }
 
 MupenMovie::MupenMovie(const fs::path &path) {
-  if(!Load(path)) {
+  if (!Load(path)) {
     Util::panic("");
   }
 }
 
 void MupenMovie::Reset() {
-  if(!IsLoaded()) return;
+  if (!IsLoaded())
+    return;
 
   loadedTasMovieIndex = sizeof(TASMovieHeader) - 4; // skip header
 }
 
-FORCE_INLINE void LogController(const n64::Controller& controller) {
+FORCE_INLINE void LogController(const n64::Controller &controller) {
   Util::debug("c_right: {}", controller.cRight);
   Util::debug("c_left: {}", controller.cLeft);
   Util::debug("c_down: {}", controller.cDown);

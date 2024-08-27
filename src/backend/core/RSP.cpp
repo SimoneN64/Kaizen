@@ -177,14 +177,14 @@ void RSP::Write(u32 addr, u32 val) {
   switch (addr) {
     case 0x04040000: spDMASPAddr.raw = val & 0x1FF8; break;
     case 0x04040004: spDMADRAMAddr.raw = val & 0xFFFFFC; break;
-    case 0x04040008: {
+    case 0x04040008:
       spDMALen.raw = val;
       DMA<false>();
-    } break;
-    case 0x0404000C: {
+    break;
+    case 0x0404000C:
       spDMALen.raw = val;
       DMA<true>();
-    } break;
+    break;
     case 0x04040010: WriteStatus(val); break;
     case 0x0404001C: ReleaseSemaphore(); break;
     case 0x04080000:

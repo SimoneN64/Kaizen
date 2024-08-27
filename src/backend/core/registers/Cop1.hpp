@@ -8,33 +8,33 @@ struct Cop1;
 union FCR31 {
   FCR31() = default;
   struct {
-    unsigned rounding_mode:2;
+    unsigned rounding_mode : 2;
     struct {
-      unsigned inexact_operation:1;
-      unsigned underflow:1;
-      unsigned overflow:1;
-      unsigned division_by_zero:1;
-      unsigned invalid_operation:1;
+      unsigned inexact_operation : 1;
+      unsigned underflow : 1;
+      unsigned overflow : 1;
+      unsigned division_by_zero : 1;
+      unsigned invalid_operation : 1;
     } flag;
     struct {
-      unsigned inexact_operation:1;
-      unsigned underflow:1;
-      unsigned overflow:1;
-      unsigned division_by_zero:1;
-      unsigned invalid_operation:1;
+      unsigned inexact_operation : 1;
+      unsigned underflow : 1;
+      unsigned overflow : 1;
+      unsigned division_by_zero : 1;
+      unsigned invalid_operation : 1;
     } enable;
     struct {
-      unsigned inexact_operation:1;
-      unsigned underflow:1;
-      unsigned overflow:1;
-      unsigned division_by_zero:1;
-      unsigned invalid_operation:1;
-      unsigned unimplemented_operation:1;
+      unsigned inexact_operation : 1;
+      unsigned underflow : 1;
+      unsigned overflow : 1;
+      unsigned division_by_zero : 1;
+      unsigned invalid_operation : 1;
+      unsigned unimplemented_operation : 1;
     } cause;
-    unsigned:5;
-    unsigned compare:1;
-    unsigned fs:1;
-    unsigned:7;
+    unsigned : 5;
+    unsigned compare : 1;
+    unsigned fs : 1;
+    unsigned : 7;
   } __attribute__((__packed__));
 
   [[nodiscard]] u32 read() const {
@@ -85,12 +85,7 @@ union FCR31 {
   }
 };
 
-enum CompConds {
-  F, UN, EQ, UEQ,
-  OLT, ULT, OLE, ULE,
-  SF, NGLE, SEQ, NGL,
-  LT, NGE, LE, NGT
-};
+enum CompConds { F, UN, EQ, UEQ, OLT, ULT, OLE, ULE, SF, NGLE, SEQ, NGL, LT, NGE, LE, NGT };
 
 union FloatingPointReg {
   struct {
@@ -121,28 +116,28 @@ struct JIT;
 struct Registers;
 
 struct Cop1 {
-  explicit Cop1(Registers&);
+  explicit Cop1(Registers &);
   u32 fcr0{};
   FCR31 fcr31{};
   FloatingPointReg fgr[32]{};
 
   void Reset();
   template <class T> // either JIT or Interpreter
-  void decode(T&, u32);
+  void decode(T &, u32);
   friend struct Interpreter;
 
   template <bool preserveCause = false>
   bool CheckFPUUsable();
   template <typename T>
-  bool CheckResult(T&);
+  bool CheckResult(T &);
   template <typename T>
-  bool CheckArg(T&);
+  bool CheckArg(T &);
   template <typename T>
-  bool CheckArgs(T&, T&);
+  bool CheckArgs(T &, T &);
   template <typename T>
   bool isqnan(T);
 
-  template<typename T, bool quiet, bool cf>
+  template <typename T, bool quiet, bool cf>
   bool XORDERED(T fs, T ft);
 
   template <typename T>
@@ -158,15 +153,16 @@ struct Cop1 {
   bool SetCauseDivisionByZero();
   bool SetCauseOverflow();
   bool SetCauseInvalid();
+
 private:
   template <typename T>
-  auto FGR_T(Cop0Status&, u32) -> T&;
+  auto FGR_T(Cop0Status &, u32) -> T &;
   template <typename T>
-  auto FGR_S(Cop0Status&, u32) -> T&;
+  auto FGR_S(Cop0Status &, u32) -> T &;
   template <typename T>
-  auto FGR_D(Cop0Status&, u32) -> T&;
-  void decodeInterp(Interpreter&, u32);
-  void decodeJIT(JIT&, u32);
+  auto FGR_D(Cop0Status &, u32) -> T &;
+  void decodeInterp(Interpreter &, u32);
+  void decodeJIT(JIT &, u32);
   void absd(u32 instr);
   void abss(u32 instr);
   void adds(u32 instr);
@@ -240,31 +236,23 @@ private:
   void negd(u32 instr);
   void sqrts(u32 instr);
   void sqrtd(u32 instr);
-  template<class T>
-  void lwc1(T&, Mem&, u32);
-  template<class T>
-  void swc1(T&, Mem&, u32);
-  template<class T>
-  void ldc1(T&, Mem&, u32);
-  template<class T>
-  void sdc1(T&, Mem&, u32);
+  template <class T>
+  void lwc1(T &, Mem &, u32);
+  template <class T>
+  void swc1(T &, Mem &, u32);
+  template <class T>
+  void ldc1(T &, Mem &, u32);
+  template <class T>
+  void sdc1(T &, Mem &, u32);
 
-  void lwc1Interp(Mem&, u32);
-  void swc1Interp(Mem&, u32);
-  void ldc1Interp(Mem&, u32);
-  void sdc1Interp(Mem&, u32);
-  void lwc1JIT(JIT&, Mem&, u32) {
-    Util::panic("[JIT]: lwc1 not implemented!");
-  }
-  void swc1JIT(JIT&, Mem&, u32) {
-    Util::panic("[JIT]: swc1 not implemented!");
-  }
-  void ldc1JIT(JIT&, Mem&, u32) {
-    Util::panic("[JIT]: ldc1 not implemented!");
-  }
-  void sdc1JIT(JIT&, Mem&, u32) {
-    Util::panic("[JIT]: sdc1 not implemented!");
-  }
+  void lwc1Interp(Mem &, u32);
+  void swc1Interp(Mem &, u32);
+  void ldc1Interp(Mem &, u32);
+  void sdc1Interp(Mem &, u32);
+  void lwc1JIT(JIT &, Mem &, u32) { Util::panic("[JIT]: lwc1 not implemented!"); }
+  void swc1JIT(JIT &, Mem &, u32) { Util::panic("[JIT]: swc1 not implemented!"); }
+  void ldc1JIT(JIT &, Mem &, u32) { Util::panic("[JIT]: ldc1 not implemented!"); }
+  void sdc1JIT(JIT &, Mem &, u32) { Util::panic("[JIT]: sdc1 not implemented!"); }
   void mfc1(u32 instr);
   void dmfc1(u32 instr);
   void mtc1(u32 instr);
@@ -274,6 +262,6 @@ private:
   void truncls(u32 instr);
   void truncld(u32 instr);
 
-  Registers& regs;
+  Registers &regs;
 };
-}
+} // namespace n64

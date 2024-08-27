@@ -44,60 +44,60 @@ struct Mem;
 union Cop0Cause {
   u32 raw;
   struct {
-    unsigned: 8;
-    unsigned interruptPending: 8;
-    unsigned: 16;
+    unsigned : 8;
+    unsigned interruptPending : 8;
+    unsigned : 16;
   } __attribute__((__packed__));
   struct {
-    unsigned: 2;
-    unsigned exceptionCode: 5;
-    unsigned: 1;
-    unsigned ip0: 1;
-    unsigned ip1: 1;
-    unsigned ip2: 1;
-    unsigned ip3: 1;
-    unsigned ip4: 1;
-    unsigned ip5: 1;
-    unsigned ip6: 1;
-    unsigned ip7: 1;
-    unsigned: 12;
-    unsigned copError: 2;
-    unsigned: 1;
-    unsigned branchDelay: 1;
+    unsigned : 2;
+    unsigned exceptionCode : 5;
+    unsigned : 1;
+    unsigned ip0 : 1;
+    unsigned ip1 : 1;
+    unsigned ip2 : 1;
+    unsigned ip3 : 1;
+    unsigned ip4 : 1;
+    unsigned ip5 : 1;
+    unsigned ip6 : 1;
+    unsigned ip7 : 1;
+    unsigned : 12;
+    unsigned copError : 2;
+    unsigned : 1;
+    unsigned branchDelay : 1;
   } __attribute__((__packed__));
 };
 
 union Cop0Status {
   struct {
-    unsigned ie: 1;
-    unsigned exl: 1;
-    unsigned erl: 1;
-    unsigned ksu: 2;
-    unsigned ux: 1;
-    unsigned sx: 1;
-    unsigned kx: 1;
-    unsigned im: 8;
-    unsigned ds: 9;
-    unsigned re: 1;
-    unsigned fr: 1;
-    unsigned rp: 1;
-    unsigned cu0: 1;
-    unsigned cu1: 1;
-    unsigned cu2: 1;
-    unsigned cu3: 1;
+    unsigned ie : 1;
+    unsigned exl : 1;
+    unsigned erl : 1;
+    unsigned ksu : 2;
+    unsigned ux : 1;
+    unsigned sx : 1;
+    unsigned kx : 1;
+    unsigned im : 8;
+    unsigned ds : 9;
+    unsigned re : 1;
+    unsigned fr : 1;
+    unsigned rp : 1;
+    unsigned cu0 : 1;
+    unsigned cu1 : 1;
+    unsigned cu2 : 1;
+    unsigned cu3 : 1;
   } __attribute__((__packed__));
   struct {
-    unsigned: 16;
-    unsigned de: 1;
-    unsigned ce: 1;
-    unsigned ch: 1;
-    unsigned: 1;
-    unsigned sr: 1;
-    unsigned ts: 1;
-    unsigned bev: 1;
-    unsigned: 1;
-    unsigned its: 1;
-    unsigned: 7;
+    unsigned : 16;
+    unsigned de : 1;
+    unsigned ce : 1;
+    unsigned ch : 1;
+    unsigned : 1;
+    unsigned sr : 1;
+    unsigned ts : 1;
+    unsigned bev : 1;
+    unsigned : 1;
+    unsigned its : 1;
+    unsigned : 7;
   } __attribute__((__packed__));
   u32 raw;
 } __attribute__((__packed__));
@@ -105,41 +105,41 @@ union Cop0Status {
 union EntryLo {
   u32 raw;
   struct {
-    unsigned g:1;
-    unsigned v:1;
-    unsigned d:1;
-    unsigned c:3;
-    unsigned pfn:20;
-    unsigned:6;
+    unsigned g : 1;
+    unsigned v : 1;
+    unsigned d : 1;
+    unsigned c : 3;
+    unsigned pfn : 20;
+    unsigned : 6;
   };
 };
 
 union EntryHi {
   u64 raw;
   struct {
-    u64 asid:8;
-    u64:5;
-    u64 vpn2:27;
-    u64 fill:22;
-    u64 r:2;
+    u64 asid : 8;
+    u64 : 5;
+    u64 vpn2 : 27;
+    u64 fill : 22;
+    u64 r : 2;
   } __attribute__((__packed__));
 };
 
 union PageMask {
   u32 raw;
   struct {
-    unsigned: 13;
-    unsigned mask: 12;
-    unsigned: 7;
+    unsigned : 13;
+    unsigned mask : 12;
+    unsigned : 7;
   };
 };
 
 union Index {
   u32 raw;
   struct {
-    unsigned i:6;
-    unsigned:25;
-    unsigned p:1;
+    unsigned i : 6;
+    unsigned : 25;
+    unsigned p : 1;
   };
 };
 
@@ -148,12 +148,12 @@ struct TLBEntry {
   union {
     u32 raw;
     struct {
-      unsigned:1;
-      unsigned v:1;
-      unsigned d:1;
-      unsigned c:3;
-      unsigned pfn:20;
-      unsigned:6;
+      unsigned : 1;
+      unsigned v : 1;
+      unsigned d : 1;
+      unsigned c : 3;
+      unsigned pfn : 20;
+      unsigned : 6;
     };
   } entryLo0, entryLo1;
   EntryHi entryHi;
@@ -162,13 +162,7 @@ struct TLBEntry {
   bool global;
 };
 
-enum TLBError : u8 {
-  NONE,
-  MISS,
-  INVALID,
-  MODIFICATION,
-  DISALLOWED_ADDRESS
-};
+enum TLBError : u8 { NONE, MISS, INVALID, MODIFICATION, DISALLOWED_ADDRESS };
 
 enum class ExceptionCode : u8 {
   Interrupt = 0,
@@ -192,24 +186,24 @@ enum class ExceptionCode : u8 {
 union Cop0Context {
   u64 raw;
   struct {
-    u64: 4;
-    u64 badvpn2: 19;
-    u64 ptebase: 41;
+    u64 : 4;
+    u64 badvpn2 : 19;
+    u64 ptebase : 41;
   };
 };
 
 union Cop0XContext {
   u64 raw;
   struct {
-    u64: 4;
-    u64 badvpn2: 27;
-    u64 r: 2;
-    u64 ptebase: 31;
+    u64 : 4;
+    u64 badvpn2 : 27;
+    u64 r : 2;
+    u64 ptebase : 31;
   } __attribute__((__packed__));
 };
 
 struct Cop0 {
-  Cop0(Registers&);
+  Cop0(Registers &);
 
   u32 GetReg32(u8);
   [[nodiscard]] u64 GetReg64(u8) const;
@@ -245,12 +239,12 @@ struct Cop0 {
   TLBError tlbError = NONE;
   s64 openbus{};
   template <class T>
-  void decode(T&, u32);
+  void decode(T &, u32);
   FORCE_INLINE u32 GetRandom() {
     u32 val = rand();
     auto wired_ = GetWired();
     u32 lower, upper;
-    if(wired_ > 31) {
+    if (wired_ > 31) {
       lower = 0;
       upper = 64;
     } else {
@@ -265,37 +259,33 @@ struct Cop0 {
   FORCE_INLINE void Update() {
     bool exception = status.exl || status.erl;
 
-    kernelMode     =  exception || status.ksu == 0;
+    kernelMode = exception || status.ksu == 0;
     supervisorMode = !exception && status.ksu == 1;
-    userMode       = !exception && status.ksu == 2;
-    is64BitAddressing =
-      (kernelMode && status.kx)
-      || (supervisorMode && status.sx)
-      || (userMode && status.ux);
+    userMode = !exception && status.ksu == 2;
+    is64BitAddressing = (kernelMode && status.kx) || (supervisorMode && status.sx) || (userMode && status.ux);
   }
 
-  enum TLBAccessType {
-    LOAD, STORE
-  };
+  enum TLBAccessType { LOAD, STORE };
 
-  bool ProbeTLB(TLBAccessType access_type, u64 vaddr, u32& paddr, int* match);
+  bool ProbeTLB(TLBAccessType access_type, u64 vaddr, u32 &paddr, int *match);
   void FireException(ExceptionCode code, int cop, s64 pc);
-  bool MapVAddr(TLBAccessType accessType, u64 vaddr, u32& paddr);
-  bool UserMapVAddr32(TLBAccessType accessType, u64 vaddr, u32& paddr);
-  bool MapVAddr32(TLBAccessType accessType, u64 vaddr, u32& paddr);
-  bool UserMapVAddr64(TLBAccessType accessType, u64 vaddr, u32& paddr);
-  bool MapVAddr64(TLBAccessType accessType, u64 vaddr, u32& paddr);
+  bool MapVAddr(TLBAccessType accessType, u64 vaddr, u32 &paddr);
+  bool UserMapVAddr32(TLBAccessType accessType, u64 vaddr, u32 &paddr);
+  bool MapVAddr32(TLBAccessType accessType, u64 vaddr, u32 &paddr);
+  bool UserMapVAddr64(TLBAccessType accessType, u64 vaddr, u32 &paddr);
+  bool MapVAddr64(TLBAccessType accessType, u64 vaddr, u32 &paddr);
 
-  TLBEntry* TLBTryMatch(u64 vaddr, int* match);
+  TLBEntry *TLBTryMatch(u64 vaddr, int *match);
   void HandleTLBException(u64 vaddr);
   ExceptionCode GetTLBExceptionCode(TLBError error, TLBAccessType access_type);
+
 private:
-  Registers& regs;
+  Registers &regs;
   [[nodiscard]] FORCE_INLINE u32 GetWired() const { return wired & 0x3F; }
   [[nodiscard]] FORCE_INLINE u32 GetCount() const { return u32(u64(count >> 1)); }
 
   void decodeInterp(u32);
-  void decodeJIT(JIT&, u32);
+  void decodeJIT(JIT &, u32);
   void mtc0(u32);
   void dmtc0(u32);
   void mfc0(u32);
@@ -306,4 +296,4 @@ private:
   void tlbw(int);
   void tlbp();
 };
-}
+} // namespace n64

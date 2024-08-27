@@ -2,7 +2,7 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
-AudioSettings::AudioSettings(nlohmann::json& settings) : settings(settings), QWidget(nullptr) {
+AudioSettings::AudioSettings(nlohmann::json &settings) : settings(settings), QWidget(nullptr) {
   lockChannels->setChecked(JSONGetField<bool>(settings, "audio", "lock"));
   volumeL->setValue(JSONGetField<float>(settings, "audio", "volumeL") * 100);
   volumeR->setValue(JSONGetField<float>(settings, "audio", "volumeR") * 100);
@@ -34,12 +34,12 @@ AudioSettings::AudioSettings(nlohmann::json& settings) : settings(settings), QWi
     emit modified();
   });
 
-  QLabel* labelLock = new QLabel("Lock channels:");
-  QLabel* labelL = new QLabel("Volume L");
-  QLabel* labelR = new QLabel("Volume R");
+  auto labelLock = new QLabel("Lock channels:");
+  auto labelL = new QLabel("Volume L");
+  auto labelR = new QLabel("Volume R");
 
-  QVBoxLayout* mainLayout = new QVBoxLayout;
-  QHBoxLayout* volLayout = new QHBoxLayout;
+  auto mainLayout = new QVBoxLayout;
+  auto volLayout = new QHBoxLayout;
   mainLayout->addWidget(labelLock);
   mainLayout->addWidget(lockChannels);
   volLayout->addWidget(labelL);

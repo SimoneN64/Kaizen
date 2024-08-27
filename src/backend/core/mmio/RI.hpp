@@ -11,4 +11,4 @@ struct RI {
   u32 mode{0xE}, config{0x40}, select{0x14}, refresh{0x63634};
 };
 
-}
+} // namespace n64

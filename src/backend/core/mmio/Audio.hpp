@@ -10,7 +10,7 @@ struct AudioDevice {
   void PushSample(float, float, float, float);
   void AdjustSampleRate(int);
   void LockMutex() {
-    if(audioStreamMutex)
+    if (audioStreamMutex)
       SDL_LockMutex(audioStreamMutex);
   }
   void UnlockMutex() {
@@ -18,13 +18,14 @@ struct AudioDevice {
       SDL_UnlockMutex(audioStreamMutex);
   }
 
-  SDL_AudioStream* GetStream() { return audioStream; }
+  SDL_AudioStream *GetStream() { return audioStream; }
+
 private:
-  SDL_AudioStream* audioStream;
-  SDL_mutex* audioStreamMutex;
+  SDL_AudioStream *audioStream;
+  SDL_mutex *audioStreamMutex;
   SDL_AudioSpec audioSpec{};
   SDL_AudioSpec request{};
   SDL_AudioDeviceID handle{};
 };
 
-}
+} // namespace n64

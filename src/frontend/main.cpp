@@ -2,7 +2,7 @@
 #include <QApplication>
 #include <QCommandLineParser>
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   QApplication app(argc, argv);
   app.setStyle("fusion");
   QCoreApplication::setOrganizationName("kaizen");
@@ -10,12 +10,9 @@ int main(int argc, char** argv) {
   QCommandLineParser parser;
   parser.setApplicationDescription(QCoreApplication::applicationName());
   parser.addHelpOption();
-  parser.addOptions({
-    {"rom", "Rom to launch from command-line", "path"},
-    {"movie", "Mupen Movie to replay", "path"}
-  });
+  parser.addOptions({{"rom", "Rom to launch from command-line", "path"}, {"movie", "Mupen Movie to replay", "path"}});
   parser.process(app);
-  
+
   KaizenQt kaizenQt;
   if (parser.isSet("rom")) {
     kaizenQt.LoadROM(parser.value("rom"));

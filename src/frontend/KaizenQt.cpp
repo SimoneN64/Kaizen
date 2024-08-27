@@ -1,21 +1,18 @@
 #include <KaizenQt.hpp>
-#include <QMessageBox>
 #include <QApplication>
 #include <QDropEvent>
+#include <QMessageBox>
 #include <QMimeData>
 #include <filesystem>
 
 namespace fs = std::filesystem;
 
-KaizenQt::KaizenQt() noexcept :
-  QWidget(nullptr) {
+KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   mainWindow = std::make_unique<MainWindowController>();
   settingsWindow = std::make_unique<SettingsWindow>();
-  emuThread = std::make_unique<EmuThread>(
-  std::move(mainWindow->view.vulkanWidget->instance),
-  std::move(mainWindow->view.vulkanWidget->wsiPlatform),
-  std::move(mainWindow->view.vulkanWidget->windowInfo),
-  *settingsWindow);
+  emuThread = std::make_unique<EmuThread>(std::move(mainWindow->view.vulkanWidget->instance),
+                                          std::move(mainWindow->view.vulkanWidget->wsiPlatform),
+                                          std::move(mainWindow->view.vulkanWidget->windowInfo), *settingsWindow);
 
   ConnectMainWindowSignalsToSlots();
 
@@ -25,22 +22,16 @@ KaizenQt::KaizenQt() noexcept :
   grabKeyboard();
   mainWindow->show();
   settingsWindow->hide();
-  connect(settingsWindow.get(), &SettingsWindow::regrabKeyboard, this, [&]() {
-    grabKeyboard();
-  });
+  connect(settingsWindow.get(), &SettingsWindow::regrabKeyboard, this, [&]() { grabKeyboard(); });
 }
 
 void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept {
-  connect(mainWindow.get(), &MainWindowController::OpenSettings, this, [this]() {
-    settingsWindow->show();
-  });
+  connect(mainWindow.get(), &MainWindowController::OpenSettings, this, [this]() { settingsWindow->show(); });
   connect(mainWindow.get(), &MainWindowController::OpenROM, this, &KaizenQt::LoadROM);
   connect(mainWindow.get(), &MainWindowController::Exit, this, &KaizenQt::Quit);
   connect(mainWindow.get(), &MainWindowController::Reset, emuThread.get(), &EmuThread::Reset);
   connect(mainWindow.get(), &MainWindowController::Stop, emuThread.get(), &EmuThread::Stop);
-  connect(mainWindow.get(), &MainWindowController::Stop, this, [this]() {
-    mainWindow->setWindowTitle("Kaizen");
-  });
+  connect(mainWindow.get(), &MainWindowController::Stop, this, [this]() { mainWindow->setWindowTitle("Kaizen"); });
   connect(mainWindow.get(), &MainWindowController::Pause, emuThread.get(), &EmuThread::TogglePause);
 }
 

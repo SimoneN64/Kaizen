@@ -3,24 +3,16 @@
 #include <log.hpp>
 
 namespace n64 {
-void Cop0::mtc0(u32 instr) {
-  SetReg32(RD(instr), regs.Read<u32>(RT(instr)));
-}
+void Cop0::mtc0(u32 instr) { SetReg32(RD(instr), regs.Read<u32>(RT(instr))); }
 
-void Cop0::dmtc0(u32 instr) {
-  SetReg64(RD(instr), regs.Read<u64>(RT(instr)));
-}
+void Cop0::dmtc0(u32 instr) { SetReg64(RD(instr), regs.Read<u64>(RT(instr))); }
 
-void Cop0::mfc0(u32 instr) {
-  regs.Write(RT(instr), s32(GetReg32(RD(instr))));
-}
+void Cop0::mfc0(u32 instr) { regs.Write(RT(instr), s32(GetReg32(RD(instr)))); }
 
-void Cop0::dmfc0(u32 instr) const {
-  regs.Write(RT(instr), s64(GetReg64(RD(instr))));
-}
+void Cop0::dmfc0(u32 instr) const { regs.Write(RT(instr), s64(GetReg64(RD(instr)))); }
 
 void Cop0::eret() {
-  if(status.erl) {
+  if (status.erl) {
     regs.SetPC64(ErrorEPC);
     status.erl = false;
   } else {
@@ -54,11 +46,11 @@ void Cop0::tlbw(int index_) {
   u32 top = page_mask.mask & 0xAAA;
   page_mask.mask = top | (top >> 1);
 
-  if(index_ >= 32) {
+  if (index_ >= 32) {
     Util::panic("TLBWI with TLB index {}", index_);
   }
 
-  tlb[index_].entryHi.raw  = entryHi.raw;
+  tlb[index_].entryHi.raw = entryHi.raw;
   tlb[index_].entryHi.vpn2 &= ~page_mask.mask;
 
   tlb[index_].entryLo0.raw = entryLo0.raw & 0x03FFFFFE;
@@ -71,8 +63,8 @@ void Cop0::tlbw(int index_) {
 
 void Cop0::tlbp() {
   int match = -1;
-  TLBEntry* entry = TLBTryMatch(entryHi.raw, &match);
-  if(entry && match >= 0) {
+  TLBEntry *entry = TLBTryMatch(entryHi.raw, &match);
+  if (entry && match >= 0) {
     index.raw = match;
   } else {
     index.raw = 0;
@@ -80,4 +72,4 @@ void Cop0::tlbp() {
   }
 }
 
-}
+} // namespace n64

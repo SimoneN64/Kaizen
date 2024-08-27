@@ -8,15 +8,15 @@ struct Event;
 
 namespace n64 {
 struct Core {
-  Core(ParallelRDP&);
+  Core(ParallelRDP &);
   void Stop();
-  void LoadROM(const std::string&);
-  bool LoadTAS(const fs::path&) const;
+  void LoadROM(const std::string &);
+  bool LoadTAS(const fs::path &) const;
   void Run(float volumeL, float volumeR);
   void Serialize();
   void Deserialize();
   void TogglePause() { pause = !pause; }
-  [[nodiscard]] VI& GetVI() const { return cpu->GetMem().mmio.vi; }
+  [[nodiscard]] VI &GetVI() const { return cpu->GetMem().mmio.vi; }
 
   u32 breakpoint = 0;
 
@@ -30,4 +30,4 @@ struct Core {
   size_t memSize{}, cpuSize{}, verSize{};
   int slot = 0;
 };
-}
+} // namespace n64

@@ -1,7 +1,6 @@
 #include <Netplay.hpp>
-#include <log.hpp>
 #include <PIF.hpp>
 #include <array>
+#include <log.hpp>
 
-namespace Netplay {
-}
+namespace Netplay {}

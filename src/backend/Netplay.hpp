@@ -1,5 +1,4 @@
 #pragma once
 #include <PIF.hpp>
 
-namespace Netplay {
-}
+namespace Netplay {}

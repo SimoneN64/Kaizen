@@ -7,7 +7,7 @@ struct Mem;
 struct Registers;
 
 struct AI {
-  AI(Mem&, Registers& regs);
+  AI(Mem &, Registers &regs);
   void Reset();
   auto Read(u32) const -> u32;
   void Write(u32, u32);
@@ -27,8 +27,9 @@ struct AI {
     u32 period{N64_CPU_FREQ / freq};
     u32 precision{16};
   } dac;
+
 private:
-  Mem& mem;
-  Registers& regs;
+  Mem &mem;
+  Registers &regs;
 };
-}
+} // namespace n64

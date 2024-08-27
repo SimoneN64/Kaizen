@@ -1,9 +1,9 @@
 #include <InputSettings.hpp>
-#include <QVBoxLayout>
 #include <QKeyEvent>
+#include <QVBoxLayout>
 #include <log.hpp>
 
-InputSettings::InputSettings(nlohmann::json& settings) : settings(settings), QWidget(nullptr) {
+InputSettings::InputSettings(nlohmann::json &settings) : settings(settings), QWidget(nullptr) {
   n64_button_labels[0] = new QLabel("A");
   n64_button_labels[1] = new QLabel("B");
   n64_button_labels[2] = new QLabel("Z");
@@ -22,7 +22,7 @@ InputSettings::InputSettings(nlohmann::json& settings) : settings(settings), QWi
   n64_button_labels[15] = new QLabel("Analog Down");
   n64_button_labels[16] = new QLabel("Analog Left");
   n64_button_labels[17] = new QLabel("Analog Right");
-  
+
   auto str = JSONGetField<std::string>(settings, "input", "A");
   kb_buttons[0] = new QPushButton(str.c_str());
   str = JSONGetField<std::string>(settings, "input", "B");
@@ -132,10 +132,11 @@ InputSettings::InputSettings(nlohmann::json& settings) : settings(settings), QWi
 }
 
 
-void InputSettings::keyPressEvent(QKeyEvent* e) {
+void InputSettings::keyPressEvent(QKeyEvent *e) {
   if (grabbing) {
     auto k = QKeySequence(e->key()).toString();
-    JSONSetField<std::string>(settings, "input", n64_button_labels[which_grabbing]->text().toStdString(), k.toStdString());
+    JSONSetField<std::string>(settings, "input", n64_button_labels[which_grabbing]->text().toStdString(),
+                              k.toStdString());
     kb_buttons[which_grabbing]->setText(k);
     grabbing = false;
     which_grabbing = -1;

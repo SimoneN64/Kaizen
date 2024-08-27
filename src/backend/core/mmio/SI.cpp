@@ -23,12 +23,14 @@ auto SI::Read(u32 addr) const -> u32 {
   case 0x0480000C:
     return 0;
   case 0x04800018:
-    u32 val = 0;
-    val |= status.dmaBusy;
-    val |= (0 << 1);
-    val |= (0 << 3);
-    val |= (mem.mmio.mi.miIntr.si << 12);
-    return val;
+    {
+      u32 val = 0;
+      val |= status.dmaBusy;
+      val |= (0 << 1);
+      val |= (0 << 3);
+      val |= (mem.mmio.mi.miIntr.si << 12);
+      return val;
+    }
   default:
     Util::panic("Unhandled SI[{:08X}] read", addr);
   }

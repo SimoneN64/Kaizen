@@ -1,6 +1,7 @@
 #pragma once
 #include <fstream>
 #include <log.hpp>
+#include <vector>
 
 namespace Util {
 FORCE_INLINE std::vector<u8> ReadFileBinary(const std::string &path) {

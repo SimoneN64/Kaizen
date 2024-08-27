@@ -16,6 +16,7 @@ include_directories(
   ../backend/core/mmio/PIF
   ../backend/core/registers
   ../backend/core/rsp
+  ../../external
   ../../external/discord_rpc/include
   ../../external/xbyak
   ../../external/mio/include

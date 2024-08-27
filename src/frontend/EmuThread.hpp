@@ -1,5 +1,6 @@
 #pragma once
 #include <Core.hpp>
+#include <Discord.hpp>
 #include <QThread>
 #include <RenderWidget.hpp>
 #include <SDL2/SDL_gamecontroller.h>
@@ -24,7 +25,10 @@ public:
   n64::Core core;
   SettingsWindow &settings;
 
-  void TogglePause() { core.pause = !core.pause; }
+  void TogglePause() {
+    core.pause = !core.pause;
+    Util::UpdateRPC(core.pause ? Util::Idling : Util::Playing);
+  }
 
   void SetRender(bool v) { core.render = v; }
 
@@ -36,6 +40,7 @@ public:
   }
 
   void Stop() {
+    Discord_ClearPresence();
     core.rom = {};
     core.pause = true;
     core.Stop();

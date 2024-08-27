@@ -16,11 +16,12 @@ include_directories(
   ../backend/core/mmio/PIF
   ../backend/core/registers
   ../backend/core/rsp
-  ../../external/
+  ../../external/discord_rpc/include
   ../../external/xbyak
   ../../external/mio/include
   ../../external/fmt/include
   ../../external/json/include
+  ../../external/parallel-rdp
   ../../external/parallel-rdp
   ../../external/parallel-rdp/parallel-rdp-standalone/parallel-rdp
   ../../external/parallel-rdp/parallel-rdp-standalone/volk
@@ -38,6 +39,7 @@ option(RAPIDJSON_BUILD_DOC "Build rapidjson documentation." OFF)
 option(RAPIDJSON_BUILD_EXAMPLES "Build rapidjson examples." OFF)
 option(RAPIDJSON_BUILD_TESTS "Build rapidjson perftests and unittests." OFF)
 
+add_subdirectory(../../external/discord_rpc discord_rpc)
 add_subdirectory(../../external/json json)
 add_subdirectory(../../external/fmt fmt)
 add_subdirectory(../../external/mio mio)
@@ -70,7 +72,7 @@ add_executable(kaizen-qt
   InputSettings.hpp
   InputSettings.cpp)
 
-target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets fmt mio nlohmann_json parallel-rdp backend)
+target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets discord-rpc fmt mio nlohmann_json parallel-rdp backend)
 target_compile_definitions(kaizen-qt PUBLIC SDL_MAIN_HANDLED)
 
 file(COPY ../../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)

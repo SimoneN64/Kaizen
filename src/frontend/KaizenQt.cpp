@@ -52,19 +52,24 @@ void KaizenQt::LoadROM(const QString &fileName) noexcept {
   mainWindow->view.actionStop->setEnabled(true);
   emuThread->start();
   emuThread->core.LoadROM(fileName.toStdString());
+  auto gameNameDB = emuThread->core.cpu->GetMem().rom.gameNameDB;
   mainWindow->setWindowTitle(emuThread->core.cpu->GetMem().rom.gameNameDB.c_str());
+  UpdateRPC(Util::Playing, gameNameDB);
 }
 
 void KaizenQt::Quit() noexcept {
   if (emuThread) {
     emuThread->SetRender(false);
     emuThread->Stop();
+    emuThread->quit();
   }
   QApplication::quit();
 }
 
 void KaizenQt::LoadTAS(const QString &fileName) const noexcept {
   emuThread->core.LoadTAS(fs::path(fileName.toStdString()));
+  auto gameNameDB = emuThread->core.cpu->GetMem().rom.gameNameDB;
+  UpdateRPC(Util::MovieReplay, gameNameDB, fileName.toStdString());
 }
 
 void KaizenQt::keyPressEvent(QKeyEvent *e) {

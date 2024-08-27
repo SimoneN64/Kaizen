@@ -27,7 +27,9 @@ public:
 
   void TogglePause() {
     core.pause = !core.pause;
-    Util::UpdateRPC(core.pause ? Util::Idling : Util::Playing);
+    Util::RPC::GetInstance().Update(core.pause ? Util::RPC::Paused : Util::RPC::GetInstance().GetState(),
+                                    core.cpu->GetMem().rom.gameNameDB,
+                                    core.cpu->GetMem().mmio.si.pif.movie.GetFilename());
   }
 
   void SetRender(bool v) { core.render = v; }
@@ -40,7 +42,7 @@ public:
   }
 
   void Stop() {
-    Discord_ClearPresence();
+    Util::RPC::GetInstance().Update(Util::RPC::Idling);
     core.rom = {};
     core.pause = true;
     core.Stop();

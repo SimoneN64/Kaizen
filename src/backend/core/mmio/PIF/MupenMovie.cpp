@@ -29,6 +29,7 @@ union TASMovieControllerData {
 static_assert(sizeof(TASMovieControllerData) == 4);
 
 bool MupenMovie::Load(const fs::path &path) {
+  filename = path.stem().string();
   loadedTasMovie = Util::ReadFileBinary(path.string());
   if (!IsLoaded()) {
     Util::error("Error loading movie!");

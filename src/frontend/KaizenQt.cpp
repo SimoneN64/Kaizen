@@ -15,6 +15,7 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
                                           std::move(mainWindow->view.vulkanWidget->windowInfo), *settingsWindow);
 
   ConnectMainWindowSignalsToSlots();
+  Util::RPC::GetInstance().Update(Util::RPC::Idling);
 
   setAcceptDrops(true);
   setFocusPolicy(Qt::StrongFocus);
@@ -54,7 +55,7 @@ void KaizenQt::LoadROM(const QString &fileName) noexcept {
   emuThread->core.LoadROM(fileName.toStdString());
   auto gameNameDB = emuThread->core.cpu->GetMem().rom.gameNameDB;
   mainWindow->setWindowTitle(emuThread->core.cpu->GetMem().rom.gameNameDB.c_str());
-  UpdateRPC(Util::Playing, gameNameDB);
+  Util::RPC::GetInstance().Update(Util::RPC::Playing, gameNameDB);
 }
 
 void KaizenQt::Quit() noexcept {
@@ -69,7 +70,8 @@ void KaizenQt::Quit() noexcept {
 void KaizenQt::LoadTAS(const QString &fileName) const noexcept {
   emuThread->core.LoadTAS(fs::path(fileName.toStdString()));
   auto gameNameDB = emuThread->core.cpu->GetMem().rom.gameNameDB;
-  UpdateRPC(Util::MovieReplay, gameNameDB, fileName.toStdString());
+  auto movieName = fs::path(fileName.toStdString()).stem().string();
+  Util::RPC::GetInstance().Update(Util::RPC::MovieReplay, gameNameDB, movieName);
 }
 
 void KaizenQt::keyPressEvent(QKeyEvent *e) {

@@ -3,618 +3,541 @@
 #define check_signed_overflow(op1, op2, res) (((~((op1) ^ (op2)) & ((op1) ^ (res))) >> ((sizeof(res) * 8) - 1)) & 1)
 #define check_signed_underflow(op1, op2, res) (((((op1) ^ (op2)) & ((op1) ^ (res))) >> ((sizeof(res) * 8) - 1)) & 1)
 
-namespace n64 {
-void JIT::lui(u32 instr) {
-  u64 val = s64((s16)instr);
-  val <<= 16;
-  if (RT(instr) != 0) [[likely]] {
+namespace n64
+{
+  void JIT::lui(u32 instr) {
+    u64 val = s64((s16)instr);
+    val <<= 16;
     regs.Write(RT(instr), val);
-    regs.gprIsConstant[RT(instr)] = true;
   }
-}
 
-void JIT::add(u32 instr) {
-  if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    u32 rs = regs.Read<s32>(RS(instr));
-    u32 rt = regs.Read<s32>(RT(instr));
-    u32 result = rs + rt;
-    if(check_signed_overflow(rs, rt, result)) {
-      //regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
-      Util::panic("[JIT]: Unhandled Overflow exception in ADD!");
-    }
-
-    if (RD(instr) != 0) [[likely]] {
-      regs.Write(RD(instr), s32(result));
-      regs.gprIsConstant[RD(instr)] = true;
-    }
-  } else {
-    Util::panic("[JIT]: Implement non constant ADD");
-  }
-}
-
-void JIT::addu(u32 instr) {
-  if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    s32 rs = regs.Read<s32>(RS(instr));
-    s32 rt = regs.Read<s32>(RT(instr));
-    s32 result = rs + rt;
-
-    if (RD(instr) != 0) [[likely]] {
-      regs.Write(RD(instr), result);
-      regs.gprIsConstant[RD(instr)] = true;
-    }
-  } else {
-    Util::panic("[JIT]: Implement non constant ADDI");
-  }
-}
-
-void JIT::addi(u32 instr) {
-  if(regs.IsRegConstant(RS(instr))) {
-    auto rs = regs.Read<u32>(RS(instr));
-    u32 imm = s32(s16(instr));
-    u32 result = rs + imm;
-    if(check_signed_overflow(rs, imm, result)) {
-      Util::panic("[JIT]: Unhandled Overflow exception in ADDI!");
-    } else {
-      if (RT(instr) != 0) [[likely]] {
-        regs.Write(RT(instr), s32(result));
-        regs.gprIsConstant[RT(instr)] = true;
+  void JIT::add(u32 instr) {
+    if (regs.IsRegConstant(RS(instr), RT(instr))) {
+      u32 rs = regs.Read<s32>(RS(instr));
+      u32 rt = regs.Read<s32>(RT(instr));
+      u32 result = rs + rt;
+      if (check_signed_overflow(rs, rt, result)) {
+        //regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
+        Util::panic("[JIT]: Unhandled Overflow exception in ADD!");
       }
+      regs.Write(RD(instr), s32(result));
+    } else {
+      Util::panic("[JIT]: Implement non constant ADD");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant ADDI!");
   }
-}
 
-void JIT::addiu(u32 instr) {
-  if(regs.IsRegConstant(RS(instr))) {
-    auto rs = regs.Read<u32>(RS(instr));
-    u32 imm = s32(s16(instr));
-    u32 result = rs + imm;
-
-    if (RT(instr) != 0) [[likely]] {
-      regs.Write(RT(instr), s32(result));
-      regs.gprIsConstant[RT(instr)] = true;
-    }
-  } else {
-    Util::panic("[JIT]: Implement non constant ADDIU!");
-  }
-}
-
-void JIT::andi(u32 instr) {
-  s64 imm = (u16)instr;
-  if(regs.IsRegConstant(RS(instr))) {
-    if (RT(instr) != 0) [[likely]] {
-      regs.Write(RT(instr), regs.Read<s64>(RS(instr)) & imm);
-      regs.gprIsConstant[RT(instr)] = true;
-    }
-  } else {
-    Util::panic("[JIT]: Implement non constant ANDI!");
-  }
-}
-
-void JIT::and_(u32 instr) {
-  if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    if (RD(instr) != 0) [[likely]] {
-      regs.Write(RD(instr), regs.Read<s64>(RS(instr)) & regs.Read<s64>(RT(instr)));
-      regs.gprIsConstant[RD(instr)] = true;
-    }
-  } else {
-    Util::panic("[JIT]: Implement non constant AND!");
-  }
-}
-
-void JIT::dadd(u32 instr) {
-  if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    auto rs = regs.Read<u64>(RS(instr));
-    auto rt = regs.Read<u64>(RT(instr));
-    u64 result = rt + rs;
-    if (check_signed_overflow(rs, rt, result)) {
-      //regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
-      Util::panic("[JIT]: Unhandled Overflow exception in DADD!");
-    }
-
-    if (RD(instr) != 0) [[likely]] {
+  void JIT::addu(u32 instr) {
+    if (regs.IsRegConstant(RS(instr), RT(instr))) {
+      s32 rs = regs.Read<s32>(RS(instr));
+      s32 rt = regs.Read<s32>(RT(instr));
+      s32 result = rs + rt;
       regs.Write(RD(instr), result);
-      regs.gprIsConstant[RD(instr)] = true;
+    } else {
+      Util::panic("[JIT]: Implement non constant ADDI");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant DADD!");
   }
-}
 
-void JIT::daddu(u32 instr) {
-  if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    if (RD(instr) != 0) [[likely]] {
+  void JIT::addi(u32 instr) {
+    if (regs.IsRegConstant(RS(instr))) {
+      auto rs = regs.Read<u32>(RS(instr));
+      u32 imm = s32(s16(instr));
+      u32 result = rs + imm;
+      if (check_signed_overflow(rs, imm, result)) {
+        Util::panic("[JIT]: Unhandled Overflow exception in ADDI!");
+      } else {
+        regs.Write(RT(instr), s32(result));
+      }
+    } else {
+      Util::panic("[JIT]: Implement non constant ADDI!");
+    }
+  }
+
+  void JIT::addiu(u32 instr) {
+    if (regs.IsRegConstant(RS(instr))) {
+      auto rs = regs.Read<u32>(RS(instr));
+      u32 imm = s32(s16(instr));
+      u32 result = rs + imm;
+      regs.Write(RT(instr), s32(result));
+    } else {
+      Util::panic("[JIT]: Implement non constant ADDIU!");
+    }
+  }
+
+  void JIT::andi(u32 instr) {
+    s64 imm = (u16)instr;
+    if (regs.IsRegConstant(RS(instr))) {
+      regs.Write(RT(instr), regs.Read<s64>(RS(instr)) & imm);
+    } else {
+      Util::panic("[JIT]: Implement non constant ANDI!");
+    }
+  }
+
+  void JIT::and_(u32 instr) {
+    if (regs.IsRegConstant(RS(instr), RT(instr))) {
+      regs.Write(RD(instr), regs.Read<s64>(RS(instr)) & regs.Read<s64>(RT(instr)));
+    } else {
+      Util::panic("[JIT]: Implement non constant AND!");
+    }
+  }
+
+  void JIT::dadd(u32 instr) {
+    if (regs.IsRegConstant(RS(instr), RT(instr))) {
+      auto rs = regs.Read<u64>(RS(instr));
+      auto rt = regs.Read<u64>(RT(instr));
+      u64 result = rt + rs;
+      if (check_signed_overflow(rs, rt, result)) {
+        //regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
+        Util::panic("[JIT]: Unhandled Overflow exception in DADD!");
+      }
+      regs.Write(RD(instr), result);
+    } else {
+      Util::panic("[JIT]: Implement non constant DADD!");
+    }
+  }
+
+  void JIT::daddu(u32 instr) {
+    if (regs.IsRegConstant(RS(instr), RT(instr))) {
       auto rs = regs.Read<s64>(RS(instr));
       auto rt = regs.Read<s64>(RT(instr));
-        regs.Write(RD(instr), rt + rs);
-      regs.gprIsConstant[RD(instr)] = true;
+      regs.Write(RD(instr), rt + rs);
+    } else {
+      Util::panic("[JIT]: Implement non constant DADD!");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant DADD!");
   }
-}
 
-void JIT::daddi(u32 instr) {
-  if(regs.IsRegConstant(RS(instr))) {
-    u64 imm = s64(s16(instr));
-    auto rs = regs.Read<u64>(RS(instr));
-    u64 result = imm + rs;
-    if (check_signed_overflow(rs, imm, result)) {
-      //regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
-      Util::panic("[JIT]: Unhandled Overflow exception in DADDI!");
-    }
-
-    if (RT(instr) != 0) [[likely]] {
+  void JIT::daddi(u32 instr) {
+    if (regs.IsRegConstant(RS(instr))) {
+      u64 imm = s64(s16(instr));
+      auto rs = regs.Read<u64>(RS(instr));
+      u64 result = imm + rs;
+      if (check_signed_overflow(rs, imm, result)) {
+        //regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
+        Util::panic("[JIT]: Unhandled Overflow exception in DADDI!");
+      }
       regs.Write(RT(instr), result);
-      regs.gprIsConstant[RT(instr)] = true;
+    } else {
+      Util::panic("[JIT]: Implement non constant DADDI!");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant DADDI!");
   }
-}
 
-void JIT::daddiu(u32 instr) {
-  if(regs.IsRegConstant(RS(instr))) {
-    if (RT(instr) != 0) [[likely]] {
+  void JIT::daddiu(u32 instr) {
+    if (regs.IsRegConstant(RS(instr))) {
       s16 imm = s16(instr);
       auto rs = regs.Read<s64>(RS(instr));
-        regs.Write(RT(instr), imm + rs);
-      regs.gprIsConstant[RT(instr)] = true;
+      regs.Write(RT(instr), imm + rs);
+    } else {
+      Util::panic("[JIT]: Implement non constant DADDI!");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant DADDI!");
   }
-}
 
-void JIT::ddiv(u32 instr) {
-  if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    auto dividend = regs.Read<s64>(RS(instr));
-    auto divisor = regs.Read<s64>(RT(instr));
-    if (dividend == 0x8000000000000000 && divisor == 0xFFFFFFFFFFFFFFFF) {
-      regs.lo = dividend;
-      regs.hi = 0;
-    } else if(divisor == 0) {
-      regs.hi = dividend;
-      if(dividend >= 0) {
+  void JIT::ddiv(u32 instr) {
+    if (regs.IsRegConstant(RS(instr), RT(instr))) {
+      auto dividend = regs.Read<s64>(RS(instr));
+      auto divisor = regs.Read<s64>(RT(instr));
+      if (dividend == 0x8000000000000000 && divisor == 0xFFFFFFFFFFFFFFFF) {
+        regs.lo = dividend;
+        regs.hi = 0;
+      } else if (divisor == 0) {
+        regs.hi = dividend;
+        if (dividend >= 0) {
+          regs.lo = -1;
+        } else {
+          regs.lo = 1;
+        }
+      } else {
+        s64 quotient = dividend / divisor;
+        s64 remainder = dividend % divisor;
+        regs.lo = quotient;
+        regs.hi = remainder;
+      }
+
+      regs.loIsConstant = true;
+      regs.hiIsConstant = true;
+    } else {
+      Util::panic("[JIT]: Implement non constant DDIV!");
+    }
+  }
+
+  void JIT::ddivu(u32 instr) {
+    if (regs.IsRegConstant(RS(instr), RT(instr))) {
+      auto dividend = regs.Read<u64>(RS(instr));
+      auto divisor = regs.Read<u64>(RT(instr));
+      if (divisor == 0) {
         regs.lo = -1;
+        regs.hi = (s64)dividend;
       } else {
-        regs.lo = 1;
+        u64 quotient = dividend / divisor;
+        u64 remainder = dividend % divisor;
+        regs.lo = (s64)quotient;
+        regs.hi = (s64)remainder;
       }
+
+      regs.loIsConstant = true;
+      regs.hiIsConstant = true;
     } else {
-      s64 quotient = dividend / divisor;
-      s64 remainder = dividend % divisor;
-      regs.lo = quotient;
-      regs.hi = remainder;
+      Util::panic("[JIT]: Implement non constant DDIVU!");
     }
-
-    regs.loIsConstant = true;
-    regs.hiIsConstant = true;
-  } else {
-    Util::panic("[JIT]: Implement non constant DDIV!");
   }
-}
 
-void JIT::ddivu(u32 instr) {
-  if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    auto dividend = regs.Read<u64>(RS(instr));
-    auto divisor = regs.Read<u64>(RT(instr));
-    if (divisor == 0) {
-      regs.lo = -1;
-      regs.hi = (s64) dividend;
-    } else {
-      u64 quotient = dividend / divisor;
-      u64 remainder = dividend % divisor;
-      regs.lo = (s64) quotient;
-      regs.hi = (s64) remainder;
-    }
+  void JIT::div(u32 instr) {
+    if (regs.IsRegConstant(RS(instr), RT(instr))) {
+      s64 dividend = regs.Read<s32>(RS(instr));
+      s64 divisor = regs.Read<s32>(RT(instr));
 
-    regs.loIsConstant = true;
-    regs.hiIsConstant = true;
-  } else {
-    Util::panic("[JIT]: Implement non constant DDIVU!");
-  }
-}
-
-void JIT::div(u32 instr) {
-  if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    s64 dividend = regs.Read<s32>(RS(instr));
-    s64 divisor = regs.Read<s32>(RT(instr));
-
-    if (divisor == 0) {
-      regs.hi = dividend;
-      if (dividend >= 0) {
-        regs.lo = s64(-1);
+      if (divisor == 0) {
+        regs.hi = dividend;
+        if (dividend >= 0) {
+          regs.lo = s64(-1);
+        } else {
+          regs.lo = s64(1);
+        }
       } else {
-        regs.lo = s64(1);
+        s32 quotient = dividend / divisor;
+        s32 remainder = dividend % divisor;
+        regs.lo = quotient;
+        regs.hi = remainder;
       }
+
+      regs.loIsConstant = true;
+      regs.hiIsConstant = true;
     } else {
-      s32 quotient = dividend / divisor;
-      s32 remainder = dividend % divisor;
-      regs.lo = quotient;
-      regs.hi = remainder;
+      Util::panic("[JIT]: Implement non constant DIV!");
     }
-
-    regs.loIsConstant = true;
-    regs.hiIsConstant = true;
-  } else {
-    Util::panic("[JIT]: Implement non constant DIV!");
   }
-}
 
-void JIT::divu(u32 instr) {
-  if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    auto dividend = regs.Read<u32>(RS(instr));
-    auto divisor = regs.Read<u32>(RT(instr));
-    if (divisor == 0) {
-      regs.lo = -1;
-      regs.hi = (s32) dividend;
+  void JIT::divu(u32 instr) {
+    if (regs.IsRegConstant(RS(instr), RT(instr))) {
+      auto dividend = regs.Read<u32>(RS(instr));
+      auto divisor = regs.Read<u32>(RT(instr));
+      if (divisor == 0) {
+        regs.lo = -1;
+        regs.hi = (s32)dividend;
+      } else {
+        s32 quotient = (s32)(dividend / divisor);
+        s32 remainder = (s32)(dividend % divisor);
+        regs.lo = quotient;
+        regs.hi = remainder;
+      }
+
+      regs.loIsConstant = true;
+      regs.hiIsConstant = true;
     } else {
-      s32 quotient = (s32) (dividend / divisor);
-      s32 remainder = (s32) (dividend % divisor);
-      regs.lo = quotient;
-      regs.hi = remainder;
+      Util::panic("[JIT]: Implement non constant DIVU!");
     }
-
-    regs.loIsConstant = true;
-    regs.hiIsConstant = true;
-  } else {
-    Util::panic("[JIT]: Implement non constant DIVU!");
   }
-}
 
-void JIT::dmult(u32 instr) {
-  if(regs.IsRegConstant(RT(instr), RS(instr))) {
-    auto rt = regs.Read<s64>(RT(instr));
-    auto rs = regs.Read<s64>(RS(instr));
-    s128 result = (s128)rt * (s128)rs;
-    regs.lo = result & 0xFFFFFFFFFFFFFFFF;
-    regs.hi = result >> 64;
-    regs.hiIsConstant = true;
-    regs.loIsConstant = true;
-  } else {
-    Util::panic("[JIT]: Implement non constant DMULT!");
+  void JIT::dmult(u32 instr) {
+    if (regs.IsRegConstant(RT(instr), RS(instr))) {
+      auto rt = regs.Read<s64>(RT(instr));
+      auto rs = regs.Read<s64>(RS(instr));
+      s128 result = (s128)rt * (s128)rs;
+      regs.lo = result & 0xFFFFFFFFFFFFFFFF;
+      regs.hi = result >> 64;
+      regs.hiIsConstant = true;
+      regs.loIsConstant = true;
+    } else {
+      Util::panic("[JIT]: Implement non constant DMULT!");
+    }
   }
-}
 
-void JIT::dmultu(u32 instr) {
-  if(regs.IsRegConstant(RT(instr), RS(instr))) {
-    auto rt = regs.Read<u64>(RT(instr));
-    auto rs = regs.Read<u64>(RS(instr));
-    u128 result = (u128)rt * (u128)rs;
-    regs.lo = s64(result & 0xFFFFFFFFFFFFFFFF);
-    regs.hi = s64(result >> 64);
-    regs.hiIsConstant = true;
-    regs.loIsConstant = true;
-  } else {
-    Util::panic("[JIT]: Implement non constant DMULT!");
+  void JIT::dmultu(u32 instr) {
+    if (regs.IsRegConstant(RT(instr), RS(instr))) {
+      auto rt = regs.Read<u64>(RT(instr));
+      auto rs = regs.Read<u64>(RS(instr));
+      u128 result = (u128)rt * (u128)rs;
+      regs.lo = s64(result & 0xFFFFFFFFFFFFFFFF);
+      regs.hi = s64(result >> 64);
+      regs.hiIsConstant = true;
+      regs.loIsConstant = true;
+    } else {
+      Util::panic("[JIT]: Implement non constant DMULT!");
+    }
   }
-}
 
-void JIT::dsll(u32 instr) {
-  if(regs.IsRegConstant(RT(instr))) {
-    if (RD(instr) != 0) [[likely]] {
+  void JIT::dsll(u32 instr) {
+    if (regs.IsRegConstant(RT(instr))) {
       u8 sa = ((instr >> 6) & 0x1f);
       auto result = regs.Read<s64>(RT(instr)) << sa;
-        regs.Write(RD(instr), result);
-      regs.gprIsConstant[RD(instr)] = true;
+      regs.Write(RD(instr), result);
+    } else {
+      Util::panic("[JIT]: Implement non constant DSLL!");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant DSLL!");
   }
-}
 
-void JIT::dsllv(u32 instr) {
-  if(regs.IsRegConstant(RT(instr), RS(instr))) {
-    if (RD(instr) != 0) [[likely]] {
+  void JIT::dsllv(u32 instr) {
+    if (regs.IsRegConstant(RT(instr), RS(instr))) {
       auto sa = regs.Read<s64>(RS(instr)) & 63;
       auto result = regs.Read<s64>(RT(instr)) << sa;
-        regs.Write(RD(instr), result);
-      regs.gprIsConstant[RD(instr)] = true;
+      regs.Write(RD(instr), result);
+    } else {
+      Util::panic("[JIT]: Implement non constant DSLLV!");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant DSLLV!");
   }
-}
 
-void JIT::dsll32(u32 instr) {
-  if(regs.IsRegConstant(RT(instr))) {
-    if (RD(instr) != 0) [[likely]] {
+  void JIT::dsll32(u32 instr) {
+    if (regs.IsRegConstant(RT(instr))) {
       u8 sa = ((instr >> 6) & 0x1f);
       auto result = regs.Read<s64>(RT(instr)) << (sa + 32);
-        regs.Write(RD(instr), result);
-      regs.gprIsConstant[RD(instr)] = true;
+      regs.Write(RD(instr), result);
+    } else {
+      Util::panic("[JIT]: Implement non constant DSLL32!");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant DSLL32!");
   }
-}
 
-void JIT::dsra(u32 instr) {
-  if(regs.IsRegConstant(RT(instr))) {
-    if (RD(instr) != 0) [[likely]] {
+  void JIT::dsra(u32 instr) {
+    if (regs.IsRegConstant(RT(instr))) {
       auto rt = regs.Read<s64>(RT(instr));
       u8 sa = ((instr >> 6) & 0x1f);
       s64 result = rt >> sa;
-        regs.Write(RD(instr), result);
-      regs.gprIsConstant[RD(instr)] = true;
+      regs.Write(RD(instr), result);
+    } else {
+      Util::panic("[JIT]: Implement non constant DSRA!");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant DSRA!");
   }
-}
 
-void JIT::dsrav(u32 instr) {
-  if(regs.IsRegConstant(RT(instr), RS(instr))) {
-    if (RD(instr) != 0) [[likely]] {
+  void JIT::dsrav(u32 instr) {
+    if (regs.IsRegConstant(RT(instr), RS(instr))) {
       auto rt = regs.Read<s64>(RT(instr));
       auto rs = regs.Read<s64>(RS(instr));
       s64 sa = rs & 63;
       s64 result = rt >> sa;
-        regs.Write(RD(instr), result);
-      regs.gprIsConstant[RD(instr)] = true;
+      regs.Write(RD(instr), result);
+    } else {
+      Util::panic("[JIT]: Implement non constant DSRAV!");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant DSRAV!");
   }
-}
 
-void JIT::dsra32(u32 instr) {
-  if(regs.IsRegConstant(RT(instr))) {
-    if (RD(instr) != 0) [[likely]] {
+  void JIT::dsra32(u32 instr) {
+    if (regs.IsRegConstant(RT(instr))) {
       auto rt = regs.Read<s64>(RT(instr));
       u8 sa = ((instr >> 6) & 0x1f);
       s64 result = rt >> (sa + 32);
-        regs.Write(RD(instr), result);
-      regs.gprIsConstant[RD(instr)] = true;
+      regs.Write(RD(instr), result);
+    } else {
+      Util::panic("[JIT]: Implement non constant DSRA32!");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant DSRA32!");
   }
-}
 
-void JIT::dsrl(u32 instr) {
-  if(regs.IsRegConstant(RT(instr))) {
-    if (RD(instr) != 0) [[likely]] {
+  void JIT::dsrl(u32 instr) {
+    if (regs.IsRegConstant(RT(instr))) {
       auto rt = regs.Read<u64>(RT(instr));
       u8 sa = ((instr >> 6) & 0x1f);
       u64 result = rt >> sa;
-        regs.Write(RD(instr), s64(result));
-      regs.gprIsConstant[RD(instr)] = true;
+      regs.Write(RD(instr), s64(result));
+    } else {
+      Util::panic("[JIT]: Implement non constant DSRL!");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant DSRL!");
   }
-}
 
-void JIT::dsrlv(u32 instr) {
-  if(regs.IsRegConstant(RT(instr), RS(instr))) {
-    if (RD(instr) != 0) [[likely]] {
+  void JIT::dsrlv(u32 instr) {
+    if (regs.IsRegConstant(RT(instr), RS(instr))) {
       u8 amount = regs.Read<u8>(RS(instr)) & 63;
       auto rt = regs.Read<u64>(RT(instr));
       u64 result = rt >> amount;
-        regs.Write(RD(instr), s64(result));
-      regs.gprIsConstant[RD(instr)] = true;
+      regs.Write(RD(instr), s64(result));
+    } else {
+      Util::panic("[JIT]: Implement non constant DSRLV!");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant DSRLV!");
   }
-}
 
-void JIT::dsrl32(u32 instr) {
-  if(regs.IsRegConstant(RT(instr))) {
-    if (RD(instr) != 0) [[likely]] {
+  void JIT::dsrl32(u32 instr) {
+    if (regs.IsRegConstant(RT(instr))) {
       auto rt = regs.Read<u64>(RT(instr));
       u8 sa = ((instr >> 6) & 0x1f);
       u64 result = rt >> (sa + 32);
-        regs.Write(RD(instr), s64(result));
-      regs.gprIsConstant[RD(instr)] = true;
-    }
-  } else {
-    Util::panic("[JIT]: Implement non constant DSRL32!");
-  }
-}
-
-void JIT::dsub(u32 instr) {
-  if(regs.IsRegConstant(RT(instr), RS(instr))) {
-    auto rt = regs.Read<s64>(RT(instr));
-    auto rs = regs.Read<s64>(RS(instr));
-    s64 result = rs - rt;
-    if (check_signed_underflow(rs, rt, result)) {
-      // regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
-      Util::panic("[JIT]: Unhandled Overflow exception in DSUB!");
+      regs.Write(RD(instr), s64(result));
     } else {
-      if (RD(instr) != 0) [[likely]] {
+      Util::panic("[JIT]: Implement non constant DSRL32!");
+    }
+  }
+
+  void JIT::dsub(u32 instr) {
+    if (regs.IsRegConstant(RT(instr), RS(instr))) {
+      auto rt = regs.Read<s64>(RT(instr));
+      auto rs = regs.Read<s64>(RS(instr));
+      s64 result = rs - rt;
+      if (check_signed_underflow(rs, rt, result)) {
+        // regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
+        Util::panic("[JIT]: Unhandled Overflow exception in DSUB!");
+      } else {
         regs.Write(RD(instr), result);
-        regs.gprIsConstant[RD(instr)] = true;
       }
+    } else {
+      Util::panic("[JIT]: Implement non constant DSUB!");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant DSUB!");
   }
-}
 
-void JIT::dsubu(u32 instr) {
-  if(regs.IsRegConstant(RT(instr), RS(instr))) {
-    auto rt = regs.Read<s64>(RT(instr));
-    auto rs = regs.Read<s64>(RS(instr));
-    s64 result = rs - rt;
-
-    if (RD(instr) != 0) [[likely]] {
+  void JIT::dsubu(u32 instr) {
+    if (regs.IsRegConstant(RT(instr), RS(instr))) {
+      auto rt = regs.Read<s64>(RT(instr));
+      auto rs = regs.Read<s64>(RS(instr));
+      s64 result = rs - rt;
       regs.Write(RD(instr), result);
-      regs.gprIsConstant[RD(instr)] = true;
+    } else {
+      Util::panic("[JIT]: Implement non constant DSUBU!");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant DSUBU!");
   }
-}
 
-void JIT::mfhi(u32 instr) {
-  if(regs.hiIsConstant) {
-    regs.Write(RD(instr), regs.hi);
-    regs.gprIsConstant[RD(instr)] = true;
-  } else {
-    Util::panic("[JIT]: Implement non constant MFHI!");
+  void JIT::mfhi(u32 instr) {
+    if (regs.hiIsConstant) {
+      regs.Write(RD(instr), regs.hi);
+    } else {
+      Util::panic("[JIT]: Implement non constant MFHI!");
+    }
   }
-}
 
-void JIT::mflo(u32 instr) {
-  if(regs.loIsConstant) {
-    regs.Write(RD(instr), regs.lo);
-    regs.gprIsConstant[RD(instr)] = true;
-  } else {
-    Util::panic("[JIT]: Implement non constant MFLO!");
+  void JIT::mflo(u32 instr) {
+    if (regs.loIsConstant) {
+      regs.Write(RD(instr), regs.lo);
+    } else {
+      Util::panic("[JIT]: Implement non constant MFLO!");
+    }
   }
-}
 
-void JIT::mult(u32 instr) {
-  if(regs.IsRegConstant(RT(instr), RS(instr))) {
-    auto rt = regs.Read<s32>(RT(instr));
-    auto rs = regs.Read<s32>(RS(instr));
-    s64 result = (s64) rt * (s64) rs;
-    regs.lo = (s64) ((s32) result);
-    regs.loIsConstant = true;
-    regs.hi = (s64) ((s32) (result >> 32));
-    regs.hiIsConstant = true;
-  } else {
-    Util::panic("[JIT]: Implement non constant MULT!");
+  void JIT::mult(u32 instr) {
+    if (regs.IsRegConstant(RT(instr), RS(instr))) {
+      auto rt = regs.Read<s32>(RT(instr));
+      auto rs = regs.Read<s32>(RS(instr));
+      s64 result = (s64)rt * (s64)rs;
+      regs.lo = (s64)((s32)result);
+      regs.loIsConstant = true;
+      regs.hi = (s64)((s32)(result >> 32));
+      regs.hiIsConstant = true;
+    } else {
+      Util::panic("[JIT]: Implement non constant MULT!");
+    }
   }
-}
 
-void JIT::multu(u32 instr) {
-  if(regs.IsRegConstant(RT(instr), RS(instr))) {
-    auto rt = regs.Read<u32>(RT(instr));
-    auto rs = regs.Read<u32>(RS(instr));
-    u64 result = (u64)rt * (u64)rs;
-    regs.lo = (s64)((s32)result);
-    regs.loIsConstant = true;
-    regs.hi = (s64)((s32)(result >> 32));
-    regs.hiIsConstant = true;
-  } else {
-    Util::panic("[JIT]: Implement non constant MULTU!");
+  void JIT::multu(u32 instr) {
+    if (regs.IsRegConstant(RT(instr), RS(instr))) {
+      auto rt = regs.Read<u32>(RT(instr));
+      auto rs = regs.Read<u32>(RS(instr));
+      u64 result = (u64)rt * (u64)rs;
+      regs.lo = (s64)((s32)result);
+      regs.loIsConstant = true;
+      regs.hi = (s64)((s32)(result >> 32));
+      regs.hiIsConstant = true;
+    } else {
+      Util::panic("[JIT]: Implement non constant MULTU!");
+    }
   }
-}
 
-void JIT::mthi(u32 instr) {
-  if(regs.IsRegConstant(RS(instr))) {
-    regs.hi = regs.Read<s64>(RS(instr));
-    regs.hiIsConstant = true;
-  } else {
-    Util::panic("[JIT]: Implement non constant MTHI!");
+  void JIT::mthi(u32 instr) {
+    if (regs.IsRegConstant(RS(instr))) {
+      regs.hi = regs.Read<s64>(RS(instr));
+      regs.hiIsConstant = true;
+    } else {
+      Util::panic("[JIT]: Implement non constant MTHI!");
+    }
   }
-}
 
-void JIT::mtlo(u32 instr) {
-  if(regs.IsRegConstant(RS(instr))) {
-    regs.lo = regs.Read<s64>(RS(instr));
-    regs.loIsConstant = true;
-  } else {
-    Util::panic("[JIT]: Implement non constant MTLO!");
+  void JIT::mtlo(u32 instr) {
+    if (regs.IsRegConstant(RS(instr))) {
+      regs.lo = regs.Read<s64>(RS(instr));
+      regs.loIsConstant = true;
+    } else {
+      Util::panic("[JIT]: Implement non constant MTLO!");
+    }
   }
-}
 
-void JIT::nor(u32 instr) {
-  if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    if (RD(instr) != 0) [[likely]] {
+  void JIT::nor(u32 instr) {
+    if (regs.IsRegConstant(RS(instr), RT(instr))) {
       regs.Write(RD(instr), ~(regs.Read<s64>(RS(instr)) | regs.Read<s64>(RT(instr))));
-      regs.gprIsConstant[RD(instr)] = true;
+    } else {
+      Util::panic("[JIT]: Implement non constant NOR!");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant NOR!");
   }
-}
 
-void JIT::slti(u32 instr) {
-  if(regs.IsRegConstant(RS(instr))) {
-    s16 imm = instr;
-    if (RT(instr) != 0) [[likely]] {
+  void JIT::slti(u32 instr) {
+    if (regs.IsRegConstant(RS(instr))) {
+      s16 imm = instr;
       regs.Write(RT(instr), regs.Read<s64>(RS(instr)) < imm);
-      regs.gprIsConstant[RT(instr)] = true;
+    } else {
+      Util::panic("[JIT]: Implement non constant SLTI!");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant SLTI!");
   }
-}
 
-void JIT::sltiu(u32 instr) {
-  if(regs.IsRegConstant(RS(instr))) {
-    s16 imm = instr;
-    if (RT(instr) != 0) [[likely]] {
+  void JIT::sltiu(u32 instr) {
+    if (regs.IsRegConstant(RS(instr))) {
+      s16 imm = instr;
       regs.Write(RT(instr), regs.Read<u64>(RS(instr)) < imm);
-      regs.gprIsConstant[RT(instr)] = true;
+    } else {
+      Util::panic("[JIT]: Implement non constant SLTIU!");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant SLTIU!");
   }
-}
 
-void JIT::slt(u32 instr) {
-  if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    if (RD(instr) != 0) [[likely]] {
+  void JIT::slt(u32 instr) {
+    if (regs.IsRegConstant(RS(instr), RT(instr))) {
       regs.Write(RD(instr), regs.Read<s64>(RS(instr)) < regs.Read<s64>(RT(instr)));
-      regs.gprIsConstant[RD(instr)] = true;
+    } else {
+      Util::panic("[JIT]: Implement non constant SLT!");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant SLT!");
   }
-}
 
-void JIT::sltu(u32 instr) {
-  if(regs.IsRegConstant(RS(instr), RT(instr))) {
-    if (RD(instr) != 0) [[likely]] {
+  void JIT::sltu(u32 instr) {
+    if (regs.IsRegConstant(RS(instr), RT(instr))) {
       regs.Write(RD(instr), regs.Read<u64>(RS(instr)) < regs.Read<u64>(RT(instr)));
-      regs.gprIsConstant[RD(instr)] = true;
+    } else {
+      Util::panic("[JIT]: Implement non constant SLT!");
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant SLT!");
   }
-}
 
-void JIT::sll(u32) {
+  void JIT::sll(u32 instr) {
+    if (regs.IsRegConstant(RT(instr))) {
+      u8 sa = ((instr >> 6) & 0x1f);
+      s32 result = regs.Read<s64>(RT(instr)) << sa;
+      regs.Write(RD(instr), (s64)result);
+    } else {
+      Util::panic("[JIT]: Implement non constant SLL!");
+    }
+  }
 
-}
+  void JIT::sllv(u32 instr) {
+    if (regs.IsRegConstant(RS(instr), RT(instr))) {
+      u8 sa = (regs.Read<s64>(RS(instr))) & 0x1F;
+      u32 rt = regs.Read<s64>(RT(instr));
+      s32 result = rt << sa;
+      regs.Write(RD(instr), (s64)result);
+    }
+  }
 
-void JIT::sllv(u32) {
+  void JIT::sub(u32) {
 
-}
+  }
 
-void JIT::sub(u32) {
+  void JIT::subu(u32) {
 
-}
+  }
 
-void JIT::subu(u32) {
+  void JIT::sra(u32) {
 
-}
+  }
 
-void JIT::sra(u32) {
+  void JIT::srav(u32) {
 
-}
+  }
 
-void JIT::srav(u32) {
+  void JIT::srl(u32) {
 
-}
+  }
 
-void JIT::srl(u32) {
+  void JIT::srlv(u32) {
 
-}
+  }
 
-void JIT::srlv(u32) {
+  void JIT::or_(u32) {
 
-}
+  }
 
-void JIT::or_(u32) {
+  void JIT::ori(u32) {
 
-}
+  }
 
-void JIT::ori(u32) {
+  void JIT::xor_(u32) {
 
-}
+  }
 
-void JIT::xor_(u32) {
+  void JIT::xori(u32) {
 
-}
-
-void JIT::xori(u32) {
-
-}
+  }
 }

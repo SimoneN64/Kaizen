@@ -1,13 +1,13 @@
 #pragma once
-#include <common.hpp>
-#include <backend/MemoryRegions.hpp>
-#include <backend/core/MMIO.hpp>
-#include <vector>
-#include <log.hpp>
+#include <File.hpp>
+#include <GameDB.hpp>
 #include <Registers.hpp>
 #include <algorithm>
-#include <GameDB.hpp>
-#include <File.hpp>
+#include <backend/MemoryRegions.hpp>
+#include <backend/core/MMIO.hpp>
+#include <common.hpp>
+#include <log.hpp>
+#include <vector>
 
 namespace n64 {
 struct ROMHeader {
@@ -37,22 +37,20 @@ struct ROM {
   bool pal;
 };
 
-enum class FlashState : u8 {
-  Idle, Erase, Write, Read, Status
-};
+enum class FlashState : u8 { Idle, Erase, Write, Read, Status };
 
 struct Flash {
-  explicit Flash(mio::mmap_sink&);
+  explicit Flash(mio::mmap_sink &);
   ~Flash() = default;
   void Reset();
-  void Load(SaveType, const std::string&);
+  void Load(SaveType, const std::string &);
   FlashState state{};
   u64 status{};
   size_t eraseOffs{};
   size_t writeOffs{};
   std::array<u8, 128> writeBuf{};
   std::string flashPath{};
-  mio::mmap_sink& saveData;
+  mio::mmap_sink &saveData;
 
   enum FlashCommands : u8 {
     FLASH_COMMAND_EXECUTE = 0xD2,
@@ -72,7 +70,7 @@ struct Flash {
   void CommandWrite();
   void CommandRead();
   std::vector<u8> Serialize();
-  void Deserialize(const std::vector<u8>& data);
+  void Deserialize(const std::vector<u8> &data);
   template <typename T>
   void Write(u32 index, T val);
   template <typename T>
@@ -81,28 +79,24 @@ struct Flash {
 
 struct Mem {
   ~Mem() = default;
-  Mem(Registers&, ParallelRDP&);
+  Mem(Registers &, ParallelRDP &);
   void Reset();
   void LoadSRAM(SaveType, fs::path);
-  static std::vector<u8> OpenROM(const std::string&, size_t&);
-  static std::vector<u8> OpenArchive(const std::string&, size_t&);
-  void LoadROM(bool, const std::string&);
-  [[nodiscard]] auto GetRDRAMPtr() -> u8* {
-    return mmio.rdp.rdram.data();
-  }
+  static std::vector<u8> OpenROM(const std::string &, size_t &);
+  static std::vector<u8> OpenArchive(const std::string &, size_t &);
+  void LoadROM(bool, const std::string &);
+  [[nodiscard]] auto GetRDRAMPtr() -> u8 * { return mmio.rdp.rdram.data(); }
 
-  [[nodiscard]] auto GetRDRAM() -> std::vector<u8>& {
-    return mmio.rdp.rdram;
-  }
+  [[nodiscard]] auto GetRDRAM() -> std::vector<u8> & { return mmio.rdp.rdram; }
 
   std::vector<u8> Serialize();
-  void Deserialize(const std::vector<u8>&);
+  void Deserialize(const std::vector<u8> &);
 
   template <typename T>
-  T Read(Registers&, u32);
+  T Read(Registers &, u32);
   template <typename T>
-  void Write(Registers&, u32, u32);
-  void Write(Registers&, u32, u64);
+  void Write(Registers &, u32, u32);
+  void Write(Registers &, u32, u64);
 
   template <typename T>
   T BackupRead(u32);
@@ -135,6 +129,7 @@ struct Mem {
   ROM rom;
   SaveType saveType = SAVE_NONE;
   Flash flash;
+
 private:
   friend struct SI;
   friend struct PI;
@@ -148,9 +143,7 @@ private:
 
   FORCE_INLINE bool IsROMPAL() {
     static const char pal_codes[] = {'D', 'F', 'I', 'P', 'S', 'U', 'X', 'Y'};
-    return std::any_of(std::begin(pal_codes), std::end(pal_codes), [this](char a) {
-      return rom.cart[0x3d] == a;
-    });
+    return std::any_of(std::begin(pal_codes), std::end(pal_codes), [this](char a) { return rom.cart[0x3d] == a; });
   }
 };
-}
+} // namespace n64

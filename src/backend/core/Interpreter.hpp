@@ -1,37 +1,37 @@
 #pragma once
+#include <BaseCPU.hpp>
 #include <Mem.hpp>
 #include <vector>
-#include <BaseCPU.hpp>
 
 namespace n64 {
 struct Core;
+
 struct Interpreter : BaseCPU {
-  explicit Interpreter(ParallelRDP&);
+  explicit Interpreter(ParallelRDP &);
   ~Interpreter() override = default;
   int Step() override;
+
   void Reset() override {
     regs.Reset();
     mem.Reset();
     cop2Latch = {};
   }
 
-  Mem& GetMem() override {
-    return mem;
-  }
+  Mem &GetMem() override { return mem; }
 
-  Registers& GetRegs() override {
-    return regs;
-  }
+  Registers &GetRegs() override { return regs; }
+
 private:
   Registers regs;
   Mem mem;
   u64 cop2Latch{};
   friend struct Cop1;
-#define check_address_error(mask, vaddr) (((!regs.cop0.is64BitAddressing) && (s32)(vaddr) != (vaddr)) || (((vaddr) & (mask)) != 0))
+#define check_address_error(mask, vaddr)                                                                               \
+  (((!regs.cop0.is64BitAddressing) && (s32)(vaddr) != (vaddr)) || (((vaddr) & (mask)) != 0))
   bool ShouldServiceInterrupt() override;
   void CheckCompareInterrupt() override;
   std::vector<u8> Serialize() override;
-  void Deserialize(const std::vector<u8>&) override;
+  void Deserialize(const std::vector<u8> &) override;
 
   void cop2Decode(u32);
   void special(u32);
@@ -130,4 +130,4 @@ private:
   void ctc2(u32);
   void cfc2(u32);
 };
-}
+} // namespace n64

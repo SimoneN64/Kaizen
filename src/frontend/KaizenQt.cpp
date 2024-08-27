@@ -7,14 +7,15 @@
 
 namespace fs = std::filesystem;
 
-KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
+KaizenQt::KaizenQt() noexcept :
+  QWidget(nullptr) {
   mainWindow = std::make_unique<MainWindowController>();
   settingsWindow = std::make_unique<SettingsWindow>();
   emuThread = std::make_unique<EmuThread>(
-    std::move(mainWindow->view.vulkanWidget->instance),
-    std::move(mainWindow->view.vulkanWidget->wsiPlatform),
-    std::move(mainWindow->view.vulkanWidget->windowInfo),
-    *settingsWindow);
+  std::move(mainWindow->view.vulkanWidget->instance),
+  std::move(mainWindow->view.vulkanWidget->wsiPlatform),
+  std::move(mainWindow->view.vulkanWidget->windowInfo),
+  *settingsWindow);
 
   ConnectMainWindowSignalsToSlots();
 
@@ -43,18 +44,18 @@ void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept {
   connect(mainWindow.get(), &MainWindowController::Pause, emuThread.get(), &EmuThread::TogglePause);
 }
 
-void KaizenQt::dragEnterEvent(QDragEnterEvent* event) {
+void KaizenQt::dragEnterEvent(QDragEnterEvent *event) {
   if (event->mimeData()->hasUrls()) {
     event->acceptProposedAction();
   }
 }
 
-void KaizenQt::dropEvent(QDropEvent* event) {
+void KaizenQt::dropEvent(QDropEvent *event) {
   auto path = event->mimeData()->urls()[0].toLocalFile();
   LoadROM(path);
 }
 
-void KaizenQt::LoadROM(const QString& fileName) noexcept {
+void KaizenQt::LoadROM(const QString &fileName) noexcept {
   mainWindow->view.actionPause->setEnabled(true);
   mainWindow->view.actionReset->setEnabled(true);
   mainWindow->view.actionStop->setEnabled(true);
@@ -64,25 +65,25 @@ void KaizenQt::LoadROM(const QString& fileName) noexcept {
 }
 
 void KaizenQt::Quit() noexcept {
-  if(emuThread) {
+  if (emuThread) {
     emuThread->SetRender(false);
     emuThread->Stop();
   }
   QApplication::quit();
 }
 
-void KaizenQt::LoadTAS(const QString& fileName) const noexcept {
+void KaizenQt::LoadTAS(const QString &fileName) const noexcept {
   emuThread->core.LoadTAS(fs::path(fileName.toStdString()));
 }
 
 void KaizenQt::keyPressEvent(QKeyEvent *e) {
   emuThread->core.pause = true;
-  n64::Mem& mem = emuThread->core.cpu->GetMem();
-  n64::PIF& pif = mem.mmio.si.pif;
+  n64::Mem &mem = emuThread->core.cpu->GetMem();
+  n64::PIF &pif = mem.mmio.si.pif;
 
   auto k = static_cast<Qt::Key>(e->key());
-  for(int i = 0; i < 14; i++) {
-    if(k == settingsWindow->keyMap[i])
+  for (int i = 0; i < 14; i++) {
+    if (k == settingsWindow->keyMap[i])
       pif.UpdateButton(0, static_cast<n64::Controller::Key>(i), true);
   }
 
@@ -101,12 +102,12 @@ void KaizenQt::keyPressEvent(QKeyEvent *e) {
 
 void KaizenQt::keyReleaseEvent(QKeyEvent *e) {
   emuThread->core.pause = true;
-  n64::Mem& mem = emuThread->core.cpu->GetMem();
-  n64::PIF& pif = mem.mmio.si.pif;
+  n64::Mem &mem = emuThread->core.cpu->GetMem();
+  n64::PIF &pif = mem.mmio.si.pif;
 
   auto k = static_cast<Qt::Key>(e->key());
-  for(int i = 0; i < 14; i++) {
-    if(k == settingsWindow->keyMap[i])
+  for (int i = 0; i < 14; i++) {
+    if (k == settingsWindow->keyMap[i])
       pif.UpdateButton(0, static_cast<n64::Controller::Key>(i), false);
   }
 

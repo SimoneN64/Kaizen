@@ -2,10 +2,7 @@
 #include <jit/helpers.hpp>
 
 namespace n64 {
-JIT::JIT(ParallelRDP& parallel) : mem(regs, parallel) {
-  regs.gpr[0] = 0;
-  regs.gprIsConstant[0] = true;
-}
+JIT::JIT(ParallelRDP &parallel) : mem(regs, parallel) {}
 
 bool JIT::ShouldServiceInterrupt() {
   bool interrupts_pending = (regs.cop0.status.im & regs.cop0.cause.interruptPending) != 0;
@@ -13,14 +10,13 @@ bool JIT::ShouldServiceInterrupt() {
   bool currently_handling_exception = regs.cop0.status.exl == 1;
   bool currently_handling_error = regs.cop0.status.erl == 1;
 
-  return interrupts_pending && interrupts_enabled &&
-         !currently_handling_exception && !currently_handling_error;
+  return interrupts_pending && interrupts_enabled && !currently_handling_exception && !currently_handling_error;
 }
 
 void JIT::CheckCompareInterrupt() {
   regs.cop0.count++;
   regs.cop0.count &= 0x1FFFFFFFF;
-  if(regs.cop0.count == (u64)regs.cop0.compare << 1) {
+  if (regs.cop0.count == (u64)regs.cop0.compare << 1) {
     regs.cop0.cause.ip7 = 1;
     mem.mmio.mi.UpdateInterrupt();
   }
@@ -31,10 +27,10 @@ int JIT::Step() {
   s64 pc = regs.pc;
 
   do {
-    //CheckCompareInterrupt();
+    // CheckCompareInterrupt();
 
-    //regs.prevDelaySlot = regs.delaySlot;
-    //regs.delaySlot = false;
+    // regs.prevDelaySlot = regs.delaySlot;
+    // regs.delaySlot = false;
 
     /*if (check_address_error(0b11, u64(pc))) [[unlikely]] {
       regs.cop0.HandleTLBException(pc);
@@ -47,7 +43,8 @@ int JIT::Step() {
       /*regs.cop0.HandleTLBException(pc);
       regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, pc);
       return 1;*/
-      Util::panic("[JIT]: Unhandled exception TLB exception {} when retrieving PC physical address!", static_cast<int>(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD)));
+      Util::panic("[JIT]: Unhandled exception TLB exception {} when retrieving PC physical address!",
+                  static_cast<int>(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD)));
     }
 
     instruction = mem.Read<u32>(regs, paddr);
@@ -59,8 +56,9 @@ int JIT::Step() {
 
     pc += 4;
 
-    //Exec(instruction);
-  } while (!InstrEndsBlock(instruction));
+    // Exec(instruction);
+  }
+  while (!InstrEndsBlock(instruction));
 
   return 1;
 }
@@ -75,7 +73,5 @@ std::vector<u8> JIT::Serialize() {
   return res;
 }
 
-void JIT::Deserialize(const std::vector<u8> &data) {
-  memcpy(&regs, data.data(), sizeof(Registers));
-}
-}
+void JIT::Deserialize(const std::vector<u8> &data) { memcpy(&regs, data.data(), sizeof(Registers)); }
+} // namespace n64

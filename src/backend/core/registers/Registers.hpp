@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <backend/core/registers/Cop1.hpp>
 
 namespace n64 {
@@ -9,15 +10,14 @@ struct Registers {
   void SetPC32(s32);
 
   bool IsRegConstant(u32 index) {
-    if(index == 0) return true;
+    if (index == 0)
+      return true;
     return gprIsConstant[index];
   }
 
-  bool IsRegConstant(u32 first, u32 second) {
-    return IsRegConstant(first) && IsRegConstant(second);
-  }
+  bool IsRegConstant(u32 first, u32 second) { return IsRegConstant(first) && IsRegConstant(second); }
 
-  bool gprIsConstant[32]{};
+  std::array<bool, 32> gprIsConstant{};
   bool loIsConstant = false, hiIsConstant = false;
   Cop0 cop0;
   Cop1 cop1;
@@ -27,9 +27,7 @@ struct Registers {
   u32 steps = 0;
   u32 extraCycles = 0;
 
-  void CpuStall(u32 cycles) {
-    extraCycles += cycles;
-  }
+  void CpuStall(u32 cycles) { extraCycles += cycles; }
 
   u32 PopStalledCycles() {
     u32 ret = extraCycles;
@@ -41,7 +39,8 @@ struct Registers {
   T Read(size_t);
   template <typename T>
   void Write(size_t, T);
+
 private:
-  s64 gpr[32]{};
+  std::array<s64, 32> gpr{};
 };
-}
+} // namespace n64

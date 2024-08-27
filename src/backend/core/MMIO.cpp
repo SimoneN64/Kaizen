@@ -15,31 +15,55 @@ void MMIO::Reset() {
 
 u32 MMIO::Read(u32 addr) {
   switch (addr) {
-    case RSP_REGION: return rsp.Read(addr);
-    case RDP_REGION: return rdp.Read(addr);
-    case MI_REGION: return mi.Read(addr);
-    case VI_REGION: return vi.Read(addr);
-    case AI_REGION: return ai.Read(addr);
-    case PI_REGION: return pi.Read(addr);
-    case RI_REGION: return ri.Read(addr);
-    case SI_REGION: return si.Read(addr);
-    default:
-      Util::panic("Unhandled mmio read at addr {:08X}", addr);
+  case RSP_REGION:
+    return rsp.Read(addr);
+  case RDP_REGION:
+    return rdp.Read(addr);
+  case MI_REGION:
+    return mi.Read(addr);
+  case VI_REGION:
+    return vi.Read(addr);
+  case AI_REGION:
+    return ai.Read(addr);
+  case PI_REGION:
+    return pi.Read(addr);
+  case RI_REGION:
+    return ri.Read(addr);
+  case SI_REGION:
+    return si.Read(addr);
+  default:
+    Util::panic("Unhandled mmio read at addr {:08X}", addr);
   }
 }
 
 void MMIO::Write(u32 addr, u32 val) {
   switch (addr) {
-    case RSP_REGION: rsp.Write(addr, val); break;
-    case RDP_REGION: rdp.Write(addr, val); break;
-    case MI_REGION: mi.Write(addr, val); break;
-    case VI_REGION: vi.Write(addr, val); break;
-    case AI_REGION: ai.Write(addr, val); break;
-    case PI_REGION: pi.Write(addr, val); break;
-    case RI_REGION: ri.Write(addr, val); break;
-    case SI_REGION: si.Write(addr, val); break;
-    default:
-      Util::panic("Unhandled mmio write at addr {:08X} with val {:08X}", addr, val);
+  case RSP_REGION:
+    rsp.Write(addr, val);
+    break;
+  case RDP_REGION:
+    rdp.Write(addr, val);
+    break;
+  case MI_REGION:
+    mi.Write(addr, val);
+    break;
+  case VI_REGION:
+    vi.Write(addr, val);
+    break;
+  case AI_REGION:
+    ai.Write(addr, val);
+    break;
+  case PI_REGION:
+    pi.Write(addr, val);
+    break;
+  case RI_REGION:
+    ri.Write(addr, val);
+    break;
+  case SI_REGION:
+    si.Write(addr, val);
+    break;
+  default:
+    Util::panic("Unhandled mmio write at addr {:08X} with val {:08X}", addr, val);
   }
 }
 
@@ -47,20 +71,9 @@ std::vector<u8> MMIO::Serialize() {
   std::vector<u8> res{};
 
   auto sPIF = si.pif.Serialize();
-  constexpr u32 rdpSize = sizeof(DPC) +
-                          0xFFFFF +
-                          RDRAM_SIZE;
-  res.resize(
-    rdpSize +
-    sizeof(RSP) +
-    sizeof(MI) +
-    sizeof(VI) +
-    sizeof(SI) +
-    sizeof(PI) +
-    sizeof(RI) +
-    sizeof(AI) +
-    sizeof(u32)*2 +
-    sizeof(SIStatus));
+  constexpr u32 rdpSize = sizeof(DPC) + 0xFFFFF + RDRAM_SIZE;
+  res.resize(rdpSize + sizeof(RSP) + sizeof(MI) + sizeof(VI) + sizeof(SI) + sizeof(PI) + sizeof(RI) + sizeof(AI) +
+             sizeof(u32) * 2 + sizeof(SIStatus));
 
   u32 index = 0;
   memcpy(res.data(), &rsp, sizeof(RSP));
@@ -118,4 +131,4 @@ void MMIO::Deserialize(const std::vector<u8> &data) {
   index += sizeof(u32);
   memcpy(&si.status, data.data() + index, sizeof(SIStatus));
 }
-}
+} // namespace n64

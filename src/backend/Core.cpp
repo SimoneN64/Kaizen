@@ -29,7 +29,7 @@ void Core::LoadROM(const std::string &rom_) {
   cpu->GetMem().LoadROM(isArchive, rom);
   GameDB::match(cpu->GetMem());
   if (cpu->GetMem().rom.gameNameDB.empty()) {
-    cpu->GetMem().rom.gameNameDB = fs::path(rom).stem();
+    cpu->GetMem().rom.gameNameDB = fs::path(rom).stem().string();
   }
   cpu->GetMem().mmio.vi.isPal = cpu->GetMem().IsROMPAL();
   cpu->GetMem().mmio.si.pif.InitDevices(cpu->GetMem().saveType);

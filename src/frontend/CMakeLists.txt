@@ -6,6 +6,10 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
 find_package(SDL2 CONFIG REQUIRED)
 
+if(WIN32)
+  add_compile_definitions(NOMINMAX)
+endif()
+
 include_directories(
   .
   ../

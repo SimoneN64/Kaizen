@@ -9,6 +9,13 @@
 	#define XBYAK_THROW(x) ;
 	#define XBYAK_THROW_RET(x, y) return y;
 #endif
+#ifndef XBYAK_CONSTEXPR
+#if ((__cplusplus >= 201402L) && !(!defined(__clang__) && defined(__GNUC__) && (__GNUC__ <= 5))) || (defined(_MSC_VER) && _MSC_VER >= 1910)
+	#define XBYAK_CONSTEXPR constexpr
+#else
+	#define XBYAK_CONSTEXPR
+#endif
+#endif
 #else
 #include <string.h>
 
@@ -20,7 +27,7 @@
 #include "xbyak.h"
 #endif // XBYAK_ONLY_CLASS_CPU
 
-#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64)
+#if defined(__i386__) || (defined(__x86_64__) && !defined(__arm64ec__)) || defined(_M_IX86) || (defined(_M_X64) && !defined(_M_ARM64EC))
 	#define XBYAK_INTEL_CPU_SPECIFIC
 #endif
 
@@ -84,7 +91,8 @@ namespace Xbyak { namespace util {
 typedef enum {
    SmtLevel = 1,
    CoreLevel = 2
-} IntelCpuTopologyLevel;
+} CpuTopologyLevel;
+typedef CpuTopologyLevel IntelCpuTopologyLevel; // for backward compatibility
 
 namespace local {
 
@@ -93,7 +101,7 @@ struct TypeT {
 };
 
 template<uint64_t L1, uint64_t H1, uint64_t L2, uint64_t H2>
-TypeT<L1 | L2, H1 | H2> operator|(TypeT<L1, H1>, TypeT<L2, H2>) { return TypeT<L1 | L2, H1 | H2>(); }
+XBYAK_CONSTEXPR TypeT<L1 | L2, H1 | H2> operator|(TypeT<L1, H1>, TypeT<L2, H2>) { return TypeT<L1 | L2, H1 | H2>(); }
 
 template<typename T>
 inline T max_(T x, T y) { return x >= y ? x : y; }
@@ -129,14 +137,14 @@ public:
 private:
 	Type type_;
 	//system topology
-	bool x2APIC_supported_;
 	static const size_t maxTopologyLevels = 2;
 	uint32_t numCores_[maxTopologyLevels];
 
 	static const uint32_t maxNumberCacheLevels = 10;
 	uint32_t dataCacheSize_[maxNumberCacheLevels];
-	uint32_t coresSharignDataCache_[maxNumberCacheLevels];
+	uint32_t coresSharingDataCache_[maxNumberCacheLevels];
 	uint32_t dataCacheLevels_;
+	uint32_t avx10version_;
 
 	uint32_t get32bitAsBE(const char *x) const
 	{
@@ -146,113 +154,230 @@ private:
 	{
 		return (1U << n) - 1;
 	}
+	// [EBX:ECX:EDX] == s?
+	bool isEqualStr(uint32_t EBX, uint32_t ECX, uint32_t EDX, const char s[12]) const
+	{
+		return get32bitAsBE(&s[0]) == EBX && get32bitAsBE(&s[4]) == EDX && get32bitAsBE(&s[8]) == ECX;
+	}
+	uint32_t extractBit(uint32_t val, uint32_t base, uint32_t end) const
+	{
+		return (val >> base) & ((1u << (end + 1 - base)) - 1);
+	}
 	void setFamily()
 	{
 		uint32_t data[4] = {};
 		getCpuid(1, data);
-		stepping = data[0] & mask(4);
-		model = (data[0] >> 4) & mask(4);
-		family = (data[0] >> 8) & mask(4);
-		// type = (data[0] >> 12) & mask(2);
-		extModel = (data[0] >> 16) & mask(4);
-		extFamily = (data[0] >> 20) & mask(8);
+		stepping = extractBit(data[0], 0, 3);
+		model = extractBit(data[0], 4, 7);
+		family = extractBit(data[0], 8, 11);
+		//type = extractBit(data[0], 12, 13);
+		extModel = extractBit(data[0], 16, 19);
+		extFamily = extractBit(data[0], 20, 27);
 		if (family == 0x0f) {
 			displayFamily = family + extFamily;
 		} else {
 			displayFamily = family;
 		}
-		if (family == 6 || family == 0x0f) {
+		if ((has(tINTEL) && family == 6) || family == 0x0f) {
 			displayModel = (extModel << 4) + model;
 		} else {
 			displayModel = model;
 		}
 	}
-	uint32_t extractBit(uint32_t val, uint32_t base, uint32_t end)
-	{
-		return (val >> base) & ((1u << (end - base)) - 1);
-	}
 	void setNumCores()
 	{
-		if (!has(tINTEL)) return;
+		if (!has(tINTEL) && !has(tAMD)) return;
 
 		uint32_t data[4] = {};
-
-		 /* CAUTION: These numbers are configuration as shipped by Intel. */
-		getCpuidEx(0x0, 0, data);
+		getCpuid(0x0, data);
 		if (data[0] >= 0xB) {
-			 /*
-				if leaf 11 exists(x2APIC is supported),
-				we use it to get the number of smt cores and cores on socket
+			// Check if "Extended Topology Enumeration" is implemented.
+			getCpuidEx(0xB, 0, data);
+			if (data[0] != 0 || data[1] != 0) {
+				/*
+					if leaf 11 exists(x2APIC is supported),
+					we use it to get the number of smt cores and cores on socket
 
-				leaf 0xB can be zeroed-out by a hypervisor
-			*/
-			x2APIC_supported_ = true;
-			for (uint32_t i = 0; i < maxTopologyLevels; i++) {
-				getCpuidEx(0xB, i, data);
-				IntelCpuTopologyLevel level = (IntelCpuTopologyLevel)extractBit(data[2], 8, 15);
-				if (level == SmtLevel || level == CoreLevel) {
-					numCores_[level - 1] = extractBit(data[1], 0, 15);
+					leaf 0xB can be zeroed-out by a hypervisor
+				*/
+				for (uint32_t i = 0; i < maxTopologyLevels; i++) {
+					getCpuidEx(0xB, i, data);
+					CpuTopologyLevel level = (CpuTopologyLevel)extractBit(data[2], 8, 15);
+					if (level == SmtLevel || level == CoreLevel) {
+						numCores_[level - 1] = extractBit(data[1], 0, 15);
+					}
 				}
+				/*
+					Fallback values in case a hypervisor has the leaf zeroed-out.
+				*/
+				numCores_[SmtLevel - 1] = local::max_(1u, numCores_[SmtLevel - 1]);
+				numCores_[CoreLevel - 1] = local::max_(numCores_[SmtLevel - 1], numCores_[CoreLevel - 1]);
+				return;
 			}
+		}
+		// "Extended Topology Enumeration" is not supported.
+		if (has(tAMD)) {
 			/*
-				Fallback values in case a hypervisor has 0xB leaf zeroed-out.
+				AMD - Legacy Method
 			*/
-			numCores_[SmtLevel - 1] = local::max_(1u, numCores_[SmtLevel - 1]);
-			numCores_[CoreLevel - 1] = local::max_(numCores_[SmtLevel - 1], numCores_[CoreLevel - 1]);
+			int physicalThreadCount = 0;
+			getCpuid(0x1, data);
+			int logicalProcessorCount = extractBit(data[1], 16, 23);
+			int htt = extractBit(data[3], 28, 28); // Hyper-threading technology.
+			getCpuid(0x80000000, data);
+			uint32_t highestExtendedLeaf = data[0];
+			if (highestExtendedLeaf >= 0x80000008) {
+				getCpuid(0x80000008, data);
+				physicalThreadCount = extractBit(data[2], 0, 7) + 1;
+			}
+			if (htt == 0) {
+				numCores_[SmtLevel - 1] = 1;
+				numCores_[CoreLevel - 1] = 1;
+			} else if (physicalThreadCount > 1) {
+				if ((displayFamily >= 0x17) && (highestExtendedLeaf >= 0x8000001E)) {
+					// Zen overreports its core count by a factor of two.
+					getCpuid(0x8000001E, data);
+					int threadsPerComputeUnit = extractBit(data[1], 8, 15) + 1;
+					physicalThreadCount /= threadsPerComputeUnit;
+				}
+				numCores_[SmtLevel - 1] = logicalProcessorCount / physicalThreadCount;
+				numCores_[CoreLevel - 1] = logicalProcessorCount;
+			} else {
+				numCores_[SmtLevel - 1] = 1;
+				numCores_[CoreLevel - 1] = logicalProcessorCount > 1 ? logicalProcessorCount : 2;
+			}
 		} else {
 			/*
-				Failed to deremine num of cores without x2APIC support.
-				TODO: USE initial APIC ID to determine ncores.
+				Intel - Legacy Method
 			*/
-			numCores_[SmtLevel - 1] = 0;
-			numCores_[CoreLevel - 1] = 0;
+			int physicalThreadCount = 0;
+			getCpuid(0x1, data);
+			int logicalProcessorCount = extractBit(data[1], 16, 23);
+			int htt = extractBit(data[3], 28, 28); // Hyper-threading technology.
+			getCpuid(0, data);
+			if (data[0] >= 0x4) {
+				getCpuid(0x4, data);
+				physicalThreadCount = extractBit(data[0], 26, 31) + 1;
+			}
+			if (htt == 0) {
+				numCores_[SmtLevel - 1] = 1;
+				numCores_[CoreLevel - 1] = 1;
+			} else if (physicalThreadCount > 1) {
+				numCores_[SmtLevel - 1] = logicalProcessorCount / physicalThreadCount;
+				numCores_[CoreLevel - 1] = logicalProcessorCount;
+			} else {
+				numCores_[SmtLevel - 1] = 1;
+				numCores_[CoreLevel - 1] = logicalProcessorCount > 0 ? logicalProcessorCount : 1;
+			}
 		}
-
 	}
 	void setCacheHierarchy()
 	{
-		if (!has(tINTEL)) return;
-		const uint32_t NO_CACHE = 0;
-		const uint32_t DATA_CACHE = 1;
-//		const uint32_t INSTRUCTION_CACHE = 2;
-		const uint32_t UNIFIED_CACHE = 3;
-		uint32_t smt_width = 0;
-		uint32_t logical_cores = 0;
 		uint32_t data[4] = {};
+		if (has(tAMD)) {
+			getCpuid(0x80000000, data);
+			if (data[0] >= 0x8000001D) {
+				// For modern AMD CPUs.
+				dataCacheLevels_ = 0;
+				for (uint32_t subLeaf = 0; dataCacheLevels_ < maxNumberCacheLevels; subLeaf++) {
+					getCpuidEx(0x8000001D, subLeaf, data);
+					int cacheType = extractBit(data[0], 0, 4);
+					/*
+					  cacheType
+						00h - Null; no more caches
+						01h - Data cache
+						02h - Instrution cache
+						03h - Unified cache
+						04h-1Fh - Reserved
+					*/
+					if (cacheType == 0) break; // No more caches.
+					if (cacheType == 0x2) continue; // Skip instruction cache.
+					int fullyAssociative = extractBit(data[0], 9, 9);
+					int numSharingCache = extractBit(data[0], 14, 25) + 1;
+					int cacheNumWays = extractBit(data[1], 22, 31) + 1;
+					int cachePhysPartitions = extractBit(data[1], 12, 21) + 1;
+					int cacheLineSize = extractBit(data[1], 0, 11) + 1;
+					int cacheNumSets = data[2] + 1;
+					dataCacheSize_[dataCacheLevels_] =
+						cacheLineSize * cachePhysPartitions * cacheNumWays;
+					if (fullyAssociative == 0) {
+						dataCacheSize_[dataCacheLevels_] *= cacheNumSets;
+					}
+					if (subLeaf > 0) {
+						numSharingCache = local::min_(numSharingCache, (int)numCores_[1]);
+						numSharingCache /= local::max_(1u, coresSharingDataCache_[0]);
+					}
+					coresSharingDataCache_[dataCacheLevels_] = numSharingCache;
+					dataCacheLevels_ += 1;
+				}
+				coresSharingDataCache_[0] = local::min_(1u, coresSharingDataCache_[0]);
+			} else if (data[0] >= 0x80000006) {
+				// For legacy AMD CPUs, use leaf 0x80000005 for L1 cache
+				// and 0x80000006 for L2 and L3 cache.
+				dataCacheLevels_ = 1;
+				getCpuid(0x80000005, data);
+				int l1dc_size = extractBit(data[2], 24, 31);
+				dataCacheSize_[0] = l1dc_size * 1024;
+				coresSharingDataCache_[0] = 1;
+				getCpuid(0x80000006, data);
+				// L2 cache
+				int l2_assoc = extractBit(data[2], 12, 15);
+				if (l2_assoc > 0) {
+					dataCacheLevels_ = 2;
+					int l2_size = extractBit(data[2], 16, 31);
+					dataCacheSize_[1] = l2_size * 1024;
+					coresSharingDataCache_[1] = 1;
+				}
+				// L3 cache
+				int l3_assoc = extractBit(data[3], 12, 15);
+				if (l3_assoc > 0) {
+					dataCacheLevels_ = 3;
+					int l3_size = extractBit(data[3], 18, 31);
+					dataCacheSize_[2] = l3_size * 512 * 1024;
+					coresSharingDataCache_[2] = numCores_[1];
+				}
+			}
+		} else if (has(tINTEL)) {
+			// Use the "Deterministic Cache Parameters" leaf is supported.
+			const uint32_t NO_CACHE = 0;
+			const uint32_t DATA_CACHE = 1;
+			//const uint32_t INSTRUCTION_CACHE = 2;
+			const uint32_t UNIFIED_CACHE = 3;
+			uint32_t smt_width = 0;
+			uint32_t logical_cores = 0;
 
-		if (x2APIC_supported_) {
 			smt_width = numCores_[0];
 			logical_cores = numCores_[1];
-		}
 
-		/*
-			Assumptions:
-			the first level of data cache is not shared (which is the
-			case for every existing architecture) and use this to
-			determine the SMT width for arch not supporting leaf 11.
-			when leaf 4 reports a number of core less than numCores_
-			on socket reported by leaf 11, then it is a correct number
-			of cores not an upperbound.
-		*/
-		for (int i = 0; dataCacheLevels_ < maxNumberCacheLevels; i++) {
-			getCpuidEx(0x4, i, data);
-			uint32_t cacheType = extractBit(data[0], 0, 4);
-			if (cacheType == NO_CACHE) break;
-			if (cacheType == DATA_CACHE || cacheType == UNIFIED_CACHE) {
-				uint32_t actual_logical_cores = extractBit(data[0], 14, 25) + 1;
-				if (logical_cores != 0) { // true only if leaf 0xB is supported and valid
-					actual_logical_cores = local::min_(actual_logical_cores, logical_cores);
+			/*
+				Assumptions:
+				the first level of data cache is not shared (which is the
+				case for every existing architecture) and use this to
+				determine the SMT width for arch not supporting leaf 11.
+				when leaf 4 reports a number of core less than numCores_
+				on socket reported by leaf 11, then it is a correct number
+				of cores not an upperbound.
+			*/
+			for (int i = 0; dataCacheLevels_ < maxNumberCacheLevels; i++) {
+				getCpuidEx(0x4, i, data);
+				uint32_t cacheType = extractBit(data[0], 0, 4);
+				if (cacheType == NO_CACHE) break;
+				if (cacheType == DATA_CACHE || cacheType == UNIFIED_CACHE) {
+					uint32_t actual_logical_cores = extractBit(data[0], 14, 25) + 1;
+					if (logical_cores != 0) { // true only if leaf 0xB is supported and valid
+						actual_logical_cores = local::min_(actual_logical_cores, logical_cores);
+					}
+					assert(actual_logical_cores != 0);
+					dataCacheSize_[dataCacheLevels_] =
+						(extractBit(data[1], 22, 31) + 1)
+						* (extractBit(data[1], 12, 21) + 1)
+						* (extractBit(data[1], 0, 11) + 1)
+						* (data[2] + 1);
+					if (cacheType == DATA_CACHE && smt_width == 0) smt_width = actual_logical_cores;
+					assert(smt_width != 0);
+					coresSharingDataCache_[dataCacheLevels_] = local::max_(actual_logical_cores / smt_width, 1u);
+					dataCacheLevels_++;
 				}
-				assert(actual_logical_cores != 0);
-				dataCacheSize_[dataCacheLevels_] =
-					(extractBit(data[1], 22, 31) + 1)
-					* (extractBit(data[1], 12, 21) + 1)
-					* (extractBit(data[1], 0, 11) + 1)
-					* (data[2] + 1);
-				if (cacheType == DATA_CACHE && smt_width == 0) smt_width = actual_logical_cores;
-				assert(smt_width != 0);
-				coresSharignDataCache_[dataCacheLevels_] = local::max_(actual_logical_cores / smt_width, 1u);
-				dataCacheLevels_++;
 			}
 		}
 	}
@@ -266,8 +391,7 @@ public:
 	int displayFamily; // family + extFamily
 	int displayModel; // model + extModel
 
-	uint32_t getNumCores(IntelCpuTopologyLevel level) const {
-		if (!x2APIC_supported_) XBYAK_THROW_RET(ERR_X2APIC_IS_NOT_SUPPORTED, 0)
+	uint32_t getNumCores(CpuTopologyLevel level) const {
 		switch (level) {
 		case SmtLevel: return numCores_[level - 1];
 		case CoreLevel: return numCores_[level - 1] / numCores_[SmtLevel - 1];
@@ -279,7 +403,7 @@ public:
 	uint32_t getCoresSharingDataCache(uint32_t i) const
 	{
 		if (i >= dataCacheLevels_) XBYAK_THROW_RET(ERR_BAD_PARAMETER, 0)
-		return coresSharignDataCache_[i];
+		return coresSharingDataCache_[i];
 	}
 	uint32_t getDataCacheSize(uint32_t i) const
 	{
@@ -290,19 +414,6 @@ public:
 	/*
 		data[] = { eax, ebx, ecx, edx }
 	*/
-	static inline void getCpuid(uint32_t eaxIn, uint32_t data[4])
-	{
-#ifdef XBYAK_INTEL_CPU_SPECIFIC
-	#ifdef _WIN32
-		__cpuid(reinterpret_cast<int*>(data), eaxIn);
-	#else
-		__cpuid(eaxIn, data[0], data[1], data[2], data[3]);
-	#endif
-#else
-		(void)eaxIn;
-		(void)data;
-#endif
-	}
 	static inline void getCpuidEx(uint32_t eaxIn, uint32_t ecxIn, uint32_t data[4])
 	{
 #ifdef XBYAK_INTEL_CPU_SPECIFIC
@@ -316,6 +427,10 @@ public:
 		(void)ecxIn;
 		(void)data;
 #endif
+	}
+	static inline void getCpuid(uint32_t eaxIn, uint32_t data[4])
+	{
+		getCpuidEx(eaxIn, 0, data);
 	}
 	static inline uint64_t getXfeature()
 	{
@@ -414,17 +529,36 @@ public:
 	XBYAK_DEFINE_TYPE(69, tAVX_VNNI_INT8);
 	XBYAK_DEFINE_TYPE(70, tAVX_NE_CONVERT);
 	XBYAK_DEFINE_TYPE(71, tAVX_IFMA);
+	XBYAK_DEFINE_TYPE(72, tRAO_INT);
+	XBYAK_DEFINE_TYPE(73, tCMPCCXADD);
+	XBYAK_DEFINE_TYPE(74, tPREFETCHITI);
+	XBYAK_DEFINE_TYPE(75, tSERIALIZE);
+	XBYAK_DEFINE_TYPE(76, tUINTR);
+	XBYAK_DEFINE_TYPE(77, tXSAVE);
+	XBYAK_DEFINE_TYPE(78, tSHA512);
+	XBYAK_DEFINE_TYPE(79, tSM3);
+	XBYAK_DEFINE_TYPE(80, tSM4);
+	XBYAK_DEFINE_TYPE(81, tAVX_VNNI_INT16);
+	XBYAK_DEFINE_TYPE(82, tAPX_F);
+	XBYAK_DEFINE_TYPE(83, tAVX10);
+	XBYAK_DEFINE_TYPE(84, tAESKLE);
+	XBYAK_DEFINE_TYPE(85, tWIDE_KL);
+	XBYAK_DEFINE_TYPE(86, tKEYLOCKER);
+	XBYAK_DEFINE_TYPE(87, tKEYLOCKER_WIDE);
+	XBYAK_DEFINE_TYPE(88, tSSE4a);
+	XBYAK_DEFINE_TYPE(89, tCLWB);
+	XBYAK_DEFINE_TYPE(90, tTSXLDTRK);
 
 #undef XBYAK_SPLIT_ID
 #undef XBYAK_DEFINE_TYPE
 
 	Cpu()
 		: type_()
-		, x2APIC_supported_(false)
 		, numCores_()
 		, dataCacheSize_()
-		, coresSharignDataCache_()
+		, coresSharingDataCache_()
 		, dataCacheLevels_(0)
+		, avx10version_(0)
 	{
 		uint32_t data[4] = {};
 		const uint32_t& EAX = data[0];
@@ -433,9 +567,7 @@ public:
 		const uint32_t& EDX = data[3];
 		getCpuid(0, data);
 		const uint32_t maxNum = EAX;
-		static const char intel[] = "ntel";
-		static const char amd[] = "cAMD";
-		if (ECX == get32bitAsBE(amd)) {
+		if (isEqualStr(EBX, ECX, EDX, "AuthenticAMD")) {
 			type_ |= tAMD;
 			getCpuid(0x80000001, data);
 			if (EDX & (1U << 31)) {
@@ -448,8 +580,7 @@ public:
 				// Long mode implies support for PREFETCHW on AMD
 				type_ |= tPREFETCHW;
 			}
-		}
-		if (ECX == get32bitAsBE(intel)) {
+		} else if (isEqualStr(EBX, ECX, EDX, "GenuineIntel")) {
 			type_ |= tINTEL;
 		}
 
@@ -459,13 +590,14 @@ public:
 		if (maxExtendedNum >= 0x80000001) {
 			getCpuid(0x80000001, data);
 
-			if (EDX & (1U << 31)) type_ |= t3DN;
-			if (EDX & (1U << 30)) type_ |= tE3DN;
-			if (EDX & (1U << 27)) type_ |= tRDTSCP;
-			if (EDX & (1U << 22)) type_ |= tMMX2;
-			if (EDX & (1U << 15)) type_ |= tCMOV;
 			if (ECX & (1U << 5)) type_ |= tLZCNT;
+			if (ECX & (1U << 6)) type_ |= tSSE4a;
 			if (ECX & (1U << 8)) type_ |= tPREFETCHW;
+			if (EDX & (1U << 15)) type_ |= tCMOV;
+			if (EDX & (1U << 22)) type_ |= tMMX2;
+			if (EDX & (1U << 27)) type_ |= tRDTSCP;
+			if (EDX & (1U << 30)) type_ |= tE3DN;
+			if (EDX & (1U << 31)) type_ |= t3DN;
 		}
 
 		if (maxExtendedNum >= 0x80000008) {
@@ -475,16 +607,17 @@ public:
 
 		getCpuid(1, data);
 		if (ECX & (1U << 0)) type_ |= tSSE3;
+		if (ECX & (1U << 1)) type_ |= tPCLMULQDQ;
 		if (ECX & (1U << 9)) type_ |= tSSSE3;
 		if (ECX & (1U << 19)) type_ |= tSSE41;
 		if (ECX & (1U << 20)) type_ |= tSSE42;
 		if (ECX & (1U << 22)) type_ |= tMOVBE;
 		if (ECX & (1U << 23)) type_ |= tPOPCNT;
 		if (ECX & (1U << 25)) type_ |= tAESNI;
-		if (ECX & (1U << 1)) type_ |= tPCLMULQDQ;
+		if (ECX & (1U << 26)) type_ |= tXSAVE;
 		if (ECX & (1U << 27)) type_ |= tOSXSAVE;
-		if (ECX & (1U << 30)) type_ |= tRDRAND;
 		if (ECX & (1U << 29)) type_ |= tF16C;
+		if (ECX & (1U << 30)) type_ |= tRDRAND;
 
 		if (EDX & (1U << 15)) type_ |= tCMOV;
 		if (EDX & (1U << 23)) type_ |= tMMX;
@@ -495,8 +628,8 @@ public:
 			// check XFEATURE_ENABLED_MASK[2:1] = '11b'
 			uint64_t bv = getXfeature();
 			if ((bv & 6) == 6) {
-				if (ECX & (1U << 28)) type_ |= tAVX;
 				if (ECX & (1U << 12)) type_ |= tFMA;
+				if (ECX & (1U << 28)) type_ |= tAVX;
 				// do *not* check AVX-512 state on macOS because it has on-demand AVX-512 support
 #if !defined(__APPLE__)
 				if (((bv >> 5) & 7) == 7)
@@ -530,38 +663,62 @@ public:
 			const uint32_t maxNumSubLeaves = EAX;
 			if (type_ & tAVX && (EBX & (1U << 5))) type_ |= tAVX2;
 			if (EBX & (1U << 3)) type_ |= tBMI1;
+			if (EBX & (1U << 4)) type_ |= tHLE;
 			if (EBX & (1U << 8)) type_ |= tBMI2;
 			if (EBX & (1U << 9)) type_ |= tENHANCED_REP;
+			if (EBX & (1U << 11)) type_ |= tRTM;
+			if (EBX & (1U << 14)) type_ |= tMPX;
 			if (EBX & (1U << 18)) type_ |= tRDSEED;
 			if (EBX & (1U << 19)) type_ |= tADX;
 			if (EBX & (1U << 20)) type_ |= tSMAP;
 			if (EBX & (1U << 23)) type_ |= tCLFLUSHOPT;
-			if (EBX & (1U << 4)) type_ |= tHLE;
-			if (EBX & (1U << 11)) type_ |= tRTM;
-			if (EBX & (1U << 14)) type_ |= tMPX;
+			if (EBX & (1U << 24)) type_ |= tCLWB;
 			if (EBX & (1U << 29)) type_ |= tSHA;
 			if (ECX & (1U << 0)) type_ |= tPREFETCHWT1;
 			if (ECX & (1U << 5)) type_ |= tWAITPKG;
 			if (ECX & (1U << 8)) type_ |= tGFNI;
 			if (ECX & (1U << 9)) type_ |= tVAES;
 			if (ECX & (1U << 10)) type_ |= tVPCLMULQDQ;
+			if (ECX & (1U << 23)) type_ |= tKEYLOCKER;
 			if (ECX & (1U << 25)) type_ |= tCLDEMOTE;
 			if (ECX & (1U << 27)) type_ |= tMOVDIRI;
 			if (ECX & (1U << 28)) type_ |= tMOVDIR64B;
+			if (EDX & (1U << 5)) type_ |= tUINTR;
+			if (EDX & (1U << 14)) type_ |= tSERIALIZE;
+			if (EDX & (1U << 16)) type_ |= tTSXLDTRK;
+			if (EDX & (1U << 22)) type_ |= tAMX_BF16;
 			if (EDX & (1U << 24)) type_ |= tAMX_TILE;
 			if (EDX & (1U << 25)) type_ |= tAMX_INT8;
-			if (EDX & (1U << 22)) type_ |= tAMX_BF16;
 			if (maxNumSubLeaves >= 1) {
 				getCpuidEx(7, 1, data);
+				if (EAX & (1U << 0)) type_ |= tSHA512;
+				if (EAX & (1U << 1)) type_ |= tSM3;
+				if (EAX & (1U << 2)) type_ |= tSM4;
+				if (EAX & (1U << 3)) type_ |= tRAO_INT;
 				if (EAX & (1U << 4)) type_ |= tAVX_VNNI;
 				if (type_ & tAVX512F) {
 					if (EAX & (1U << 5)) type_ |= tAVX512_BF16;
 				}
+				if (EAX & (1U << 7)) type_ |= tCMPCCXADD;
 				if (EAX & (1U << 21)) type_ |= tAMX_FP16;
 				if (EAX & (1U << 23)) type_ |= tAVX_IFMA;
 				if (EDX & (1U << 4)) type_ |= tAVX_VNNI_INT8;
 				if (EDX & (1U << 5)) type_ |= tAVX_NE_CONVERT;
+				if (EDX & (1U << 10)) type_ |= tAVX_VNNI_INT16;
+				if (EDX & (1U << 14)) type_ |= tPREFETCHITI;
+				if (EDX & (1U << 19)) type_ |= tAVX10;
+				if (EDX & (1U << 21)) type_ |= tAPX_F;
 			}
+		}
+		if (maxNum >= 0x19) {
+			getCpuidEx(0x19, 0, data);
+			if (EBX & (1U << 0)) type_ |= tAESKLE;
+			if (EBX & (1U << 2)) type_ |= tWIDE_KL;
+			if (type_ & (tKEYLOCKER|tAESKLE|tWIDE_KL)) type_ |= tKEYLOCKER_WIDE;
+		}
+		if (has(tAVX10) && maxNum >= 0x24) {
+			getCpuidEx(0x24, 0, data);
+			avx10version_ = EBX & mask(7);
 		}
 		setFamily();
 		setNumCores();
@@ -579,6 +736,7 @@ public:
 	{
 		return (type & type_) == type;
 	}
+	int getAVX10version() const { return avx10version_; }
 };
 
 #ifndef XBYAK_ONLY_CLASS_CPU

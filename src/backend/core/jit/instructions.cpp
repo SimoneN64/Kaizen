@@ -497,26 +497,114 @@ void JIT::sllv(u32 instr) {
     u32 rt = regs.Read<s64>(RT(instr));
     s32 result = rt << sa;
     regs.Write(RD(instr), (s64)result);
+  } else {
+    Util::panic("[JIT]: Implement non constant SLLV!");
   }
 }
 
-void JIT::sub(u32) {}
+void JIT::sub(u32 instr) {
+  if (regs.IsRegConstant(RS(instr), RT(instr))) {
+    s32 rt = regs.Read<s64>(RT(instr));
+    s32 rs = regs.Read<s64>(RS(instr));
+    s32 result = rs - rt;
+    if (check_signed_underflow(rs, rt, result)) {
+      regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
+    } else {
+      regs.Write(RD(instr), result);
+    }
+  } else {
+    Util::panic("[JIT]: Implement non constant SUB!");
+  }
+}
 
-void JIT::subu(u32) {}
+void JIT::subu(u32 instr) {
+  if (regs.IsRegConstant(RS(instr), RT(instr))) {
+    u32 rt = regs.Read<s64>(RT(instr));
+    u32 rs = regs.Read<s64>(RS(instr));
+    u32 result = rs - rt;
+    regs.Write(RD(instr), (s64)((s32)result));
+  } else {
+    Util::panic("[JIT]: Implement non constant SUBU!");
+  }
+}
 
-void JIT::sra(u32) {}
+void JIT::sra(u32 instr) {
+  if (regs.IsRegConstant(RT(instr))) {
+    s64 rt = regs.Read<s64>(RT(instr));
+    u8 sa = ((instr >> 6) & 0x1f);
+    s32 result = rt >> sa;
+    regs.Write(RD(instr), result);
+  } else {
+    Util::panic("[JIT]: Implement non constant SRA!");
+  }
+}
 
-void JIT::srav(u32) {}
+void JIT::srav(u32 instr) {
+  if (regs.IsRegConstant(RS(instr), RT(instr))) {
+    s64 rs = regs.Read<s64>(RS(instr));
+    s64 rt = regs.Read<s64>(RT(instr));
+    u8 sa = rs & 0x1f;
+    s32 result = rt >> sa;
+    regs.Write(RD(instr), result);
+  } else {
+    Util::panic("[JIT]: Implement non constant SRAV!");
+  }
+}
 
-void JIT::srl(u32) {}
+void JIT::srl(u32 instr) {
+  if (regs.IsRegConstant(RT(instr))) {
+    u32 rt = regs.Read<s64>(RT(instr));
+    u8 sa = ((instr >> 6) & 0x1f);
+    u32 result = rt >> sa;
+    regs.Write(RD(instr), (s32)result);
+  } else {
+    Util::panic("[JIT]: Implement non constant SRL!");
+  }
+}
 
-void JIT::srlv(u32) {}
+void JIT::srlv(u32 instr) {
+  if (regs.IsRegConstant(RS(instr), RT(instr))) {
+    u8 sa = (regs.Read<s64>(RS(instr)) & 0x1F);
+    u32 rt = regs.Read<s64>(RT(instr));
+    s32 result = rt >> sa;
+    regs.Write(RD(instr), (s64)result);
+  } else {
+    Util::panic("[JIT]: Implement non constant SRLV!");
+  }
+}
 
-void JIT::or_(u32) {}
+void JIT::or_(u32 instr) {
+  if (regs.IsRegConstant(RS(instr), RT(instr))) {
+    regs.Write(RD(instr), regs.Read<s64>(RS(instr)) | regs.Read<s64>(RT(instr)));
+  } else {
+    Util::panic("[JIT]: Implement non constant OR!");
+  }
+}
 
-void JIT::ori(u32) {}
+void JIT::ori(u32 instr) {
+  if (regs.IsRegConstant(RS(instr))) {
+    s64 imm = (u16)instr;
+    s64 result = imm | regs.Read<s64>(RS(instr));
+    regs.Write(RT(instr), result);
+  } else {
+    Util::panic("[JIT]: Implement non constant ORI!");
+  }
+}
 
-void JIT::xor_(u32) {}
+void JIT::xori(u32 instr) {
+  if (regs.IsRegConstant(RS(instr))) {
+    s64 imm = (u16)instr;
+    regs.Write(RT(instr), regs.Read<s64>(RS(instr)) ^ imm);
+  } else {
+    Util::panic("[JIT]: Implement non constant XORI!");
+  }
+}
 
-void JIT::xori(u32) {}
+void JIT::xor_(u32 instr) {
+  if (regs.IsRegConstant(RS(instr), RT(instr))) {
+    regs.Write(RD(instr), regs.Read<s64>(RT(instr)) ^ regs.Read<s64>(RS(instr)));
+  } else {
+    Util::panic("[JIT]: Implement non constant XOR!");
+  }
+}
 } // namespace n64

@@ -5,8 +5,9 @@
 #include <log.hpp>
 
 CPUSettings::CPUSettings(nlohmann::json &settings) : settings(settings), QWidget(nullptr) {
-  cpuTypes->addItems({"Interpreter", "Dynamic Recompiler"});
-
+  cpuTypes->addItems({
+    "Interpreter" //, "Dynamic Recompiler"
+  });
   if (JSONGetField<std::string>(settings, "cpu", "type") == "jit") {
     cpuTypes->setCurrentIndex(1);
   } else {
@@ -16,8 +17,8 @@ CPUSettings::CPUSettings(nlohmann::json &settings) : settings(settings), QWidget
   connect(cpuTypes, &QComboBox::currentIndexChanged, this, [&]() {
     if (cpuTypes->currentIndex() == 0) {
       JSONSetField(settings, "cpu", "type", "interpreter");
-    } else if (cpuTypes->currentIndex() == 1) {
-      JSONSetField(settings, "cpu", "type", "jit");
+      //} else if (cpuTypes->currentIndex() == 1) {
+      //  JSONSetField(settings, "cpu", "type", "jit");
     } else {
       Util::panic("Impossible CPU type!");
     }

@@ -1,5 +1,6 @@
 #pragma once
 #include <common.hpp>
+#include <fmt/color.h>
 #include <fmt/core.h>
 #include <string>
 #if !defined(NDEBUG) && !defined(_WIN32)

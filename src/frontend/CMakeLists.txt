@@ -42,6 +42,7 @@ include_directories(
 option(RAPIDJSON_BUILD_DOC "Build rapidjson documentation." OFF)
 option(RAPIDJSON_BUILD_EXAMPLES "Build rapidjson examples." OFF)
 option(RAPIDJSON_BUILD_TESTS "Build rapidjson perftests and unittests." OFF)
+option(BUILD_SHARED_LIBS OFF)
 
 add_subdirectory(../../external/discord_rpc discord_rpc)
 add_subdirectory(../../external/json json)

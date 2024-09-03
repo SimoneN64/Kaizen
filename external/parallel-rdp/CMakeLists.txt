@@ -49,9 +49,6 @@ add_library(parallel-rdp
 
 if(WIN32)
   target_compile_definitions(parallel-rdp PUBLIC VK_USE_PLATFORM_WIN32_KHR)
-  if(MSVC)
-    target_compile_options(parallel-rdp PUBLIC /EHa)
-  endif()
 else()
   target_link_libraries(parallel-rdp PUBLIC dl)
 endif()

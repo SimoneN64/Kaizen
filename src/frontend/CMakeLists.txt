@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(kaizen-qt)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
 find_package(SDL2 CONFIG REQUIRED)
@@ -34,8 +35,6 @@ include_directories(
   ../../external/parallel-rdp/parallel-rdp-standalone/vulkan
   ../../external/parallel-rdp/parallel-rdp-standalone/vulkan-headers/include
   ../../external/parallel-rdp/parallel-rdp-standalone/util
-  ../../external/imgui/imgui
-  ../../external/imgui/imgui/backends
   ../../external/unarr
   ${SDL2_INCLUDE_DIRS}
 )
@@ -76,6 +75,21 @@ add_executable(kaizen-qt
   AudioSettings.cpp
   InputSettings.hpp
   InputSettings.cpp)
+
+include(CheckCCompilerFlag)
+
+check_c_compiler_flag(-msse4.1 HAS_SSE4_1)
+
+if (HAS_SSE4_1)
+  target_compile_definitions(kaizen-qt PUBLIC SIMD_SUPPORT)
+  target_compile_options(kaizen-qt PUBLIC -msse3 -msse4.1)
+endif ()
+
+if(${CMAKE_BUILD_TYPE} MATCHES Debug)
+  target_compile_definitions(kaizen-qt PUBLIC VULKAN_DEBUG)
+  #target_compile_options(kaizen-qt PUBLIC -fsanitize=address -fsanitize=undefined)
+  #target_link_options(kaizen-qt PUBLIC -fsanitize=address -fsanitize=undefined)
+endif()
 
 target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets discord-rpc fmt mio nlohmann_json parallel-rdp backend)
 target_compile_definitions(kaizen-qt PUBLIC SDL_MAIN_HANDLED)

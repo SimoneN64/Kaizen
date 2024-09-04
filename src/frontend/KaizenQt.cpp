@@ -60,9 +60,9 @@ void KaizenQt::LoadROM(const QString &fileName) noexcept {
 
 void KaizenQt::Quit() noexcept {
   if (emuThread) {
-    emuThread->SetRender(false);
-    emuThread->Stop();
-    emuThread->quit();
+    emuThread->requestInterruption();
+    while (emuThread->isRunning())
+      ;
   }
   QApplication::quit();
 }

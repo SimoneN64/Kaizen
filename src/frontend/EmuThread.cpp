@@ -43,7 +43,7 @@ EmuThread::EmuThread(const std::shared_ptr<QtInstanceFactory> &instance_,
     }
   };
 
-  while (true) {
+  while (!isInterruptionRequested()) {
     if (!core.pause) {
       core.Run(settings.getVolumeL(), settings.getVolumeR());
       if (core.render) {
@@ -108,4 +108,7 @@ EmuThread::EmuThread(const std::shared_ptr<QtInstanceFactory> &instance_,
       pif.UpdateAxis(0, n64::Controller::Axis::X, xclamped);
     }
   }
+
+  SetRender(false);
+  Stop();
 }

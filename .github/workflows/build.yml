@@ -14,7 +14,7 @@ jobs:
         run: |
           sudo add-apt-repository universe
           sudo apt-get update -qq
-          sudo apt-get install -y clang build-essential libgtk-3-dev libsdl2-dev git ninja-build qt6-base-dev
+          sudo apt-get install -y clang build-essential libgtk-3-dev git ninja-build qt6-base-dev
           sudo apt-get install -y vulkan-tools libvulkan1 libvulkan-dev vulkan-utility-libraries-dev spirv-tools
       - name: Build Kaizen
         run: |
@@ -36,9 +36,6 @@ jobs:
       - uses: actions/checkout@master
         with:
           submodules: recursive
-      - name: Setup dependencies
-        run: |
-          vcpkg install sdl2[vulkan]:x64-windows
       - name: Setup Qt
         uses: jurplel/install-qt-action@v3
         with:
@@ -54,7 +51,6 @@ jobs:
           cp build/src/frontend/Release/kaizen-qt.exe upload
           mkdir upload/resources
           cp resources/* upload/resources
-          cp build/src/frontend/Release/SDL2.dll upload
           windeployqt --dir upload upload/kaizen-qt.exe
       - name: Upload artifacts
         uses: actions/upload-artifact@master

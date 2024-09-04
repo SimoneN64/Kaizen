@@ -1,6 +1,6 @@
 #pragma once
 #include <MemoryHelpers.hpp>
-#include <SDL2/SDL_audio.h>
+#include <SDL3/SDL_audio.h>
 
 namespace n64 {
 struct AudioDevice {
@@ -22,7 +22,7 @@ struct AudioDevice {
 
 private:
   SDL_AudioStream *audioStream;
-  SDL_mutex *audioStreamMutex;
+  SDL_Mutex *audioStreamMutex;
   SDL_AudioSpec audioSpec{};
   SDL_AudioSpec request{};
   SDL_AudioDeviceID handle{};

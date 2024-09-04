@@ -144,7 +144,7 @@ bool Cop1::isqnan<double>(double f) {
 
 template <>
 bool Cop1::CheckCVTArg<s32>(float &f) {
-  switch (fpclassify(f)) {
+  switch (std::fpclassify(f)) {
   case FP_SUBNORMAL:
   case FP_INFINITE:
   case FP_NAN:
@@ -164,7 +164,7 @@ bool Cop1::CheckCVTArg<s32>(float &f) {
 
 template <>
 bool Cop1::CheckCVTArg<s32>(double &f) {
-  switch (fpclassify(f)) {
+  switch (std::fpclassify(f)) {
   case FP_SUBNORMAL:
   case FP_INFINITE:
   case FP_NAN:
@@ -184,7 +184,7 @@ bool Cop1::CheckCVTArg<s32>(double &f) {
 
 template <>
 bool Cop1::CheckCVTArg<s64>(float &f) {
-  switch (fpclassify(f)) {
+  switch (std::fpclassify(f)) {
   case FP_SUBNORMAL:
   case FP_INFINITE:
   case FP_NAN:
@@ -204,7 +204,7 @@ bool Cop1::CheckCVTArg<s64>(float &f) {
 
 template <>
 bool Cop1::CheckCVTArg<s64>(double &f) {
-  switch (fpclassify(f)) {
+  switch (std::fpclassify(f)) {
   case FP_SUBNORMAL:
   case FP_INFINITE:
   case FP_NAN:
@@ -224,7 +224,7 @@ bool Cop1::CheckCVTArg<s64>(double &f) {
 
 template <typename T>
 bool Cop1::CheckArg(T &f) {
-  switch (fpclassify(f)) {
+  switch (std::fpclassify(f)) {
   case FP_SUBNORMAL:
     SetCauseUnimplemented();
     regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);

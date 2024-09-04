@@ -1,5 +1,5 @@
 #include <EmuThread.hpp>
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 
 EmuThread::EmuThread(const std::shared_ptr<QtInstanceFactory> &instance_,
                      const std::shared_ptr<Vulkan::WSIPlatform> &wsiPlatform_,
@@ -8,10 +8,10 @@ EmuThread::EmuThread(const std::shared_ptr<QtInstanceFactory> &instance_,
 
 [[noreturn]] void EmuThread::run() noexcept {
   parallel.Init(instance, wsiPlatform, windowInfo, core.cpu->GetMem().GetRDRAMPtr());
-  SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
+  SDL_InitSubSystem(SDL_INIT_GAMEPAD);
   bool controllerConnected = false;
 
-  if (SDL_GameControllerAddMappingsFromFile("resources/gamecontrollerdb.txt") < 0) {
+  if (SDL_AddGamepadMappingsFromFile("resources/gamecontrollerdb.txt") < 0) {
     Util::warn("[SDL] Could not load game controller DB");
   }
 
@@ -19,24 +19,24 @@ EmuThread::EmuThread(const std::shared_ptr<QtInstanceFactory> &instance_,
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
       switch (e.type) {
-      case SDL_CONTROLLERDEVICEADDED:
+      case SDL_EVENT_GAMEPAD_ADDED:
         {
-          const int index = e.cdevice.which;
-          controller = SDL_GameControllerOpen(index);
+          const int index = e.gdevice.which;
+          controller = SDL_OpenGamepad(index);
           Util::info("Found controller!");
-          auto serial = SDL_GameControllerGetSerial(controller);
-          auto name = SDL_GameControllerName(controller);
-          auto path = SDL_GameControllerPath(controller);
+          auto serial = SDL_GetGamepadSerial(controller);
+          auto name = SDL_GetGamepadName(controller);
+          auto path = SDL_GetGamepadPath(controller);
           Util::info("\tName: {}", name ? name : "Not available");
           Util::info("\tSerial: {}", serial ? serial : "Not available");
           Util::info("\tPath: {}", path ? path : "Not available");
           controllerConnected = true;
         }
         break;
-      case SDL_CONTROLLERDEVICEREMOVED:
+      case SDL_EVENT_GAMEPAD_REMOVED:
         {
           controllerConnected = false;
-          SDL_GameControllerClose(controller);
+          SDL_CloseGamepad(controller);
         }
         break;
       }
@@ -59,43 +59,34 @@ EmuThread::EmuThread(const std::shared_ptr<QtInstanceFactory> &instance_,
 
     if (controllerConnected) {
       n64::PIF &pif = core.cpu->GetMem().mmio.si.pif;
-      pif.UpdateButton(0, n64::Controller::Key::A, SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_A));
-      pif.UpdateButton(0, n64::Controller::Key::B, SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_X));
+      pif.UpdateButton(0, n64::Controller::Key::A, SDL_GetGamepadButton(controller, SDL_GAMEPAD_BUTTON_SOUTH));
+      pif.UpdateButton(0, n64::Controller::Key::B, SDL_GetGamepadButton(controller, SDL_GAMEPAD_BUTTON_WEST));
       pif.UpdateButton(0, n64::Controller::Key::Z,
-                       SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_TRIGGERLEFT) == SDL_JOYSTICK_AXIS_MAX);
-      pif.UpdateButton(0, n64::Controller::Key::Start,
-                       SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_START));
-      pif.UpdateButton(0, n64::Controller::Key::DUp,
-                       SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_UP));
-      pif.UpdateButton(0, n64::Controller::Key::DDown,
-                       SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_DOWN));
-      pif.UpdateButton(0, n64::Controller::Key::DLeft,
-                       SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_LEFT));
+                       SDL_GetGamepadAxis(controller, SDL_GAMEPAD_AXIS_LEFT_TRIGGER) == SDL_JOYSTICK_AXIS_MAX);
+      pif.UpdateButton(0, n64::Controller::Key::Start, SDL_GetGamepadButton(controller, SDL_GAMEPAD_BUTTON_START));
+      pif.UpdateButton(0, n64::Controller::Key::DUp, SDL_GetGamepadButton(controller, SDL_GAMEPAD_BUTTON_DPAD_UP));
+      pif.UpdateButton(0, n64::Controller::Key::DDown, SDL_GetGamepadButton(controller, SDL_GAMEPAD_BUTTON_DPAD_DOWN));
+      pif.UpdateButton(0, n64::Controller::Key::DLeft, SDL_GetGamepadButton(controller, SDL_GAMEPAD_BUTTON_DPAD_LEFT));
       pif.UpdateButton(0, n64::Controller::Key::DRight,
-                       SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT));
-      pif.UpdateButton(0, n64::Controller::Key::LT,
-                       SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_LEFTSHOULDER));
+                       SDL_GetGamepadButton(controller, SDL_GAMEPAD_BUTTON_DPAD_RIGHT));
+      pif.UpdateButton(0, n64::Controller::Key::LT, SDL_GetGamepadButton(controller, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER));
       pif.UpdateButton(0, n64::Controller::Key::RT,
-                       SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER));
-      pif.UpdateButton(0, n64::Controller::Key::CUp,
-                       SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_RIGHTY) <= -127);
-      pif.UpdateButton(0, n64::Controller::Key::CDown,
-                       SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_RIGHTY) >= 127);
-      pif.UpdateButton(0, n64::Controller::Key::CLeft,
-                       SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_RIGHTX) <= -127);
-      pif.UpdateButton(0, n64::Controller::Key::CRight,
-                       SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_RIGHTX) >= 127);
+                       SDL_GetGamepadButton(controller, SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER));
+      pif.UpdateButton(0, n64::Controller::Key::CUp, SDL_GetGamepadAxis(controller, SDL_GAMEPAD_AXIS_RIGHTY) <= -127);
+      pif.UpdateButton(0, n64::Controller::Key::CDown, SDL_GetGamepadAxis(controller, SDL_GAMEPAD_AXIS_RIGHTY) >= 127);
+      pif.UpdateButton(0, n64::Controller::Key::CLeft, SDL_GetGamepadAxis(controller, SDL_GAMEPAD_AXIS_RIGHTX) <= -127);
+      pif.UpdateButton(0, n64::Controller::Key::CRight, SDL_GetGamepadAxis(controller, SDL_GAMEPAD_AXIS_RIGHTX) >= 127);
 
-      float xclamped = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX);
+      float xclamped = SDL_GetGamepadAxis(controller, SDL_GAMEPAD_AXIS_LEFTX);
       if (xclamped < 0) {
-        xclamped /= float(std::abs(SDL_JOYSTICK_AXIS_MIN));
+        xclamped /= float(std::abs(SDL_JOYSTICK_AXIS_MAX));
       } else {
         xclamped /= SDL_JOYSTICK_AXIS_MAX;
       }
 
       xclamped *= 86;
 
-      float yclamped = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY);
+      float yclamped = SDL_GetGamepadAxis(controller, SDL_GAMEPAD_AXIS_LEFTY);
       if (yclamped < 0) {
         yclamped /= float(std::abs(SDL_JOYSTICK_AXIS_MIN));
       } else {

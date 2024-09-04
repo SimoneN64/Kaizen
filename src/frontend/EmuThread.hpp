@@ -3,7 +3,7 @@
 #include <Discord.hpp>
 #include <QThread>
 #include <RenderWidget.hpp>
-#include <SDL2/SDL_gamecontroller.h>
+#include <SDL3/SDL_gamepad.h>
 #include <SettingsWindow.hpp>
 #include <memory>
 
@@ -20,7 +20,7 @@ public:
 
   [[noreturn]] void run() noexcept override;
 
-  SDL_GameController *controller = nullptr;
+  SDL_Gamepad *controller = nullptr;
   ParallelRDP parallel;
   n64::Core core;
   SettingsWindow &settings;

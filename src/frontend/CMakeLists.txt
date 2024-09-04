@@ -5,11 +5,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
-find_package(SDL2 CONFIG REQUIRED)
 
-if(WIN32)
+if (WIN32)
   add_compile_definitions(NOMINMAX)
-endif()
+endif ()
 
 include_directories(
   .
@@ -36,7 +35,7 @@ include_directories(
   ../../external/parallel-rdp/parallel-rdp-standalone/vulkan-headers/include
   ../../external/parallel-rdp/parallel-rdp-standalone/util
   ../../external/unarr
-  ${SDL2_INCLUDE_DIRS}
+  ../../external/SDL/include
 )
 
 option(RAPIDJSON_BUILD_DOC "Build rapidjson documentation." OFF)
@@ -51,6 +50,8 @@ add_subdirectory(../../external/mio mio)
 add_subdirectory(../backend backend)
 add_subdirectory(../../external/parallel-rdp parallel-rdp)
 add_subdirectory(../../external/unarr unarr)
+add_subdirectory(../../external/SDL SDL)
+
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -86,13 +87,13 @@ if (HAS_SSE4_1)
   target_compile_options(kaizen-qt PUBLIC -msse3 -msse4.1)
 endif ()
 
-if(${CMAKE_BUILD_TYPE} MATCHES Debug)
+if (${CMAKE_BUILD_TYPE} MATCHES Debug)
   target_compile_definitions(kaizen-qt PUBLIC VULKAN_DEBUG)
   #target_compile_options(kaizen-qt PUBLIC -fsanitize=address -fsanitize=undefined)
   #target_link_options(kaizen-qt PUBLIC -fsanitize=address -fsanitize=undefined)
-endif()
+endif ()
 
-target_link_libraries(kaizen-qt PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets discord-rpc fmt mio nlohmann_json parallel-rdp backend)
+target_link_libraries(kaizen-qt PUBLIC SDL3::SDL3 SDL3::SDL3-static Qt6::Core Qt6::Gui Qt6::Widgets discord-rpc fmt mio nlohmann_json parallel-rdp backend)
 target_compile_definitions(kaizen-qt PUBLIC SDL_MAIN_HANDLED)
 
 file(COPY ../../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)

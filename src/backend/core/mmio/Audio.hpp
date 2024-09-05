@@ -7,6 +7,8 @@ struct AudioDevice {
   AudioDevice();
   ~AudioDevice();
 
+  void Reset() { running = false; }
+
   void PushSample(float, float, float, float);
   void AdjustSampleRate(int);
   void LockMutex() {

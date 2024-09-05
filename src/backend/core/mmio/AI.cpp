@@ -16,6 +16,7 @@ void AI::Reset() {
   dmaLen = {};
   dmaAddr = {};
   dac = {44100, N64_CPU_FREQ / dac.freq, 16};
+  device.Reset();
 }
 
 // https://github.com/ares-emulator/ares/blob/master/ares/n64/ai/io.cpp

@@ -1,7 +1,7 @@
 #pragma once
 #include <backend/Core.hpp>
-#include <wsi.hpp>
 #include <rdp_device.hpp>
+#include <wsi.hpp>
 
 class ParallelRDP {
 public:
@@ -15,16 +15,19 @@ public:
     virtual ~WindowInfo() = default;
   };
 
-  void Init(const std::shared_ptr<Vulkan::InstanceFactory>&, const std::shared_ptr<Vulkan::WSIPlatform>&, const std::shared_ptr<WindowInfo>&, const u8*);
+  void Init(const std::shared_ptr<Vulkan::InstanceFactory> &, const std::shared_ptr<Vulkan::WSIPlatform> &,
+            const std::shared_ptr<WindowInfo> &, const u8 *);
   ParallelRDP() = default;
 
-  void UpdateScreen(n64::VI&, bool = false);
-  void EnqueueCommand(int, u32*);
+  void UpdateScreen(n64::VI &);
+  void EnqueueCommand(int, u32 *);
   void OnFullSync();
   bool IsFramerateUnlocked();
   void SetFramerateUnlocked(bool);
+
 private:
-  void LoadWSIPlatform(const std::shared_ptr<Vulkan::InstanceFactory>&, const std::shared_ptr<Vulkan::WSIPlatform>&, const std::shared_ptr<WindowInfo>&);
+  void LoadWSIPlatform(const std::shared_ptr<Vulkan::InstanceFactory> &, const std::shared_ptr<Vulkan::WSIPlatform> &,
+                       const std::shared_ptr<WindowInfo> &);
   void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Vulkan::Image>, Util::IntrusivePtr<Vulkan::CommandBuffer>);
   void UpdateScreen(Util::IntrusivePtr<Vulkan::Image>);
 

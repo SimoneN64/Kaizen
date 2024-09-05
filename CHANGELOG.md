@@ -11,3 +11,4 @@ This file always reflects the *latest* changes up until a release. Then it gets 
     - Remove `nativefiledialog-extended` submodule as it is no longer needed
     - Update `xbyak` subtree
     - Small CMake refactoring
+    - Correct RDRAM masking in RSP

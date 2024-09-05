@@ -1,12 +1,10 @@
-#include <core/RSP.hpp>
-#include <log.hpp>
 #include <core/Mem.hpp>
+#include <core/RSP.hpp>
 #include <core/registers/Registers.hpp>
+#include <log.hpp>
 
 namespace n64 {
-RSP::RSP(Mem& mem, Registers& regs) : mem(mem), regs(regs) {
-  Reset();
-}
+RSP::RSP(Mem &mem, Registers &regs) : mem(mem), regs(regs) { Reset(); }
 
 void RSP::Reset() {
   lastSuccessfulSPAddr.raw = 0;
@@ -69,35 +67,43 @@ FORCE_INLINE void logRSP(const RSP& rsp, const u32 instr) {
 
 auto RSP::Read(u32 addr) -> u32 {
   switch (addr) {
-    case 0x04040000: return lastSuccessfulSPAddr.raw & 0x1FF8;
-    case 0x04040004: return lastSuccessfulDRAMAddr.raw & 0xFFFFFC;
-    case 0x04040008:
-    case 0x0404000C: return spDMALen.raw;
-    case 0x04040010: return spStatus.raw;
-    case 0x04040014: return spStatus.dmaFull;
-    case 0x04040018: return 0;
-    case 0x0404001C:
-      return AcquireSemaphore();
-    case 0x04080000: return pc & 0xFFC;
-    default:
-      Util::panic("Unimplemented SP register read {:08X}", addr);
+  case 0x04040000:
+    return lastSuccessfulSPAddr.raw & 0x1FF8;
+  case 0x04040004:
+    return lastSuccessfulDRAMAddr.raw & 0xFFFFF8;
+  case 0x04040008:
+  case 0x0404000C:
+    return spDMALen.raw;
+  case 0x04040010:
+    return spStatus.raw;
+  case 0x04040014:
+    return spStatus.dmaFull;
+  case 0x04040018:
+    return 0;
+  case 0x0404001C:
+    return AcquireSemaphore();
+  case 0x04080000:
+    return pc & 0xFFC;
+  default:
+    Util::panic("Unimplemented SP register read {:08X}", addr);
   }
 }
 
 void RSP::WriteStatus(u32 value) {
-  MI& mi = mem.mmio.mi;
+  MI &mi = mem.mmio.mi;
   auto write = SPStatusWrite{.raw = value};
-  if(write.clearHalt && !write.setHalt) {
+  if (write.clearHalt && !write.setHalt) {
     spStatus.halt = false;
   }
-  if(write.setHalt && !write.clearHalt) {
+  if (write.setHalt && !write.clearHalt) {
     regs.steps = 0;
     spStatus.halt = true;
   }
-  if(write.clearBroke) spStatus.broke = false;
-  if(write.clearIntr && !write.setIntr)
+  if (write.clearBroke)
+    spStatus.broke = false;
+  if (write.clearIntr && !write.setIntr)
     mi.InterruptLower(MI::Interrupt::SP);
-  if(write.setIntr && !write.clearIntr)
+  if (write.setIntr && !write.clearIntr)
     mi.InterruptRaise(MI::Interrupt::SP);
   CLEAR_SET(spStatus.singleStep, write.clearSstep, write.setSstep);
   CLEAR_SET(spStatus.interruptOnBreak, write.clearIntrOnBreak, write.setIntrOnBreak);
@@ -111,26 +117,27 @@ void RSP::WriteStatus(u32 value) {
   CLEAR_SET(spStatus.signal7, write.clearSignal7, write.setSignal7);
 }
 
-template <> void RSP::DMA<true>() {
+template <>
+void RSP::DMA<true>() {
   u32 length = spDMALen.len + 1;
 
   length = (length + 0x7) & ~0x7;
 
-  std::array<u8, DMEM_SIZE>& src = spDMASPAddr.bank ? imem : dmem;
+  std::array<u8, DMEM_SIZE> &src = spDMASPAddr.bank ? imem : dmem;
 
   u32 mem_address = spDMASPAddr.address & 0xFF8;
-  u32 dram_address = spDMADRAMAddr.address & 0xFFFFFC;
+  u32 dram_address = spDMADRAMAddr.address & 0xFFFFF8;
   Util::trace("SP DMA from RSP to RDRAM (size: {} B, {:08X} to {:08X})", length, mem_address, dram_address);
 
   for (u32 i = 0; i < spDMALen.count + 1; i++) {
-    for(u32 j = 0; j < length; j++) {
+    for (u32 j = 0; j < length; j++) {
       mem.mmio.rdp.WriteRDRAM<u8>(BYTE_ADDRESS(dram_address + j), src[(mem_address + j) & DMEM_DSIZE]);
     }
 
     int skip = i == spDMALen.count ? 0 : spDMALen.skip;
 
     dram_address += (length + skip);
-    dram_address &= 0xFFFFFC;
+    dram_address &= 0xFFFFF8;
     mem_address += length;
     mem_address &= 0xFF8;
   }
@@ -142,26 +149,27 @@ template <> void RSP::DMA<true>() {
   spDMALen.raw = 0xFF8 | (spDMALen.skip << 20);
 }
 
-template <> void RSP::DMA<false>() {
+template <>
+void RSP::DMA<false>() {
   u32 length = spDMALen.len + 1;
 
   length = (length + 0x7) & ~0x7;
 
-  std::array<u8, DMEM_SIZE>& dst = spDMASPAddr.bank ? imem : dmem;
+  std::array<u8, DMEM_SIZE> &dst = spDMASPAddr.bank ? imem : dmem;
 
   u32 mem_address = spDMASPAddr.address & 0xFF8;
-  u32 dram_address = spDMADRAMAddr.address & 0xFFFFFC;
+  u32 dram_address = spDMADRAMAddr.address & 0xFFFFF8;
   Util::trace("SP DMA from RDRAM to RSP (size: {} B, {:08X} to {:08X})", length, dram_address, mem_address);
 
   for (u32 i = 0; i < spDMALen.count + 1; i++) {
-    for(u32 j = 0; j < length; j++) {
+    for (u32 j = 0; j < length; j++) {
       dst[(mem_address + j) & DMEM_DSIZE] = mem.mmio.rdp.ReadRDRAM<u8>(BYTE_ADDRESS(dram_address + j));
     }
 
     int skip = i == spDMALen.count ? 0 : spDMALen.skip;
 
     dram_address += (length + skip);
-    dram_address &= 0xFFFFFC;
+    dram_address &= 0xFFFFF8;
     mem_address += length;
     mem_address &= 0xFF8;
   }
@@ -175,24 +183,33 @@ template <> void RSP::DMA<false>() {
 
 void RSP::Write(u32 addr, u32 val) {
   switch (addr) {
-    case 0x04040000: spDMASPAddr.raw = val & 0x1FF8; break;
-    case 0x04040004: spDMADRAMAddr.raw = val & 0xFFFFFC; break;
-    case 0x04040008:
-      spDMALen.raw = val;
-      DMA<false>();
+  case 0x04040000:
+    spDMASPAddr.raw = val & 0x1FF8;
     break;
-    case 0x0404000C:
-      spDMALen.raw = val;
-      DMA<true>();
+  case 0x04040004:
+    spDMADRAMAddr.raw = val & 0xFFFFF8;
     break;
-    case 0x04040010: WriteStatus(val); break;
-    case 0x0404001C: ReleaseSemaphore(); break;
-    case 0x04080000:
-      if(spStatus.halt) {
-        SetPC(val);
-      } break;
-    default:
-      Util::panic("Unimplemented SP register write {:08X}, val: {:08X}", addr, val);
+  case 0x04040008:
+    spDMALen.raw = val;
+    DMA<false>();
+    break;
+  case 0x0404000C:
+    spDMALen.raw = val;
+    DMA<true>();
+    break;
+  case 0x04040010:
+    WriteStatus(val);
+    break;
+  case 0x0404001C:
+    ReleaseSemaphore();
+    break;
+  case 0x04080000:
+    if (spStatus.halt) {
+      SetPC(val);
+    }
+    break;
+  default:
+    Util::panic("Unimplemented SP register write {:08X}, val: {:08X}", addr, val);
   }
 }
-}
+} // namespace n64

@@ -26,7 +26,7 @@ public:
   SettingsWindow &settings;
 
   void TogglePause() {
-    core.pause = !core.pause;
+    core.TogglePause();
     Util::RPC::GetInstance().Update(core.pause ? Util::RPC::Paused : Util::RPC::GetInstance().GetState(),
                                     core.cpu->GetMem().rom.gameNameDB,
                                     core.cpu->GetMem().mmio.si.pif.movie.GetFilename());

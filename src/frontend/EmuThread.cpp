@@ -46,13 +46,10 @@ EmuThread::EmuThread(const std::shared_ptr<QtInstanceFactory> &instance_,
   while (!isInterruptionRequested()) {
     if (!core.pause) {
       core.Run(settings.getVolumeL(), settings.getVolumeR());
-      if (core.render) {
-        parallel.UpdateScreen(core.cpu->GetMem().mmio.vi);
-      }
-    } else {
-      if (core.render) {
-        parallel.UpdateScreen(core.cpu->GetMem().mmio.vi, true);
-      }
+    }
+
+    if (core.render) {
+      parallel.UpdateScreen(core.cpu->GetMem().mmio.vi);
     }
 
     pollEvents();

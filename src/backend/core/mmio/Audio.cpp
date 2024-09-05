@@ -9,29 +9,6 @@ namespace n64 {
 #define SYSTEM_SAMPLE_SIZE 4
 #define BYTES_PER_HALF_SECOND (((float)AUDIO_SAMPLE_RATE / 2) * SYSTEM_SAMPLE_SIZE)
 
-void audioCallback(void *userdata, SDL_AudioStream *stream, int additional_amount, int total_amount) {
-  auto audioDevice = (AudioDevice *)userdata;
-  int gotten = 0, available = 0;
-
-  if (audioDevice) {
-    audioDevice->LockMutex();
-    available = SDL_GetAudioStreamAvailable(audioDevice->GetStream());
-    if (available > 0) {
-      gotten = SDL_GetAudioStreamData(audioDevice->GetStream(), stream, total_amount);
-    }
-    audioDevice->UnlockMutex();
-  }
-
-  int gottenSamples = (int)(gotten / sizeof(float));
-  auto *out = (float *)stream;
-  out += gottenSamples;
-
-  for (int i = gottenSamples; i < total_amount / sizeof(float); i++) {
-    float sample = 0;
-    *out++ = sample;
-  }
-}
-
 AudioDevice::~AudioDevice() {
   LockMutex();
   SDL_DestroyAudioStream(GetStream());
@@ -39,38 +16,34 @@ AudioDevice::~AudioDevice() {
   SDL_DestroyMutex(audioStreamMutex);
 }
 
-AudioDevice::AudioDevice() : audioStreamMutex(SDL_CreateMutex()) {
-  request.freq = AUDIO_SAMPLE_RATE;
-  request.format = SYSTEM_SAMPLE_FORMAT;
-  request.channels = 2;
-
-  audioStream = SDL_CreateAudioStream(&request, &request);
-
-  SDL_InitSubSystem(SDL_INIT_AUDIO);
-
+AudioDevice::AudioDevice() {
+  audioStreamMutex = SDL_CreateMutex();
   if (!audioStreamMutex) {
     Util::panic("Unable to initialize audio mutex: {}", SDL_GetError());
   }
 
-  handle = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &request);
-  SDL_BindAudioStream(handle, audioStream);
-  SDL_SetAudioStreamGetCallback(audioStream, audioCallback, this);
+  SDL_InitSubSystem(SDL_INIT_AUDIO);
+  request = {SYSTEM_SAMPLE_FORMAT, 2, AUDIO_SAMPLE_RATE};
 
-  if (!handle) {
-    Util::panic("Failed to initialize SDL Audio: {}", SDL_GetError());
+  audioStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &request, nullptr, nullptr);
+  if (!audioStream) {
+    Util::panic("Unable to create audio stream: {}", SDL_GetError());
   }
-
-  SDL_PauseAudioDevice(handle);
 }
 
 void AudioDevice::PushSample(float left, float volumeL, float right, float volumeR) {
   float adjustedL = left * volumeL;
   float adjustedR = right * volumeR;
-  float samples[2]{adjustedL, adjustedR};
+  float samples[]{adjustedL, adjustedR};
 
   auto availableBytes = (float)SDL_GetAudioStreamAvailable(audioStream);
   if (availableBytes <= BYTES_PER_HALF_SECOND) {
     SDL_PutAudioStreamData(audioStream, samples, 2 * sizeof(float));
+  }
+
+  if (!running) {
+    SDL_ResumeAudioStreamDevice(audioStream);
+    running = true;
   }
 }
 
@@ -78,13 +51,12 @@ void AudioDevice::AdjustSampleRate(int sampleRate) {
   LockMutex();
   SDL_DestroyAudioStream(audioStream);
 
-  auto oldReq = request;
+  request = {SYSTEM_SAMPLE_FORMAT, 2, sampleRate};
 
-  request.freq = sampleRate;
-  request.format = SYSTEM_SAMPLE_FORMAT;
-  request.channels = 2;
-
-  audioStream = SDL_CreateAudioStream(&request, &oldReq);
+  audioStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &request, nullptr, nullptr);
+  if (!audioStream) {
+    Util::panic("Unable to create audio stream: {}", SDL_GetError());
+  }
   UnlockMutex();
 }
 } // namespace n64

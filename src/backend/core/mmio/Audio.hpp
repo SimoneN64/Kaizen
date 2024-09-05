@@ -23,9 +23,8 @@ struct AudioDevice {
 private:
   SDL_AudioStream *audioStream;
   SDL_Mutex *audioStreamMutex;
-  SDL_AudioSpec audioSpec{};
   SDL_AudioSpec request{};
-  SDL_AudioDeviceID handle{};
+  bool running = false;
 };
 
 } // namespace n64

@@ -41,6 +41,7 @@ IndentCaseBlocks: true
 InsertNewlineAtEOF: true
 MacroBlockBegin: ''
 MacroBlockEnd: ''
+SortIncludes: Never
 MaxEmptyLinesToKeep: 2
 NamespaceIndentation: Inner
 SpaceInEmptyParentheses: false

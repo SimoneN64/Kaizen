@@ -53,6 +53,7 @@ add_subdirectory(../backend backend)
 add_subdirectory(../../external/parallel-rdp parallel-rdp)
 add_subdirectory(../../external/unarr unarr)
 add_subdirectory(../../external/SDL SDL)
+add_subdirectory(../../external/imgui imgui)
 
 
 set(CMAKE_AUTOMOC ON)
@@ -95,7 +96,7 @@ if (${CMAKE_BUILD_TYPE} MATCHES Debug)
   #target_link_options(kaizen-qt PUBLIC -fsanitize=address -fsanitize=undefined)
 endif ()
 
-target_link_libraries(kaizen-qt PUBLIC SDL3::SDL3 SDL3::SDL3-static Qt6::Core Qt6::Gui Qt6::Widgets discord-rpc fmt mio nlohmann_json parallel-rdp backend)
+target_link_libraries(kaizen-qt PUBLIC SDL3::SDL3 SDL3::SDL3-static Qt6::Core Qt6::Gui Qt6::Widgets discord-rpc fmt mio nlohmann_json imgui parallel-rdp backend)
 target_compile_definitions(kaizen-qt PUBLIC SDL_MAIN_HANDLED)
 
 file(COPY ../../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)

@@ -7,14 +7,13 @@
 #include <imgui_impl_vulkan.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
-#include <RenderWidget.hpp>
 
 using namespace Vulkan;
 using namespace RDP;
 
-bool ParallelRDP::IsFramerateUnlocked() { return wsi->get_present_mode() != PresentMode::SyncToVBlank; }
+bool ParallelRDP::IsFramerateUnlocked() const { return wsi->get_present_mode() != PresentMode::SyncToVBlank; }
 
-void ParallelRDP::SetFramerateUnlocked(bool unlocked) {
+void ParallelRDP::SetFramerateUnlocked(bool unlocked) const {
   if (unlocked) {
     wsi->set_present_mode(PresentMode::UnlockedForceTearing);
   } else {
@@ -24,9 +23,17 @@ void ParallelRDP::SetFramerateUnlocked(bool unlocked) {
 
 Program *fullscreen_quad_program;
 
-void ParallelRDP::LoadWSIPlatform(const std::shared_ptr<Vulkan::InstanceFactory> &instanceFactory,
-                                  const std::shared_ptr<Vulkan::WSIPlatform> &wsi_platform,
-                                  const std::shared_ptr<ParallelRDP::WindowInfo> &newWindowInfo) {
+static void check_vk_result(VkResult err) {
+  if (err == 0)
+    return;
+  fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
+  if (err < 0)
+    abort();
+}
+
+void ParallelRDP::LoadWSIPlatform(const std::shared_ptr<InstanceFactory> &instanceFactory,
+                                  const std::shared_ptr<WSIPlatform> &wsi_platform,
+                                  const std::shared_ptr<WindowInfo> &newWindowInfo, void *winPtr) {
   wsi = std::make_shared<WSI>();
   wsi->set_backbuffer_srgb(false);
   wsi->set_platform(wsi_platform.get());
@@ -37,27 +44,67 @@ void ParallelRDP::LoadWSIPlatform(const std::shared_ptr<Vulkan::InstanceFactory>
   }
 
   windowInfo = newWindowInfo;
-   
+
   auto props = SDL_CreateProperties();
 #ifdef SDL_PLATFORM_LINUX
-  SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_WAYLAND_WL_SURFACE_POINTER,
-                         dynamic_cast<QtWSIPlatform>(wsi_platform.get())->window->winId());
-  SDL_SetPointerProperty(props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER,
-                         dynamic_cast<QtWSIPlatform>(wsi_platform.get())->window->winId());
+  SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_WAYLAND_WL_SURFACE_POINTER, winPtr);
+  SDL_SetPointerProperty(props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, winPtr);
 #elif SDL_PLATFORM_WINDOWS
-  SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_WIN32_HWND_POINTER,
-                         dynamic_cast<QtWSIPlatform>(wsi_platform.get())->window->winId());
+  SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_WIN32_HWND_POINTER, winPtr);
 #else
-  SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_COCOA_WINDOW_POINTER,
-                         dynamic_cast<QtWSIPlatform>(wsi_platform.get())->window->winId());
+  SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_COCOA_WINDOW_POINTER, winPtr);
 #endif
   SDLWindow = SDL_CreateWindowWithProperties(props);
+
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGuiIO &io = ImGui::GetIO();
+  (void)io;
+  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+  io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+  ImGui::StyleColorsDark();
+  ImGui_ImplSDL3_InitForVulkan(SDLWindow);
+
+  ImGui_ImplVulkan_InitInfo init_info = {};
+  init_info.Instance = wsi->get_context().get_instance();
+  init_info.PhysicalDevice = wsi->get_device().get_physical_device();
+  init_info.Device = wsi->get_device().get_device();
+  init_info.QueueFamily = wsi->get_context().get_queue_info().family_indices[QUEUE_INDEX_GRAPHICS];
+  init_info.Queue = wsi->get_context().get_queue_info().queues[QUEUE_INDEX_GRAPHICS];
+  init_info.PipelineCache = nullptr;
+  {
+    VkDescriptorPoolSize pool_sizes[] = {
+      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1},
+    };
+    VkDescriptorPoolCreateInfo pool_info = {};
+    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    pool_info.maxSets = 1;
+    pool_info.poolSizeCount = IM_ARRAYSIZE(pool_sizes);
+    pool_info.pPoolSizes = pool_sizes;
+    auto err = wsi->get_device().get_device_table().vkCreateDescriptorPool(wsi->get_device().get_device(), &pool_info,
+                                                                           nullptr, &init_info.DescriptorPool);
+    check_vk_result(err);
+  }
+
+  init_info.RenderPass =
+    wsi->get_device()
+      .request_render_pass(wsi->get_device().get_swapchain_render_pass(SwapchainRenderPass::ColorOnly), false)
+      .get_render_pass();
+  init_info.Subpass = 0;
+  init_info.MinImageCount = 2;
+  init_info.ImageCount = 2;
+  init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+  init_info.Allocator = nullptr;
+  init_info.CheckVkResultFn = check_vk_result;
+  ImGui_ImplVulkan_Init(&init_info);
 }
 
 void ParallelRDP::Init(const std::shared_ptr<Vulkan::InstanceFactory> &factory,
                        const std::shared_ptr<Vulkan::WSIPlatform> &wsiPlatform,
-                       const std::shared_ptr<WindowInfo> &newWindowInfo, const u8 *rdram) {
-  LoadWSIPlatform(factory, wsiPlatform, newWindowInfo);
+                       const std::shared_ptr<WindowInfo> &newWindowInfo, const u8 *rdram, void *winPtr) {
+  LoadWSIPlatform(factory, wsiPlatform, newWindowInfo, winPtr);
 
   ResourceLayout vertLayout;
   ResourceLayout fragLayout;
@@ -102,7 +149,8 @@ void ParallelRDP::Init(const std::shared_ptr<Vulkan::InstanceFactory> &factory,
   }
 }
 
-void ParallelRDP::DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image, Util::IntrusivePtr<CommandBuffer> cmd) {
+void ParallelRDP::DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image,
+                                             Util::IntrusivePtr<CommandBuffer> cmd) const {
   cmd->set_texture(0, 0, image->get_view(), Vulkan::StockSampler::LinearClamp);
   cmd->set_program(fullscreen_quad_program);
   cmd->set_quad_state();
@@ -136,7 +184,7 @@ void ParallelRDP::DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image, Ut
   cmd->draw(3, 1);
 }
 
-void ParallelRDP::UpdateScreen(Util::IntrusivePtr<Image> image) {
+void ParallelRDP::UpdateScreen(Util::IntrusivePtr<Image> image) const {
   wsi->begin_frame();
 
   if (!image) {
@@ -170,7 +218,7 @@ void ParallelRDP::UpdateScreen(Util::IntrusivePtr<Image> image) {
   wsi->end_frame();
 }
 
-void ParallelRDP::UpdateScreen(n64::VI &vi) {
+void ParallelRDP::UpdateScreen(const n64::VI &vi) const {
   command_processor->set_vi_register(VIRegister::Control, vi.status.raw);
   command_processor->set_vi_register(VIRegister::Origin, vi.origin);
   command_processor->set_vi_register(VIRegister::Width, vi.width);
@@ -199,8 +247,8 @@ void ParallelRDP::UpdateScreen(n64::VI &vi) {
   command_processor->begin_frame_context();
 }
 
-void ParallelRDP::EnqueueCommand(int command_length, u32 *buffer) {
+void ParallelRDP::EnqueueCommand(int command_length, const u32 *buffer) const {
   command_processor->enqueue_command(command_length, buffer);
 }
 
-void ParallelRDP::OnFullSync() { command_processor->wait_for_timeline(command_processor->signal_timeline()); }
+void ParallelRDP::OnFullSync() const { command_processor->wait_for_timeline(command_processor->signal_timeline()); }

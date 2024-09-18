@@ -261,7 +261,7 @@ SDL_COMPILE_TIME_ASSERT(SDL_COLORSPACE_BT2020_FULL_FORMAT, SDL_COLORSPACE_BT2020
 /**
  * Call to SDL_GetPixelFormatDetails
  */
-static int pixels_getPixelFormatDetails(void *arg)
+static int SDLCALL pixels_getPixelFormatDetails(void *arg)
 {
     const char *unknownFormat = "SDL_PIXELFORMAT_UNKNOWN";
     const char *expectedError = "Unknown pixel format";
@@ -349,7 +349,7 @@ static int pixels_getPixelFormatDetails(void *arg)
  *
  * \sa SDL_GetPixelFormatName
  */
-static int pixels_getPixelFormatName(void *arg)
+static int SDLCALL pixels_getPixelFormatName(void *arg)
 {
     const char *unknownFormat = "SDL_PIXELFORMAT_UNKNOWN";
     const char *error;
@@ -417,7 +417,7 @@ static int pixels_getPixelFormatName(void *arg)
  * \sa SDL_CreatePalette
  * \sa SDL_DestroyPalette
  */
-static int pixels_allocFreePalette(void *arg)
+static int SDLCALL pixels_allocFreePalette(void *arg)
 {
     const char *expectedError = "Parameter 'ncolors' is invalid";
     const char *error;
@@ -500,15 +500,15 @@ static int pixels_allocFreePalette(void *arg)
 
 /* Pixels test cases */
 static const SDLTest_TestCaseReference pixelsTest1 = {
-    (SDLTest_TestCaseFp)pixels_getPixelFormatDetails, "pixels_allocFreeFormat", "Call to SDL_GetPixelFormatDetails", TEST_ENABLED
+    pixels_getPixelFormatDetails, "pixels_allocFreeFormat", "Call to SDL_GetPixelFormatDetails", TEST_ENABLED
 };
 
 static const SDLTest_TestCaseReference pixelsTest2 = {
-    (SDLTest_TestCaseFp)pixels_allocFreePalette, "pixels_allocFreePalette", "Call to SDL_CreatePalette and SDL_DestroyPalette", TEST_ENABLED
+    pixels_allocFreePalette, "pixels_allocFreePalette", "Call to SDL_CreatePalette and SDL_DestroyPalette", TEST_ENABLED
 };
 
 static const SDLTest_TestCaseReference pixelsTest3 = {
-    (SDLTest_TestCaseFp)pixels_getPixelFormatName, "pixels_getPixelFormatName", "Call to SDL_GetPixelFormatName", TEST_ENABLED
+    pixels_getPixelFormatName, "pixels_getPixelFormatName", "Call to SDL_GetPixelFormatName", TEST_ENABLED
 };
 
 /* Sequence of Pixels test cases */

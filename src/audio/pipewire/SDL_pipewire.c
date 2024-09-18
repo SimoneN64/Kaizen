@@ -711,7 +711,7 @@ static bool hotplug_loop_init(void)
     spa_list_init(&hotplug_pending_list);
     spa_list_init(&hotplug_io_list);
 
-    hotplug_loop = PIPEWIRE_pw_thread_loop_new("SDLAudioHotplug", NULL);
+    hotplug_loop = PIPEWIRE_pw_thread_loop_new("SDLPwAudioPlug", NULL);
     if (!hotplug_loop) {
         return SDL_SetError("Pipewire: Failed to create hotplug detection loop (%i)", errno);
     }
@@ -1215,6 +1215,7 @@ static void PIPEWIRE_DeinitializeStart(void)
 static void PIPEWIRE_Deinitialize(void)
 {
     if (pipewire_initialized) {
+        hotplug_loop_destroy();
         deinit_pipewire_library();
         pipewire_initialized = false;
     }
@@ -1270,7 +1271,6 @@ static bool PIPEWIRE_PREFERRED_Init(SDL_AudioDriverImpl *impl)
     PIPEWIRE_pw_thread_loop_unlock(hotplug_loop);
 
     if (no_devices || !pipewire_core_version_at_least(1, 0, 0)) {
-        hotplug_loop_destroy();
         PIPEWIRE_Deinitialize();
         return false;
     }

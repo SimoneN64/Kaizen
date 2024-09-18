@@ -76,6 +76,7 @@
 #define HAVE_ATOF   1
 #define HAVE_STRCMP 1
 #define HAVE_STRNCMP    1
+#define HAVE_STRPBRK    1
 #define HAVE_STRCASESTR 1
 #define HAVE_VSSCANF 1
 #define HAVE_VSNPRINTF  1
@@ -150,6 +151,9 @@
 /*#define SDL_JOYSTICK_HIDAPI 1*/
 #define SDL_JOYSTICK_MFI 1
 #define SDL_JOYSTICK_VIRTUAL    1
+
+/* Enable various process implementations */
+#define SDL_PROCESS_DUMMY 1
 
 #ifdef SDL_PLATFORM_TVOS
 #define SDL_SENSOR_DUMMY    1

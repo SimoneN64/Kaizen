@@ -20,7 +20,7 @@
 */
 #include "SDL_internal.h"
 
-#if SDL_VIDEO_RENDER_OGL_ES2
+#ifdef SDL_VIDEO_RENDER_OGL_ES2
 
 #include "../../video/SDL_sysvideo.h" // For SDL_RecreateWindow
 #include <SDL3/SDL_opengles2.h>
@@ -2039,16 +2039,6 @@ static bool GLES2_RenderPresent(SDL_Renderer *renderer)
 static bool GLES2_SetVSync(SDL_Renderer *renderer, const int vsync)
 {
     int interval = 0;
-
-#ifdef SDL_PLATFORM_WINRT
-    /* DLudwig, 2013-11-29: ANGLE for WinRT doesn't seem to work unless VSync
-     * is turned on.  Not doing so will freeze the screen's contents to that
-     * of the first drawn frame.
-     */
-    if (vsync == 0) {
-        return SDL_Unsupported();
-    }
-#endif
 
     if (!SDL_GL_SetSwapInterval(vsync)) {
         return false;

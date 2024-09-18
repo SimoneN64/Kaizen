@@ -142,13 +142,10 @@ int main(int argc, char **argv)
     SDLTest_CommonState *state;
 
     /* Initialize test framework */
-    state = SDLTest_CommonCreateState(argv, 0);
+    state = SDLTest_CommonCreateState(argv, SDL_INIT_AUDIO);
     if (!state) {
         return 1;
     }
-
-    /* Enable standard application logging */
-    SDL_SetLogPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO);
 
     /* Parse commandline */
     for (i = 1; i < argc;) {
@@ -171,7 +168,7 @@ int main(int argc, char **argv)
     }
 
     /* Load the SDL library */
-    if (!SDL_Init(SDL_INIT_AUDIO)) {
+    if (!SDLTest_CommonInit(state)) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't initialize SDL: %s\n", SDL_GetError());
         return 1;
     }
@@ -197,8 +194,7 @@ int main(int argc, char **argv)
 
     SDL_free(filename);
 
-    SDL_Quit();
-    SDLTest_CommonDestroyState(state);
+    SDLTest_CommonQuit(state);
 
     return 0;
 }

@@ -28,7 +28,7 @@ static int mouseStateCheck(Uint32 state)
  * Check call to SDL_GetMouseState
  *
  */
-static int mouse_getMouseState(void *arg)
+static int SDLCALL mouse_getMouseState(void *arg)
 {
     float x;
     float y;
@@ -73,7 +73,7 @@ static int mouse_getMouseState(void *arg)
  * Check call to SDL_GetRelativeMouseState
  *
  */
-static int mouse_getRelativeMouseState(void *arg)
+static int SDLCALL mouse_getRelativeMouseState(void *arg)
 {
     float x;
     float y;
@@ -193,7 +193,7 @@ static SDL_Cursor *initArrowCursor(const char *image[])
  * \sa SDL_CreateCursor
  * \sa SDL_DestroyCursor
  */
-static int mouse_createFreeCursor(void *arg)
+static int SDLCALL mouse_createFreeCursor(void *arg)
 {
     SDL_Cursor *cursor;
 
@@ -219,7 +219,7 @@ static int mouse_createFreeCursor(void *arg)
  * \sa SDL_CreateColorCursor
  * \sa SDL_DestroyCursor
  */
-static int mouse_createFreeColorCursor(void *arg)
+static int SDLCALL mouse_createFreeColorCursor(void *arg)
 {
     SDL_Surface *face;
     SDL_Cursor *cursor;
@@ -252,9 +252,9 @@ static int mouse_createFreeColorCursor(void *arg)
 }
 
 /* Helper that changes cursor visibility */
-static void changeCursorVisibility(SDL_bool state)
+static void changeCursorVisibility(bool state)
 {
-    SDL_bool newState;
+    bool newState;
 
     if (state) {
         SDL_ShowCursor();
@@ -266,8 +266,8 @@ static void changeCursorVisibility(SDL_bool state)
     newState = SDL_CursorVisible();
     SDLTest_AssertPass("Call to SDL_CursorVisible()");
     SDLTest_AssertCheck(state == newState, "Validate new state, expected: %s, got: %s",
-                        state ? "SDL_TRUE" : "SDL_FALSE",
-                        newState ? "SDL_TRUE" : "SDL_FALSE");
+                        state ? "true" : "false",
+                        newState ? "true" : "false");
 }
 
 /**
@@ -275,21 +275,21 @@ static void changeCursorVisibility(SDL_bool state)
  *
  * \sa SDL_ShowCursor
  */
-static int mouse_showCursor(void *arg)
+static int SDLCALL mouse_showCursor(void *arg)
 {
-    SDL_bool currentState;
+    bool currentState;
 
     /* Get current state */
     currentState = SDL_CursorVisible();
     SDLTest_AssertPass("Call to SDL_CursorVisible()");
     if (currentState) {
         /* Hide the cursor, then show it again */
-        changeCursorVisibility(SDL_FALSE);
-        changeCursorVisibility(SDL_TRUE);
+        changeCursorVisibility(false);
+        changeCursorVisibility(true);
     } else {
         /* Show the cursor, then hide it again */
-        changeCursorVisibility(SDL_TRUE);
-        changeCursorVisibility(SDL_FALSE);
+        changeCursorVisibility(true);
+        changeCursorVisibility(false);
     }
 
     return TEST_COMPLETED;
@@ -300,7 +300,7 @@ static int mouse_showCursor(void *arg)
  *
  * \sa SDL_SetCursor
  */
-static int mouse_setCursor(void *arg)
+static int SDLCALL mouse_setCursor(void *arg)
 {
     SDL_Cursor *cursor;
 
@@ -333,7 +333,7 @@ static int mouse_setCursor(void *arg)
  *
  * \sa SDL_GetCursor
  */
-static int mouse_getCursor(void *arg)
+static int SDLCALL mouse_getCursor(void *arg)
 {
     SDL_Cursor *cursor;
 
@@ -379,13 +379,13 @@ static void destroyMouseSuiteTestWindow(SDL_Window *window)
  * \sa SDL_GetWindowRelativeMouseMode
  * \sa SDL_SetWindowRelativeMouseMode
  */
-static int mouse_getSetRelativeMouseMode(void *arg)
+static int SDLCALL mouse_getSetRelativeMouseMode(void *arg)
 {
     SDL_Window *window;
     int result;
     int i;
-    SDL_bool initialState;
-    SDL_bool currentState;
+    bool initialState;
+    bool currentState;
 
     /* Create test window */
     window = createMouseSuiteTestWindow();
@@ -400,34 +400,34 @@ static int mouse_getSetRelativeMouseMode(void *arg)
     /* Repeat twice to check D->D transition */
     for (i = 0; i < 2; i++) {
         /* Disable - should always be supported */
-        result = SDL_SetWindowRelativeMouseMode(window, SDL_FALSE);
+        result = SDL_SetWindowRelativeMouseMode(window, false);
         SDLTest_AssertPass("Call to SDL_SetWindowRelativeMouseMode(window, FALSE)");
-        SDLTest_AssertCheck(result == SDL_TRUE, "Validate result value from SDL_SetWindowRelativeMouseMode, expected: SDL_TRUE, got: %i", result);
+        SDLTest_AssertCheck(result == true, "Validate result value from SDL_SetWindowRelativeMouseMode, expected: true, got: %i", result);
         currentState = SDL_GetWindowRelativeMouseMode(window);
         SDLTest_AssertPass("Call to SDL_GetWindowRelativeMouseMode(window)");
-        SDLTest_AssertCheck(currentState == SDL_FALSE, "Validate current state is FALSE, got: %i", currentState);
+        SDLTest_AssertCheck(currentState == false, "Validate current state is FALSE, got: %i", currentState);
     }
 
     /* Repeat twice to check D->E->E transition */
     for (i = 0; i < 2; i++) {
         /* Enable - may not be supported */
-        result = SDL_SetWindowRelativeMouseMode(window, SDL_TRUE);
+        result = SDL_SetWindowRelativeMouseMode(window, true);
         SDLTest_AssertPass("Call to SDL_SetWindowRelativeMouseMode(window, TRUE)");
         if (result != -1) {
-            SDLTest_AssertCheck(result == SDL_TRUE, "Validate result value from SDL_SetWindowRelativeMouseMode, expected: SDL_TRUE, got: %i", result);
+            SDLTest_AssertCheck(result == true, "Validate result value from SDL_SetWindowRelativeMouseMode, expected: true, got: %i", result);
             currentState = SDL_GetWindowRelativeMouseMode(window);
             SDLTest_AssertPass("Call to SDL_GetWindowRelativeMouseMode(window)");
-            SDLTest_AssertCheck(currentState == SDL_TRUE, "Validate current state is TRUE, got: %i", currentState);
+            SDLTest_AssertCheck(currentState == true, "Validate current state is TRUE, got: %i", currentState);
         }
     }
 
     /* Disable to check E->D transition */
-    result = SDL_SetWindowRelativeMouseMode(window, SDL_FALSE);
+    result = SDL_SetWindowRelativeMouseMode(window, false);
     SDLTest_AssertPass("Call to SDL_SetWindowRelativeMouseMode(window, FALSE)");
-    SDLTest_AssertCheck(result == SDL_TRUE, "Validate result value from SDL_SetWindowRelativeMouseMode, expected: SDL_TRUE, got: %i", result);
+    SDLTest_AssertCheck(result == true, "Validate result value from SDL_SetWindowRelativeMouseMode, expected: true, got: %i", result);
     currentState = SDL_GetWindowRelativeMouseMode(window);
     SDLTest_AssertPass("Call to SDL_GetWindowRelativeMouseMode(window)");
-    SDLTest_AssertCheck(currentState == SDL_FALSE, "Validate current state is FALSE, got: %i", currentState);
+    SDLTest_AssertCheck(currentState == false, "Validate current state is FALSE, got: %i", currentState);
 
     /* Revert to original state - ignore result */
     result = SDL_SetWindowRelativeMouseMode(window, initialState);
@@ -443,7 +443,7 @@ static int mouse_getSetRelativeMouseMode(void *arg)
  *
  * \sa SDL_WarpMouseInWindow
  */
-static int mouse_warpMouseInWindow(void *arg)
+static int SDLCALL mouse_warpMouseInWindow(void *arg)
 {
     const int w = MOUSE_TESTWINDOW_WIDTH, h = MOUSE_TESTWINDOW_HEIGHT;
     int numPositions = 6;
@@ -506,13 +506,13 @@ static int mouse_warpMouseInWindow(void *arg)
  *
  * \sa SDL_GetMouseFocus
  */
-static int mouse_getMouseFocus(void *arg)
+static int SDLCALL mouse_getMouseFocus(void *arg)
 {
     const int w = MOUSE_TESTWINDOW_WIDTH, h = MOUSE_TESTWINDOW_HEIGHT;
     float x, y;
     SDL_Window *window;
     SDL_Window *focusWindow;
-    const SDL_bool video_driver_is_wayland = !SDL_strcmp(SDL_GetCurrentVideoDriver(), "wayland");
+    const bool video_driver_is_wayland = !SDL_strcmp(SDL_GetCurrentVideoDriver(), "wayland");
 
     /* Get focus - focus non-deterministic */
     focusWindow = SDL_GetMouseFocus();
@@ -572,7 +572,7 @@ static int mouse_getMouseFocus(void *arg)
  *
  * \sa SDL_GetDefaultCursor
  */
-static int mouse_getDefaultCursor(void *arg)
+static int SDLCALL mouse_getDefaultCursor(void *arg)
 {
     SDL_Cursor *cursor;
 
@@ -589,7 +589,7 @@ static int mouse_getDefaultCursor(void *arg)
  *
  * \sa SDL_GetGlobalMouseState
  */
-static int mouse_getGlobalMouseState(void *arg)
+static int SDLCALL mouse_getGlobalMouseState(void *arg)
 {
     float x;
     float y;
@@ -612,51 +612,51 @@ static int mouse_getGlobalMouseState(void *arg)
 
 /* Mouse test cases */
 static const SDLTest_TestCaseReference mouseTestGetMouseState = {
-    (SDLTest_TestCaseFp)mouse_getMouseState, "mouse_getMouseState", "Check call to SDL_GetMouseState", TEST_ENABLED
+    mouse_getMouseState, "mouse_getMouseState", "Check call to SDL_GetMouseState", TEST_ENABLED
 };
 
 static const SDLTest_TestCaseReference mouseTestGetRelativeMouseState = {
-    (SDLTest_TestCaseFp)mouse_getRelativeMouseState, "mouse_getRelativeMouseState", "Check call to SDL_GetRelativeMouseState", TEST_ENABLED
+    mouse_getRelativeMouseState, "mouse_getRelativeMouseState", "Check call to SDL_GetRelativeMouseState", TEST_ENABLED
 };
 
 static const SDLTest_TestCaseReference mouseTestCreateFreeCursor = {
-    (SDLTest_TestCaseFp)mouse_createFreeCursor, "mouse_createFreeCursor", "Check call to SDL_CreateCursor and SDL_DestroyCursor", TEST_ENABLED
+    mouse_createFreeCursor, "mouse_createFreeCursor", "Check call to SDL_CreateCursor and SDL_DestroyCursor", TEST_ENABLED
 };
 
 static const SDLTest_TestCaseReference mouseTestShowCursor = {
-    (SDLTest_TestCaseFp)mouse_showCursor, "mouse_showCursor", "Check call to SDL_ShowCursor", TEST_ENABLED
+    mouse_showCursor, "mouse_showCursor", "Check call to SDL_ShowCursor", TEST_ENABLED
 };
 
 static const SDLTest_TestCaseReference mouseTestSetCursor = {
-    (SDLTest_TestCaseFp)mouse_setCursor, "mouse_setCursor", "Check call to SDL_SetCursor", TEST_ENABLED
+    mouse_setCursor, "mouse_setCursor", "Check call to SDL_SetCursor", TEST_ENABLED
 };
 
 static const SDLTest_TestCaseReference mouseTestGetCursor = {
-    (SDLTest_TestCaseFp)mouse_getCursor, "mouse_getCursor", "Check call to SDL_GetCursor", TEST_ENABLED
+    mouse_getCursor, "mouse_getCursor", "Check call to SDL_GetCursor", TEST_ENABLED
 };
 
 static const SDLTest_TestCaseReference mouseTestWarpMouseInWindow = {
-    (SDLTest_TestCaseFp)mouse_warpMouseInWindow, "mouse_warpMouseInWindow", "Check call to SDL_WarpMouseInWindow", TEST_ENABLED
+    mouse_warpMouseInWindow, "mouse_warpMouseInWindow", "Check call to SDL_WarpMouseInWindow", TEST_ENABLED
 };
 
 static const SDLTest_TestCaseReference mouseTestGetMouseFocus = {
-    (SDLTest_TestCaseFp)mouse_getMouseFocus, "mouse_getMouseFocus", "Check call to SDL_GetMouseFocus", TEST_ENABLED
+    mouse_getMouseFocus, "mouse_getMouseFocus", "Check call to SDL_GetMouseFocus", TEST_ENABLED
 };
 
 static const SDLTest_TestCaseReference mouseTestCreateFreeColorCursor = {
-    (SDLTest_TestCaseFp)mouse_createFreeColorCursor, "mouse_createFreeColorCursor", "Check call to SDL_CreateColorCursor and SDL_DestroyCursor", TEST_ENABLED
+    mouse_createFreeColorCursor, "mouse_createFreeColorCursor", "Check call to SDL_CreateColorCursor and SDL_DestroyCursor", TEST_ENABLED
 };
 
 static const SDLTest_TestCaseReference mouseTestGetSetRelativeMouseMode = {
-    (SDLTest_TestCaseFp)mouse_getSetRelativeMouseMode, "mouse_getSetRelativeMouseMode", "Check call to SDL_GetWindowRelativeMouseMode and SDL_SetWindowRelativeMouseMode", TEST_ENABLED
+    mouse_getSetRelativeMouseMode, "mouse_getSetRelativeMouseMode", "Check call to SDL_GetWindowRelativeMouseMode and SDL_SetWindowRelativeMouseMode", TEST_ENABLED
 };
 
 static const SDLTest_TestCaseReference mouseTestGetDefaultCursor = {
-    (SDLTest_TestCaseFp)mouse_getDefaultCursor, "mouse_getDefaultCursor", "Check call to SDL_GetDefaultCursor", TEST_ENABLED
+    mouse_getDefaultCursor, "mouse_getDefaultCursor", "Check call to SDL_GetDefaultCursor", TEST_ENABLED
 };
 
 static const SDLTest_TestCaseReference mouseTestGetGlobalMouseState = {
-    (SDLTest_TestCaseFp)mouse_getGlobalMouseState, "mouse_getGlobalMouseState", "Check call to SDL_GetGlobalMouseState", TEST_ENABLED
+    mouse_getGlobalMouseState, "mouse_getGlobalMouseState", "Check call to SDL_GetGlobalMouseState", TEST_ENABLED
 };
 
 /* Sequence of Mouse test cases */

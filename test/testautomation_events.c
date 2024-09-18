@@ -25,7 +25,7 @@ static int g_userdataValue2 = 2;
 #define MAX_ITERATIONS 100
 
 /* Event filter that sets some flags and optionally checks userdata */
-static SDL_bool SDLCALL events_sampleNullEventFilter(void *userdata, SDL_Event *event)
+static bool SDLCALL events_sampleNullEventFilter(void *userdata, SDL_Event *event)
 {
     g_eventFilterCalled = 1;
 
@@ -36,7 +36,7 @@ static SDL_bool SDLCALL events_sampleNullEventFilter(void *userdata, SDL_Event *
         }
     }
 
-    return SDL_TRUE;
+    return true;
 }
 
 /**
@@ -45,7 +45,7 @@ static SDL_bool SDLCALL events_sampleNullEventFilter(void *userdata, SDL_Event *
  * \sa SDL_PumpEvents
  * \sa SDL_PollEvent
  */
-static int events_pushPumpAndPollUserevent(void *arg)
+static int SDLCALL events_pushPumpAndPollUserevent(void *arg)
 {
     SDL_Event event_in;
     SDL_Event event_out;
@@ -109,7 +109,7 @@ static int events_pushPumpAndPollUserevent(void *arg)
  * \sa SDL_RemoveEventWatch
  *
  */
-static int events_addDelEventWatch(void *arg)
+static int SDLCALL events_addDelEventWatch(void *arg)
 {
     SDL_Event event;
 
@@ -159,7 +159,7 @@ static int events_addDelEventWatch(void *arg)
  * \sa SDL_RemoveEventWatch
  *
  */
-static int events_addDelEventWatchWithUserdata(void *arg)
+static int SDLCALL events_addDelEventWatchWithUserdata(void *arg)
 {
     SDL_Event event;
 

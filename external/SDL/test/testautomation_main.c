@@ -16,7 +16,7 @@
  * \sa SDL_Init
  * \sa SDL_Quit
  */
-static int main_testInitQuitSubSystem(void *arg)
+static int SDLCALL main_testInitQuitSubSystem(void *arg)
 {
     int i;
     int subsystems[] = { SDL_INIT_JOYSTICK, SDL_INIT_HAPTIC, SDL_INIT_GAMEPAD };
@@ -40,7 +40,7 @@ static int main_testInitQuitSubSystem(void *arg)
 }
 
 static const int joy_and_controller = SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD;
-static int main_testImpliedJoystickInit(void *arg)
+static int SDLCALL main_testImpliedJoystickInit(void *arg)
 {
     int initialized_system;
 
@@ -61,7 +61,7 @@ static int main_testImpliedJoystickInit(void *arg)
     return TEST_COMPLETED;
 }
 
-static int main_testImpliedJoystickQuit(void *arg)
+static int SDLCALL main_testImpliedJoystickQuit(void *arg)
 {
     int initialized_system;
 
@@ -90,7 +90,7 @@ static int main_testImpliedJoystickQuit(void *arg)
 #pragma GCC diagnostic ignored "-Wformat-zero-length"
 #endif
 
-static int
+static int SDLCALL
 main_testSetError(void *arg)
 {
     size_t i;
@@ -101,13 +101,13 @@ main_testSetError(void *arg)
 
     SDLTest_AssertPass("SDL_SetError(NULL)");
     result = SDL_SetError(NULL);
-    SDLTest_AssertCheck(result == SDL_FALSE, "SDL_SetError(NULL) -> %d (expected %d)", result, SDL_FALSE);
+    SDLTest_AssertCheck(result == false, "SDL_SetError(NULL) -> %d (expected %d)", result, false);
     error = SDL_GetError();
     SDLTest_AssertCheck(SDL_strcmp(error, "") == 0, "SDL_GetError() -> \"%s\" (expected \"%s\")", error, "");
 
     SDLTest_AssertPass("SDL_SetError(\"\")");
     result = SDL_SetError("");
-    SDLTest_AssertCheck(result == SDL_FALSE, "SDL_SetError(\"\") -> %d (expected %d)", result, SDL_FALSE);
+    SDLTest_AssertCheck(result == false, "SDL_SetError(\"\") -> %d (expected %d)", result, false);
     error = SDL_GetError();
     SDLTest_AssertCheck(SDL_strcmp(error, "") == 0, "SDL_GetError() -> \"%s\" (expected \"%s\")", error, "");
 
@@ -118,7 +118,7 @@ main_testSetError(void *arg)
     error_input[i] = '\0';
     SDLTest_AssertPass("SDL_SetError(\"abc...\")");
     result = SDL_SetError("%s", error_input);
-    SDLTest_AssertCheck(result == SDL_FALSE, "SDL_SetError(\"abc...\") -> %d (expected %d)", result, SDL_FALSE);
+    SDLTest_AssertCheck(result == false, "SDL_SetError(\"abc...\") -> %d (expected %d)", result, false);
     error = SDL_GetError();
 
 #ifdef SDL_THREADS_DISABLED
@@ -137,19 +137,19 @@ main_testSetError(void *arg)
 #endif
 
 static const SDLTest_TestCaseReference mainTest1 = {
-    (SDLTest_TestCaseFp)main_testInitQuitSubSystem, "main_testInitQuitSubSystem", "Tests SDL_InitSubSystem/QuitSubSystem", TEST_ENABLED
+    main_testInitQuitSubSystem, "main_testInitQuitSubSystem", "Tests SDL_InitSubSystem/QuitSubSystem", TEST_ENABLED
 };
 
 static const SDLTest_TestCaseReference mainTest2 = {
-    (SDLTest_TestCaseFp)main_testImpliedJoystickInit, "main_testImpliedJoystickInit", "Tests that init for gamecontroller properly implies joystick", TEST_ENABLED
+    main_testImpliedJoystickInit, "main_testImpliedJoystickInit", "Tests that init for gamecontroller properly implies joystick", TEST_ENABLED
 };
 
 static const SDLTest_TestCaseReference mainTest3 = {
-    (SDLTest_TestCaseFp)main_testImpliedJoystickQuit, "main_testImpliedJoystickQuit", "Tests that quit for gamecontroller doesn't quit joystick if you inited it explicitly", TEST_ENABLED
+    main_testImpliedJoystickQuit, "main_testImpliedJoystickQuit", "Tests that quit for gamecontroller doesn't quit joystick if you inited it explicitly", TEST_ENABLED
 };
 
 static const SDLTest_TestCaseReference mainTest4 = {
-    (SDLTest_TestCaseFp)main_testSetError, "main_testSetError", "Tests that SDL_SetError() handles arbitrarily large strings", TEST_ENABLED
+    main_testSetError, "main_testSetError", "Tests that SDL_SetError() handles arbitrarily large strings", TEST_ENABLED
 };
 
 /* Sequence of Main test cases */

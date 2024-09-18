@@ -34,9 +34,6 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
         return SDL_APP_FAILURE;
     }
 
-    /* Enable standard application logging */
-    SDL_SetLogPriority(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO);
-
     state->skip_renderer = 1;
 
     if (!SDLTest_CommonDefaultArgs(state, argc, argv) || !SDLTest_CommonInit(state)) {
@@ -44,15 +41,15 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
         return SDL_APP_FAILURE;
     }
 
-	gpu_device = SDL_CreateGPUDevice(TESTGPU_SUPPORTED_FORMATS, SDL_TRUE, NULL);
+	gpu_device = SDL_CreateGPUDevice(TESTGPU_SUPPORTED_FORMATS, true, NULL);
 	if (!gpu_device) {
 		SDL_Log("SDL_CreateGPUDevice failed: %s", SDL_GetError());
-		return -1;
+		return SDL_APP_FAILURE;
 	}
 
 	if (!SDL_ClaimWindowForGPUDevice(gpu_device, state->windows[0])) {
 		SDL_Log("SDL_ClaimWindowForGPUDevice failed: %s", SDL_GetError());
-		return -1;
+		return SDL_APP_FAILURE;
 	}
 
     mode = SDL_GetCurrentDisplayMode(SDL_GetPrimaryDisplay());
@@ -89,17 +86,17 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 	if (swapchainTexture != NULL) {
         const double currentTime = (double)SDL_GetPerformanceCounter() / SDL_GetPerformanceFrequency();
         SDL_GPURenderPass *renderPass;
-		SDL_GPUColorAttachmentInfo colorAttachmentInfo;
-        SDL_zero(colorAttachmentInfo);
-		colorAttachmentInfo.texture = swapchainTexture;
-		colorAttachmentInfo.clearColor.r = (float)(0.5 + 0.5 * SDL_sin(currentTime));
-		colorAttachmentInfo.clearColor.g = (float)(0.5 + 0.5 * SDL_sin(currentTime + SDL_PI_D * 2 / 3));
-		colorAttachmentInfo.clearColor.b = (float)(0.5 + 0.5 * SDL_sin(currentTime + SDL_PI_D * 4 / 3));;
-		colorAttachmentInfo.clearColor.a = 1.0f;
-		colorAttachmentInfo.loadOp = SDL_GPU_LOADOP_CLEAR;
-		colorAttachmentInfo.storeOp = SDL_GPU_STOREOP_STORE;
+		SDL_GPUColorTargetInfo color_target_info;
+        SDL_zero(color_target_info);
+		color_target_info.texture = swapchainTexture;
+		color_target_info.clear_color.r = (float)(0.5 + 0.5 * SDL_sin(currentTime));
+		color_target_info.clear_color.g = (float)(0.5 + 0.5 * SDL_sin(currentTime + SDL_PI_D * 2 / 3));
+		color_target_info.clear_color.b = (float)(0.5 + 0.5 * SDL_sin(currentTime + SDL_PI_D * 4 / 3));;
+		color_target_info.clear_color.a = 1.0f;
+		color_target_info.load_op = SDL_GPU_LOADOP_CLEAR;
+		color_target_info.store_op = SDL_GPU_STOREOP_STORE;
 
-		renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorAttachmentInfo, 1, NULL);
+		renderPass = SDL_BeginGPURenderPass(cmdbuf, &color_target_info, 1, NULL);
 		SDL_EndGPURenderPass(renderPass);
 	}
 
@@ -122,4 +119,3 @@ void SDL_AppQuit(void *appstate)
 	SDL_DestroyGPUDevice(gpu_device);
     SDLTest_CommonQuit(state);
 }
-

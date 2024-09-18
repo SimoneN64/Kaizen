@@ -33,14 +33,14 @@ Uint64 next(Uint64 state[2]) {
     return result;
 }
 static Uint64 rngState[2] = {1, 2};
-Uint32 getRandomUint32() {
+Uint32 getRandomUint32(void) {
     return (Uint32)next(rngState);
 }
 /* ================= Test Case Helper Functions ================== */
 /*
  * Resets PRNG state to initialize tests using PRNG
  */
-void blitSetUp(void *arg) {
+void SDLCALL blitSetUp(void **arg) {
     rngState[0] = 1;
     rngState[1] = 2;
 }
@@ -96,7 +96,7 @@ Uint32 hashSurfacePixels(SDL_Surface * surface) {
  * Tests rendering a rainbow gradient background onto a blank surface, then rendering a sprite with complex geometry and
  * transparency on top of said surface, and comparing the result to known accurate renders with a hash.
  */
-int blit_testExampleApplicationRender(void *arg) {
+static int SDLCALL blit_testExampleApplicationRender(void *arg) {
     const int width = 32;
     const int height = 32;
     const Uint32 correct_hash = 0xe345d7a7;
@@ -123,7 +123,7 @@ int blit_testExampleApplicationRender(void *arg) {
  * different source and destination pixel formats, without an alpha shuffle, at SVGA resolution. Compares to known
  * accurate renders with a hash.
  */
-int blit_testRandomToRandomSVGA(void *arg) {
+static int SDLCALL blit_testRandomToRandomSVGA(void *arg) {
     const int width = 800;
     const int height = 600;
     const Uint32 correct_hash = 0x42140c5f;
@@ -152,7 +152,7 @@ int blit_testRandomToRandomSVGA(void *arg) {
  * shift operations between the different source and destination pixel formats, including an alpha shuffle. Compares to
  * known accurate renders with a hash.
  */
-int blit_testRandomToRandomSVGAMultipleIterations(void *arg) {
+static int SDLCALL blit_testRandomToRandomSVGAMultipleIterations(void *arg) {
     const int width = 800;
     const int height = 600;
     const int blit_width = 15;
@@ -192,15 +192,15 @@ int blit_testRandomToRandomSVGAMultipleIterations(void *arg) {
 }
 
 static const SDLTest_TestCaseReference blitTest1 = {
-        (SDLTest_TestCaseFp)blit_testExampleApplicationRender, "blit_testExampleApplicationRender",
+        blit_testExampleApplicationRender, "blit_testExampleApplicationRender",
         "Test example application render.", TEST_ENABLED
 };
 static const SDLTest_TestCaseReference blitTest2 = {
-        (SDLTest_TestCaseFp)blit_testRandomToRandomSVGA, "blit_testRandomToRandomSVGA",
+        blit_testRandomToRandomSVGA, "blit_testRandomToRandomSVGA",
         "Test SVGA noise render.", TEST_ENABLED
 };
 static const SDLTest_TestCaseReference blitTest3 = {
-        (SDLTest_TestCaseFp)blit_testRandomToRandomSVGAMultipleIterations, "blit_testRandomToRandomSVGAMultipleIterations",
+        blit_testRandomToRandomSVGAMultipleIterations, "blit_testRandomToRandomSVGAMultipleIterations",
         "Test SVGA noise render (250k iterations).", TEST_ENABLED
 };
 static const SDLTest_TestCaseReference *blitTests[] = {

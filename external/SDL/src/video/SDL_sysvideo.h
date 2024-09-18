@@ -264,7 +264,8 @@ struct SDL_VideoDevice
     bool (*GetWindowBordersSize)(SDL_VideoDevice *_this, SDL_Window *window, int *top, int *left, int *bottom, int *right);
     void (*GetWindowSizeInPixels)(SDL_VideoDevice *_this, SDL_Window *window, int *w, int *h);
     bool (*SetWindowOpacity)(SDL_VideoDevice *_this, SDL_Window *window, float opacity);
-    bool (*SetWindowModalFor)(SDL_VideoDevice *_this, SDL_Window *modal_window, SDL_Window *parent_window);
+    bool (*SetWindowParent)(SDL_VideoDevice *_this, SDL_Window *window, SDL_Window *parent);
+    bool (*SetWindowModal)(SDL_VideoDevice *_this, SDL_Window *window, bool modal);
     void (*ShowWindow)(SDL_VideoDevice *_this, SDL_Window *window);
     void (*HideWindow)(SDL_VideoDevice *_this, SDL_Window *window);
     void (*RaiseWindow)(SDL_VideoDevice *_this, SDL_Window *window);
@@ -497,7 +498,6 @@ typedef struct VideoBootStrap
 extern VideoBootStrap COCOA_bootstrap;
 extern VideoBootStrap X11_bootstrap;
 extern VideoBootStrap WINDOWS_bootstrap;
-extern VideoBootStrap WINRT_bootstrap;
 extern VideoBootStrap HAIKU_bootstrap;
 extern VideoBootStrap UIKIT_bootstrap;
 extern VideoBootStrap Android_bootstrap;

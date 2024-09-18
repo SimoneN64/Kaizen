@@ -96,7 +96,7 @@ if (${CMAKE_BUILD_TYPE} MATCHES Debug)
   #target_link_options(kaizen-qt PUBLIC -fsanitize=address -fsanitize=undefined)
 endif ()
 
-target_link_libraries(kaizen-qt PUBLIC SDL3::SDL3 SDL3::SDL3-static Qt6::Core Qt6::Gui Qt6::Widgets discord-rpc fmt mio nlohmann_json imgui parallel-rdp backend)
+target_link_libraries(kaizen-qt PUBLIC SDL3::SDL3 SDL3::SDL3-static Qt6::Core Qt6::Gui Qt6::Widgets discord-rpc fmt mio nlohmann_json parallel-rdp imgui backend)
 target_compile_definitions(kaizen-qt PUBLIC SDL_MAIN_HANDLED)
 
 file(COPY ../../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)

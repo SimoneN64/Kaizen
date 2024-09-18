@@ -56,6 +56,11 @@ void ParallelRDP::LoadWSIPlatform(const std::shared_ptr<InstanceFactory> &instan
 #endif
   SDLWindow = SDL_CreateWindowWithProperties(props);
 
+  auto instance = wsi->get_context().get_instance();
+
+  volkInitialize();
+  volkLoadInstance(instance);
+
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
   ImGuiIO &io = ImGui::GetIO();
@@ -64,10 +69,17 @@ void ParallelRDP::LoadWSIPlatform(const std::shared_ptr<InstanceFactory> &instan
   io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
   ImGui::StyleColorsDark();
+
+  ImGui_ImplVulkan_LoadFunctions(
+    [](const char *function_name, void *instance) {
+      return vkGetInstanceProcAddr(static_cast<VkInstance>(instance), function_name);
+    },
+    instance);
+
   ImGui_ImplSDL3_InitForVulkan(SDLWindow);
 
   ImGui_ImplVulkan_InitInfo init_info = {};
-  init_info.Instance = wsi->get_context().get_instance();
+  init_info.Instance = instance;
   init_info.PhysicalDevice = wsi->get_device().get_physical_device();
   init_info.Device = wsi->get_device().get_device();
   init_info.QueueFamily = wsi->get_context().get_queue_info().family_indices[QUEUE_INDEX_GRAPHICS];
@@ -101,8 +113,7 @@ void ParallelRDP::LoadWSIPlatform(const std::shared_ptr<InstanceFactory> &instan
   ImGui_ImplVulkan_Init(&init_info);
 }
 
-void ParallelRDP::Init(const std::shared_ptr<Vulkan::InstanceFactory> &factory,
-                       const std::shared_ptr<Vulkan::WSIPlatform> &wsiPlatform,
+void ParallelRDP::Init(const std::shared_ptr<InstanceFactory> &factory, const std::shared_ptr<WSIPlatform> &wsiPlatform,
                        const std::shared_ptr<WindowInfo> &newWindowInfo, const u8 *rdram, void *winPtr) {
   LoadWSIPlatform(factory, wsiPlatform, newWindowInfo, winPtr);
 
@@ -151,7 +162,7 @@ void ParallelRDP::Init(const std::shared_ptr<Vulkan::InstanceFactory> &factory,
 
 void ParallelRDP::DrawFullscreenTexturedQuad(Util::IntrusivePtr<Image> image,
                                              Util::IntrusivePtr<CommandBuffer> cmd) const {
-  cmd->set_texture(0, 0, image->get_view(), Vulkan::StockSampler::LinearClamp);
+  cmd->set_texture(0, 0, image->get_view(), StockSampler::LinearClamp);
   cmd->set_program(fullscreen_quad_program);
   cmd->set_quad_state();
   auto data = static_cast<float *>(cmd->allocate_vertex_data(0, 6 * sizeof(float), 2 * sizeof(float)));
@@ -188,7 +199,7 @@ void ParallelRDP::UpdateScreen(Util::IntrusivePtr<Image> image) const {
   wsi->begin_frame();
 
   if (!image) {
-    auto info = Vulkan::ImageCreateInfo::immutable_2d_image(800, 600, VK_FORMAT_R8G8B8A8_UNORM);
+    auto info = ImageCreateInfo::immutable_2d_image(800, 600, VK_FORMAT_R8G8B8A8_UNORM);
     info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     info.misc = IMAGE_MISC_MUTABLE_SRGB_BIT;
     info.initial_layout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -210,8 +221,23 @@ void ParallelRDP::UpdateScreen(Util::IntrusivePtr<Image> image) const {
 
   cmd->begin_render_pass(wsi->get_device().get_swapchain_render_pass(SwapchainRenderPass::ColorOnly));
   DrawFullscreenTexturedQuad(image, cmd);
+
+  SDL_Event event;
+  while (SDL_PollEvent(&event)) {
+    ImGui_ImplSDL3_ProcessEvent(&event);
+  }
+
+  ImGui_ImplVulkan_NewFrame();
+  ImGui_ImplSDL3_NewFrame();
+  ImGui::NewFrame();
+
+  ImGui::ShowDemoWindow();
+
   ImGui::Render();
   ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd->get_command_buffer());
+
+  ImGui::UpdatePlatformWindows();
+  ImGui::RenderPlatformWindowsDefault();
 
   cmd->end_render_pass();
   wsi->get_device().submit(cmd);

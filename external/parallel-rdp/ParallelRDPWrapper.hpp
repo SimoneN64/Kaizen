@@ -2,6 +2,7 @@
 #include <backend/Core.hpp>
 #include <rdp_device.hpp>
 #include <wsi.hpp>
+#include <SDL3/SDL.h>
 
 class ParallelRDP {
 public:
@@ -34,4 +35,5 @@ private:
   std::shared_ptr<Vulkan::WSI> wsi;
   std::shared_ptr<RDP::CommandProcessor> command_processor;
   std::shared_ptr<WindowInfo> windowInfo;
+  SDL_Window *SDLWindow;
 };

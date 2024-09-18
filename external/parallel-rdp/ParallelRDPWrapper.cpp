@@ -7,6 +7,7 @@
 #include <imgui_impl_vulkan.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
+#include <RenderWidget.hpp>
 
 using namespace Vulkan;
 using namespace RDP;
@@ -36,6 +37,21 @@ void ParallelRDP::LoadWSIPlatform(const std::shared_ptr<Vulkan::InstanceFactory>
   }
 
   windowInfo = newWindowInfo;
+   
+  auto props = SDL_CreateProperties();
+#ifdef SDL_PLATFORM_LINUX
+  SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_WAYLAND_WL_SURFACE_POINTER,
+                         dynamic_cast<QtWSIPlatform>(wsi_platform.get())->window->winId());
+  SDL_SetPointerProperty(props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER,
+                         dynamic_cast<QtWSIPlatform>(wsi_platform.get())->window->winId());
+#elif SDL_PLATFORM_WINDOWS
+  SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_WIN32_HWND_POINTER,
+                         dynamic_cast<QtWSIPlatform>(wsi_platform.get())->window->winId());
+#else
+  SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_COCOA_WINDOW_POINTER,
+                         dynamic_cast<QtWSIPlatform>(wsi_platform.get())->window->winId());
+#endif
+  SDLWindow = SDL_CreateWindowWithProperties(props);
 }
 
 void ParallelRDP::Init(const std::shared_ptr<Vulkan::InstanceFactory> &factory,

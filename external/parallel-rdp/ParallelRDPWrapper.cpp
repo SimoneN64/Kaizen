@@ -48,7 +48,7 @@ void ParallelRDP::LoadWSIPlatform(const std::shared_ptr<InstanceFactory> &instan
   auto props = SDL_CreateProperties();
 #ifdef SDL_PLATFORM_LINUX
   SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_WAYLAND_WL_SURFACE_POINTER, winPtr);
-  SDL_SetPointerProperty(props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, winPtr);
+  SDL_SetNumberProperty(props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, static_cast<s64>winPtr);
 #elif SDL_PLATFORM_WINDOWS
   SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_WIN32_HWND_POINTER, winPtr);
 #else

@@ -6,12 +6,11 @@
 #include <QWidget>
 #include <QWindow>
 #include <QTimer>
-
-#include <SDL3/SDL.h>
+#include <imgui_impl_vulkan.h>
 
 struct QtInstanceFactory : Vulkan::InstanceFactory {
   VkInstance create_instance(const VkInstanceCreateInfo *info) override {
-    qVkInstance.setApiVersion({1, 3, 0});
+    handle.setApiVersion({1, 3, 0});
     QByteArrayList exts;
     for (int i = 0; i < info->enabledExtensionCount; i++) {
       exts.push_back(QByteArray::fromStdString(info->ppEnabledExtensionNames[i]));
@@ -20,15 +19,15 @@ struct QtInstanceFactory : Vulkan::InstanceFactory {
     for (int i = 0; i < info->enabledLayerCount; i++) {
       layers.push_back(QByteArray::fromStdString(info->ppEnabledLayerNames[i]));
     }
-    qVkInstance.setExtensions(exts);
-    qVkInstance.setLayers(layers);
-    qVkInstance.setApiVersion({1, 3, 0});
-    qVkInstance.create();
+    handle.setExtensions(exts);
+    handle.setLayers(layers);
+    handle.setApiVersion({1, 3, 0});
+    handle.create();
 
-    return qVkInstance.vkInstance();
+    return handle.vkInstance();
   }
 
-  QVulkanInstance qVkInstance;
+  QVulkanInstance handle;
 };
 
 class QtParallelRdpWindowInfo : public ParallelRDP::WindowInfo {
@@ -81,20 +80,15 @@ public:
 };
 
 class RenderWidget : public QWidget {
-  SDL_Window *sdlWindow;
-  QTimer timer;
-  void UpdateEvents();
-  std::shared_ptr<Vulkan::WSI> wsi;
-
 public:
+  [[nodiscard]] VkInstance instance() const { return qtVkInstanceFactory->handle.vkInstance(); }
   explicit RenderWidget(QWidget *parent);
-  void InitImgui(std::shared_ptr<Vulkan::WSI> &wsi);
 
   [[nodiscard]] QPaintEngine *paintEngine() const override { return nullptr; }
 
   std::shared_ptr<ParallelRDP::WindowInfo> windowInfo;
   std::shared_ptr<Vulkan::WSIPlatform> wsiPlatform;
-  std::shared_ptr<QtInstanceFactory> instance;  
+  std::shared_ptr<QtInstanceFactory> qtVkInstanceFactory;
 Q_SIGNALS:
   void Show() { show(); }
   void Hide() { hide(); }

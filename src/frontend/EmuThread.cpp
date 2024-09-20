@@ -1,13 +1,13 @@
 #include <EmuThread.hpp>
 #include <SDL3/SDL.h>
 
-EmuThread::EmuThread(RenderWidget& renderWidget, SettingsWindow &settings) noexcept :
+EmuThread::EmuThread(RenderWidget &renderWidget, SettingsWindow &settings) noexcept :
     renderWidget(renderWidget), core(parallel), settings(settings) {}
 
 [[noreturn]] void EmuThread::run() noexcept {
-  parallel.Init(renderWidget.instance, renderWidget.wsiPlatform, renderWidget.windowInfo,
+  parallel.Init(renderWidget.qtVkInstanceFactory, renderWidget.wsiPlatform, renderWidget.windowInfo,
                 core.cpu->GetMem().GetRDRAMPtr());
-  renderWidget.InitImgui(parallel.wsi);
+
   SDL_InitSubSystem(SDL_INIT_GAMEPAD);
   bool controllerConnected = false;
 
@@ -15,7 +15,7 @@ EmuThread::EmuThread(RenderWidget& renderWidget, SettingsWindow &settings) noexc
     Util::warn("[SDL] Could not load game controller DB");
   }
 
-  auto pollEvents = [&]() {
+  auto pollEvents = [&] {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
       switch (e.type) {

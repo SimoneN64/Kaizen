@@ -1,18 +1,36 @@
 #pragma once
 #include <QApplication>
 #include <QMainWindow>
+#include <QVBoxLayout>
 #include <RenderWidget.hpp>
-#include "ui_mainwindow.h"
+#include <ImGuiWidget.hpp>
 
-class MainWindowController : public QMainWindow {
+class MainWindow : public QMainWindow {
   Q_OBJECT
 
 public:
-  MainWindowController() noexcept;
+  MainWindow() noexcept;
 
-  Ui::MainWindow view;
+  QAction *actionAbout;
+  QAction *actionOpen;
+  QAction *actionExit;
+  QAction *actionPause;
+  QAction *actionReset;
+  QAction *actionStop;
+  QAction *actionSettings;
+  QWidget *centralwidget;
+  QVBoxLayout *verticalLayout;
+  QHBoxLayout *horizontalLayout;
+  RenderWidget *vulkanWidget;
+  ImGuiWidget *debugger;
+  QMenuBar *menubar;
+  QMenu *menuFile;
+  QMenu *menuEmulation;
+  QMenu *menuAbout;
+  QStatusBar *statusbar;
 
 private:
+  void Retranslate();
   void ConnectSignalsToSlots() noexcept;
 
   bool textPauseToggle = false;

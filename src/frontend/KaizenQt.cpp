@@ -8,9 +8,9 @@
 namespace fs = std::filesystem;
 
 KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
-  mainWindow = std::make_unique<MainWindowController>();
+  mainWindow = std::make_unique<MainWindow>();
   settingsWindow = std::make_unique<SettingsWindow>();
-  emuThread = std::make_unique<EmuThread>(*mainWindow->view.vulkanWidget, *settingsWindow);
+  emuThread = std::make_unique<EmuThread>(*mainWindow->vulkanWidget, *settingsWindow);
 
   ConnectMainWindowSignalsToSlots();
   Util::RPC::GetInstance().Update(Util::RPC::Idling);
@@ -25,13 +25,13 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
 }
 
 void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept {
-  connect(mainWindow.get(), &MainWindowController::OpenSettings, this, [this]() { settingsWindow->show(); });
-  connect(mainWindow.get(), &MainWindowController::OpenROM, this, &KaizenQt::LoadROM);
-  connect(mainWindow.get(), &MainWindowController::Exit, this, &KaizenQt::Quit);
-  connect(mainWindow.get(), &MainWindowController::Reset, emuThread.get(), &EmuThread::Reset);
-  connect(mainWindow.get(), &MainWindowController::Stop, emuThread.get(), &EmuThread::Stop);
-  connect(mainWindow.get(), &MainWindowController::Stop, this, [this]() { mainWindow->setWindowTitle("Kaizen"); });
-  connect(mainWindow.get(), &MainWindowController::Pause, emuThread.get(), &EmuThread::TogglePause);
+  connect(mainWindow.get(), &MainWindow::OpenSettings, this, [this]() { settingsWindow->show(); });
+  connect(mainWindow.get(), &MainWindow::OpenROM, this, &KaizenQt::LoadROM);
+  connect(mainWindow.get(), &MainWindow::Exit, this, &KaizenQt::Quit);
+  connect(mainWindow.get(), &MainWindow::Reset, emuThread.get(), &EmuThread::Reset);
+  connect(mainWindow.get(), &MainWindow::Stop, emuThread.get(), &EmuThread::Stop);
+  connect(mainWindow.get(), &MainWindow::Stop, this, [this]() { mainWindow->setWindowTitle("Kaizen"); });
+  connect(mainWindow.get(), &MainWindow::Pause, emuThread.get(), &EmuThread::TogglePause);
 }
 
 void KaizenQt::dragEnterEvent(QDragEnterEvent *event) {
@@ -46,9 +46,9 @@ void KaizenQt::dropEvent(QDropEvent *event) {
 }
 
 void KaizenQt::LoadROM(const QString &fileName) noexcept {
-  mainWindow->view.actionPause->setEnabled(true);
-  mainWindow->view.actionReset->setEnabled(true);
-  mainWindow->view.actionStop->setEnabled(true);
+  mainWindow->actionPause->setEnabled(true);
+  mainWindow->actionReset->setEnabled(true);
+  mainWindow->actionStop->setEnabled(true);
   emuThread->start();
   emuThread->core.LoadROM(fileName.toStdString());
   auto gameNameDB = emuThread->core.cpu->GetMem().rom.gameNameDB;

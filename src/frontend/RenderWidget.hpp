@@ -1,12 +1,9 @@
 #pragma once
 #undef signals
 #include <ParallelRDPWrapper.hpp>
-#include <QVulkanInstance>
 #include <QVulkanWindow>
 #include <QWidget>
 #include <QWindow>
-#include <QTimer>
-#include <imgui_impl_vulkan.h>
 
 struct QtInstanceFactory : Vulkan::InstanceFactory {
   VkInstance create_instance(const VkInstanceCreateInfo *info) override {

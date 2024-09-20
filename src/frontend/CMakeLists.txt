@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
 
+add_compile_definitions(IMGUI_IMPL_VULKAN_USE_VOLK)
+add_compile_definitions(IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
+
 if (WIN32)
   add_compile_definitions(NOMINMAX)
 endif ()
@@ -68,7 +71,6 @@ add_executable(kaizen-qt
   RenderWidget.hpp
   EmuThread.hpp
   EmuThread.cpp
-  mainwindow.ui
   MainWindow.hpp
   MainWindow.cpp
   SettingsWindow.hpp
@@ -79,7 +81,9 @@ add_executable(kaizen-qt
   AudioSettings.hpp
   AudioSettings.cpp
   InputSettings.hpp
-  InputSettings.cpp)
+  InputSettings.cpp
+  ImGuiWidget.hpp
+  ImGuiWidget.cpp)
 
 include(CheckCCompilerFlag)
 

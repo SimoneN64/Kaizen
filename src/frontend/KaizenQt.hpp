@@ -35,7 +35,7 @@ public:
 private:
   void Quit() noexcept;
   void ConnectMainWindowSignalsToSlots() noexcept;
-  std::unique_ptr<MainWindowController> mainWindow;
+  std::unique_ptr<MainWindow> mainWindow;
   std::unique_ptr<SettingsWindow> settingsWindow;
   std::unique_ptr<EmuThread> emuThread;
 };

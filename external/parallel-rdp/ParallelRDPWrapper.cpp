@@ -33,7 +33,7 @@ static void check_vk_result(VkResult err) {
 
 void ParallelRDP::LoadWSIPlatform(const std::shared_ptr<InstanceFactory> &instanceFactory,
                                   const std::shared_ptr<WSIPlatform> &wsi_platform,
-                                  const std::shared_ptr<WindowInfo> &newWindowInfo, void *winPtr) {
+                                  const std::shared_ptr<WindowInfo> &newWindowInfo) {
   wsi = std::make_shared<WSI>();
   wsi->set_backbuffer_srgb(false);
   wsi->set_platform(wsi_platform.get());
@@ -45,38 +45,16 @@ void ParallelRDP::LoadWSIPlatform(const std::shared_ptr<InstanceFactory> &instan
 
   windowInfo = newWindowInfo;
 
-  auto props = SDL_CreateProperties();
-#ifdef SDL_PLATFORM_LINUX
-  SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_WAYLAND_WL_SURFACE_POINTER, winPtr);
-  SDL_SetNumberProperty(props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, static_cast<s64>winPtr);
-#elif SDL_PLATFORM_WINDOWS
-  SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_WIN32_HWND_POINTER, winPtr);
-#else
-  SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_COCOA_WINDOW_POINTER, winPtr);
-#endif
-  SDLWindow = SDL_CreateWindowWithProperties(props);
-
   auto instance = wsi->get_context().get_instance();
 
   volkInitialize();
   volkLoadInstance(instance);
-
-  IMGUI_CHECKVERSION();
-  ImGui::CreateContext();
-  ImGuiIO &io = ImGui::GetIO();
-  (void)io;
-  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-  io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-
-  ImGui::StyleColorsDark();
 
   ImGui_ImplVulkan_LoadFunctions(
     [](const char *function_name, void *instance) {
       return vkGetInstanceProcAddr(static_cast<VkInstance>(instance), function_name);
     },
     instance);
-
-  ImGui_ImplSDL3_InitForVulkan(SDLWindow);
 
   ImGui_ImplVulkan_InitInfo init_info = {};
   init_info.Instance = instance;
@@ -114,8 +92,8 @@ void ParallelRDP::LoadWSIPlatform(const std::shared_ptr<InstanceFactory> &instan
 }
 
 void ParallelRDP::Init(const std::shared_ptr<InstanceFactory> &factory, const std::shared_ptr<WSIPlatform> &wsiPlatform,
-                       const std::shared_ptr<WindowInfo> &newWindowInfo, const u8 *rdram, void *winPtr) {
-  LoadWSIPlatform(factory, wsiPlatform, newWindowInfo, winPtr);
+                       const std::shared_ptr<WindowInfo> &newWindowInfo, const u8 *rdram) {
+  LoadWSIPlatform(factory, wsiPlatform, newWindowInfo);
 
   ResourceLayout vertLayout;
   ResourceLayout fragLayout;
@@ -222,16 +200,9 @@ void ParallelRDP::UpdateScreen(Util::IntrusivePtr<Image> image) const {
   cmd->begin_render_pass(wsi->get_device().get_swapchain_render_pass(SwapchainRenderPass::ColorOnly));
   DrawFullscreenTexturedQuad(image, cmd);
 
-  SDL_Event event;
-  while (SDL_PollEvent(&event)) {
-    ImGui_ImplSDL3_ProcessEvent(&event);
-  }
-
   ImGui_ImplVulkan_NewFrame();
   ImGui_ImplSDL3_NewFrame();
   ImGui::NewFrame();
-
-  ImGui::ShowDemoWindow();
 
   ImGui::Render();
   ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd->get_command_buffer());

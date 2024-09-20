@@ -5,12 +5,9 @@
 #include <QVulkanWindow>
 #include <QWidget>
 #include <QWindow>
+#include <QTimer>
 
-#include <imgui.h>
-#include <imgui_impl_sdl3.h>
-#include <imgui_impl_vulkan.h>
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_vulkan.h>
 
 struct QtInstanceFactory : Vulkan::InstanceFactory {
   VkInstance create_instance(const VkInstanceCreateInfo *info) override {
@@ -84,6 +81,10 @@ public:
 };
 
 class RenderWidget : public QWidget {
+  SDL_Window *sdlWindow;
+  QTimer timer;
+  void UpdateEvents();
+
 public:
   explicit RenderWidget(QWidget *parent);
 
@@ -91,7 +92,7 @@ public:
 
   std::unique_ptr<ParallelRDP::WindowInfo> windowInfo;
   std::unique_ptr<Vulkan::WSIPlatform> wsiPlatform;
-  std::unique_ptr<QtInstanceFactory> instance;
+  std::unique_ptr<QtInstanceFactory> instance;  
 Q_SIGNALS:
   void Show() { show(); }
   void Hide() { hide(); }

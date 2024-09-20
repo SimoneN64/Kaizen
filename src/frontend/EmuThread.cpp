@@ -7,8 +7,7 @@ EmuThread::EmuThread(const std::shared_ptr<QtInstanceFactory> &instance_,
     instance(instance_), wsiPlatform(wsiPlatform_), windowInfo(windowInfo_), core(parallel), settings(settings) {}
 
 [[noreturn]] void EmuThread::run() noexcept {
-  parallel.Init(instance, wsiPlatform, windowInfo, core.cpu->GetMem().GetRDRAMPtr(),
-                reinterpret_cast<void *>(wsiPlatform->get_native_window()));
+  parallel.Init(instance, wsiPlatform, windowInfo, core.cpu->GetMem().GetRDRAMPtr());
   SDL_InitSubSystem(SDL_INIT_GAMEPAD);
   bool controllerConnected = false;
 

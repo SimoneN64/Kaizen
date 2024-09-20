@@ -17,7 +17,7 @@ public:
   };
 
   void Init(const std::shared_ptr<Vulkan::InstanceFactory> &, const std::shared_ptr<Vulkan::WSIPlatform> &,
-            const std::shared_ptr<WindowInfo> &, const u8 *, void *);
+            const std::shared_ptr<WindowInfo> &, const u8 *);
   ParallelRDP() = default;
 
   void UpdateScreen(const n64::VI &) const;
@@ -28,12 +28,11 @@ public:
 
 private:
   void LoadWSIPlatform(const std::shared_ptr<Vulkan::InstanceFactory> &, const std::shared_ptr<Vulkan::WSIPlatform> &,
-                       const std::shared_ptr<WindowInfo> &, void *);
+                       const std::shared_ptr<WindowInfo> &);
   void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Vulkan::Image>, Util::IntrusivePtr<Vulkan::CommandBuffer>) const;
   void UpdateScreen(Util::IntrusivePtr<Vulkan::Image>) const;
 
   std::shared_ptr<Vulkan::WSI> wsi;
   std::shared_ptr<RDP::CommandProcessor> command_processor;
   std::shared_ptr<WindowInfo> windowInfo;
-  SDL_Window *SDLWindow;
 };

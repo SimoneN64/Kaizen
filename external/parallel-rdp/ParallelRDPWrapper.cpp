@@ -23,14 +23,6 @@ void ParallelRDP::SetFramerateUnlocked(bool unlocked) const {
 
 Program *fullscreen_quad_program;
 
-static void check_vk_result(VkResult err) {
-  if (err == 0)
-    return;
-  fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
-  if (err < 0)
-    abort();
-}
-
 void ParallelRDP::LoadWSIPlatform(const std::shared_ptr<InstanceFactory> &instanceFactory,
                                   const std::shared_ptr<WSIPlatform> &wsi_platform,
                                   const std::shared_ptr<WindowInfo> &newWindowInfo) {
@@ -44,51 +36,6 @@ void ParallelRDP::LoadWSIPlatform(const std::shared_ptr<InstanceFactory> &instan
   }
 
   windowInfo = newWindowInfo;
-
-  auto instance = wsi->get_context().get_instance();
-
-  volkInitialize();
-  volkLoadInstance(instance);
-
-  ImGui_ImplVulkan_LoadFunctions(
-    [](const char *function_name, void *instance) {
-      return vkGetInstanceProcAddr(static_cast<VkInstance>(instance), function_name);
-    },
-    instance);
-
-  ImGui_ImplVulkan_InitInfo init_info = {};
-  init_info.Instance = instance;
-  init_info.PhysicalDevice = wsi->get_device().get_physical_device();
-  init_info.Device = wsi->get_device().get_device();
-  init_info.QueueFamily = wsi->get_context().get_queue_info().family_indices[QUEUE_INDEX_GRAPHICS];
-  init_info.Queue = wsi->get_context().get_queue_info().queues[QUEUE_INDEX_GRAPHICS];
-  init_info.PipelineCache = nullptr;
-  {
-    VkDescriptorPoolSize pool_sizes[] = {
-      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1},
-    };
-    VkDescriptorPoolCreateInfo pool_info = {};
-    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    pool_info.maxSets = 1;
-    pool_info.poolSizeCount = IM_ARRAYSIZE(pool_sizes);
-    pool_info.pPoolSizes = pool_sizes;
-    auto err = wsi->get_device().get_device_table().vkCreateDescriptorPool(wsi->get_device().get_device(), &pool_info,
-                                                                           nullptr, &init_info.DescriptorPool);
-    check_vk_result(err);
-  }
-
-  init_info.RenderPass =
-    wsi->get_device()
-      .request_render_pass(wsi->get_device().get_swapchain_render_pass(SwapchainRenderPass::ColorOnly), false)
-      .get_render_pass();
-  init_info.Subpass = 0;
-  init_info.MinImageCount = 2;
-  init_info.ImageCount = 2;
-  init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-  init_info.Allocator = nullptr;
-  init_info.CheckVkResultFn = check_vk_result;
-  ImGui_ImplVulkan_Init(&init_info);
 }
 
 void ParallelRDP::Init(const std::shared_ptr<InstanceFactory> &factory, const std::shared_ptr<WSIPlatform> &wsiPlatform,
@@ -199,16 +146,6 @@ void ParallelRDP::UpdateScreen(Util::IntrusivePtr<Image> image) const {
 
   cmd->begin_render_pass(wsi->get_device().get_swapchain_render_pass(SwapchainRenderPass::ColorOnly));
   DrawFullscreenTexturedQuad(image, cmd);
-
-  ImGui_ImplVulkan_NewFrame();
-  ImGui_ImplSDL3_NewFrame();
-  ImGui::NewFrame();
-
-  ImGui::Render();
-  ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd->get_command_buffer());
-
-  ImGui::UpdatePlatformWindows();
-  ImGui::RenderPlatformWindowsDefault();
 
   cmd->end_render_pass();
   wsi->get_device().submit(cmd);

@@ -26,13 +26,13 @@ public:
   bool IsFramerateUnlocked() const;
   void SetFramerateUnlocked(bool) const;
 
+  std::shared_ptr<Vulkan::WSI> wsi;
+  std::shared_ptr<RDP::CommandProcessor> command_processor;
+  std::shared_ptr<WindowInfo> windowInfo;
+
 private:
   void LoadWSIPlatform(const std::shared_ptr<Vulkan::InstanceFactory> &, const std::shared_ptr<Vulkan::WSIPlatform> &,
                        const std::shared_ptr<WindowInfo> &);
   void DrawFullscreenTexturedQuad(Util::IntrusivePtr<Vulkan::Image>, Util::IntrusivePtr<Vulkan::CommandBuffer>) const;
   void UpdateScreen(Util::IntrusivePtr<Vulkan::Image>) const;
-
-  std::shared_ptr<Vulkan::WSI> wsi;
-  std::shared_ptr<RDP::CommandProcessor> command_processor;
-  std::shared_ptr<WindowInfo> windowInfo;
 };

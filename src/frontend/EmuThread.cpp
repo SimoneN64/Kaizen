@@ -1,13 +1,13 @@
 #include <EmuThread.hpp>
 #include <SDL3/SDL.h>
 
-EmuThread::EmuThread(const std::shared_ptr<QtInstanceFactory> &instance_,
-                     const std::shared_ptr<Vulkan::WSIPlatform> &wsiPlatform_,
-                     const std::shared_ptr<ParallelRDP::WindowInfo> &windowInfo_, SettingsWindow &settings) noexcept :
-    instance(instance_), wsiPlatform(wsiPlatform_), windowInfo(windowInfo_), core(parallel), settings(settings) {}
+EmuThread::EmuThread(RenderWidget& renderWidget, SettingsWindow &settings) noexcept :
+    renderWidget(renderWidget), core(parallel), settings(settings) {}
 
 [[noreturn]] void EmuThread::run() noexcept {
-  parallel.Init(instance, wsiPlatform, windowInfo, core.cpu->GetMem().GetRDRAMPtr());
+  parallel.Init(renderWidget.instance, renderWidget.wsiPlatform, renderWidget.windowInfo,
+                core.cpu->GetMem().GetRDRAMPtr());
+  renderWidget.InitImgui(parallel.wsi);
   SDL_InitSubSystem(SDL_INIT_GAMEPAD);
   bool controllerConnected = false;
 

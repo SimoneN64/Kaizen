@@ -9,14 +9,10 @@
 
 class EmuThread : public QThread {
   Q_OBJECT
-  std::shared_ptr<QtInstanceFactory> instance;
-  std::shared_ptr<Vulkan::WSIPlatform> wsiPlatform;
-  std::shared_ptr<ParallelRDP::WindowInfo> windowInfo;
+  RenderWidget &renderWidget;
 
 public:
-  explicit EmuThread(const std::shared_ptr<QtInstanceFactory> &instance,
-                     const std::shared_ptr<Vulkan::WSIPlatform> &wsiPlatform,
-                     const std::shared_ptr<ParallelRDP::WindowInfo> &windowInfo, SettingsWindow &) noexcept;
+  explicit EmuThread(RenderWidget &, SettingsWindow &) noexcept;
 
   [[noreturn]] void run() noexcept override;
 

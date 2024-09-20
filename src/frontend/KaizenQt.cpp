@@ -10,9 +10,7 @@ namespace fs = std::filesystem;
 KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   mainWindow = std::make_unique<MainWindowController>();
   settingsWindow = std::make_unique<SettingsWindow>();
-  emuThread = std::make_unique<EmuThread>(std::move(mainWindow->view.vulkanWidget->instance),
-                                          std::move(mainWindow->view.vulkanWidget->wsiPlatform),
-                                          std::move(mainWindow->view.vulkanWidget->windowInfo), *settingsWindow);
+  emuThread = std::make_unique<EmuThread>(*mainWindow->view.vulkanWidget, *settingsWindow);
 
   ConnectMainWindowSignalsToSlots();
   Util::RPC::GetInstance().Update(Util::RPC::Idling);

@@ -84,15 +84,17 @@ class RenderWidget : public QWidget {
   SDL_Window *sdlWindow;
   QTimer timer;
   void UpdateEvents();
+  std::shared_ptr<Vulkan::WSI> wsi;
 
 public:
   explicit RenderWidget(QWidget *parent);
+  void InitImgui(std::shared_ptr<Vulkan::WSI> &wsi);
 
   [[nodiscard]] QPaintEngine *paintEngine() const override { return nullptr; }
 
-  std::unique_ptr<ParallelRDP::WindowInfo> windowInfo;
-  std::unique_ptr<Vulkan::WSIPlatform> wsiPlatform;
-  std::unique_ptr<QtInstanceFactory> instance;  
+  std::shared_ptr<ParallelRDP::WindowInfo> windowInfo;
+  std::shared_ptr<Vulkan::WSIPlatform> wsiPlatform;
+  std::shared_ptr<QtInstanceFactory> instance;  
 Q_SIGNALS:
   void Show() { show(); }
   void Hide() { hide(); }

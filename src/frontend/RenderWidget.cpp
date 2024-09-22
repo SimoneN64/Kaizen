@@ -1,7 +1,7 @@
 #include <KaizenQt.hpp>
 #include <RenderWidget.hpp>
 
-RenderWidget::RenderWidget(QWidget *parent) : QWidget(parent) {
+RenderWidget::RenderWidget() : QWidget(nullptr) {
   setAttribute(Qt::WA_NativeWindow);
   setAttribute(Qt::WA_PaintOnScreen);
   if (GetOSCompositorCategory() == CompositorCategory::Wayland) {

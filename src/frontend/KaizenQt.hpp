@@ -38,4 +38,5 @@ private:
   std::unique_ptr<MainWindow> mainWindow;
   std::unique_ptr<SettingsWindow> settingsWindow;
   std::unique_ptr<EmuThread> emuThread;
+  std::unique_ptr<Debugger> debugger;
 };

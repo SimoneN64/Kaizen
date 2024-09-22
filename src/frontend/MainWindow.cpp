@@ -11,6 +11,8 @@ MainWindow::MainWindow() noexcept {
   if (objectName().isEmpty())
     setObjectName("MainWindow");
   resize(800, 646);
+  actionOpenDebuggerWindow = new QAction(this);
+  actionOpenDebuggerWindow->setObjectName("actionOpenDebuggerWindow");
   actionAbout = new QAction(this);
   actionAbout->setObjectName("actionAbout");
   actionOpen = new QAction(this);
@@ -27,22 +29,16 @@ MainWindow::MainWindow() noexcept {
   actionSettings->setObjectName("actionSettings");
   centralwidget = new QWidget(this);
   centralwidget->setObjectName("centralwidget");
-  verticalLayout = new QVBoxLayout(centralwidget);
+  verticalLayout = new QVBoxLayout;
   verticalLayout->setSpacing(0);
   verticalLayout->setObjectName("verticalLayout");
   verticalLayout->setContentsMargins(0, 0, 0, 0);
-  horizontalLayout = new QHBoxLayout(centralwidget);
-  horizontalLayout->setSpacing(0);
-  verticalLayout->setObjectName("horizontalLayout");
-  verticalLayout->setContentsMargins(0, 0, 0, 0);
-  vulkanWidget = new RenderWidget(centralwidget);
+  vulkanWidget = new RenderWidget;
   vulkanWidget->setObjectName("vulkanWidget");
-  debugger = new ImGuiWidget(centralwidget);
-  debugger->setObjectName("debugger");
 
-  horizontalLayout->addWidget(vulkanWidget);
-  horizontalLayout->addWidget(debugger);
-  verticalLayout->addLayout(horizontalLayout);
+  verticalLayout->addWidget(vulkanWidget);
+
+  centralwidget->setLayout(verticalLayout);
 
   setCentralWidget(centralwidget);
   menubar = new QMenuBar(this);
@@ -52,6 +48,8 @@ MainWindow::MainWindow() noexcept {
   menuFile->setObjectName("menuFile");
   menuEmulation = new QMenu(menubar);
   menuEmulation->setObjectName("menuEmulation");
+  menuTools = new QMenu(menubar);
+  menuTools->setObjectName("menuTools");
   menuAbout = new QMenu(menubar);
   menuAbout->setObjectName("menuAbout");
   setMenuBar(menubar);
@@ -61,6 +59,7 @@ MainWindow::MainWindow() noexcept {
 
   menubar->addAction(menuFile->menuAction());
   menubar->addAction(menuEmulation->menuAction());
+  menubar->addAction(menuTools->menuAction());
   menubar->addAction(menuAbout->menuAction());
   menuFile->addAction(actionOpen);
   menuFile->addAction(actionExit);
@@ -68,6 +67,7 @@ MainWindow::MainWindow() noexcept {
   menuEmulation->addAction(actionPause);
   menuEmulation->addAction(actionReset);
   menuEmulation->addAction(actionStop);
+  menuTools->addAction(actionOpenDebuggerWindow);
   menuAbout->addAction(actionAbout);
 
   Retranslate();
@@ -82,42 +82,29 @@ MainWindow::MainWindow() noexcept {
 
 void MainWindow::Retranslate() {
   setWindowTitle(QCoreApplication::translate("MainWindow", "Kaizen", nullptr));
+  actionOpenDebuggerWindow->setText(QCoreApplication::translate("MainWindow", "CPU Debugger", nullptr));
+  actionOpenDebuggerWindow->setStatusTip(QCoreApplication::translate(
+    "MainWindow", "Open the CPU debugger window which allows you see registers, memory and disassembled code",
+    nullptr));
   actionAbout->setText(QCoreApplication::translate("MainWindow", "About Kaizen", nullptr));
-#if QT_CONFIG(statustip)
   actionAbout->setStatusTip(QCoreApplication::translate("MainWindow", "About this emulator", nullptr));
-#endif // QT_CONFIG(statustip)
   actionOpen->setText(QCoreApplication::translate("MainWindow", "Open...", nullptr));
-#if QT_CONFIG(statustip)
   actionOpen->setStatusTip(QCoreApplication::translate("MainWindow", "Open a ROM", nullptr));
-#endif // QT_CONFIG(statustip)
-#if QT_CONFIG(shortcut)
   actionOpen->setShortcut(QCoreApplication::translate("MainWindow", "Ctrl+O", nullptr));
-#endif // QT_CONFIG(shortcut)
   actionExit->setText(QCoreApplication::translate("MainWindow", "Exit", nullptr));
-#if QT_CONFIG(statustip)
   actionExit->setStatusTip(QCoreApplication::translate("MainWindow", "Quit the emulator", nullptr));
-#endif // QT_CONFIG(statustip)
   actionPause->setText(QCoreApplication::translate("MainWindow", "Pause", nullptr));
-#if QT_CONFIG(statustip)
   actionPause->setStatusTip(QCoreApplication::translate("MainWindow", "Pause the emulation", nullptr));
-#endif // QT_CONFIG(statustip)
   actionReset->setText(QCoreApplication::translate("MainWindow", "Reset", nullptr));
-#if QT_CONFIG(statustip)
   actionReset->setStatusTip(QCoreApplication::translate("MainWindow", "Reset the emulation", nullptr));
-#endif // QT_CONFIG(statustip)
   actionStop->setText(QCoreApplication::translate("MainWindow", "Stop", nullptr));
-#if QT_CONFIG(statustip)
   actionStop->setStatusTip(QCoreApplication::translate("MainWindow", "Stop the emulation", nullptr));
-#endif // QT_CONFIG(statustip)
   actionSettings->setText(QCoreApplication::translate("MainWindow", "Settings", nullptr));
-#if QT_CONFIG(tooltip)
   actionSettings->setToolTip(QCoreApplication::translate("MainWindow", "Settings", nullptr));
-#endif // QT_CONFIG(tooltip)
-#if QT_CONFIG(statustip)
   actionSettings->setStatusTip(QCoreApplication::translate("MainWindow", "Open the settings window", nullptr));
-#endif // QT_CONFIG(statustip)
   menuFile->setTitle(QCoreApplication::translate("MainWindow", "File", nullptr));
   menuEmulation->setTitle(QCoreApplication::translate("MainWindow", "Emulation", nullptr));
+  menuTools->setTitle(QCoreApplication::translate("MainWindow", "Tools", nullptr));
   menuAbout->setTitle(QCoreApplication::translate("MainWindow", "Help", nullptr));
 } // retranslateUi
 
@@ -162,4 +149,5 @@ void MainWindow::ConnectSignalsToSlots() noexcept {
   });
 
   connect(actionSettings, &QAction::triggered, this, [this]() { emit OpenSettings(); });
+  connect(actionOpenDebuggerWindow, &QAction::triggered, this, [this]() { emit OpenDebugger(); });
 }

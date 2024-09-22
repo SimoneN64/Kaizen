@@ -3,7 +3,7 @@
 #include <QMainWindow>
 #include <QVBoxLayout>
 #include <RenderWidget.hpp>
-#include <ImGuiWidget.hpp>
+#include <Debugger.hpp>
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -11,6 +11,7 @@ class MainWindow : public QMainWindow {
 public:
   MainWindow() noexcept;
 
+  QAction *actionOpenDebuggerWindow;
   QAction *actionAbout;
   QAction *actionOpen;
   QAction *actionExit;
@@ -20,12 +21,11 @@ public:
   QAction *actionSettings;
   QWidget *centralwidget;
   QVBoxLayout *verticalLayout;
-  QHBoxLayout *horizontalLayout;
   RenderWidget *vulkanWidget;
-  ImGuiWidget *debugger;
   QMenuBar *menubar;
   QMenu *menuFile;
   QMenu *menuEmulation;
+  QMenu *menuTools;
   QMenu *menuAbout;
   QStatusBar *statusbar;
 
@@ -36,6 +36,7 @@ private:
   bool textPauseToggle = false;
 
 Q_SIGNALS:
+  void OpenDebugger();
   void OpenSettings();
   void OpenROM(const QString &rom_file);
   void Exit();

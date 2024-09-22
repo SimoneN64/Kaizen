@@ -11,6 +11,7 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   mainWindow = std::make_unique<MainWindow>();
   settingsWindow = std::make_unique<SettingsWindow>();
   emuThread = std::make_unique<EmuThread>(*mainWindow->vulkanWidget, *settingsWindow);
+  debugger = std::make_unique<Debugger>();
 
   ConnectMainWindowSignalsToSlots();
   Util::RPC::GetInstance().Update(Util::RPC::Idling);
@@ -20,17 +21,19 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   setFocus();
   grabKeyboard();
   mainWindow->show();
+  debugger->hide();
   settingsWindow->hide();
-  connect(settingsWindow.get(), &SettingsWindow::regrabKeyboard, this, [&]() { grabKeyboard(); });
+  connect(settingsWindow.get(), &SettingsWindow::regrabKeyboard, this, [&] { grabKeyboard(); });
 }
 
 void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept {
-  connect(mainWindow.get(), &MainWindow::OpenSettings, this, [this]() { settingsWindow->show(); });
+  connect(mainWindow.get(), &MainWindow::OpenSettings, this, [this] { settingsWindow->show(); });
+  connect(mainWindow.get(), &MainWindow::OpenDebugger, this, [this] { debugger->show(); });
   connect(mainWindow.get(), &MainWindow::OpenROM, this, &KaizenQt::LoadROM);
   connect(mainWindow.get(), &MainWindow::Exit, this, &KaizenQt::Quit);
   connect(mainWindow.get(), &MainWindow::Reset, emuThread.get(), &EmuThread::Reset);
   connect(mainWindow.get(), &MainWindow::Stop, emuThread.get(), &EmuThread::Stop);
-  connect(mainWindow.get(), &MainWindow::Stop, this, [this]() { mainWindow->setWindowTitle("Kaizen"); });
+  connect(mainWindow.get(), &MainWindow::Stop, this, [this] { mainWindow->setWindowTitle("Kaizen"); });
   connect(mainWindow.get(), &MainWindow::Pause, emuThread.get(), &EmuThread::TogglePause);
 }
 

@@ -79,7 +79,7 @@ public:
 class RenderWidget : public QWidget {
 public:
   [[nodiscard]] VkInstance instance() const { return qtVkInstanceFactory->handle.vkInstance(); }
-  explicit RenderWidget(QWidget *parent);
+  explicit RenderWidget();
 
   [[nodiscard]] QPaintEngine *paintEngine() const override { return nullptr; }
 

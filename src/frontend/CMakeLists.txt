@@ -6,9 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
 
-add_compile_definitions(IMGUI_IMPL_VULKAN_USE_VOLK)
-add_compile_definitions(IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
-
 if (WIN32)
   add_compile_definitions(NOMINMAX)
 endif ()
@@ -56,7 +53,6 @@ add_subdirectory(../backend backend)
 add_subdirectory(../../external/parallel-rdp parallel-rdp)
 add_subdirectory(../../external/unarr unarr)
 add_subdirectory(../../external/SDL SDL)
-add_subdirectory(../../external/imgui imgui)
 
 
 set(CMAKE_AUTOMOC ON)
@@ -82,8 +78,8 @@ add_executable(kaizen-qt
   AudioSettings.cpp
   InputSettings.hpp
   InputSettings.cpp
-  ImGuiWidget.hpp
-  ImGuiWidget.cpp)
+  Debugger.hpp
+  Debugger.cpp)
 
 include(CheckCCompilerFlag)
 
@@ -100,7 +96,7 @@ if (${CMAKE_BUILD_TYPE} MATCHES Debug)
   #target_link_options(kaizen-qt PUBLIC -fsanitize=address -fsanitize=undefined)
 endif ()
 
-target_link_libraries(kaizen-qt PUBLIC SDL3::SDL3 SDL3::SDL3-static Qt6::Core Qt6::Gui Qt6::Widgets discord-rpc fmt mio nlohmann_json parallel-rdp imgui backend)
+target_link_libraries(kaizen-qt PUBLIC SDL3::SDL3 SDL3::SDL3-static Qt6::Core Qt6::Gui Qt6::Widgets discord-rpc fmt mio nlohmann_json parallel-rdp backend)
 target_compile_definitions(kaizen-qt PUBLIC SDL_MAIN_HANDLED)
 
 file(COPY ../../resources/ DESTINATION ${PROJECT_BINARY_DIR}/resources/)

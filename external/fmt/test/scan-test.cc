@@ -110,12 +110,27 @@ TEST(scan_test, invalid_format) {
                    "invalid format string");
 }
 
+namespace std {
+using fmt::scan;
+using fmt::scan_error;
+}  // namespace std
+
 TEST(scan_test, example) {
-  std::string key;
-  int value = 0;
-  fmt::scan_to("answer = 42", "{} = {}", key, value);
-  EXPECT_EQ(key, "answer");
-  EXPECT_EQ(value, 42);
+  // Example from https://wg21.link/p1729r3.
+  if (auto result = std::scan<std::string, int>("answer = 42", "{} = {}")) {
+    auto range = result->range();
+    EXPECT_EQ(range.begin(), range.end());
+    EXPECT_EQ(result->begin(), result->end());
+#ifdef __cpp_structured_bindings
+    const auto& [key, value] = result->values();
+    EXPECT_EQ(key, "answer");
+    EXPECT_EQ(value, 42);
+#endif
+  } else {
+    std::scan_error error = result.error();
+    (void)error;
+    FAIL();
+  }
 }
 
 TEST(scan_test, end_of_input) { fmt::scan<int>("", "{}"); }

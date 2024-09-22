@@ -7,6 +7,7 @@
 
 #include "fmt/ranges.h"
 
+#include <array>
 #include <list>
 #include <map>
 #include <numeric>
@@ -16,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-#if FMT_HAS_INCLUDE(<ranges>)
+#if FMT_CPLUSPLUS > 201703L && FMT_HAS_INCLUDE(<ranges>)
 #  include <ranges>
 #endif
 
@@ -58,8 +59,13 @@ TEST(ranges_test, format_vector) {
   EXPECT_EQ(fmt::format("{:n:#x}", v), "0x1, 0x2, 0x3, 0x5, 0x7, 0xb");
 
   auto vc = std::vector<char>{'a', 'b', 'c'};
+  auto vec = std::vector<char>{'a', '\n', '\t'};
   auto vvc = std::vector<std::vector<char>>{vc, vc};
   EXPECT_EQ(fmt::format("{}", vc), "['a', 'b', 'c']");
+  EXPECT_EQ(fmt::format("{:s}", vc), "\"abc\"");
+  EXPECT_EQ(fmt::format("{:?s}", vec), "\"a\\n\\t\"");
+  EXPECT_EQ(fmt::format("{:s}", vec), "\"a\n\t\"");
+  EXPECT_EQ(fmt::format("{::s}", vvc), "[\"abc\", \"abc\"]");
   EXPECT_EQ(fmt::format("{}", vvc), "[['a', 'b', 'c'], ['a', 'b', 'c']]");
   EXPECT_EQ(fmt::format("{:n}", vvc), "['a', 'b', 'c'], ['a', 'b', 'c']");
   EXPECT_EQ(fmt::format("{:n:n}", vvc), "'a', 'b', 'c', 'a', 'b', 'c'");
@@ -82,6 +88,35 @@ TEST(ranges_test, format_map) {
   auto m = std::map<std::string, int>{{"one", 1}, {"two", 2}};
   EXPECT_EQ(fmt::format("{}", m), "{\"one\": 1, \"two\": 2}");
   EXPECT_EQ(fmt::format("{:n}", m), "\"one\": 1, \"two\": 2");
+}
+
+struct test_map_value {};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<test_map_value> : formatter<string_view> {
+  auto format(test_map_value, format_context& ctx) const
+      -> format_context::iterator {
+    return formatter<string_view>::format("foo", ctx);
+  }
+};
+
+template <typename K>
+struct formatter<std::pair<K, test_map_value>> : formatter<string_view> {
+  auto format(std::pair<K, test_map_value>, format_context& ctx) const
+      -> format_context::iterator {
+    return ctx.out();
+  }
+};
+
+template <typename K>
+struct is_tuple_formattable<std::pair<K, test_map_value>, char>
+    : std::false_type {};
+
+FMT_END_NAMESPACE
+
+TEST(ranges_test, format_map_custom_pair) {
+  EXPECT_EQ(fmt::format("{}", std::map<int, test_map_value>{{42, {}}}),
+            "{42: \"foo\"}");
 }
 
 TEST(ranges_test, format_set) {
@@ -135,6 +170,8 @@ TEST(ranges_test, format_adl_begin_end) {
 TEST(ranges_test, format_pair) {
   auto p = std::pair<int, float>(42, 1.5f);
   EXPECT_EQ(fmt::format("{}", p), "(42, 1.5)");
+  EXPECT_EQ(fmt::format("{:}", p), "(42, 1.5)");
+  EXPECT_EQ(fmt::format("{:n}", p), "421.5");
 }
 
 struct unformattable {};
@@ -143,6 +180,7 @@ TEST(ranges_test, format_tuple) {
   auto t =
       std::tuple<int, float, std::string, char>(42, 1.5f, "this is tuple", 'i');
   EXPECT_EQ(fmt::format("{}", t), "(42, 1.5, \"this is tuple\", 'i')");
+  EXPECT_EQ(fmt::format("{:n}", t), "421.5\"this is tuple\"'i'");
 
   EXPECT_EQ(fmt::format("{}", std::tuple<>()), "()");
 
@@ -233,6 +271,33 @@ TEST(ranges_test, disabled_range_formatting_of_path) {
             fmt::range_format::disabled);
 }
 
+struct vector_string : std::vector<char> {
+  using base = std::vector<char>;
+  using base::base;
+};
+struct vector_debug_string : std::vector<char> {
+  using base = std::vector<char>;
+  using base::base;
+};
+FMT_BEGIN_NAMESPACE
+template <>
+struct range_format_kind<vector_string, char>
+    : std::integral_constant<range_format, range_format::string> {};
+template <>
+struct range_format_kind<vector_debug_string, char>
+    : std::integral_constant<range_format, range_format::debug_string> {};
+FMT_END_NAMESPACE
+
+TEST(ranges_test, range_format_string) {
+  const vector_string v{'f', 'o', 'o'};
+  EXPECT_EQ(fmt::format("{}", v), "foo");
+}
+
+TEST(ranges_test, range_format_debug_string) {
+  const vector_debug_string v{'f', 'o', 'o'};
+  EXPECT_EQ(fmt::format("{}", v), "\"foo\"");
+}
+
 // A range that provides non-const only begin()/end() to test fmt::join
 // handles that.
 //
@@ -298,8 +363,7 @@ TEST(ranges_test, enum_range) {
 
 #if !FMT_MSC_VERSION
 TEST(ranges_test, unformattable_range) {
-  EXPECT_FALSE((fmt::has_formatter<std::vector<unformattable>,
-                                   fmt::format_context>::value));
+  EXPECT_FALSE((fmt::is_formattable<std::vector<unformattable>, char>::value));
 }
 #endif
 
@@ -457,23 +521,21 @@ TEST(ranges_test, join_range) {
 }
 
 namespace adl {
-struct vec : std::vector<int> {
-  using std::vector<int>::vector;  // inherit all constructors
+struct vec {
+  int n[2] = {42, 43};
 };
 
-// ADL-found begin() and end() skip the first and last element
-auto begin(vec& v) -> typename vec::iterator { return v.begin() + 1; }
-auto end(vec& v) -> typename vec::iterator { return v.end() - 1; }
-}
+auto begin(const vec& v) -> const int* { return v.n; }
+auto end(const vec& v) -> const int* { return v.n + 2; }
+}  // namespace adl
 
 TEST(ranges_test, format_join_adl_begin_end) {
-  auto v = adl::vec{41, 42, 43, 44};
-  EXPECT_EQ(fmt::format("{}", fmt::join(v, "/")), "42/43");
+  EXPECT_EQ(fmt::format("{}", fmt::join(adl::vec(), "/")), "42/43");
 }
 
 #endif  // FMT_RANGES_TEST_ENABLE_JOIN
 
-#if defined(__cpp_lib_ranges) && __cpp_lib_ranges >= 202302L
+#if defined(__cpp_lib_ranges) && __cpp_lib_ranges >= 202207L
 TEST(ranges_test, nested_ranges) {
   auto l = std::list{1, 2, 3};
   auto r = std::views::iota(0, 3) | std::views::transform([&l](auto i) {
@@ -498,7 +560,7 @@ TEST(ranges_test, escape) {
   EXPECT_EQ(fmt::format("{}", vec{"\x7f"}), "[\"\\x7f\"]");
   EXPECT_EQ(fmt::format("{}", vec{"n\xcc\x83"}), "[\"n\xcc\x83\"]");
 
-  if (fmt::detail::is_utf8()) {
+  if (fmt::detail::use_utf8) {
     EXPECT_EQ(fmt::format("{}", vec{"\xcd\xb8"}), "[\"\\u0378\"]");
     // Unassigned Unicode code points.
     EXPECT_EQ(fmt::format("{}", vec{"\xf0\xaa\x9b\x9e"}), "[\"\\U0002a6de\"]");
@@ -516,7 +578,11 @@ TEST(ranges_test, escape) {
 
   EXPECT_EQ(fmt::format("{}", std::vector<std::vector<char>>{{'x'}}),
             "[['x']]");
+
+// Disabled due to a clang 17 bug: https://github.com/fmtlib/fmt/issues/4144.
+#if FMT_CLANG_VERSION >= 1800
   EXPECT_EQ(fmt::format("{}", std::tuple<std::vector<char>>{{'x'}}), "(['x'])");
+#endif
 }
 
 template <typename R> struct fmt_ref_view {
@@ -620,3 +686,110 @@ struct lvalue_qualified_begin_end {
 TEST(ranges_test, lvalue_qualified_begin_end) {
   EXPECT_EQ(fmt::format("{}", lvalue_qualified_begin_end{}), "[1, 2, 3, 4, 5]");
 }
+
+#if !defined(__cpp_lib_ranges) || __cpp_lib_ranges <= 202106L
+#  define ENABLE_STD_VIEWS_TESTS 0
+#elif FMT_CLANG_VERSION
+#  if FMT_CLANG_VERSION > 1500
+#    define ENABLE_STD_VIEWS_TESTS 1
+#  else
+#    define ENABLE_STD_VIEWS_TESTS 0
+#  endif
+#else
+#  define ENABLE_STD_VIEWS_TESTS 1
+#endif
+
+#if ENABLE_STD_VIEWS_TESTS
+TEST(ranges_test, input_range_join) {
+  auto iss = std::istringstream("1 2 3 4 5");
+  auto view = std::views::istream<std::string>(iss);
+  EXPECT_EQ("1, 2, 3, 4, 5",
+            fmt::format("{}", fmt::join(view.begin(), view.end(), ", ")));
+}
+
+TEST(ranges_test, input_range_join_overload) {
+  auto iss = std::istringstream("1 2 3 4 5");
+  EXPECT_EQ(
+      "1.2.3.4.5",
+      fmt::format("{}", fmt::join(std::views::istream<std::string>(iss), ".")));
+}
+
+namespace views_filter_view_test {
+struct codec_mask {
+  static constexpr auto codecs = std::array{0, 1, 2, 3};
+  int except = 0;
+};
+
+auto format_as(codec_mask mask) {
+  // Careful not to capture param by reference here, it will dangle.
+  return codec_mask::codecs |
+         std::views::filter([mask](auto c) { return c != mask.except; });
+}
+}  // namespace views_filter_view_test
+
+TEST(ranges_test, format_as_with_ranges_mutable_begin_end) {
+  using namespace views_filter_view_test;
+  {
+    auto make_filter_view = []() {
+      return codec_mask::codecs |
+             std::views::filter([](auto c) { return c != 2; });
+    };
+    auto r = make_filter_view();
+    EXPECT_EQ("[0, 1, 3]", fmt::format("{}", r));
+    EXPECT_EQ("[0, 1, 3]", fmt::format("{}", make_filter_view()));
+  }
+
+  {
+    auto mask = codec_mask{2};
+    const auto const_mask = codec_mask{2};
+
+    EXPECT_EQ("[0, 1, 3]", fmt::format("{}", mask));
+    EXPECT_EQ("[0, 1, 3]", fmt::format("{}", const_mask));
+    EXPECT_EQ("[0, 1, 3]", fmt::format("{}", codec_mask{2}));
+  }
+}
+
+#endif
+
+TEST(ranges_test, std_istream_iterator_join) {
+  auto&& iss = std::istringstream("1 2 3 4 5");
+  auto first = std::istream_iterator<int>(iss);
+  auto last = std::istream_iterator<int>();
+  EXPECT_EQ("1, 2, 3, 4, 5", fmt::format("{}", fmt::join(first, last, ", ")));
+}
+
+// Mirrors C++20 std::ranges::basic_istream_view::iterator.
+struct noncopyable_istream_iterator : std::istream_iterator<int> {
+  using base = std::istream_iterator<int>;
+  explicit noncopyable_istream_iterator(std::istringstream& iss) : base{iss} {}
+  noncopyable_istream_iterator(const noncopyable_istream_iterator&) = delete;
+  noncopyable_istream_iterator(noncopyable_istream_iterator&&) = default;
+};
+static_assert(!std::is_copy_constructible<noncopyable_istream_iterator>::value,
+              "");
+
+TEST(ranges_test, movable_only_istream_iter_join) {
+  auto&& iss = std::istringstream("1 2 3 4 5");
+  auto first = noncopyable_istream_iterator(iss);
+  auto last = std::istream_iterator<int>();
+  EXPECT_EQ("1, 2, 3, 4, 5",
+            fmt::format("{}", fmt::join(std::move(first), last, ", ")));
+}
+
+struct movable_iter_range {
+  std::istringstream iss{"1 2 3 4 5"};
+  noncopyable_istream_iterator begin() {
+    return noncopyable_istream_iterator{iss};
+  }
+  std::istream_iterator<int> end() { return {}; }
+};
+
+TEST(ranges_test, movable_only_istream_iter_join2) {
+  EXPECT_EQ("[1, 2, 3, 4, 5]", fmt::format("{}", movable_iter_range{}));
+}
+
+struct not_range {
+  void begin() const {}
+  void end() const {}
+};
+static_assert(!fmt::is_formattable<not_range>{}, "");

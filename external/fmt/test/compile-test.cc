@@ -14,14 +14,6 @@
 #include "gmock/gmock.h"
 #include "gtest-extra.h"
 
-TEST(iterator_test, counting_iterator) {
-  auto it = fmt::detail::counting_iterator();
-  auto prev = it++;
-  EXPECT_EQ(prev.count(), 0);
-  EXPECT_EQ(it.count(), 1);
-  EXPECT_EQ((it + 41).count(), 42);
-}
-
 TEST(compile_test, compile_fallback) {
   // FMT_COMPILE should fallback on runtime formatting when `if constexpr` is
   // not available.
@@ -206,7 +198,7 @@ TEST(compile_test, format_to_n) {
   EXPECT_STREQ("2a", buffer);
 }
 
-#  ifdef __cpp_lib_bit_cast
+#  if FMT_USE_CONSTEVAL && (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1940)
 TEST(compile_test, constexpr_formatted_size) {
   FMT_CONSTEXPR20 size_t size = fmt::formatted_size(FMT_COMPILE("{}"), 42);
   EXPECT_EQ(size, 2);
@@ -342,6 +334,7 @@ TEST(compile_time_formatting_test, integer) {
   EXPECT_EQ("0X4A", test_format<5>(FMT_COMPILE("{:#X}"), 0x4a));
 
   EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42));
+  EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42l));
   EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42ll));
   EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42ull));
 

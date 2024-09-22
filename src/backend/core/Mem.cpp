@@ -87,7 +87,7 @@ FORCE_INLINE void SetROMCIC(u32 checksum, ROM &rom) {
 }
 
 std::vector<u8> Mem::OpenArchive(const std::string &path, size_t &sizeAdjusted) {
-  auto stream = ar_open_file(fs::path(path).u8string().c_str());
+  auto stream = ar_open_file(fs::path(path).c_str());
 
   if (!stream) {
     Util::panic("Could not open archive! Are you sure it's an archive?");

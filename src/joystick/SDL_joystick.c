@@ -366,6 +366,7 @@ static Uint32 initial_wheel_devices[] = {
     MAKE_VIDPID(0x044f, 0xb65e), // Thrustmaster T500RS
     MAKE_VIDPID(0x044f, 0xb664), // Thrustmaster TX (initial mode)
     MAKE_VIDPID(0x044f, 0xb669), // Thrustmaster TX (active mode)
+    MAKE_VIDPID(0x044f, 0xb67f), // Thrustmaster TMX
     MAKE_VIDPID(0x044f, 0xb691), // Thrustmaster TS-XW (initial mode)
     MAKE_VIDPID(0x044f, 0xb692), // Thrustmaster TS-XW (active mode)
     MAKE_VIDPID(0x0483, 0x0522), // Simagic Wheelbase (including M10, Alpha Mini, Alpha, Alpha U)
@@ -3097,6 +3098,11 @@ bool SDL_IsJoystickSteamController(Uint16 vendor_id, Uint16 product_id)
 {
     EControllerType eType = GuessControllerType(vendor_id, product_id);
     return eType == k_eControllerType_SteamController || eType == k_eControllerType_SteamControllerV2;
+}
+
+bool SDL_IsJoystickHoriSteamController(Uint16 vendor_id, Uint16 product_id)
+{
+    return vendor_id == USB_VENDOR_HORI && (product_id == USB_PRODUCT_HORI_STEAM_CONTROLLER || product_id == USB_PRODUCT_HORI_STEAM_CONTROLLER_BT);
 }
 
 bool SDL_IsJoystickSteamDeck(Uint16 vendor_id, Uint16 product_id)

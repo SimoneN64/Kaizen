@@ -155,11 +155,11 @@ static const SDL_GPUBootstrap *backends[] = {
 #ifdef SDL_GPU_METAL
     &MetalDriver,
 #endif
-#ifdef SDL_GPU_D3D12
-    &D3D12Driver,
-#endif
 #ifdef SDL_GPU_VULKAN
     &VulkanDriver,
+#endif
+#ifdef SDL_GPU_D3D12
+    &D3D12Driver,
 #endif
 #ifdef SDL_GPU_D3D11
     &D3D11Driver,
@@ -959,6 +959,10 @@ SDL_GPUTexture *SDL_CreateGPUTexture(
                     SDL_assert_release(!"For array textures: usage must not contain DEPTH_STENCIL_TARGET");
                     failed = true;
                 }
+                if (createinfo->sample_count > SDL_GPU_SAMPLECOUNT_1) {
+                    SDL_assert_release(!"For array textures: sample_count must be SDL_GPU_SAMPLECOUNT_1");
+                    failed = true;
+                }
             }
             if (createinfo->sample_count > SDL_GPU_SAMPLECOUNT_1 && createinfo->num_levels > 1) {
                 SDL_assert_release(!"For 2D multisample textures: num_levels must be 1");
@@ -1377,6 +1381,9 @@ SDL_GPURenderPass *SDL_BeginGPURenderPass(
                     }
                     if (resolveTextureHeader->info.type == SDL_GPU_TEXTURETYPE_3D) {
                         SDL_assert_release(!"Resolve texture must not be of TEXTURETYPE_3D!");
+                    }
+                    if (!(resolveTextureHeader->info.usage & SDL_GPU_TEXTUREUSAGE_COLOR_TARGET)) {
+                        SDL_assert_release(!"Resolve texture usage must include COLOR_TARGET!");
                     }
                 }
             }

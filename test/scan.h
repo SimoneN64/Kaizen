@@ -10,7 +10,7 @@
 #include <climits>
 #include <tuple>
 
-#include "fmt/format.h"
+#include "fmt/format-inl.h"
 
 FMT_BEGIN_NAMESPACE
 namespace detail {
@@ -142,7 +142,7 @@ class scan_buffer {
 using scan_iterator = scan_buffer::iterator;
 using scan_sentinel = scan_buffer::sentinel;
 
-class string_scan_buffer : public scan_buffer {
+class string_scan_buffer final : public scan_buffer {
  private:
   void consume() override {}
 
@@ -151,13 +151,15 @@ class string_scan_buffer : public scan_buffer {
       : scan_buffer(s.begin(), s.end(), true) {}
 };
 
-class file_scan_buffer : public scan_buffer {
+class file_scan_buffer final : public scan_buffer {
  private:
-  template <typename F, FMT_ENABLE_IF(sizeof(F::_IO_read_ptr) != 0)>
+  template <typename F, FMT_ENABLE_IF(sizeof(F::_IO_read_ptr) != 0 &&
+                                      !FMT_USE_FALLBACK_FILE)>
   static auto get_file(F* f, int) -> glibc_file<F> {
     return f;
   }
-  template <typename F, FMT_ENABLE_IF(sizeof(F::_p) != 0)>
+  template <typename F,
+            FMT_ENABLE_IF(sizeof(F::_p) != 0 && !FMT_USE_FALLBACK_FILE)>
   static auto get_file(F* f, int) -> apple_file<F> {
     return f;
   }
@@ -190,7 +192,10 @@ class file_scan_buffer : public scan_buffer {
     flockfile(f);
     fill();
   }
-  ~file_scan_buffer() { funlockfile(file_); }
+  ~file_scan_buffer() {
+    FILE* f = file_;
+    funlockfile(f);
+  }
 };
 }  // namespace detail
 
@@ -363,7 +368,7 @@ const char* parse_scan_specs(const char* begin, const char* end,
     switch (to_ascii(*begin)) {
     // TODO: parse more scan format specifiers
     case 'x':
-      specs.type = presentation_type::hex;
+      specs.set_type(presentation_type::hex);
       ++begin;
       break;
     case '}':
@@ -432,7 +437,7 @@ auto read_hex(scan_iterator it, T& value) -> scan_iterator {
 template <typename T, FMT_ENABLE_IF(std::is_unsigned<T>::value)>
 auto read(scan_iterator it, T& value, const format_specs& specs)
     -> scan_iterator {
-  if (specs.type == presentation_type::hex) return read_hex(it, value);
+  if (specs.type() == presentation_type::hex) return read_hex(it, value);
   return read(it, value);
 }
 
@@ -548,31 +553,59 @@ struct scan_handler {
     return begin;
   }
 
-  void on_error(const char* message) { report_error(message); }
+  FMT_NORETURN void on_error(const char* message) { report_error(message); }
 };
 
 void vscan(detail::scan_buffer& buf, string_view fmt, scan_args args) {
   auto h = detail::scan_handler(fmt, buf, args);
-  detail::parse_format_string<false>(fmt, h);
+  detail::parse_format_string(fmt, h);
+}
+
+template <size_t I, typename... T, FMT_ENABLE_IF(I == sizeof...(T))>
+void make_args(std::array<scan_arg, sizeof...(T)>&, std::tuple<T...>&) {}
+
+template <size_t I, typename... T, FMT_ENABLE_IF(I < sizeof...(T))>
+void make_args(std::array<scan_arg, sizeof...(T)>& args,
+               std::tuple<T...>& values) {
+  using element_type = typename std::tuple_element<I, std::tuple<T...>>::type;
+  static_assert(std::is_same<remove_cvref_t<element_type>, element_type>::value,
+                "");
+  args[I] = std::get<I>(values);
+  make_args<I + 1>(args, values);
 }
 }  // namespace detail
 
-template <typename... T>
-auto make_scan_args(T&... args) -> std::array<scan_arg, sizeof...(T)> {
-  return {{args...}};
-}
-
-template <typename... T> class scan_data {
+template <typename Range, typename... T> class scan_data {
  private:
   std::tuple<T...> values_;
+  Range range_;
 
  public:
+  scan_data() = default;
   scan_data(T... values) : values_(std::move(values)...) {}
 
   auto value() const -> decltype(std::get<0>(values_)) {
     return std::get<0>(values_);
   }
+
+  auto values() const -> const std::tuple<T...>& { return values_; }
+
+  auto make_args() -> std::array<scan_arg, sizeof...(T)> {
+    auto args = std::array<scan_arg, sizeof...(T)>();
+    detail::make_args<0>(args, values_);
+    return args;
+  }
+
+  auto range() const -> Range { return range_; }
+
+  auto begin() const -> decltype(range_.begin()) { return range_.begin(); }
+  auto end() const -> decltype(range_.end()) { return range_.end(); }
 };
+
+template <typename... T>
+auto make_scan_args(T&... args) -> std::array<scan_arg, sizeof...(T)> {
+  return {{args...}};
+}
 
 class scan_error {};
 
@@ -580,15 +613,20 @@ class scan_error {};
 template <typename T, typename E> class expected {
  private:
   T value_;
+  bool has_value_ = true;
 
  public:
   expected(T value) : value_(std::move(value)) {}
 
+  explicit operator bool() const { return has_value_; }
+
   auto operator->() const -> const T* { return &value_; }
+
+  auto error() -> E const { return E(); }
 };
 
-template <typename... T>
-using scan_result = expected<scan_data<T...>, scan_error>;
+template <typename Range, typename... T>
+using scan_result = expected<scan_data<Range, T...>, scan_error>;
 
 auto vscan(string_view input, string_view fmt, scan_args args)
     -> string_view::iterator {
@@ -604,12 +642,12 @@ auto scan_to(string_view input, string_view fmt, T&... args)
   return vscan(input, fmt, make_scan_args(args...));
 }
 
-template <typename T>
-auto scan(string_view input, string_view fmt) -> scan_result<T> {
-  static_assert(std::is_same<remove_cvref_t<T>, T>::value, "");
-  auto value = T();
-  scan_to(input, fmt, value);
-  return scan_data<T>(std::move(value));
+template <typename... T>
+auto scan(string_view input, string_view fmt)
+    -> scan_result<string_view, T...> {
+  auto data = scan_data<string_view, T...>();
+  vscan(input, fmt, data.make_args());
+  return data;
 }
 
 template <typename Range, typename... T,

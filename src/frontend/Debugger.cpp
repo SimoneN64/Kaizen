@@ -1,4 +1,5 @@
 #include <Debugger.hpp>
+#include <QGuiApplication>
 
 Debugger::Debugger() : QWidget(nullptr) {
   disassembly = new QDockWidget(this);

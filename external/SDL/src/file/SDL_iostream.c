@@ -33,6 +33,8 @@
 #include <limits.h>
 #endif
 
+#include "SDL_iostream_c.h"
+
 /* This file provides a general interface for SDL to read and write
    data sources.  It can easily be extended to files, memory, etc.
 */

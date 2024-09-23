@@ -22,4 +22,8 @@ Debugger::Debugger() : QWidget(nullptr) {
   verLayout->addLayout(horLayout);
 
   setLayout(verLayout);
+
+  connect(codeView, &QTreeView::activated, this, [&](QModelIndex index) {
+
+  });
 }

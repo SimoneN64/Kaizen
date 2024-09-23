@@ -21,6 +21,10 @@ void Interpreter::CheckCompareInterrupt() {
   }
 }
 
+Disassembler::DisassemblyResult Interpreter::Disassemble(u32 address, u32 instruction) const {
+  return Disassembler::instance().Disassemble(address, instruction);
+}
+
 int Interpreter::Step() {
   CheckCompareInterrupt();
 

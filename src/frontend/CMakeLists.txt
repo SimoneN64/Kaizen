@@ -36,8 +36,7 @@ include_directories(
   ../../external/parallel-rdp/parallel-rdp-standalone/util
   ../../external/unarr
   ../../external/SDL/include
-  ../../external/imgui
-  ../../external/imgui/backends
+  ../../external/capstone/include
 )
 
 option(RAPIDJSON_BUILD_DOC "Build rapidjson documentation." OFF)

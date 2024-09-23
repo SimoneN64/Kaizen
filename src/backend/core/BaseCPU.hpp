@@ -1,6 +1,7 @@
 #pragma once
 #include <Mem.hpp>
 #include <Registers.hpp>
+#include <Disassembler.hpp>
 
 namespace n64 {
 struct BaseCPU {
@@ -13,5 +14,6 @@ struct BaseCPU {
   virtual void Deserialize(const std::vector<u8> &) = 0;
   virtual Mem &GetMem() = 0;
   virtual Registers &GetRegs() = 0;
+  virtual Disassembler::DisassemblyResult Disassemble(u32, u32) const = 0;
 };
 } // namespace n64

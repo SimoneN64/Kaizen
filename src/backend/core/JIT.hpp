@@ -20,6 +20,8 @@ struct JIT : BaseCPU {
 
   Registers &GetRegs() override { return regs; }
 
+  Disassembler::DisassemblyResult Disassemble(u32, u32) const override { return {}; }
+
 private:
   Registers regs;
   Mem mem;

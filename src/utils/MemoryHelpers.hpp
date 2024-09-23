@@ -7,6 +7,16 @@
 
 namespace Util {
 template <typename T>
+static FORCE_INLINE const std::vector<u8> &IntegralToBuffer(const T &val) {
+  std::vector<u8> ret{};
+  ret.resize(sizeof(T));
+
+  memcpy(ret.data(), &val, sizeof(T));
+
+  return ret;
+}
+
+template <typename T>
 static FORCE_INLINE T ReadAccess(const u8 *data, u32 index) {
   if constexpr (sizeof(T) == 8) {
     u32 hi = *reinterpret_cast<const u32 *>(&data[index + 0]);

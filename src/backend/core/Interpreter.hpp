@@ -20,6 +20,7 @@ struct Interpreter : BaseCPU {
   Mem &GetMem() override { return mem; }
 
   Registers &GetRegs() override { return regs; }
+  Disassembler::DisassemblyResult Disassemble(u32, u32) const override;
 
 private:
   Registers regs;

@@ -29,18 +29,18 @@ struct QtInstanceFactory : Vulkan::InstanceFactory {
 
 class QtParallelRdpWindowInfo : public ParallelRDP::WindowInfo {
 public:
-  explicit QtParallelRdpWindowInfo(QWindow *window) : window(window) {}
+  explicit QtParallelRdpWindowInfo(QWindow* window) : window(window) {}
   CoordinatePair get_window_size() override {
     return CoordinatePair{static_cast<float>(window->width()), static_cast<float>(window->height())};
   }
 
 private:
-  QWindow *window;
+  std::shared_ptr<QWindow> window{};
 };
 
 class QtWSIPlatform final : public Vulkan::WSIPlatform {
 public:
-  explicit QtWSIPlatform(QWindow *window) : window(window) {}
+  explicit QtWSIPlatform(QWindow* window) : window(window) {}
 
   std::vector<const char *> get_instance_extensions() override {
     auto vec = std::vector<const char *>();
@@ -53,7 +53,7 @@ public:
   }
 
   VkSurfaceKHR create_surface(VkInstance, VkPhysicalDevice) override {
-    return QVulkanInstance::surfaceForWindow(window);
+    return QVulkanInstance::surfaceForWindow(window.get());
   }
 
   void destroy_surface(VkInstance, VkSurfaceKHR) override {}
@@ -73,7 +73,7 @@ public:
 
   VkApplicationInfo appInfo{.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO, .apiVersion = VK_API_VERSION_1_3};
 
-  QWindow *window;
+  std::shared_ptr<QWindow> window{};
 };
 
 class RenderWidget : public QWidget {

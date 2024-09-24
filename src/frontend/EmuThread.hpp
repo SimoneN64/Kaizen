@@ -16,7 +16,7 @@ public:
 
   [[noreturn]] void run() noexcept override;
 
-  SDL_Gamepad *controller = nullptr;
+  SDL_Gamepad *controller{};
   ParallelRDP parallel;
   n64::Core core;
   SettingsWindow &settings;

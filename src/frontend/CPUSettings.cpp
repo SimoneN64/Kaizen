@@ -1,7 +1,5 @@
 #include <CPUSettings.hpp>
 #include <JSONUtils.hpp>
-#include <QLabel>
-#include <QVBoxLayout>
 #include <log.hpp>
 
 CPUSettings::CPUSettings(nlohmann::json &settings) : settings(settings), QWidget(nullptr) {
@@ -14,7 +12,7 @@ CPUSettings::CPUSettings(nlohmann::json &settings) : settings(settings), QWidget
     cpuTypes->setCurrentIndex(0);
   }
 
-  connect(cpuTypes, &QComboBox::currentIndexChanged, this, [&]() {
+  connect(cpuTypes.get(), &QComboBox::currentIndexChanged, this, [&]() {
     if (cpuTypes->currentIndex() == 0) {
       JSONSetField(settings, "cpu", "type", "interpreter");
       //} else if (cpuTypes->currentIndex() == 1) {
@@ -26,11 +24,8 @@ CPUSettings::CPUSettings(nlohmann::json &settings) : settings(settings), QWidget
     emit modified();
   });
 
-  auto label = new QLabel("CPU type:");
-
-  auto mainLayout = new QVBoxLayout;
-  mainLayout->addWidget(label);
-  mainLayout->addWidget(cpuTypes);
+  mainLayout->addWidget(label.get());
+  mainLayout->addWidget(cpuTypes.get());
   mainLayout->addStretch();
-  setLayout(mainLayout);
+  setLayout(mainLayout.get());
 }

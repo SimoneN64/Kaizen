@@ -1,7 +1,3 @@
-#include <QButtonGroup>
-#include <QFileDialog>
-#include <QGroupBox>
-#include <QVBoxLayout>
 #include <SettingsWindow.hpp>
 #include <fmt/core.h>
 
@@ -18,47 +14,43 @@ SettingsWindow::SettingsWindow() : QWidget(nullptr) {
   resize(500, 400);
   setWindowTitle("Settings");
 
-  cpuSettings = new CPUSettings(settings);
-  audioSettings = new AudioSettings(settings);
-  inputSettings = new InputSettings(settings);
-  generalSettings = new QWidget;
+  cpuSettings = std::make_unique<CPUSettings>(settings);
+  audioSettings = std::make_unique<AudioSettings>(settings);
+  inputSettings = std::make_unique<InputSettings>(settings);
+  generalSettings = std::make_unique<QWidget>();
   keyMap = inputSettings->GetMappedKeys();
 
-  folderLabelPrefix = new QLabel("Save files' path: ");
-  folderLabel = new QLabel(fmt::format("{}", savePath).c_str());
+  folderLabel = std::make_unique<QLabel>(fmt::format("{}", savePath).c_str());
 
-  connect(folderBtn, &QPushButton::pressed, this, [&]() {
+  connect(folderBtn.get(), &QPushButton::pressed, this, [&]() {
     savePath = QFileDialog::getExistingDirectory(this, tr("Select directory")).toStdString();
     folderLabel->setText(fmt::format("{}", savePath).c_str());
     JSONSetField(settings, "general", "savePath", savePath);
     apply->setEnabled(true);
   });
 
-  auto generalLayout = new QHBoxLayout;
-  auto generalLayoutV = new QVBoxLayout;
-  generalLayout->addWidget(folderLabelPrefix);
-  generalLayout->addWidget(folderLabel);
+  generalLayout->addWidget(folderLabelPrefix.get());
+  generalLayout->addWidget(folderLabel.get());
   generalLayout->addStretch();
-  generalLayout->addWidget(folderBtn);
-  generalLayoutV->addLayout(generalLayout);
+  generalLayout->addWidget(folderBtn.get());
+  generalLayoutV->addLayout(generalLayout.get());
   generalLayoutV->addStretch();
-  generalSettings->setLayout(generalLayoutV);
+  generalSettings->setLayout(generalLayoutV.get());
 
-  auto *tabs = new QTabWidget;
-  tabs->addTab(generalSettings, tr("General"));
-  tabs->addTab(cpuSettings, tr("CPU"));
-  tabs->addTab(audioSettings, tr("Audio"));
-  tabs->addTab(inputSettings, tr("Input"));
+  tabs->addTab(generalSettings.get(), tr("General"));
+  tabs->addTab(cpuSettings.get(), tr("CPU"));
+  tabs->addTab(audioSettings.get(), tr("Audio"));
+  tabs->addTab(inputSettings.get(), tr("Input"));
 
   apply->setEnabled(false);
 
-  connect(cpuSettings, &CPUSettings::modified, this, [&]() { apply->setEnabled(true); });
+  connect(cpuSettings.get(), &CPUSettings::modified, this, [&]() { apply->setEnabled(true); });
 
-  connect(audioSettings, &AudioSettings::modified, this, [&]() { apply->setEnabled(true); });
+  connect(audioSettings.get(), &AudioSettings::modified, this, [&]() { apply->setEnabled(true); });
 
-  connect(inputSettings, &InputSettings::modified, this, [&]() { apply->setEnabled(true); });
+  connect(inputSettings.get(), &InputSettings::modified, this, [&]() { apply->setEnabled(true); });
 
-  connect(apply, &QPushButton::pressed, this, [&]() {
+  connect(apply.get(), &QPushButton::pressed, this, [&]() {
     auto newMap = inputSettings->GetMappedKeys();
     if (!std::equal(keyMap.begin(), keyMap.end(), newMap.begin(), newMap.end())) {
       keyMap = newMap;
@@ -70,13 +62,11 @@ SettingsWindow::SettingsWindow() : QWidget(nullptr) {
     file.close();
   });
 
-  connect(cancel, &QPushButton::pressed, this, &QWidget::hide);
+  connect(cancel.get(), &QPushButton::pressed, this, &QWidget::hide);
 
-  QVBoxLayout *mainLayout = new QVBoxLayout;
-  QHBoxLayout *buttonsLayout = new QHBoxLayout;
-  buttonsLayout->addWidget(apply);
-  buttonsLayout->addWidget(cancel);
-  mainLayout->addWidget(tabs);
-  mainLayout->addLayout(buttonsLayout);
-  setLayout(mainLayout);
+  buttonsLayout->addWidget(apply.get());
+  buttonsLayout->addWidget(cancel.get());
+  mainLayout->addWidget(tabs.get());
+  mainLayout->addLayout(buttonsLayout.get());
+  setLayout(mainLayout.get());
 }

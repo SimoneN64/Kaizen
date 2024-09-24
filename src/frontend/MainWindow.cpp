@@ -1,74 +1,67 @@
 #include <MainWindow.hpp>
-#include <QFileDialog>
-#include <QKeyEvent>
-#include <QMessageBox>
-#include <QSlider>
-#include <QMenu>
-#include <QMenuBar>
-#include <QStatusBar>
 
 MainWindow::MainWindow() noexcept {
   if (objectName().isEmpty())
     setObjectName("MainWindow");
   resize(800, 646);
-  actionOpenDebuggerWindow = new QAction(this);
+  actionOpenDebuggerWindow = std::make_unique<QAction>(this);
   actionOpenDebuggerWindow->setObjectName("actionOpenDebuggerWindow");
-  actionAbout = new QAction(this);
+  actionAbout = std::make_unique<QAction>(this);
   actionAbout->setObjectName("actionAbout");
-  actionOpen = new QAction(this);
+  actionOpen = std::make_unique<QAction>(this);
   actionOpen->setObjectName("actionOpen");
-  actionExit = new QAction(this);
+  actionExit = std::make_unique<QAction>(this);
   actionExit->setObjectName("actionExit");
-  actionPause = new QAction(this);
+  actionPause = std::make_unique<QAction>(this);
   actionPause->setObjectName("actionPause");
-  actionReset = new QAction(this);
+  actionReset = std::make_unique<QAction>(this);
   actionReset->setObjectName("actionReset");
-  actionStop = new QAction(this);
+  actionStop = std::make_unique<QAction>(this);
   actionStop->setObjectName("actionStop");
-  actionSettings = new QAction(this);
+  actionSettings = std::make_unique<QAction>(this);
   actionSettings->setObjectName("actionSettings");
-  centralwidget = new QWidget(this);
+  centralwidget = std::make_unique<QWidget>(this);
   centralwidget->setObjectName("centralwidget");
-  verticalLayout = new QVBoxLayout;
+  verticalLayout = std::make_unique<QVBoxLayout>();
   verticalLayout->setSpacing(0);
   verticalLayout->setObjectName("verticalLayout");
   verticalLayout->setContentsMargins(0, 0, 0, 0);
-  vulkanWidget = new RenderWidget;
+  vulkanWidget = std::make_unique<RenderWidget>();
   vulkanWidget->setObjectName("vulkanWidget");
 
-  verticalLayout->addWidget(vulkanWidget);
+  verticalLayout->addWidget(vulkanWidget.get());
 
-  centralwidget->setLayout(verticalLayout);
+  centralwidget->setLayout(verticalLayout.get());
 
-  setCentralWidget(centralwidget);
-  menubar = new QMenuBar(this);
+  setCentralWidget(centralwidget.get());
+  menubar = std::make_unique<QMenuBar>(this);
   menubar->setObjectName("menubar");
   menubar->setGeometry(QRect(0, 0, 800, 22));
-  menuFile = new QMenu(menubar);
+  menuFile = std::make_unique<QMenu>(menubar.get());
   menuFile->setObjectName("menuFile");
-  menuEmulation = new QMenu(menubar);
+  menuEmulation = std::make_unique<QMenu>(menubar.get());
   menuEmulation->setObjectName("menuEmulation");
-  menuTools = new QMenu(menubar);
+  menuTools = std::make_unique<QMenu>(menubar.get());
   menuTools->setObjectName("menuTools");
-  menuAbout = new QMenu(menubar);
+  menuAbout = std::make_unique<QMenu>(menubar.get());
   menuAbout->setObjectName("menuAbout");
-  setMenuBar(menubar);
-  statusbar = new QStatusBar(this);
+  setMenuBar(menubar.get());
+  statusbar = std::make_unique<QStatusBar>(this);
   statusbar->setObjectName("statusbar");
-  setStatusBar(statusbar);
+  setStatusBar(statusbar.get());
 
   menubar->addAction(menuFile->menuAction());
   menubar->addAction(menuEmulation->menuAction());
   menubar->addAction(menuTools->menuAction());
   menubar->addAction(menuAbout->menuAction());
-  menuFile->addAction(actionOpen);
-  menuFile->addAction(actionExit);
-  menuEmulation->addAction(actionSettings);
-  menuEmulation->addAction(actionPause);
-  menuEmulation->addAction(actionReset);
-  menuEmulation->addAction(actionStop);
-  menuTools->addAction(actionOpenDebuggerWindow);
-  menuAbout->addAction(actionAbout);
+  menuFile->addAction(actionOpen.get());
+  menuFile->addAction(actionExit.get());
+  menuEmulation->addAction(actionSettings.get());
+  menuEmulation->addAction(actionPause.get());
+  menuEmulation->addAction(actionReset.get());
+  menuEmulation->addAction(actionStop.get());
+  menuTools->addAction(actionOpenDebuggerWindow.get());
+  menuAbout->addAction(actionAbout.get());
 
   Retranslate();
 
@@ -109,7 +102,7 @@ void MainWindow::Retranslate() {
 } // retranslateUi
 
 void MainWindow::ConnectSignalsToSlots() noexcept {
-  connect(actionOpen, &QAction::triggered, this, [this]() {
+  connect(actionOpen.get(), &QAction::triggered, this, [this]() {
     QString file_name = QFileDialog::getOpenFileName(
       this, "Nintendo 64 executable", QString(),
       "All supported types (*.zip *.ZIP *.7z *.7Z *.rar *.RAR *.tar *.TAR *.n64 *.N64 *.v64 *.V64 *.z64 *.Z64)");
@@ -120,13 +113,13 @@ void MainWindow::ConnectSignalsToSlots() noexcept {
     }
   });
 
-  connect(actionExit, &QAction::triggered, this, [this]() { emit Exit(); });
+  connect(actionExit.get(), &QAction::triggered, this, [this]() { emit Exit(); });
 
   connect(this, &MainWindow::destroyed, this, [this]() { emit Exit(); });
 
-  connect(actionReset, &QAction::triggered, this, [this]() { emit Reset(); });
+  connect(actionReset.get(), &QAction::triggered, this, [this]() { emit Reset(); });
 
-  connect(actionStop, &QAction::triggered, this, [this]() {
+  connect(actionStop.get(), &QAction::triggered, this, [this]() {
     vulkanWidget->hide();
     actionPause->setDisabled(true);
     actionReset->setDisabled(true);
@@ -134,13 +127,13 @@ void MainWindow::ConnectSignalsToSlots() noexcept {
     emit Stop();
   });
 
-  connect(actionPause, &QAction::triggered, this, [this]() {
+  connect(actionPause.get(), &QAction::triggered, this, [this]() {
     textPauseToggle = !textPauseToggle;
     actionPause->setText(textPauseToggle ? "Resume" : "Pause");
     emit Pause();
   });
 
-  connect(actionAbout, &QAction::triggered, this, [this]() {
+  connect(actionAbout.get(), &QAction::triggered, this, [this]() {
     QMessageBox::about(this, tr("About Kaizen"),
                        tr("Kaizen is a Nintendo 64 emulator that strives to offer a friendly user "
                           "experience and great compatibility.\n"
@@ -148,6 +141,6 @@ void MainWindow::ConnectSignalsToSlots() noexcept {
                           "Nintendo 64 is a registered trademarks of Nintendo Co., Ltd."));
   });
 
-  connect(actionSettings, &QAction::triggered, this, [this]() { emit OpenSettings(); });
-  connect(actionOpenDebuggerWindow, &QAction::triggered, this, [this]() { emit OpenDebugger(); });
+  connect(actionSettings.get(), &QAction::triggered, this, [this]() { emit OpenSettings(); });
+  connect(actionOpenDebuggerWindow.get(), &QAction::triggered, this, [this]() { emit OpenDebugger(); });
 }

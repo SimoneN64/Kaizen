@@ -2,6 +2,13 @@
 #include <QApplication>
 #include <QMainWindow>
 #include <QVBoxLayout>
+#include <QFileDialog>
+#include <QKeyEvent>
+#include <QMessageBox>
+#include <QSlider>
+#include <QMenu>
+#include <QMenuBar>
+#include <QStatusBar>
 #include <RenderWidget.hpp>
 #include <Debugger.hpp>
 
@@ -11,23 +18,23 @@ class MainWindow : public QMainWindow {
 public:
   MainWindow() noexcept;
 
-  QAction *actionOpenDebuggerWindow;
-  QAction *actionAbout;
-  QAction *actionOpen;
-  QAction *actionExit;
-  QAction *actionPause;
-  QAction *actionReset;
-  QAction *actionStop;
-  QAction *actionSettings;
-  QWidget *centralwidget;
-  QVBoxLayout *verticalLayout;
-  RenderWidget *vulkanWidget;
-  QMenuBar *menubar;
-  QMenu *menuFile;
-  QMenu *menuEmulation;
-  QMenu *menuTools;
-  QMenu *menuAbout;
-  QStatusBar *statusbar;
+  std::unique_ptr<QAction> actionOpenDebuggerWindow{};
+  std::unique_ptr<QAction> actionAbout{};
+  std::unique_ptr<QAction> actionOpen{};
+  std::unique_ptr<QAction> actionExit{};
+  std::unique_ptr<QAction> actionPause{};
+  std::unique_ptr<QAction> actionReset{};
+  std::unique_ptr<QAction> actionStop{};
+  std::unique_ptr<QAction> actionSettings{};
+  std::unique_ptr<QWidget> centralwidget{};
+  std::unique_ptr<QVBoxLayout> verticalLayout{};
+  std::unique_ptr<RenderWidget> vulkanWidget{};
+  std::unique_ptr<QMenuBar> menubar{};
+  std::unique_ptr<QMenu> menuFile{};
+  std::unique_ptr<QMenu> menuEmulation{};
+  std::unique_ptr<QMenu> menuTools{};
+  std::unique_ptr<QMenu> menuAbout{};
+  std::unique_ptr<QStatusBar> statusbar{};
 
 private:
   void Retranslate();

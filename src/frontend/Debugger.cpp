@@ -1,29 +1,23 @@
 #include <Debugger.hpp>
-#include <QGuiApplication>
 
 Debugger::Debugger() : QWidget(nullptr) {
-  disassembly = new QDockWidget;
   disassembly->setWindowTitle("Disassembly");
   disassembly->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
-  codeView = new QTreeView(disassembly);
   codeView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   codeView->setHeaderHidden(true);
-  cpuState = new QDockWidget;
+  codeView->setModel(codeModel.get());
   cpuState->setWindowTitle("Registers");
   cpuState->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
-  registers = new QTreeView(cpuState);
   registers->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-  horLayout = new QHBoxLayout;
-  horLayout->addWidget(disassembly);
-  horLayout->addWidget(cpuState);
+  horLayout->addWidget(disassembly.get());
+  horLayout->addWidget(cpuState.get());
 
-  verLayout = new QVBoxLayout;
-  verLayout->addLayout(horLayout);
+  verLayout->addLayout(horLayout.get());
 
-  setLayout(verLayout);
+  setLayout(verLayout.get());
 
-  connect(codeView, &QTreeView::activated, this, [&](QModelIndex index) {
+  connect(codeView.get(), &QTreeView::activated, this, [&](QModelIndex index) {
 
   });
 }

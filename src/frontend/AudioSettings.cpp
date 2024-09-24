@@ -1,6 +1,4 @@
 #include <AudioSettings.hpp>
-#include <QLabel>
-#include <QVBoxLayout>
 
 AudioSettings::AudioSettings(nlohmann::json &settings) : settings(settings), QWidget(nullptr) {
   lockChannels->setChecked(JSONGetField<bool>(settings, "audio", "lock"));
@@ -9,7 +7,7 @@ AudioSettings::AudioSettings(nlohmann::json &settings) : settings(settings), QWi
   volumeL->setRange(0, 100);
   volumeR->setRange(0, 100);
 
-  connect(lockChannels, &QCheckBox::stateChanged, this, [&]() {
+  connect(lockChannels.get(), &QCheckBox::stateChanged, this, [&]() {
     JSONSetField(settings, "audio", "lock", lockChannels->isChecked());
     if (lockChannels->isChecked()) {
       volumeR->setValue(volumeL->value());
@@ -18,7 +16,7 @@ AudioSettings::AudioSettings(nlohmann::json &settings) : settings(settings), QWi
     emit modified();
   });
 
-  connect(volumeL, &QSlider::valueChanged, this, [&]() {
+  connect(volumeL.get(), &QSlider::valueChanged, this, [&]() {
     JSONSetField(settings, "audio", "volumeL", float(volumeL->value()) / 100.f);
     if (lockChannels->isChecked()) {
       volumeR->setValue(volumeL->value());
@@ -27,26 +25,20 @@ AudioSettings::AudioSettings(nlohmann::json &settings) : settings(settings), QWi
     emit modified();
   });
 
-  connect(volumeR, &QSlider::valueChanged, this, [&]() {
+  connect(volumeR.get(), &QSlider::valueChanged, this, [&]() {
     if (!lockChannels->isChecked()) {
       JSONSetField(settings, "audio", "volumeR", float(volumeR->value()) / 100.f);
     }
     emit modified();
   });
 
-  auto labelLock = new QLabel("Lock channels:");
-  auto labelL = new QLabel("Volume L");
-  auto labelR = new QLabel("Volume R");
-
-  auto mainLayout = new QVBoxLayout;
-  auto volLayout = new QHBoxLayout;
-  mainLayout->addWidget(labelLock);
-  mainLayout->addWidget(lockChannels);
-  volLayout->addWidget(labelL);
-  volLayout->addWidget(volumeL);
-  volLayout->addWidget(labelR);
-  volLayout->addWidget(volumeR);
-  mainLayout->addLayout(volLayout);
+  mainLayout->addWidget(labelLock.get());
+  mainLayout->addWidget(lockChannels.get());
+  volLayout->addWidget(labelL.get());
+  volLayout->addWidget(volumeL.get());
+  volLayout->addWidget(labelR.get());
+  volLayout->addWidget(volumeR.get());
+  mainLayout->addLayout(volLayout.get());
   mainLayout->addStretch();
-  setLayout(mainLayout);
+  setLayout(mainLayout.get());
 }

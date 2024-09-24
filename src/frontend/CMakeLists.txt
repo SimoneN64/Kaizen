@@ -78,7 +78,8 @@ add_executable(kaizen-qt
   InputSettings.hpp
   InputSettings.cpp
   Debugger.hpp
-  Debugger.cpp)
+  Debugger.cpp
+  CodeModel.hpp)
 
 include(CheckCCompilerFlag)
 

@@ -357,7 +357,8 @@ bool WSI::init_context_from_platform(InstanceFactory* instanceFactory, unsigned 
 	new_context->set_application_info(platform->get_application_info());
 	new_context->set_num_thread_indices(num_thread_indices);
 	new_context->set_system_handles(system_handles);
-  new_context->set_instance_factory(instanceFactory);
+  if(instanceFactory)
+  	new_context->set_instance_factory(instanceFactory);
 
 	if (!new_context->init_instance(
 			instance_ext.data(), instance_ext.size(),

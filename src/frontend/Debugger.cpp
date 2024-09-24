@@ -17,7 +17,5 @@ Debugger::Debugger() : QWidget(nullptr) {
 
   setLayout(verLayout.get());
 
-  connect(codeView.get(), &QTreeView::activated, this, [&](QModelIndex index) {
-
-  });
+  // connect(codeView.get(), &QTreeView::activated, this, );
 }

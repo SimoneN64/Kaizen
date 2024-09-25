@@ -3,6 +3,7 @@
 #include <EmuThread.hpp>
 #include <MainWindow.hpp>
 #include <SettingsWindow.hpp>
+#include <log.hpp>
 
 enum class CompositorCategory { Windows, MacOS, XCB, Wayland };
 
@@ -39,4 +40,5 @@ private:
   std::unique_ptr<SettingsWindow> settingsWindow;
   std::unique_ptr<EmuThread> emuThread;
   std::unique_ptr<Debugger> debugger;
+  std::shared_ptr<n64::Core> core;
 };

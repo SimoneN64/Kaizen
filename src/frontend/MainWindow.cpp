@@ -1,6 +1,6 @@
 #include <MainWindow.hpp>
 
-MainWindow::MainWindow() noexcept {
+MainWindow::MainWindow(const std::shared_ptr<n64::Core> &core) noexcept {
   if (objectName().isEmpty())
     setObjectName("MainWindow");
   resize(800, 646);
@@ -26,7 +26,7 @@ MainWindow::MainWindow() noexcept {
   verticalLayout->setSpacing(0);
   verticalLayout->setObjectName("verticalLayout");
   verticalLayout->setContentsMargins(0, 0, 0, 0);
-  vulkanWidget = std::make_unique<RenderWidget>();
+  vulkanWidget = std::make_unique<RenderWidget>(core);
   vulkanWidget->setObjectName("vulkanWidget");
 
   verticalLayout->addWidget(vulkanWidget.get());

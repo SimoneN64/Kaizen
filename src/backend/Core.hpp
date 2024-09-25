@@ -1,14 +1,12 @@
 #pragma once
+#include <ParallelRDPWrapper.hpp>
 #include <backend/core/Interpreter.hpp>
 #include <backend/core/JIT.hpp>
 #include <string>
 
-struct Window;
-struct Event;
-
 namespace n64 {
 struct Core {
-  explicit Core(ParallelRDP &);
+  explicit Core();
   void Stop();
   void LoadROM(const std::string &);
   [[nodiscard]] bool LoadTAS(const fs::path &) const;
@@ -29,5 +27,6 @@ struct Core {
   std::vector<u8> serialized[10]{};
   size_t memSize{}, cpuSize{}, verSize{};
   int slot = 0;
+  ParallelRDP parallel;
 };
 } // namespace n64

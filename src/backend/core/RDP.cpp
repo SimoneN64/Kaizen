@@ -2,6 +2,7 @@
 #include <core/RSP.hpp>
 #include <log.hpp>
 #include <parallel-rdp/ParallelRDPWrapper.hpp>
+#include <core/Mem.hpp>
 
 namespace n64 {
 RDP::RDP(Mem &mem, ParallelRDP &parallel) : mem(mem), parallel(parallel) {

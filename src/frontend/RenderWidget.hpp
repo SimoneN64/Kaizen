@@ -4,6 +4,11 @@
 #include <QVulkanWindow>
 #include <QWidget>
 #include <QWindow>
+#include <SDL3/SDL_gamepad.h>
+
+namespace n64 {
+struct Core;
+}
 
 struct QtInstanceFactory : Vulkan::InstanceFactory {
   VkInstance create_instance(const VkInstanceCreateInfo *info) override {
@@ -29,7 +34,7 @@ struct QtInstanceFactory : Vulkan::InstanceFactory {
 
 class QtParallelRdpWindowInfo : public ParallelRDP::WindowInfo {
 public:
-  explicit QtParallelRdpWindowInfo(QWindow* window) : window(window) {}
+  explicit QtParallelRdpWindowInfo(QWindow *window) : window(window) {}
   CoordinatePair get_window_size() override {
     return CoordinatePair{static_cast<float>(window->width()), static_cast<float>(window->height())};
   }
@@ -40,7 +45,7 @@ private:
 
 class QtWSIPlatform final : public Vulkan::WSIPlatform {
 public:
-  explicit QtWSIPlatform(QWindow* window) : window(window) {}
+  explicit QtWSIPlatform(const std::shared_ptr<n64::Core> &core, QWindow *window) : window(window), core(core) {}
 
   std::vector<const char *> get_instance_extensions() override {
     auto vec = std::vector<const char *>();
@@ -64,7 +69,7 @@ public:
 
   bool alive(Vulkan::WSI &) override { return true; }
 
-  void poll_input() override {}
+  void poll_input() override;
   void poll_input_async(Granite::InputTrackerHandler *handler) override {}
 
   void event_frame_tick(double frame, double elapsed) override {}
@@ -74,15 +79,19 @@ public:
   VkApplicationInfo appInfo{.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO, .apiVersion = VK_API_VERSION_1_3};
 
   std::shared_ptr<QWindow> window{};
+
+private:
+  std::shared_ptr<n64::Core> core;
+  SDL_Gamepad *gamepad{};
+  bool gamepadConnected = false;
 };
 
 class RenderWidget : public QWidget {
 public:
   [[nodiscard]] VkInstance instance() const { return qtVkInstanceFactory->handle.vkInstance(); }
-  explicit RenderWidget();
+  explicit RenderWidget(const std::shared_ptr<n64::Core> &);
 
   [[nodiscard]] QPaintEngine *paintEngine() const override { return nullptr; }
-
   std::shared_ptr<ParallelRDP::WindowInfo> windowInfo;
   std::shared_ptr<Vulkan::WSIPlatform> wsiPlatform;
   std::shared_ptr<QtInstanceFactory> qtVkInstanceFactory;

@@ -3,7 +3,7 @@
 #include <Scheduler.hpp>
 
 namespace n64 {
-Core::Core(ParallelRDP &parallel) : cpu(std::make_unique<Interpreter>(parallel)) {}
+Core::Core() : cpu(std::make_unique<Interpreter>(parallel)) {}
 
 void Core::Stop() {
   render = false;
@@ -106,15 +106,15 @@ void Core::Serialize() {
 }
 
 void Core::Deserialize() {
-  std::vector<u8> dVER(serialized[slot].begin(), serialized[slot].begin() + verSize);
+  std::vector dVER(serialized[slot].begin(), serialized[slot].begin() + verSize);
   if (dVER[0] != (KAIZEN_VERSION >> 8) || dVER[1] != (KAIZEN_VERSION >> 4) || dVER[2] != (KAIZEN_VERSION & 0xFF)) {
     Util::panic("PROBLEMI!");
   }
 
   cpu->GetMem().Deserialize(
-    std::vector<u8>(serialized[slot].begin() + verSize, serialized[slot].begin() + verSize + memSize));
-  cpu->Deserialize(std::vector<u8>(serialized[slot].begin() + verSize + memSize,
-                                   serialized[slot].begin() + verSize + memSize + cpuSize));
+    std::vector(serialized[slot].begin() + verSize, serialized[slot].begin() + verSize + memSize));
+  cpu->Deserialize(
+    std::vector(serialized[slot].begin() + verSize + memSize, serialized[slot].begin() + verSize + memSize + cpuSize));
   serialized[slot].erase(serialized[slot].begin(), serialized[slot].end());
 }
 } // namespace n64

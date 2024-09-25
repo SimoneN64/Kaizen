@@ -16,7 +16,7 @@ class MainWindow : public QMainWindow {
   Q_OBJECT
 
 public:
-  MainWindow() noexcept;
+  MainWindow(const std::shared_ptr<n64::Core> &) noexcept;
 
   std::unique_ptr<QAction> actionOpenDebuggerWindow{};
   std::unique_ptr<QAction> actionAbout{};

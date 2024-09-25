@@ -2,6 +2,7 @@
 #include <ParallelRDPWrapper.hpp>
 #include <memory>
 #include <rdp_device.hpp>
+#include <core/mmio/VI.hpp>
 
 using namespace Vulkan;
 using namespace RDP;

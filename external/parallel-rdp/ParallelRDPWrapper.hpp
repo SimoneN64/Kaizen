@@ -1,8 +1,11 @@
 #pragma once
-#include <backend/Core.hpp>
 #include <rdp_device.hpp>
 #include <wsi.hpp>
-#include <SDL3/SDL.h>
+#include <common.hpp>
+
+namespace n64 {
+struct VI;
+}
 
 class ParallelRDP {
 public:

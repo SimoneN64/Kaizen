@@ -1,16 +1,17 @@
+#include <Core.hpp>
 #include <KaizenQt.hpp>
 #include <QApplication>
 #include <QDropEvent>
 #include <QMessageBox>
 #include <QMimeData>
-#include <filesystem>
 
 namespace fs = std::filesystem;
 
 KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
-  mainWindow = std::make_unique<MainWindow>();
+  core = std::make_shared<n64::Core>();
+  mainWindow = std::make_unique<MainWindow>(core);
   settingsWindow = std::make_unique<SettingsWindow>();
-  emuThread = std::make_unique<EmuThread>(*mainWindow->vulkanWidget, *settingsWindow);
+  emuThread = std::make_unique<EmuThread>(core, *mainWindow->vulkanWidget, *settingsWindow);
   debugger = std::make_unique<Debugger>();
 
   ConnectMainWindowSignalsToSlots();
@@ -53,9 +54,9 @@ void KaizenQt::LoadROM(const QString &fileName) noexcept {
   mainWindow->actionReset->setEnabled(true);
   mainWindow->actionStop->setEnabled(true);
   emuThread->start();
-  emuThread->core.LoadROM(fileName.toStdString());
-  auto gameNameDB = emuThread->core.cpu->GetMem().rom.gameNameDB;
-  mainWindow->setWindowTitle(emuThread->core.cpu->GetMem().rom.gameNameDB.c_str());
+  emuThread->core->LoadROM(fileName.toStdString());
+  auto gameNameDB = emuThread->core->cpu->GetMem().rom.gameNameDB;
+  mainWindow->setWindowTitle(emuThread->core->cpu->GetMem().rom.gameNameDB.c_str());
   Util::RPC::GetInstance().Update(Util::RPC::Playing, gameNameDB);
 }
 
@@ -69,15 +70,19 @@ void KaizenQt::Quit() noexcept {
 }
 
 void KaizenQt::LoadTAS(const QString &fileName) const noexcept {
-  emuThread->core.LoadTAS(fs::path(fileName.toStdString()));
-  auto gameNameDB = emuThread->core.cpu->GetMem().rom.gameNameDB;
-  auto movieName = fs::path(fileName.toStdString()).stem().string();
-  Util::RPC::GetInstance().Update(Util::RPC::MovieReplay, gameNameDB, movieName);
+  if (emuThread->core->LoadTAS(fs::path(fileName.toStdString()))) {
+    auto gameNameDB = emuThread->core->cpu->GetMem().rom.gameNameDB;
+    auto movieName = fs::path(fileName.toStdString()).stem().string();
+    Util::RPC::GetInstance().Update(Util::RPC::MovieReplay, gameNameDB, movieName);
+    return;
+  }
+
+  Util::panic("Could not load TAS movie {}!", fileName.toStdString());
 }
 
 void KaizenQt::keyPressEvent(QKeyEvent *e) {
-  emuThread->core.pause = true;
-  n64::Mem &mem = emuThread->core.cpu->GetMem();
+  emuThread->core->pause = true;
+  n64::Mem &mem = emuThread->core->cpu->GetMem();
   n64::PIF &pif = mem.mmio.si.pif;
 
   auto k = static_cast<Qt::Key>(e->key());
@@ -95,13 +100,13 @@ void KaizenQt::keyPressEvent(QKeyEvent *e) {
   if (k == settingsWindow->keyMap[17])
     pif.UpdateAxis(0, n64::Controller::Axis::X, 86);
 
-  emuThread->core.pause = false;
+  emuThread->core->pause = false;
   QWidget::keyPressEvent(e);
 }
 
 void KaizenQt::keyReleaseEvent(QKeyEvent *e) {
-  emuThread->core.pause = true;
-  n64::Mem &mem = emuThread->core.cpu->GetMem();
+  emuThread->core->pause = true;
+  n64::Mem &mem = emuThread->core->cpu->GetMem();
   n64::PIF &pif = mem.mmio.si.pif;
 
   auto k = static_cast<Qt::Key>(e->key());
@@ -119,6 +124,6 @@ void KaizenQt::keyReleaseEvent(QKeyEvent *e) {
   if (k == settingsWindow->keyMap[17])
     pif.UpdateAxis(0, n64::Controller::Axis::X, 0);
 
-  emuThread->core.pause = false;
+  emuThread->core->pause = false;
   QWidget::keyReleaseEvent(e);
 }

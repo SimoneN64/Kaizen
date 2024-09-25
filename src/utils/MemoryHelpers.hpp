@@ -91,37 +91,23 @@ static FORCE_INLINE void WriteAccess(u8 *data, const u32 index, const T val) {
   }
 }
 
-FORCE_INLINE void SwapBuffer32(std::vector<u8> &data) {
-  for (size_t i = 0; i < data.size(); i += 4) {
-    const u32 original = *reinterpret_cast<u32 *>(&data[i]);
-    *reinterpret_cast<u32 *>(&data[i]) = bswap(original);
+template <typename T>
+static FORCE_INLINE void SwapBuffer(std::vector<u8> &data) {
+  for (size_t i = 0; i < data.size(); i += sizeof(T)) {
+    const T original = *reinterpret_cast<T *>(&data[i]);
+    *reinterpret_cast<T *>(&data[i]) = bswap(original);
   }
 }
 
-FORCE_INLINE void SwapBuffer16(std::vector<u8> &data) {
-  for (size_t i = 0; i < data.size(); i += 2) {
-    const u16 original = *reinterpret_cast<u16 *>(&data[i]);
-    *reinterpret_cast<u16 *>(&data[i]) = bswap(original);
+template <typename T, size_t Size>
+static FORCE_INLINE void SwapBuffer(std::array<u8, Size> &data) {
+  for (size_t i = 0; i < data.size(); i += sizeof(T)) {
+    const T original = *reinterpret_cast<T *>(&data[i]);
+    *reinterpret_cast<T *>(&data[i]) = bswap(original);
   }
 }
 
-template <size_t Size>
-FORCE_INLINE void SwapBuffer32(std::array<u8, Size> &data) {
-  for (size_t i = 0; i < Size; i += 4) {
-    const u32 original = *static_cast<u32 *>(&data[i]);
-    *static_cast<u32 *>(&data[i]) = bswap(original);
-  }
-}
-
-template <size_t Size>
-FORCE_INLINE void SwapBuffer16(std::array<u8, Size> &data) {
-  for (size_t i = 0; i < Size; i += 2) {
-    const u16 original = *static_cast<u16 *>(&data[i]);
-    *static_cast<u16 *>(&data[i]) = bswap(original);
-  }
-}
-
-FORCE_INLINE u32 crc32(u32 crc, const u8 *buf, const size_t len) {
+static FORCE_INLINE u32 crc32(u32 crc, const u8 *buf, const size_t len) {
   static u32 table[256];
   static int have_table = 0;
 

@@ -109,21 +109,21 @@ struct Mem {
     std::vector<u8> temp{};
     temp.resize(RDRAM_SIZE);
     std::copy(mmio.rdp.rdram.begin(), mmio.rdp.rdram.end(), temp.begin());
-    Util::SwapBuffer32(temp);
+    Util::SwapBuffer<u32>(temp);
     Util::WriteFileBinary(temp, "rdram.bin");
   }
 
   FORCE_INLINE void DumpIMEM() const {
     std::array<u8, IMEM_SIZE> temp{};
     std::copy(mmio.rsp.imem.begin(), mmio.rsp.imem.end(), temp.begin());
-    Util::SwapBuffer32(temp);
+    Util::SwapBuffer<u32>(temp);
     Util::WriteFileBinary(temp, "imem.bin");
   }
 
   FORCE_INLINE void DumpDMEM() const {
     std::array<u8, DMEM_SIZE> temp{};
     std::copy(mmio.rsp.dmem.begin(), mmio.rsp.dmem.end(), temp.begin());
-    Util::SwapBuffer32(temp);
+    Util::SwapBuffer<u32>(temp);
     Util::WriteFileBinary(temp, "dmem.bin");
   }
   ROM rom;

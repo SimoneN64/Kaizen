@@ -3,11 +3,11 @@
 #include <cstring>
 #include <functional>
 #include <log.hpp>
-#include <portable_endian_bswap.h>
+#include <byteswap.hpp>
 
 namespace Util {
 template <typename T>
-static FORCE_INLINE const std::vector<u8> &IntegralToBuffer(const T &val) {
+static FORCE_INLINE std::vector<u8> IntegralToBuffer(const T &val) {
   std::vector<u8> ret{};
   ret.resize(sizeof(T));
 
@@ -17,11 +17,11 @@ static FORCE_INLINE const std::vector<u8> &IntegralToBuffer(const T &val) {
 }
 
 template <typename T>
-static FORCE_INLINE T ReadAccess(const u8 *data, u32 index) {
+static FORCE_INLINE T ReadAccess(const u8 *data, const u32 index) {
   if constexpr (sizeof(T) == 8) {
     u32 hi = *reinterpret_cast<const u32 *>(&data[index + 0]);
     u32 lo = *reinterpret_cast<const u32 *>(&data[index + 4]);
-    T result = ((T)hi << 32) | (T)lo;
+    const T result = static_cast<T>(hi) << 32 | static_cast<T>(lo);
     return result;
   } else {
     return *reinterpret_cast<const T *>(&data[index]);
@@ -29,11 +29,11 @@ static FORCE_INLINE T ReadAccess(const u8 *data, u32 index) {
 }
 
 template <typename T>
-static FORCE_INLINE T ReadAccess(const std::vector<u8> &data, u32 index) {
+static FORCE_INLINE T ReadAccess(const std::vector<u8> &data, const u32 index) {
   if constexpr (sizeof(T) == 8) {
     u32 hi = *reinterpret_cast<const u32 *>(&data[index + 0]);
     u32 lo = *reinterpret_cast<const u32 *>(&data[index + 4]);
-    T result = ((T)hi << 32) | (T)lo;
+    const T result = (static_cast<T>(hi) << 32) | static_cast<T>(lo);
     return result;
   } else {
     return *reinterpret_cast<const T *>(&data[index]);
@@ -41,11 +41,11 @@ static FORCE_INLINE T ReadAccess(const std::vector<u8> &data, u32 index) {
 }
 
 template <typename T, size_t Size>
-static FORCE_INLINE T ReadAccess(const std::array<u8, Size> &data, u32 index) {
+static FORCE_INLINE T ReadAccess(const std::array<u8, Size> &data, const u32 index) {
   if constexpr (sizeof(T) == 8) {
     u32 hi = *reinterpret_cast<const u32 *>(&data[index + 0]);
     u32 lo = *reinterpret_cast<const u32 *>(&data[index + 4]);
-    T result = ((T)hi << 32) | (T)lo;
+    const T result = static_cast<T>(hi) << 32 | static_cast<T>(lo);
     return result;
   } else {
     return *reinterpret_cast<const T *>(&data[index]);
@@ -53,10 +53,10 @@ static FORCE_INLINE T ReadAccess(const std::array<u8, Size> &data, u32 index) {
 }
 
 template <typename T, size_t Size>
-static FORCE_INLINE void WriteAccess(std::array<u8, Size> &data, u32 index, T val) {
+static FORCE_INLINE void WriteAccess(std::array<u8, Size> &data, const u32 index, const T val) {
   if constexpr (sizeof(T) == 8) {
-    u32 hi = val >> 32;
-    u32 lo = val;
+    const u32 hi = val >> 32;
+    const u32 lo = val;
 
     *reinterpret_cast<u32 *>(&data[index + 0]) = hi;
     *reinterpret_cast<u32 *>(&data[index + 4]) = lo;
@@ -66,10 +66,10 @@ static FORCE_INLINE void WriteAccess(std::array<u8, Size> &data, u32 index, T va
 }
 
 template <typename T>
-static FORCE_INLINE void WriteAccess(std::vector<u8> &data, u32 index, T val) {
+static FORCE_INLINE void WriteAccess(std::vector<u8> &data, const u32 index, const T val) {
   if constexpr (sizeof(T) == 8) {
-    u32 hi = val >> 32;
-    u32 lo = val;
+    const u32 hi = val >> 32;
+    const u32 lo = val;
 
     *reinterpret_cast<u32 *>(&data[index + 0]) = hi;
     *reinterpret_cast<u32 *>(&data[index + 4]) = lo;
@@ -79,10 +79,10 @@ static FORCE_INLINE void WriteAccess(std::vector<u8> &data, u32 index, T val) {
 }
 
 template <typename T>
-static FORCE_INLINE void WriteAccess(u8 *data, u32 index, T val) {
+static FORCE_INLINE void WriteAccess(u8 *data, const u32 index, const T val) {
   if constexpr (sizeof(T) == 8) {
-    u32 hi = val >> 32;
-    u32 lo = val;
+    const u32 hi = val >> 32;
+    const u32 lo = val;
 
     *reinterpret_cast<u32 *>(&data[index + 0]) = hi;
     *reinterpret_cast<u32 *>(&data[index + 4]) = lo;
@@ -93,43 +93,41 @@ static FORCE_INLINE void WriteAccess(u8 *data, u32 index, T val) {
 
 FORCE_INLINE void SwapBuffer32(std::vector<u8> &data) {
   for (size_t i = 0; i < data.size(); i += 4) {
-    u32 original = *(u32 *)&data[i];
-    *(u32 *)&data[i] = bswap_32(original);
+    const u32 original = *reinterpret_cast<u32 *>(&data[i]);
+    *reinterpret_cast<u32 *>(&data[i]) = bswap(original);
   }
 }
 
 FORCE_INLINE void SwapBuffer16(std::vector<u8> &data) {
   for (size_t i = 0; i < data.size(); i += 2) {
-    u16 original = *(u16 *)&data[i];
-    *(u16 *)&data[i] = bswap_16(original);
+    const u16 original = *reinterpret_cast<u16 *>(&data[i]);
+    *reinterpret_cast<u16 *>(&data[i]) = bswap(original);
   }
 }
 
 template <size_t Size>
 FORCE_INLINE void SwapBuffer32(std::array<u8, Size> &data) {
   for (size_t i = 0; i < Size; i += 4) {
-    u32 original = *(u32 *)&data[i];
-    *(u32 *)&data[i] = bswap_32(original);
+    const u32 original = *static_cast<u32 *>(&data[i]);
+    *static_cast<u32 *>(&data[i]) = bswap(original);
   }
 }
 
 template <size_t Size>
 FORCE_INLINE void SwapBuffer16(std::array<u8, Size> &data) {
   for (size_t i = 0; i < Size; i += 2) {
-    u16 original = *(u16 *)&data[i];
-    *(u16 *)&data[i] = bswap_16(original);
+    const u16 original = *static_cast<u16 *>(&data[i]);
+    *static_cast<u16 *>(&data[i]) = bswap(original);
   }
 }
 
-FORCE_INLINE u32 crc32(u32 crc, const u8 *buf, size_t len) {
+FORCE_INLINE u32 crc32(u32 crc, const u8 *buf, const size_t len) {
   static u32 table[256];
   static int have_table = 0;
-  u32 rem;
-  u8 octet;
 
   if (have_table == 0) {
     for (int i = 0; i < 256; i++) {
-      rem = i;
+      u32 rem = i;
       for (int j = 0; j < 8; j++) {
         if (rem & 1) {
           rem >>= 1;
@@ -144,18 +142,20 @@ FORCE_INLINE u32 crc32(u32 crc, const u8 *buf, size_t len) {
 
   crc = ~crc;
   for (int i = 0; i < len; i++) {
-    octet = buf[i]; /* Cast to unsigned octet. */
+    const u8 octet = buf[i]; /* Cast to unsigned octet. */
     crc = (crc >> 8) ^ table[(crc & 0xff) ^ octet];
   }
   return ~crc;
 }
 
 #ifdef _WIN32
-FORCE_INLINE void *aligned_alloc(size_t alignment, size_t size) { return _aligned_malloc(size, alignment); }
+FORCE_INLINE void *aligned_alloc(const size_t alignment, const size_t size) { return _aligned_malloc(size, alignment); }
 
 FORCE_INLINE void aligned_free(void *ptr) { _aligned_free(ptr); }
 #else
-FORCE_INLINE void *aligned_alloc(size_t alignment, size_t size) { return std::aligned_alloc(alignment, size); }
+FORCE_INLINE void *aligned_alloc(const size_t alignment, const size_t size) {
+  return std::aligned_alloc(alignment, size);
+}
 
 FORCE_INLINE void aligned_free(void *ptr) { std::free(ptr); }
 #endif

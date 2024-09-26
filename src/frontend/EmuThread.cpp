@@ -4,7 +4,7 @@
 EmuThread::EmuThread(const std::shared_ptr<n64::Core> &core, RenderWidget &renderWidget,
                      SettingsWindow &settings) noexcept : renderWidget(renderWidget), core(core), settings(settings) {}
 
-[[noreturn]] void EmuThread::run() noexcept {
+void EmuThread::run() noexcept {
   core->parallel.Init(renderWidget.qtVkInstanceFactory, renderWidget.wsiPlatform, renderWidget.windowInfo,
                       core->cpu->GetMem().GetRDRAMPtr());
 

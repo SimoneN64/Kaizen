@@ -16,7 +16,7 @@ class EmuThread : public QThread {
 public:
   explicit EmuThread(const std::shared_ptr<n64::Core> &, RenderWidget &, SettingsWindow &) noexcept;
 
-  [[noreturn]] void run() noexcept override;
+  void run() noexcept override;
   void TogglePause() const noexcept;
   void SetRender(bool v) const noexcept;
   void Reset() const noexcept;

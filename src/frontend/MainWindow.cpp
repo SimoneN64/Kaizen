@@ -120,6 +120,7 @@ void MainWindow::ConnectSignalsToSlots() noexcept {
   connect(actionReset.get(), &QAction::triggered, this, [this]() { emit Reset(); });
 
   connect(actionStop.get(), &QAction::triggered, this, [this]() {
+    setWindowTitle("Kaizen");
     vulkanWidget->hide();
     actionPause->setDisabled(true);
     actionReset->setDisabled(true);

@@ -2,8 +2,6 @@
 #include <core/Mem.hpp>
 #include <core/registers/Registers.hpp>
 
-Scheduler scheduler;
-
 void Scheduler::EnqueueRelative(u64 t, const EventType type) { EnqueueAbsolute(t + ticks, type); }
 
 void Scheduler::EnqueueAbsolute(u64 t, const EventType type) { events.push({t, type}); }

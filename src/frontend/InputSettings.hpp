@@ -5,10 +5,16 @@
 #include <QWidget>
 #include <QKeyEvent>
 #include <QVBoxLayout>
+#include <QComboBox>
+#include <QTimer>
 
 class InputSettings : public QWidget {
   bool grabbing = false;
-  int which_grabbing = -1;
+  int whichGrabbing = -1;
+
+  void QueryDevices() noexcept;
+
+  std::unordered_map<u32, std::string> gamepadIndexes{};
 
   std::unique_ptr<QHBoxLayout> AB = std::make_unique<QHBoxLayout>();
   std::unique_ptr<QHBoxLayout> ZStart = std::make_unique<QHBoxLayout>();
@@ -20,8 +26,12 @@ class InputSettings : public QWidget {
   std::unique_ptr<QHBoxLayout> AupAdown = std::make_unique<QHBoxLayout>();
   std::unique_ptr<QHBoxLayout> AleftAright = std::make_unique<QHBoxLayout>();
   std::unique_ptr<QVBoxLayout> mainLayout = std::make_unique<QVBoxLayout>();
-  std::array<std::unique_ptr<QPushButton>, 18> kb_buttons;
-  std::array<std::unique_ptr<QLabel>, 18> n64_button_labels;
+  std::array<std::unique_ptr<QPushButton>, 18> kbButtons;
+  std::array<std::unique_ptr<QLabel>, 18> buttonLabels;
+  std::unique_ptr<QHBoxLayout> deviceComboBoxLayout = std::make_unique<QHBoxLayout>();
+  QTimer refresh;
+  std::unique_ptr<QLabel> devicesLabel = std::make_unique<QLabel>("Device:");
+  std::unique_ptr<QComboBox> devices = std::make_unique<QComboBox>();
   Q_OBJECT
 public:
   InputSettings(nlohmann::json &);

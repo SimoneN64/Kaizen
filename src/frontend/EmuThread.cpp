@@ -8,12 +8,6 @@ void EmuThread::run() noexcept {
   core->parallel.Init(renderWidget.qtVkInstanceFactory, renderWidget.wsiPlatform, renderWidget.windowInfo,
                       core->cpu->GetMem().GetRDRAMPtr());
 
-  SDL_InitSubSystem(SDL_INIT_GAMEPAD);
-
-  if (SDL_AddGamepadMappingsFromFile("resources/gamecontrollerdb.txt") < 0) {
-    Util::warn("[SDL] Could not load game controller DB");
-  }
-
   while (!isInterruptionRequested()) {
     if (!core->pause) {
       core->Run(settings.getVolumeL(), settings.getVolumeR());

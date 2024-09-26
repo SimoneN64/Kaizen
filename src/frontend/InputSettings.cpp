@@ -1,5 +1,7 @@
 #include <InputSettings.hpp>
 #include <log.hpp>
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_init.h>
 
 InputSettings::InputSettings(nlohmann::json &settings) : QWidget(nullptr), settings(settings) {
   buttonLabels[0] = std::make_unique<QLabel>("A");
@@ -22,97 +24,112 @@ InputSettings::InputSettings(nlohmann::json &settings) : QWidget(nullptr), setti
   buttonLabels[17] = std::make_unique<QLabel>("Analog Right");
 
   auto str = JSONGetField<std::string>(settings, "input", "A");
-  kb_buttons[0] = std::make_unique<QPushButton>(str.c_str());
+  kbButtons[0] = std::make_unique<QPushButton>(str.c_str());
   str = JSONGetField<std::string>(settings, "input", "B");
-  kb_buttons[1] = std::make_unique<QPushButton>(str.c_str());
+  kbButtons[1] = std::make_unique<QPushButton>(str.c_str());
   str = JSONGetField<std::string>(settings, "input", "Z");
-  kb_buttons[2] = std::make_unique<QPushButton>(str.c_str());
+  kbButtons[2] = std::make_unique<QPushButton>(str.c_str());
   str = JSONGetField<std::string>(settings, "input", "Start");
-  kb_buttons[3] = std::make_unique<QPushButton>(str.c_str());
+  kbButtons[3] = std::make_unique<QPushButton>(str.c_str());
   str = JSONGetField<std::string>(settings, "input", "L");
-  kb_buttons[4] = std::make_unique<QPushButton>(str.c_str());
+  kbButtons[4] = std::make_unique<QPushButton>(str.c_str());
   str = JSONGetField<std::string>(settings, "input", "R");
-  kb_buttons[5] = std::make_unique<QPushButton>(str.c_str());
+  kbButtons[5] = std::make_unique<QPushButton>(str.c_str());
   str = JSONGetField<std::string>(settings, "input", "Dpad Up");
-  kb_buttons[6] = std::make_unique<QPushButton>(str.c_str());
+  kbButtons[6] = std::make_unique<QPushButton>(str.c_str());
   str = JSONGetField<std::string>(settings, "input", "Dpad Down");
-  kb_buttons[7] = std::make_unique<QPushButton>(str.c_str());
+  kbButtons[7] = std::make_unique<QPushButton>(str.c_str());
   str = JSONGetField<std::string>(settings, "input", "Dpad Left");
-  kb_buttons[8] = std::make_unique<QPushButton>(str.c_str());
+  kbButtons[8] = std::make_unique<QPushButton>(str.c_str());
   str = JSONGetField<std::string>(settings, "input", "Dpad Right");
-  kb_buttons[9] = std::make_unique<QPushButton>(str.c_str());
+  kbButtons[9] = std::make_unique<QPushButton>(str.c_str());
   str = JSONGetField<std::string>(settings, "input", "C Up");
-  kb_buttons[10] = std::make_unique<QPushButton>(str.c_str());
+  kbButtons[10] = std::make_unique<QPushButton>(str.c_str());
   str = JSONGetField<std::string>(settings, "input", "C Down");
-  kb_buttons[11] = std::make_unique<QPushButton>(str.c_str());
+  kbButtons[11] = std::make_unique<QPushButton>(str.c_str());
   str = JSONGetField<std::string>(settings, "input", "C Left");
-  kb_buttons[12] = std::make_unique<QPushButton>(str.c_str());
+  kbButtons[12] = std::make_unique<QPushButton>(str.c_str());
   str = JSONGetField<std::string>(settings, "input", "C Right");
-  kb_buttons[13] = std::make_unique<QPushButton>(str.c_str());
+  kbButtons[13] = std::make_unique<QPushButton>(str.c_str());
   str = JSONGetField<std::string>(settings, "input", "Analog Up");
-  kb_buttons[14] = std::make_unique<QPushButton>(str.c_str());
+  kbButtons[14] = std::make_unique<QPushButton>(str.c_str());
   str = JSONGetField<std::string>(settings, "input", "Analog Down");
-  kb_buttons[15] = std::make_unique<QPushButton>(str.c_str());
+  kbButtons[15] = std::make_unique<QPushButton>(str.c_str());
   str = JSONGetField<std::string>(settings, "input", "Analog Left");
-  kb_buttons[16] = std::make_unique<QPushButton>(str.c_str());
+  kbButtons[16] = std::make_unique<QPushButton>(str.c_str());
   str = JSONGetField<std::string>(settings, "input", "Analog Right");
-  kb_buttons[17] = std::make_unique<QPushButton>(str.c_str());
+  kbButtons[17] = std::make_unique<QPushButton>(str.c_str());
 
   for (int i = 0; i < 18; i++) {
-    connect(kb_buttons[i].get(), &QPushButton::pressed, this, [&, i]() {
-      for (auto& kb_button : kb_buttons) {
-        kb_button->setEnabled(false);
+    connect(kbButtons[i].get(), &QPushButton::pressed, this, [&, i]() {
+      devices->setEnabled(false);
+      for (const auto &kbButton : kbButtons) {
+        kbButton->setEnabled(false);
       }
       grabKeyboard();
       grabbing = true;
-      which_grabbing = i;
+      whichGrabbing = i;
     });
   }
 
-  AB->addWidget(n64_button_labels[0].get());
-  AB->addWidget(kb_buttons[0].get());
-  AB->addWidget(n64_button_labels[1].get());
-  AB->addWidget(kb_buttons[1].get());
+  SDL_InitSubSystem(SDL_INIT_GAMEPAD);
+
+  if (SDL_AddGamepadMappingsFromFile("resources/gamecontrollerdb.txt") < 0) {
+    Util::warn("[SDL] Could not load game controller DB");
+  }
+
+  connect(&refresh, &QTimer::timeout, this, &InputSettings::QueryDevices);
+  refresh.start(1000);
+
+  devices->addItem("Keyboard/Mouse");
+  deviceComboBoxLayout->addWidget(devicesLabel.get());
+  deviceComboBoxLayout->addWidget(devices.get());
+  mainLayout->addLayout(deviceComboBoxLayout.get());
+
+  AB->addWidget(buttonLabels[0].get());
+  AB->addWidget(kbButtons[0].get());
+  AB->addWidget(buttonLabels[1].get());
+  AB->addWidget(kbButtons[1].get());
   mainLayout->addLayout(AB.get());
-  ZStart->addWidget(n64_button_labels[2].get());
-  ZStart->addWidget(kb_buttons[2].get());
-  ZStart->addWidget(n64_button_labels[3].get());
-  ZStart->addWidget(kb_buttons[3].get());
+  ZStart->addWidget(buttonLabels[2].get());
+  ZStart->addWidget(kbButtons[2].get());
+  ZStart->addWidget(buttonLabels[3].get());
+  ZStart->addWidget(kbButtons[3].get());
   mainLayout->addLayout(ZStart.get());
-  LR->addWidget(n64_button_labels[4].get());
-  LR->addWidget(kb_buttons[4].get());
-  LR->addWidget(n64_button_labels[5].get());
-  LR->addWidget(kb_buttons[5].get());
+  LR->addWidget(buttonLabels[4].get());
+  LR->addWidget(kbButtons[4].get());
+  LR->addWidget(buttonLabels[5].get());
+  LR->addWidget(kbButtons[5].get());
   mainLayout->addLayout(LR.get());
-  DupDdown->addWidget(n64_button_labels[6].get());
-  DupDdown->addWidget(kb_buttons[6].get());
-  DupDdown->addWidget(n64_button_labels[7].get());
-  DupDdown->addWidget(kb_buttons[7].get());
+  DupDdown->addWidget(buttonLabels[6].get());
+  DupDdown->addWidget(kbButtons[6].get());
+  DupDdown->addWidget(buttonLabels[7].get());
+  DupDdown->addWidget(kbButtons[7].get());
   mainLayout->addLayout(DupDdown.get());
-  DleftDright->addWidget(n64_button_labels[8].get());
-  DleftDright->addWidget(kb_buttons[8].get());
-  DleftDright->addWidget(n64_button_labels[9].get());
-  DleftDright->addWidget(kb_buttons[9].get());
+  DleftDright->addWidget(buttonLabels[8].get());
+  DleftDright->addWidget(kbButtons[8].get());
+  DleftDright->addWidget(buttonLabels[9].get());
+  DleftDright->addWidget(kbButtons[9].get());
   mainLayout->addLayout(DleftDright.get());
-  CupCdown->addWidget(n64_button_labels[10].get());
-  CupCdown->addWidget(kb_buttons[10].get());
-  CupCdown->addWidget(n64_button_labels[11].get());
-  CupCdown->addWidget(kb_buttons[11].get());
+  CupCdown->addWidget(buttonLabels[10].get());
+  CupCdown->addWidget(kbButtons[10].get());
+  CupCdown->addWidget(buttonLabels[11].get());
+  CupCdown->addWidget(kbButtons[11].get());
   mainLayout->addLayout(CupCdown.get());
-  CleftCright->addWidget(n64_button_labels[12].get());
-  CleftCright->addWidget(kb_buttons[12].get());
-  CleftCright->addWidget(n64_button_labels[13].get());
-  CleftCright->addWidget(kb_buttons[13].get());
+  CleftCright->addWidget(buttonLabels[12].get());
+  CleftCright->addWidget(kbButtons[12].get());
+  CleftCright->addWidget(buttonLabels[13].get());
+  CleftCright->addWidget(kbButtons[13].get());
   mainLayout->addLayout(CleftCright.get());
-  AupAdown->addWidget(n64_button_labels[14].get());
-  AupAdown->addWidget(kb_buttons[14].get());
-  AupAdown->addWidget(n64_button_labels[15].get());
-  AupAdown->addWidget(kb_buttons[15].get());
+  AupAdown->addWidget(buttonLabels[14].get());
+  AupAdown->addWidget(kbButtons[14].get());
+  AupAdown->addWidget(buttonLabels[15].get());
+  AupAdown->addWidget(kbButtons[15].get());
   mainLayout->addLayout(AupAdown.get());
-  AleftAright->addWidget(n64_button_labels[16].get());
-  AleftAright->addWidget(kb_buttons[16].get());
-  AleftAright->addWidget(n64_button_labels[17].get());
-  AleftAright->addWidget(kb_buttons[17].get());
+  AleftAright->addWidget(buttonLabels[16].get());
+  AleftAright->addWidget(kbButtons[16].get());
+  AleftAright->addWidget(buttonLabels[17].get());
+  AleftAright->addWidget(kbButtons[17].get());
   mainLayout->addLayout(AleftAright.get());
   mainLayout->addStretch();
   setLayout(mainLayout.get());
@@ -121,14 +138,14 @@ InputSettings::InputSettings(nlohmann::json &settings) : QWidget(nullptr), setti
 
 void InputSettings::keyPressEvent(QKeyEvent *e) {
   if (grabbing) {
-    auto k = QKeySequence(e->key()).toString();
-    JSONSetField<std::string>(settings, "input", n64_button_labels[which_grabbing]->text().toStdString(),
-                              k.toStdString());
-    kb_buttons[which_grabbing]->setText(k);
+    const auto k = QKeySequence(e->key()).toString();
+    JSONSetField<std::string>(settings, "input", buttonLabels[whichGrabbing]->text().toStdString(), k.toStdString());
+    kbButtons[whichGrabbing]->setText(k);
     grabbing = false;
-    which_grabbing = -1;
-    for (auto& kb_button : kb_buttons) {
-      kb_button->setEnabled(true);
+    whichGrabbing = -1;
+    devices->setEnabled(true);
+    for (const auto &kbButton : kbButtons) {
+      kbButton->setEnabled(true);
     }
     releaseKeyboard();
     emit modified();
@@ -139,8 +156,57 @@ std::array<Qt::Key, 18> InputSettings::GetMappedKeys() const {
   std::array<Qt::Key, 18> ret{};
 
   for (int i = 0; i < 18; i++) {
-    ret[i] = QKeySequence(kb_buttons[i]->text().toUpper())[0].key();
+    ret[i] = QKeySequence(kbButtons[i]->text().toUpper())[0].key();
   }
 
   return ret;
+}
+
+void InputSettings::QueryDevices() noexcept {
+  if (!devices->isEnabled())
+    return;
+
+  SDL_Event e;
+  while (SDL_PollEvent(&e)) {
+    switch (e.type) {
+    case SDL_EVENT_GAMEPAD_ADDED:
+      {
+        const auto index = e.gdevice.which;
+
+        const auto gamepad = SDL_OpenGamepad(index);
+        Util::info("Found controller!");
+        const auto serial = SDL_GetGamepadSerial(gamepad);
+        const auto name = SDL_GetGamepadName(gamepad);
+        const auto path = SDL_GetGamepadPath(gamepad);
+
+        if (name) {
+          if (!gamepadIndexes.contains(index)) {
+            gamepadIndexes[index] = name;
+          }
+          devices->addItem(name);
+        } else if (serial) {
+          if (!gamepadIndexes.contains(index)) {
+            gamepadIndexes[index] = serial;
+          }
+          devices->addItem(serial);
+        } else if (path) {
+          if (!gamepadIndexes.contains(index)) {
+            gamepadIndexes[index] = path;
+          }
+          devices->addItem(path);
+        }
+
+        SDL_CloseGamepad(gamepad);
+      }
+      break;
+    case SDL_EVENT_GAMEPAD_REMOVED:
+      {
+        const auto index = e.gdevice.which;
+
+        if (gamepadIndexes.contains(index))
+          devices->removeItem(devices->findText(gamepadIndexes[index].c_str()));
+      }
+      break;
+    }
+  }
 }

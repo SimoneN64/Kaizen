@@ -29,34 +29,6 @@ RenderWidget::RenderWidget(const std::shared_ptr<n64::Core> &core) : QWidget(nul
 }
 
 void QtWSIPlatform::poll_input() {
-  SDL_Event e;
-  while (SDL_PollEvent(&e)) {
-    switch (e.type) {
-    case SDL_EVENT_GAMEPAD_ADDED:
-      {
-        const auto index = e.gdevice.which;
-        gamepad = SDL_OpenGamepad(index);
-        Util::info("Found controller!");
-        const auto serial = SDL_GetGamepadSerial(gamepad);
-        const auto name = SDL_GetGamepadName(gamepad);
-        const auto path = SDL_GetGamepadPath(gamepad);
-        Util::info("\tName: {}", name ? name : "Not available");
-        Util::info("\tSerial: {}", serial ? serial : "Not available");
-        Util::info("\tPath: {}", path ? path : "Not available");
-        gamepadConnected = true;
-      }
-      break;
-    case SDL_EVENT_GAMEPAD_REMOVED:
-      {
-        gamepadConnected = false;
-        SDL_CloseGamepad(gamepad);
-      }
-      break;
-    default:
-      break;
-    }
-  }
-
   if (gamepadConnected) {
     n64::PIF &pif = core->cpu->GetMem().mmio.si.pif;
     pif.UpdateButton(0, n64::Controller::Key::A, SDL_GetGamepadButton(gamepad, SDL_GAMEPAD_BUTTON_SOUTH));

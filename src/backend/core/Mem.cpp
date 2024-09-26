@@ -150,7 +150,7 @@ void Mem::LoadROM(bool isArchive, const std::string &filename) {
       buf = OpenROM(filename, sizeAdjusted);
     }
 
-    endianness = be32toh(*reinterpret_cast<u32 *>(buf.data()));
+    endianness = bswap(*reinterpret_cast<u32 *>(buf.data()));
     Util::SwapN64Rom<true>(buf, endianness);
 
     std::copy(buf.begin(), buf.end(), rom.cart.begin());
@@ -159,15 +159,15 @@ void Mem::LoadROM(bool isArchive, const std::string &filename) {
   }
   memcpy(rom.gameNameCart, rom.header.imageName, sizeof(rom.header.imageName));
 
-  rom.header.clockRate = be32toh(rom.header.clockRate);
-  rom.header.programCounter = be32toh(rom.header.programCounter);
-  rom.header.release = be32toh(rom.header.release);
-  rom.header.crc1 = be32toh(rom.header.crc1);
-  rom.header.crc2 = be32toh(rom.header.crc2);
-  rom.header.unknown = be64toh(rom.header.unknown);
-  rom.header.unknown2 = be32toh(rom.header.unknown2);
-  rom.header.manufacturerId = be32toh(rom.header.manufacturerId);
-  rom.header.cartridgeId = be16toh(rom.header.cartridgeId);
+  rom.header.clockRate = bswap(rom.header.clockRate);
+  rom.header.programCounter = bswap(rom.header.programCounter);
+  rom.header.release = bswap(rom.header.release);
+  rom.header.crc1 = bswap(rom.header.crc1);
+  rom.header.crc2 = bswap(rom.header.crc2);
+  rom.header.unknown = bswap(rom.header.unknown);
+  rom.header.unknown2 = bswap(rom.header.unknown2);
+  rom.header.manufacturerId = bswap(rom.header.manufacturerId);
+  rom.header.cartridgeId = bswap(rom.header.cartridgeId);
 
   rom.code[0] = rom.header.manufacturerId & 0xFF;
   rom.code[1] = (rom.header.cartridgeId >> 8) & 0xFF;
@@ -180,7 +180,7 @@ void Mem::LoadROM(bool isArchive, const std::string &filename) {
 
   u32 checksum = Util::crc32(0, &rom.cart[0x40], 0x9c0);
   SetROMCIC(checksum, rom);
-  endianness = be32toh(*reinterpret_cast<u32 *>(rom.cart.data()));
+  endianness = bswap(*reinterpret_cast<u32 *>(rom.cart.data()));
   Util::SwapN64Rom(rom.cart, endianness);
   rom.pal = IsROMPAL();
 }
@@ -243,7 +243,7 @@ u16 Mem::Read(n64::Registers &regs, u32 paddr) {
   case PIF_ROM_REGION:
     return Util::ReadAccess<u16>(si.pif.bootrom, HALF_ADDRESS(paddr) - PIF_ROM_REGION_START);
   case PIF_RAM_REGION:
-    return be16toh(Util::ReadAccess<u16>(si.pif.ram, paddr - PIF_RAM_REGION_START));
+    return bswap(Util::ReadAccess<u16>(si.pif.ram, paddr - PIF_RAM_REGION_START));
   case 0x00800000 ... 0x03EFFFFF:
   case 0x04200000 ... 0x042FFFFF:
   case 0x04900000 ... 0x04FFFFFF:
@@ -273,7 +273,7 @@ u32 Mem::Read(n64::Registers &regs, u32 paddr) {
   case PIF_ROM_REGION:
     return Util::ReadAccess<u32>(si.pif.bootrom, paddr - PIF_ROM_REGION_START);
   case PIF_RAM_REGION:
-    return be32toh(Util::ReadAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START));
+    return bswap(Util::ReadAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START));
   case 0x00800000 ... 0x03FFFFFF:
   case 0x04200000 ... 0x042FFFFF:
   case 0x04900000 ... 0x04FFFFFF:
@@ -303,7 +303,7 @@ u64 Mem::Read(n64::Registers &regs, u32 paddr) {
   case PIF_ROM_REGION:
     return Util::ReadAccess<u64>(si.pif.bootrom, paddr - PIF_ROM_REGION_START);
   case PIF_RAM_REGION:
-    return be64toh(Util::ReadAccess<u64>(si.pif.ram, paddr - PIF_RAM_REGION_START));
+    return bswap(Util::ReadAccess<u64>(si.pif.ram, paddr - PIF_RAM_REGION_START));
   case 0x00800000 ... 0x03EFFFFF:
   case 0x04200000 ... 0x042FFFFF:
   case 0x04900000 ... 0x04FFFFFF:
@@ -339,7 +339,7 @@ void Mem::Write<u8>(Registers &regs, u32 paddr, u32 val) {
   case PIF_RAM_REGION:
     val = val << (8 * (3 - (paddr & 3)));
     paddr = (paddr - PIF_RAM_REGION_START) & ~3;
-    Util::WriteAccess<u32>(si.pif.ram, paddr, htobe32(val));
+    Util::WriteAccess<u32>(si.pif.ram, paddr, bswap(val));
     si.pif.ProcessCommands(*this);
     break;
   case 0x00800000 ... 0x03EFFFFF:
@@ -380,7 +380,7 @@ void Mem::Write<u16>(Registers &regs, u32 paddr, u32 val) {
   case PIF_RAM_REGION:
     val = val << (16 * !(paddr & 2));
     paddr &= ~3;
-    Util::WriteAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe32(val));
+    Util::WriteAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START, bswap(val));
     si.pif.ProcessCommands(*this);
     break;
   case 0x00800000 ... 0x03EFFFFF:
@@ -418,7 +418,7 @@ void Mem::Write<u32>(Registers &regs, u32 paddr, u32 val) {
     mmio.Write(paddr, val);
     break;
   case PIF_RAM_REGION:
-    Util::WriteAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe32(val));
+    Util::WriteAccess<u32>(si.pif.ram, paddr - PIF_RAM_REGION_START, bswap(val));
     si.pif.ProcessCommands(*this);
     break;
   case 0x00800000 ... 0x03EFFFFF:
@@ -455,7 +455,7 @@ void Mem::Write(Registers &regs, u32 paddr, u64 val) {
   case MMIO_REGION:
     Util::panic("MMIO Write!");
   case PIF_RAM_REGION:
-    Util::WriteAccess<u64>(si.pif.ram, paddr - PIF_RAM_REGION_START, htobe64(val));
+    Util::WriteAccess<u64>(si.pif.ram, paddr - PIF_RAM_REGION_START, bswap(val));
     si.pif.ProcessCommands(*this);
     break;
   case 0x00800000 ... 0x03EFFFFF:

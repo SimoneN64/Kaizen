@@ -253,7 +253,7 @@ auto PI::BusRead<u32, false>(u32 addr) -> u32 {
       if (index > mem.rom.cart.size() - 3) { // -3 because we're reading an entire word
         switch (addr) {
         case REGION_CART_ISVIEWER_BUFFER:
-          return htobe32(Util::ReadAccess<u32>(mem.isviewer, addr - SREGION_CART_ISVIEWER_BUFFER));
+          return bswap(Util::ReadAccess<u32>(mem.isviewer, addr - SREGION_CART_ISVIEWER_BUFFER));
         case CART_ISVIEWER_FLUSH:
           Util::panic("Read from ISViewer flush!");
         default:
@@ -306,7 +306,7 @@ void PI::BusWrite<u32, false>(u32 addr, u32 val) {
   case REGION_PI_ROM:
     switch (addr) {
     case REGION_CART_ISVIEWER_BUFFER:
-      Util::WriteAccess<u32>(mem.isviewer, addr - SREGION_CART_ISVIEWER_BUFFER, be32toh(val));
+      Util::WriteAccess<u32>(mem.isviewer, addr - SREGION_CART_ISVIEWER_BUFFER, bswap(val));
       break;
     case CART_ISVIEWER_FLUSH:
       {

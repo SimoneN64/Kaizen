@@ -1,6 +1,5 @@
 #include <Core.hpp>
 #include <EmuThread.hpp>
-#include <SDL3/SDL.h>
 
 EmuThread::EmuThread(const std::shared_ptr<n64::Core> &core, RenderWidget &renderWidget,
                      SettingsWindow &settings) noexcept : renderWidget(renderWidget), core(core), settings(settings) {}
@@ -36,7 +35,7 @@ void EmuThread::TogglePause() const noexcept {
                                   core->cpu->GetMem().mmio.si.pif.movie.GetFilename());
 }
 
-void EmuThread::SetRender(bool v) const noexcept { core->render = v; }
+void EmuThread::SetRender(const bool v) const noexcept { core->render = v; }
 
 void EmuThread::Reset() const noexcept {
   core->pause = true;

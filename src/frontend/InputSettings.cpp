@@ -1,25 +1,25 @@
 #include <InputSettings.hpp>
 #include <log.hpp>
 
-InputSettings::InputSettings(nlohmann::json &settings) : settings(settings), QWidget(nullptr) {
-  n64_button_labels[0]  = std::make_unique<QLabel>("A");
-  n64_button_labels[1]  = std::make_unique<QLabel>("B");
-  n64_button_labels[2]  = std::make_unique<QLabel>("Z");
-  n64_button_labels[3]  = std::make_unique<QLabel>("Start");
-  n64_button_labels[4]  = std::make_unique<QLabel>("L");
-  n64_button_labels[5]  = std::make_unique<QLabel>("R");
-  n64_button_labels[6]  = std::make_unique<QLabel>("Dpad Up");
-  n64_button_labels[7]  = std::make_unique<QLabel>("Dpad Down");
-  n64_button_labels[8]  = std::make_unique<QLabel>("Dpad Left");
-  n64_button_labels[9]  = std::make_unique<QLabel>("Dpad Right");
-  n64_button_labels[10] = std::make_unique<QLabel>("C Up");
-  n64_button_labels[11] = std::make_unique<QLabel>("C Down");
-  n64_button_labels[12] = std::make_unique<QLabel>("C Left");
-  n64_button_labels[13] = std::make_unique<QLabel>("C Right");
-  n64_button_labels[14] = std::make_unique<QLabel>("Analog Up");
-  n64_button_labels[15] = std::make_unique<QLabel>("Analog Down");
-  n64_button_labels[16] = std::make_unique<QLabel>("Analog Left");
-  n64_button_labels[17] = std::make_unique<QLabel>("Analog Right");
+InputSettings::InputSettings(nlohmann::json &settings) : QWidget(nullptr), settings(settings) {
+  buttonLabels[0] = std::make_unique<QLabel>("A");
+  buttonLabels[1] = std::make_unique<QLabel>("B");
+  buttonLabels[2] = std::make_unique<QLabel>("Z");
+  buttonLabels[3] = std::make_unique<QLabel>("Start");
+  buttonLabels[4] = std::make_unique<QLabel>("L");
+  buttonLabels[5] = std::make_unique<QLabel>("R");
+  buttonLabels[6] = std::make_unique<QLabel>("Dpad Up");
+  buttonLabels[7] = std::make_unique<QLabel>("Dpad Down");
+  buttonLabels[8] = std::make_unique<QLabel>("Dpad Left");
+  buttonLabels[9] = std::make_unique<QLabel>("Dpad Right");
+  buttonLabels[10] = std::make_unique<QLabel>("C Up");
+  buttonLabels[11] = std::make_unique<QLabel>("C Down");
+  buttonLabels[12] = std::make_unique<QLabel>("C Left");
+  buttonLabels[13] = std::make_unique<QLabel>("C Right");
+  buttonLabels[14] = std::make_unique<QLabel>("Analog Up");
+  buttonLabels[15] = std::make_unique<QLabel>("Analog Down");
+  buttonLabels[16] = std::make_unique<QLabel>("Analog Left");
+  buttonLabels[17] = std::make_unique<QLabel>("Analog Right");
 
   auto str = JSONGetField<std::string>(settings, "input", "A");
   kb_buttons[0] = std::make_unique<QPushButton>(str.c_str());
@@ -135,7 +135,7 @@ void InputSettings::keyPressEvent(QKeyEvent *e) {
   }
 }
 
-std::array<Qt::Key, 18> InputSettings::GetMappedKeys() {
+std::array<Qt::Key, 18> InputSettings::GetMappedKeys() const {
   std::array<Qt::Key, 18> ret{};
 
   for (int i = 0; i < 18; i++) {

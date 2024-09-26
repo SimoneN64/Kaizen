@@ -14,13 +14,17 @@ struct QtInstanceFactory : Vulkan::InstanceFactory {
   VkInstance create_instance(const VkInstanceCreateInfo *info) override {
     handle.setApiVersion({1, 3, 0});
     QByteArrayList exts;
+    exts.resize(info->enabledExtensionCount);
     for (int i = 0; i < info->enabledExtensionCount; i++) {
-      exts.push_back(QByteArray::fromStdString(info->ppEnabledExtensionNames[i]));
+      exts[i] = info->ppEnabledExtensionNames[i];
     }
+
     QByteArrayList layers;
+    layers.resize(info->enabledExtensionCount);
     for (int i = 0; i < info->enabledLayerCount; i++) {
-      layers.push_back(QByteArray::fromStdString(info->ppEnabledLayerNames[i]));
+      layers[i] = info->ppEnabledLayerNames[i];
     }
+
     handle.setExtensions(exts);
     handle.setLayers(layers);
     handle.setApiVersion({1, 3, 0});
@@ -49,9 +53,11 @@ public:
 
   std::vector<const char *> get_instance_extensions() override {
     auto vec = std::vector<const char *>();
+    const auto &extensions = window->vulkanInstance()->supportedExtensions();
+    vec.reserve(extensions.size());
 
-    for (const auto &ext : window->vulkanInstance()->supportedExtensions()) {
-      vec.push_back(ext.name);
+    for (const auto &ext : extensions) {
+      vec.emplace_back(ext.name);
     }
 
     return vec;

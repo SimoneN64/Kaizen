@@ -27,7 +27,7 @@ public:
   InputSettings(nlohmann::json &);
   nlohmann::json &settings;
   void keyPressEvent(QKeyEvent *) override;
-  std::array<Qt::Key, 18> GetMappedKeys();
+  std::array<Qt::Key, 18> GetMappedKeys() const;
 Q_SIGNALS:
   void modified();
 };

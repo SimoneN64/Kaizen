@@ -4,14 +4,19 @@ This file always reflects the *latest* changes up until a release. Then it gets 
 
 ## Changes
 
+New features:
 * Debugger with memory view, registers view and code disassembly with stepping and breakpoints
-* Controllers no longer have a fixed mapping, you can customize it now
-* Update SDL to version 3
-* Update ParallelRDP
+* Customizable controller mappings
+
+Fixes:
 * Screen no longer black when the game is paused
+* Fix crashes when closing the emulator while a game is running
 * Other minor fixes such as:
-    - Fix crashes when closing the emulator while a game is running
     - Remove `nativefiledialog-extended` submodule as it is no longer needed
-    - Update `xbyak` subtree
     - Small CMake refactoring
     - Correct RDRAM masking in RSP
+
+Updates:
+* Update SDL to version 3
+* Update `parallel-rdp`
+* Update `xbyak` subtree

@@ -4,6 +4,8 @@ This file always reflects the *latest* changes up until a release. Then it gets 
 
 ## Changes
 
+* Debugger with memory view, registers view and code disassembly with stepping and breakpoints
+* Controllers no longer have a fixed mapping, you can customize it now
 * Update SDL to version 3
 * Update ParallelRDP
 * Screen no longer black when the game is paused

@@ -14,10 +14,8 @@ vgcore.*
 *.data
 disasm.txt
 *log*.txt
-.vs/
 CMakeSettings.json
 out/
 settings.json
 compile_commands.json
-.vscode/
 *.diagsession

@@ -52,7 +52,7 @@ SettingsWindow::SettingsWindow() : QWidget(nullptr) {
 
   connect(apply.get(), &QPushButton::pressed, this, [&]() {
     auto newMap = inputSettings->GetMappedKeys();
-    if (!std::equal(keyMap.begin(), keyMap.end(), newMap.begin(), newMap.end())) {
+    if (!std::ranges::equal(keyMap, newMap)) {
       keyMap = newMap;
       emit regrabKeyboard();
     }

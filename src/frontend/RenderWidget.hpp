@@ -80,6 +80,9 @@ public:
 
   void event_frame_tick(double frame, double elapsed) override {}
 
+  void EnableEventPolling() { canPollEvents = true; }
+  void DisableEventPolling() { canPollEvents = false; }
+
   const VkApplicationInfo *get_application_info() override { return &appInfo; }
 
   VkApplicationInfo appInfo{.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO, .apiVersion = VK_API_VERSION_1_3};
@@ -90,6 +93,7 @@ private:
   std::shared_ptr<n64::Core> core;
   SDL_Gamepad *gamepad{};
   bool gamepadConnected = false;
+  bool canPollEvents = true;
 };
 
 class RenderWidget : public QWidget {
@@ -99,7 +103,7 @@ public:
 
   [[nodiscard]] QPaintEngine *paintEngine() const override { return nullptr; }
   std::shared_ptr<ParallelRDP::WindowInfo> windowInfo;
-  std::shared_ptr<Vulkan::WSIPlatform> wsiPlatform;
+  std::shared_ptr<QtWSIPlatform> wsiPlatform;
   std::shared_ptr<QtInstanceFactory> qtVkInstanceFactory;
 Q_SIGNALS:
   void Show() { show(); }

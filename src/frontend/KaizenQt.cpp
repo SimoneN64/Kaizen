@@ -24,10 +24,17 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   mainWindow->show();
   debugger->hide();
   settingsWindow->hide();
-  connect(settingsWindow.get(), &SettingsWindow::regrabKeyboard, this, [&] { grabKeyboard(); });
 }
 
 void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept {
+  connect(settingsWindow.get(), &SettingsWindow::regrabKeyboard, this, [&] { grabKeyboard(); });
+
+  connect(settingsWindow.get(), &SettingsWindow::gotClosed, this,
+          [&] { mainWindow->vulkanWidget->wsiPlatform->EnableEventPolling(); });
+
+  connect(settingsWindow.get(), &SettingsWindow::gotOpened, this,
+          [&] { mainWindow->vulkanWidget->wsiPlatform->DisableEventPolling(); });
+
   connect(mainWindow.get(), &MainWindow::OpenSettings, this, [this] { settingsWindow->show(); });
   connect(mainWindow.get(), &MainWindow::OpenDebugger, this, [this] { debugger->show(); });
   connect(mainWindow.get(), &MainWindow::OpenROM, this, &KaizenQt::LoadROM);
@@ -44,22 +51,22 @@ void KaizenQt::dragEnterEvent(QDragEnterEvent *event) {
 }
 
 void KaizenQt::dropEvent(QDropEvent *event) {
-  auto path = event->mimeData()->urls()[0].toLocalFile();
+  const auto path = event->mimeData()->urls()[0].toLocalFile();
   LoadROM(path);
 }
 
-void KaizenQt::LoadROM(const QString &fileName) noexcept {
+void KaizenQt::LoadROM(const QString &path) const noexcept {
   mainWindow->actionPause->setEnabled(true);
   mainWindow->actionReset->setEnabled(true);
   mainWindow->actionStop->setEnabled(true);
   emuThread->start();
-  emuThread->core->LoadROM(fileName.toStdString());
-  auto gameNameDB = emuThread->core->cpu->GetMem().rom.gameNameDB;
+  emuThread->core->LoadROM(path.toStdString());
+  const auto gameNameDB = emuThread->core->cpu->GetMem().rom.gameNameDB;
   mainWindow->setWindowTitle(emuThread->core->cpu->GetMem().rom.gameNameDB.c_str());
   Util::RPC::GetInstance().Update(Util::RPC::Playing, gameNameDB);
 }
 
-void KaizenQt::Quit() noexcept {
+void KaizenQt::Quit() const noexcept {
   if (emuThread) {
     emuThread->requestInterruption();
     while (emuThread->isRunning())
@@ -80,11 +87,14 @@ void KaizenQt::LoadTAS(const QString &fileName) const noexcept {
 }
 
 void KaizenQt::keyPressEvent(QKeyEvent *e) {
+  if (settingsWindow->inputSettings->selectedDeviceIsNotKeyboard)
+    return;
+
   emuThread->core->pause = true;
   n64::Mem &mem = emuThread->core->cpu->GetMem();
   n64::PIF &pif = mem.mmio.si.pif;
 
-  auto k = static_cast<Qt::Key>(e->key());
+  const auto k = static_cast<Qt::Key>(e->key());
   for (int i = 0; i < 14; i++) {
     if (k == settingsWindow->keyMap[i])
       pif.UpdateButton(0, static_cast<n64::Controller::Key>(i), true);
@@ -104,11 +114,14 @@ void KaizenQt::keyPressEvent(QKeyEvent *e) {
 }
 
 void KaizenQt::keyReleaseEvent(QKeyEvent *e) {
+  if (settingsWindow->inputSettings->selectedDeviceIsNotKeyboard)
+    return;
+
   emuThread->core->pause = true;
   n64::Mem &mem = emuThread->core->cpu->GetMem();
   n64::PIF &pif = mem.mmio.si.pif;
 
-  auto k = static_cast<Qt::Key>(e->key());
+  const auto k = static_cast<Qt::Key>(e->key());
   for (int i = 0; i < 14; i++) {
     if (k == settingsWindow->keyMap[i])
       pif.UpdateButton(0, static_cast<n64::Controller::Key>(i), false);

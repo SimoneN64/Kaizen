@@ -61,25 +61,35 @@ InputSettings::InputSettings(nlohmann::json &settings) : QWidget(nullptr), setti
   kbButtons[17] = std::make_unique<QPushButton>(str.c_str());
 
   for (int i = 0; i < 18; i++) {
-    connect(kbButtons[i].get(), &QPushButton::pressed, this, [&, i]() {
+    connect(kbButtons[i].get(), &QPushButton::pressed, this, [&, i] {
       devices->setEnabled(false);
       for (const auto &kbButton : kbButtons) {
         kbButton->setEnabled(false);
       }
-      grabKeyboard();
+
       grabbing = true;
       whichGrabbing = i;
+
+      if (devices->currentText() == "Keyboard/Mouse") {
+        grabKeyboard();
+      } else {
+        selectedDeviceIsNotKeyboard = true;
+      }
     });
   }
 
+  connect(devices.get(), &QComboBox::currentTextChanged, this, [&](const QString &text) {
+    JSONSetField<std::string>(settings, "input", "Device", text.toStdString());
+    emit modified();
+  });
+
   SDL_InitSubSystem(SDL_INIT_GAMEPAD);
 
-  if (SDL_AddGamepadMappingsFromFile("resources/gamecontrollerdb.txt") < 0) {
-    Util::warn("[SDL] Could not load game controller DB");
-  }
-
   connect(&refresh, &QTimer::timeout, this, &InputSettings::QueryDevices);
-  refresh.start(1000);
+  refresh.start(16);
+
+  connect(&pollGamepad, &QTimer::timeout, this, &InputSettings::PollGamepad);
+  pollGamepad.start(16);
 
   devices->addItem("Keyboard/Mouse");
   deviceComboBoxLayout->addWidget(devicesLabel.get());
@@ -138,17 +148,21 @@ InputSettings::InputSettings(nlohmann::json &settings) : QWidget(nullptr), setti
 
 void InputSettings::keyPressEvent(QKeyEvent *e) {
   if (grabbing) {
-    const auto k = QKeySequence(e->key()).toString();
-    JSONSetField<std::string>(settings, "input", buttonLabels[whichGrabbing]->text().toStdString(), k.toStdString());
-    kbButtons[whichGrabbing]->setText(k);
-    grabbing = false;
-    whichGrabbing = -1;
+    const auto k = QKeySequence(e->key()).toString().toStdString();
+    JSONSetField<std::string>(settings, "input", buttonLabels[whichGrabbing]->text().toStdString(), k);
+    kbButtons[whichGrabbing]->setText(k.c_str());
     devices->setEnabled(true);
     for (const auto &kbButton : kbButtons) {
       kbButton->setEnabled(true);
     }
-    releaseKeyboard();
-    emit modified();
+
+    grabbing = false;
+    whichGrabbing = -1;
+
+    if (devices->currentText() == "Keyboard/Mouse") {
+      releaseKeyboard();
+      emit modified();
+    }
   }
 }
 
@@ -206,6 +220,35 @@ void InputSettings::QueryDevices() noexcept {
         if (gamepadIndexes.contains(index))
           devices->removeItem(devices->findText(gamepadIndexes[index].c_str()));
       }
+      break;
+    }
+  }
+}
+
+void InputSettings::PollGamepad() noexcept {
+  if (!selectedDeviceIsNotKeyboard)
+    return;
+
+  SDL_Event e;
+  while (SDL_PollEvent(&e)) {
+    switch (e.type) {
+    case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+      {
+        const auto k = SDL_GetGamepadStringForButton(static_cast<SDL_GamepadButton>(e.gbutton.button));
+        JSONSetField<std::string>(settings, "input", buttonLabels[whichGrabbing]->text().toStdString(), k);
+        kbButtons[whichGrabbing]->setText(k);
+        devices->setEnabled(true);
+        for (const auto &kbButton : kbButtons) {
+          kbButton->setEnabled(true);
+        }
+
+        grabbing = false;
+        whichGrabbing = -1;
+
+        emit modified();
+      }
+      break;
+    default:
       break;
     }
   }

@@ -13,6 +13,7 @@ class InputSettings : public QWidget {
   int whichGrabbing = -1;
 
   void QueryDevices() noexcept;
+  void PollGamepad() noexcept;
 
   std::unordered_map<u32, std::string> gamepadIndexes{};
 
@@ -29,12 +30,13 @@ class InputSettings : public QWidget {
   std::array<std::unique_ptr<QPushButton>, 18> kbButtons;
   std::array<std::unique_ptr<QLabel>, 18> buttonLabels;
   std::unique_ptr<QHBoxLayout> deviceComboBoxLayout = std::make_unique<QHBoxLayout>();
-  QTimer refresh;
+  QTimer refresh, pollGamepad;
   std::unique_ptr<QLabel> devicesLabel = std::make_unique<QLabel>("Device:");
   std::unique_ptr<QComboBox> devices = std::make_unique<QComboBox>();
   Q_OBJECT
 public:
-  InputSettings(nlohmann::json &);
+  bool selectedDeviceIsNotKeyboard = false;
+  explicit InputSettings(nlohmann::json &);
   nlohmann::json &settings;
   void keyPressEvent(QKeyEvent *) override;
   std::array<Qt::Key, 18> GetMappedKeys() const;

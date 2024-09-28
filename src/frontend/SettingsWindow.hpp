@@ -25,15 +25,20 @@ class SettingsWindow : public QWidget {
   std::unique_ptr<QHBoxLayout> buttonsLayout = std::make_unique<QHBoxLayout>();
   Q_OBJECT
 public:
+  SettingsWindow();
+  void hideEvent(QHideEvent *event) override { emit gotClosed(); }
+  void showEvent(QShowEvent *event) override { emit gotOpened(); }
   float getVolumeL() { return float(audioSettings->volumeL->value()) / 100.f; }
   float getVolumeR() { return float(audioSettings->volumeR->value()) / 100.f; }
+
   std::array<Qt::Key, 18> keyMap{};
-  SettingsWindow();
   nlohmann::json settings;
   std::unique_ptr<CPUSettings> cpuSettings{};
   std::unique_ptr<AudioSettings> audioSettings{};
   std::unique_ptr<InputSettings> inputSettings{};
   std::unique_ptr<QWidget> generalSettings{};
 Q_SIGNALS:
+  void gotOpened();
+  void gotClosed();
   void regrabKeyboard();
 };

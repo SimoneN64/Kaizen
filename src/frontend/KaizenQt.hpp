@@ -27,14 +27,14 @@ class KaizenQt : public QWidget {
 public:
   KaizenQt() noexcept;
   void LoadTAS(const QString &path) const noexcept;
-  void LoadROM(const QString &path) noexcept;
+  void LoadROM(const QString &path) const noexcept;
   void dropEvent(QDropEvent *) override;
   void dragEnterEvent(QDragEnterEvent *) override;
   void keyPressEvent(QKeyEvent *) override;
   void keyReleaseEvent(QKeyEvent *) override;
 
 private:
-  void Quit() noexcept;
+  void Quit() const noexcept;
   void ConnectMainWindowSignalsToSlots() noexcept;
   std::unique_ptr<MainWindow> mainWindow;
   std::unique_ptr<SettingsWindow> settingsWindow;

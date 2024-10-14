@@ -120,26 +120,19 @@ auto Cop1::FGR_D<double>(Cop0Status &status, u32 index) -> double & {
   return FGR_T<double>(status, index);
 }
 
-u32 floatIntegerCast(float f) {
-  u32 v;
-  memcpy(&v, &f, 4);
-  return v;
-}
-
-u64 doubleIntegerCast(double f) {
-  u64 v;
-  memcpy(&v, &f, 8);
-  return v;
+template <typename To, typename From>
+To floatIntegerCast(From f) {
+  return std::bit_cast<To, From>(f);
 }
 
 template <>
 bool Cop1::isqnan<float>(float f) {
-  return (floatIntegerCast(f) >> 22) & 1;
+  return (floatIntegerCast<u32>(f) >> 22) & 1;
 }
 
 template <>
 bool Cop1::isqnan<double>(double f) {
-  return (doubleIntegerCast(f) >> 51) & 1;
+  return (floatIntegerCast<u64>(f) >> 51) & 1;
 }
 
 template <>
@@ -313,8 +306,7 @@ bool Cop1::CheckResult<float>(float &f) {
     return true;
   case FP_NAN:
     {
-      uint32_t v = 0x7fbf'ffff;
-      memcpy(&f, &v, 4);
+      f = std::bit_cast<float, u32>(0x7fbf'ffff);
       return true;
     }
   }
@@ -336,8 +328,7 @@ bool Cop1::CheckResult<double>(double &f) {
     return true;
   case FP_NAN:
     {
-      uint64_t v = 0x7ff7'ffff'ffff'ffff;
-      memcpy(&f, &v, 8);
+      f = std::bit_cast<double, u64>(0x7ff7'ffff'ffff'ffff);
       return true;
     }
   }

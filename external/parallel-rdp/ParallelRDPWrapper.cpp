@@ -19,6 +19,42 @@ void ParallelRDP::SetFramerateUnlocked(bool unlocked) const {
 
 Program *fullscreen_quad_program;
 
+// Copied and modified from WSI::init_context_from_platform
+Util::IntrusivePtr<Context> InitVulkanContext(WSIPlatform *platform, unsigned num_thread_indices,
+                                              const Context::SystemHandles &system_handles,
+                                              InstanceFactory *instance_factory) {
+  VK_ASSERT(platform);
+  auto instance_ext = platform->get_instance_extensions();
+  auto device_ext = platform->get_device_extensions();
+  auto new_context = Util::make_handle<Context>();
+
+  new_context->set_application_info(platform->get_application_info());
+  new_context->set_num_thread_indices(num_thread_indices);
+  new_context->set_system_handles(system_handles);
+  if (instance_factory) {
+    new_context->set_instance_factory(instance_factory);
+  }
+
+  if (!new_context->init_instance(instance_ext.data(), instance_ext.size(), CONTEXT_CREATION_ENABLE_ADVANCED_WSI_BIT)) {
+    Util::panic("Failed to create Vulkan instance.\n");
+  }
+
+  VkSurfaceKHR tmp_surface = platform->create_surface(new_context->get_instance(), VK_NULL_HANDLE);
+
+  bool ret = new_context->init_device(VK_NULL_HANDLE, tmp_surface, device_ext.data(), device_ext.size(),
+                                      CONTEXT_CREATION_ENABLE_ADVANCED_WSI_BIT);
+
+  if (tmp_surface) {
+    platform->destroy_surface(new_context->get_instance(), tmp_surface);
+  }
+
+  if (!ret) {
+    Util::panic("Failed to create Vulkan device.\n");
+  }
+
+  return new_context;
+}
+
 void ParallelRDP::LoadWSIPlatform(const std::shared_ptr<InstanceFactory> &instanceFactory,
                                   const std::shared_ptr<WSIPlatform> &wsi_platform,
                                   const std::shared_ptr<WindowInfo> &newWindowInfo) {
@@ -27,8 +63,17 @@ void ParallelRDP::LoadWSIPlatform(const std::shared_ptr<InstanceFactory> &instan
   wsi->set_platform(wsi_platform.get());
   wsi->set_present_mode(PresentMode::SyncToVBlank);
   Context::SystemHandles handles;
-  if (!wsi->init_simple(instanceFactory.get(), 1, handles)) {
-    Util::panic("Failed to initialize WSI!");
+
+  if (!wsi->init_from_existing_context(InitVulkanContext(wsi_platform.get(), 1, handles, instanceFactory.get()))) {
+    Util::panic("Failed to initialize WSI: init_from_existing_context() failed");
+  }
+
+  if (!wsi->init_device()) {
+    Util::panic("Failed to initialize WSI: init_device() failed");
+  }
+
+  if (!wsi->init_surface_swapchain()) {
+    Util::panic("Failed to initialize WSI: init_surface_swapchain() failed");
   }
 
   windowInfo = newWindowInfo;

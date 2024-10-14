@@ -20,7 +20,7 @@ struct JIT : BaseCPU {
 
   Registers &GetRegs() override { return regs; }
 
-  Disassembler::DisassemblyResult Disassemble(u32, u32) const override { return {}; }
+  [[nodiscard]] Disassembler::DisassemblyResult Disassemble(u32, u32) const override { return {}; }
 
 private:
   Registers regs;
@@ -29,7 +29,7 @@ private:
   friend struct Cop1;
 #define check_address_error(mask, vaddr)                                                                               \
   (((!regs.cop0.is64BitAddressing) && (s32)(vaddr) != (vaddr)) || (((vaddr) & (mask)) != 0))
-  bool ShouldServiceInterrupt() override;
+  bool ShouldServiceInterrupt() const override;
   void CheckCompareInterrupt() override;
   std::vector<u8> Serialize() override;
   void Deserialize(const std::vector<u8> &) override;

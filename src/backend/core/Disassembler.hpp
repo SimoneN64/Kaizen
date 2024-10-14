@@ -25,8 +25,8 @@ struct Disassembler {
   ~Disassembler() { cs_close(&handle); }
 
 private:
-  DisassemblyResult DisassembleDetailed(u32 address, u32 instruction);
-  DisassemblyResult DisassembleSimple(u32 address, u32 instruction);
+  DisassemblyResult DisassembleDetailed(u32 address, u32 instruction) const;
+  DisassemblyResult DisassembleSimple(u32 address, u32 instruction) const;
 
   explicit Disassembler(const bool rsp) : rsp(rsp) {
     if (cs_open(CS_ARCH_MIPS, static_cast<cs_mode>((rsp ? CS_MODE_32 : CS_MODE_64) | CS_MODE_BIG_ENDIAN), &handle) !=

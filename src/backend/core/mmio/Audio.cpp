@@ -31,13 +31,13 @@ AudioDevice::AudioDevice() {
   }
 }
 
-void AudioDevice::PushSample(float left, float volumeL, float right, float volumeR) {
-  float adjustedL = left * volumeL;
-  float adjustedR = right * volumeR;
-  float samples[]{adjustedL, adjustedR};
+void AudioDevice::PushSample(const float left, const float volumeL, const float right, const float volumeR) {
+  const float adjustedL = left * volumeL;
+  const float adjustedR = right * volumeR;
+  const float samples[]{adjustedL, adjustedR};
 
-  auto availableBytes = (float)SDL_GetAudioStreamAvailable(audioStream);
-  if (availableBytes <= BYTES_PER_HALF_SECOND) {
+  if (const auto availableBytes = static_cast<float>(SDL_GetAudioStreamAvailable(audioStream));
+      availableBytes <= BYTES_PER_HALF_SECOND) {
     SDL_PutAudioStreamData(audioStream, samples, 2 * sizeof(float));
   }
 
@@ -47,7 +47,7 @@ void AudioDevice::PushSample(float left, float volumeL, float right, float volum
   }
 }
 
-void AudioDevice::AdjustSampleRate(int sampleRate) {
+void AudioDevice::AdjustSampleRate(const int sampleRate) {
   LockMutex();
   SDL_DestroyAudioStream(audioStream);
 

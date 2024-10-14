@@ -4,10 +4,8 @@
 #include <log.hpp>
 
 namespace n64 {
-FORCE_INLINE void special(MI &mi, Registers &regs, RSP &rsp, u32 instr) {
-  u8 mask = instr & 0x3f;
-  // Util::print("rsp special {:02X}", mask);
-  switch (mask) {
+FORCE_INLINE void special(MI &mi, RSP &rsp, const u32 instr) {
+  switch (const u8 mask = instr & 0x3f) {
   case 0x00:
     if (instr != 0) {
       rsp.sll(instr);
@@ -73,31 +71,27 @@ FORCE_INLINE void special(MI &mi, Registers &regs, RSP &rsp, u32 instr) {
   }
 }
 
-FORCE_INLINE void regimm(RSP &rsp, u32 instr) {
-  u8 mask = ((instr >> 16) & 0x1F);
-  // Util::print("rsp regimm {:02X}", mask);
-  switch (mask) {
+FORCE_INLINE void regimm(RSP &rsp, const u32 instr) {
+  switch (const u8 mask = instr >> 16 & 0x1F) {
   case 0x00:
-    rsp.b(instr, (s32)rsp.gpr[RS(instr)] < 0);
+    rsp.b(instr, rsp.gpr[RS(instr)] < 0);
     break;
   case 0x01:
-    rsp.b(instr, (s32)rsp.gpr[RS(instr)] >= 0);
+    rsp.b(instr, rsp.gpr[RS(instr)] >= 0);
     break;
   case 0x10:
-    rsp.blink(instr, (s32)rsp.gpr[RS(instr)] < 0);
+    rsp.blink(instr, rsp.gpr[RS(instr)] < 0);
     break;
   case 0x11:
-    rsp.blink(instr, (s32)rsp.gpr[RS(instr)] >= 0);
+    rsp.blink(instr, rsp.gpr[RS(instr)] >= 0);
     break;
   default:
     Util::panic("Unhandled RSP regimm instruction ({:05b})", mask);
   }
 }
 
-FORCE_INLINE void lwc2(RSP &rsp, u32 instr) {
-  u8 mask = (instr >> 11) & 0x1F;
-  // Util::print("lwc2 {:02X}", mask);
-  switch (mask) {
+FORCE_INLINE void lwc2(RSP &rsp, const u32 instr) {
+  switch (const u8 mask = instr >> 11 & 0x1F) {
   case 0x00:
     rsp.lbv(instr);
     break;
@@ -138,10 +132,8 @@ FORCE_INLINE void lwc2(RSP &rsp, u32 instr) {
   }
 }
 
-FORCE_INLINE void swc2(RSP &rsp, u32 instr) {
-  u8 mask = (instr >> 11) & 0x1F;
-  // Util::print("swc2 {:02X}", mask);
-  switch (mask) {
+FORCE_INLINE void swc2(RSP &rsp, const u32 instr) {
+  switch (const u8 mask = instr >> 11 & 0x1F) {
   case 0x00:
     rsp.sbv(instr);
     break;
@@ -183,13 +175,11 @@ FORCE_INLINE void swc2(RSP &rsp, u32 instr) {
   }
 }
 
-FORCE_INLINE void cop2(RSP &rsp, u32 instr) {
-  u8 mask = instr & 0x3F;
-  u8 mask_sub = (instr >> 21) & 0x1F;
-  // Util::print("Cop2 {:02X}", mask);
-  switch (mask) {
+FORCE_INLINE void cop2(RSP &rsp, const u32 instr) {
+  const u8 mask_sub = instr >> 21 & 0x1F;
+  switch (const u8 mask = instr & 0x3F) {
   case 0x00:
-    if ((instr >> 25) & 1) {
+    if (instr >> 25 & 1) {
       rsp.vmulf(instr);
     } else {
       switch (mask_sub) {
@@ -355,14 +345,13 @@ FORCE_INLINE void cop2(RSP &rsp, u32 instr) {
   }
 }
 
-FORCE_INLINE void cop0(Registers &regs, Mem &mem, u32 instr) {
-  u8 mask = (instr >> 21) & 0x1F;
+FORCE_INLINE void cop0(Mem &mem, const u32 instr) {
   MMIO &mmio = mem.mmio;
   RSP &rsp = mmio.rsp;
   RDP &rdp = mmio.rdp;
-  // Util::print("Cop0 {:02X}", mask);
+
   if ((instr & 0x7FF) == 0) {
-    switch (mask) {
+    switch (const u8 mask = instr >> 21 & 0x1F) {
     case 0x00:
       rsp.mfc0(rdp, instr);
       break;
@@ -377,14 +366,12 @@ FORCE_INLINE void cop0(Registers &regs, Mem &mem, u32 instr) {
   }
 }
 
-void RSP::Exec(u32 instr) {
-  u8 mask = (instr >> 26) & 0x3F;
+void RSP::Exec(const u32 instr) {
   MMIO &mmio = mem.mmio;
   MI &mi = mmio.mi;
-  // Util::print("RSP {:02X}", mask);
-  switch (mask) {
+  switch (const u8 mask = instr >> 26 & 0x3F) {
   case 0x00:
-    special(mi, regs, *this, instr);
+    special(mi, *this, instr);
     break;
   case 0x01:
     regimm(*this, instr);
@@ -396,16 +383,16 @@ void RSP::Exec(u32 instr) {
     jal(instr);
     break;
   case 0x04:
-    b(instr, (s32)gpr[RT(instr)] == (s32)gpr[RS(instr)]);
+    b(instr, gpr[RT(instr)] == gpr[RS(instr)]);
     break;
   case 0x05:
-    b(instr, (s32)gpr[RT(instr)] != (s32)gpr[RS(instr)]);
+    b(instr, gpr[RT(instr)] != gpr[RS(instr)]);
     break;
   case 0x06:
-    b(instr, (s32)gpr[RS(instr)] <= 0);
+    b(instr, gpr[RS(instr)] <= 0);
     break;
   case 0x07:
-    b(instr, (s32)gpr[RS(instr)] > 0);
+    b(instr, gpr[RS(instr)] > 0);
     break;
   case 0x08:
   case 0x09:
@@ -430,7 +417,7 @@ void RSP::Exec(u32 instr) {
     lui(instr);
     break;
   case 0x10:
-    cop0(regs, mem, instr);
+    cop0(mem, instr);
     break;
   case 0x12:
     cop2(*this, instr);

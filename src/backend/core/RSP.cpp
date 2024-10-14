@@ -4,7 +4,7 @@
 #include <log.hpp>
 
 namespace n64 {
-RSP::RSP(Mem &mem, Registers &regs) : mem(mem), regs(regs) { Reset(); }
+RSP::RSP(Mem &mem, Registers &regs) : regs(regs), mem(mem) { Reset(); }
 
 void RSP::Reset() {
   lastSuccessfulSPAddr.raw = 0;
@@ -65,7 +65,7 @@ FORCE_INLINE void logRSP(const RSP& rsp, const u32 instr) {
 }
 */
 
-auto RSP::Read(u32 addr) -> u32 {
+auto RSP::Read(const u32 addr) -> u32 {
   switch (addr) {
   case 0x04040000:
     return lastSuccessfulSPAddr.raw & 0x1FF8;
@@ -89,9 +89,9 @@ auto RSP::Read(u32 addr) -> u32 {
   }
 }
 
-void RSP::WriteStatus(u32 value) {
+void RSP::WriteStatus(const u32 value) {
   MI &mi = mem.mmio.mi;
-  auto write = SPStatusWrite{.raw = value};
+  const auto write = SPStatusWrite{.raw = value};
   if (write.clearHalt && !write.setHalt) {
     spStatus.halt = false;
   }
@@ -123,7 +123,7 @@ void RSP::DMA<true>() {
 
   length = (length + 0x7) & ~0x7;
 
-  std::array<u8, DMEM_SIZE> &src = spDMASPAddr.bank ? imem : dmem;
+  const auto &src = spDMASPAddr.bank ? imem : dmem;
 
   u32 mem_address = spDMASPAddr.address & 0xFF8;
   u32 dram_address = spDMADRAMAddr.address & 0xFFFFF8;
@@ -134,7 +134,7 @@ void RSP::DMA<true>() {
       mem.mmio.rdp.WriteRDRAM<u8>(BYTE_ADDRESS(dram_address + j), src[(mem_address + j) & DMEM_DSIZE]);
     }
 
-    int skip = i == spDMALen.count ? 0 : spDMALen.skip;
+    const int skip = i == spDMALen.count ? 0 : spDMALen.skip;
 
     dram_address += (length + skip);
     dram_address &= 0xFFFFF8;
@@ -155,7 +155,7 @@ void RSP::DMA<false>() {
 
   length = (length + 0x7) & ~0x7;
 
-  std::array<u8, DMEM_SIZE> &dst = spDMASPAddr.bank ? imem : dmem;
+  auto &dst = spDMASPAddr.bank ? imem : dmem;
 
   u32 mem_address = spDMASPAddr.address & 0xFF8;
   u32 dram_address = spDMADRAMAddr.address & 0xFFFFF8;
@@ -166,7 +166,7 @@ void RSP::DMA<false>() {
       dst[(mem_address + j) & DMEM_DSIZE] = mem.mmio.rdp.ReadRDRAM<u8>(BYTE_ADDRESS(dram_address + j));
     }
 
-    int skip = i == spDMALen.count ? 0 : spDMALen.skip;
+    const int skip = i == spDMALen.count ? 0 : spDMALen.skip;
 
     dram_address += (length + skip);
     dram_address &= 0xFFFFF8;
@@ -181,7 +181,7 @@ void RSP::DMA<false>() {
   spDMALen.raw = 0xFF8 | (spDMALen.skip << 20);
 }
 
-void RSP::Write(u32 addr, u32 val) {
+void RSP::Write(const u32 addr, const u32 val) {
   switch (addr) {
   case 0x04040000:
     spDMASPAddr.raw = val & 0x1FF8;

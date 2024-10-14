@@ -7,7 +7,7 @@
 namespace n64 {
 RDP::RDP(Mem &mem, ParallelRDP &parallel) : mem(mem), parallel(parallel) {
   rdram.resize(RDRAM_SIZE);
-  std::fill(rdram.begin(), rdram.end(), 0);
+  std::ranges::fill(rdram, 0);
   memset(cmd_buf, 0, 0x100000);
   dpc.status.raw = 0x80;
 }
@@ -15,75 +15,75 @@ RDP::RDP(Mem &mem, ParallelRDP &parallel) : mem(mem), parallel(parallel) {
 void RDP::Reset() {
   dpc = {};
   dpc.status.raw = 0x80;
-  std::fill(rdram.begin(), rdram.end(), 0);
+  std::ranges::fill(rdram, 0);
   memset(cmd_buf, 0, 0x100000);
 }
 
 template <>
-void RDP::WriteRDRAM<u8>(size_t idx, u8 v) {
-  size_t real = BYTE_ADDRESS(idx);
-  if (real < RDRAM_SIZE) {
+void RDP::WriteRDRAM<u8>(const size_t idx, const u8 v) {
+  if (const size_t real = BYTE_ADDRESS(idx); real < RDRAM_SIZE) [[likely]] {
     rdram[real] = v;
   }
 }
 
 template <>
-void RDP::WriteRDRAM<u16>(size_t idx, u16 v) {
-  size_t real = HALF_ADDRESS(idx);
-  if (real < RDRAM_SIZE) {
+void RDP::WriteRDRAM<u16>(const size_t idx, const u16 v) {
+  if (const size_t real = HALF_ADDRESS(idx); real < RDRAM_SIZE) [[likely]] {
     Util::WriteAccess<u16>(rdram, real, v);
   }
 }
 
 template <>
-void RDP::WriteRDRAM<u32>(size_t idx, u32 v) {
-  if (idx < RDRAM_SIZE) {
+void RDP::WriteRDRAM<u32>(const size_t idx, const u32 v) {
+  if (idx < RDRAM_SIZE) [[likely]] {
     Util::WriteAccess<u32>(rdram, idx, v);
   }
 }
 
 template <>
-void RDP::WriteRDRAM<u64>(size_t idx, u64 v) {
-  if (idx < RDRAM_SIZE) {
+void RDP::WriteRDRAM<u64>(const size_t idx, const u64 v) {
+  if (idx < RDRAM_SIZE) [[likely]] {
     Util::WriteAccess<u64>(rdram, idx, v);
   }
 }
 
 template <>
-u8 RDP::ReadRDRAM<u8>(size_t idx) {
-  size_t real = BYTE_ADDRESS(idx);
-  if (real >= RDRAM_SIZE)
-    return 0;
-  return rdram[real];
+u8 RDP::ReadRDRAM<u8>(const size_t idx) {
+  if (const size_t real = BYTE_ADDRESS(idx); real < RDRAM_SIZE) [[likely]]
+    return rdram[real];
+
+  return 0;
 }
 
 template <>
-u16 RDP::ReadRDRAM<u16>(size_t idx) {
-  size_t real = HALF_ADDRESS(idx);
-  if (real >= RDRAM_SIZE)
-    return 0;
-  return Util::ReadAccess<u16>(rdram, real);
+u16 RDP::ReadRDRAM<u16>(const size_t idx) {
+  if (const size_t real = HALF_ADDRESS(idx); real < RDRAM_SIZE) [[likely]]
+    return Util::ReadAccess<u16>(rdram, real);
+
+  return 0;
 }
 
 template <>
-u32 RDP::ReadRDRAM<u32>(size_t idx) {
-  if (idx >= RDRAM_SIZE)
-    return 0;
-  return Util::ReadAccess<u32>(rdram, idx);
+u32 RDP::ReadRDRAM<u32>(const size_t idx) {
+  if (idx < RDRAM_SIZE) [[likely]]
+    return Util::ReadAccess<u32>(rdram, idx);
+
+  return 0;
 }
 
 template <>
-u64 RDP::ReadRDRAM<u64>(size_t idx) {
-  if (idx >= RDRAM_SIZE)
-    return 0;
-  return Util::ReadAccess<u64>(rdram, idx);
+u64 RDP::ReadRDRAM<u64>(const size_t idx) {
+  if (idx < RDRAM_SIZE) [[likely]]
+    return Util::ReadAccess<u64>(rdram, idx);
+
+  return 0;
 }
 
 static const int cmd_lens[64] = {2, 2, 2, 2, 2, 2, 2, 2, 8, 12, 24, 28, 24, 28, 40, 44, 2, 2, 2, 2, 2, 2,
                                  2, 2, 2, 2, 2, 2, 2, 2, 2, 2,  2,  2,  2,  2,  4,  4,  2, 2, 2, 2, 2, 2,
                                  2, 2, 2, 2, 2, 2, 2, 2, 2, 2,  2,  2,  2,  2,  2,  2,  2, 2, 2, 2};
 
-auto RDP::Read(u32 addr) const -> u32 {
+auto RDP::Read(const u32 addr) const -> u32 {
   switch (addr) {
   case 0x04100000:
     return dpc.start;
@@ -104,9 +104,11 @@ auto RDP::Read(u32 addr) const -> u32 {
   default:
     Util::panic("Unhandled DP Command Registers read (addr: {:08X})", addr);
   }
+
+  return 0;
 }
 
-void RDP::Write(u32 addr, u32 val) {
+void RDP::Write(const u32 addr, const u32 val) {
   switch (addr) {
   case 0x04100000:
     WriteStart(val);
@@ -122,7 +124,7 @@ void RDP::Write(u32 addr, u32 val) {
   }
 }
 
-void RDP::WriteStatus(u32 val) {
+void RDP::WriteStatus(const u32 val) {
   DPCStatusWrite temp{};
   temp.raw = val;
 
@@ -201,39 +203,40 @@ void RDP::RunCommand() {
     const u32 current = dpc.current & 0xFFFFF8;
     const u32 end = dpc.end & 0xFFFFF8;
 
-    int len = end - current;
+    const auto len = static_cast<s32>(end) - static_cast<s32>(current);
     if (len <= 0)
       return;
 
-    if (len + (remaining_cmds * 4) > 0xFFFFF) {
+    if (len + remaining_cmds * 4 > 0xFFFFF) {
       Util::panic("Too many RDP commands");
       return;
     }
 
     if (dpc.status.xbusDmemDma) {
       for (int i = 0; i < len; i += 4) {
-        u32 cmd = Util::ReadAccess<u32>(mem.mmio.rsp.dmem, (current + i) & 0xFFF);
+        const u32 cmd = Util::ReadAccess<u32>(mem.mmio.rsp.dmem, (current + i) & 0xFFF);
         cmd_buf[remaining_cmds + (i >> 2)] = cmd;
       }
     } else {
       if (end > 0x7FFFFFF || current > 0x7FFFFFF) { // if (end > RDRAM_DSIZE || current > RDRAM_DSIZE)
         return;
       }
+
       for (int i = 0; i < len; i += 4) {
-        u32 cmd = Util::ReadAccess<u32>(rdram, current + i);
+        const u32 cmd = Util::ReadAccess<u32>(rdram, current + i);
         cmd_buf[remaining_cmds + (i >> 2)] = cmd;
       }
     }
 
-    int word_len = (len >> 2) + remaining_cmds;
+    const int word_len = (len >> 2) + remaining_cmds;
     int buf_index = 0;
 
     bool processed_all = true;
 
     while (buf_index < word_len) {
-      u8 cmd = (cmd_buf[buf_index] >> 24) & 0x3F;
+      const u8 cmd = (cmd_buf[buf_index] >> 24) & 0x3F;
 
-      int cmd_len = cmd_lens[cmd];
+      const int cmd_len = cmd_lens[cmd];
       if ((buf_index + cmd_len) * 4 > len + (remaining_cmds * 4)) {
         remaining_cmds = word_len - buf_index;
 

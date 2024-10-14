@@ -96,7 +96,7 @@ bool PIF::ReadButtons(u8 *res) {
   case JOYBUS_16KB_EEPROM:
   case JOYBUS_CONTROLLER:
     if (movie.IsLoaded()) {
-      Controller controller = movie.NextInputs();
+      const Controller controller = movie.NextInputs();
       res[0] = controller.byte1;
       res[1] = controller.byte2;
       res[2] = controller.joyX;

@@ -6,7 +6,7 @@
 #include <QVBoxLayout>
 #include <CodeModel.hpp>
 
-class Debugger : public QWidget {
+class Debugger final : public QWidget {
   std::unique_ptr<QDockWidget> disassembly = std::make_unique<QDockWidget>(),
                                cpuState = std::make_unique<QDockWidget>();
   std::unique_ptr<QTreeView> codeView = std::make_unique<QTreeView>(disassembly.get()),

@@ -3,7 +3,7 @@
 #include <core/mmio/SI.hpp>
 
 namespace n64 {
-SI::SI(Mem &mem, Registers &regs) : mem(mem), regs(regs), pif(mem, regs) { Reset(); }
+SI::SI(Mem &mem, Registers &regs) : pif(mem, regs), mem(mem), regs(regs) { Reset(); }
 
 void SI::Reset() {
   status.raw = 0;

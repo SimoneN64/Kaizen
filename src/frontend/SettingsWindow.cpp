@@ -1,7 +1,7 @@
 #include <SettingsWindow.hpp>
 #include <fmt/core.h>
 
-std::string savePath = "";
+std::string savePath;
 
 SettingsWindow::SettingsWindow() : QWidget(nullptr) {
   settings = JSONOpenOrCreate("resources/settings.json");

@@ -65,7 +65,7 @@ auto PI::BusRead<u8, true>(u32 addr) -> u8 {
   case REGION_PI_ROM:
     {
       // round to nearest 4 byte boundary, keeping old LSB
-      u32 index = BYTE_ADDRESS(addr) - SREGION_PI_ROM;
+      const u32 index = BYTE_ADDRESS(addr) - SREGION_PI_ROM;
       if (index >= mem.rom.cart.size()) {
         Util::warn("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM! ({}/0x{:016X})", addr,
                    index, index, mem.rom.cart.size(), mem.rom.cart.size());
@@ -104,7 +104,7 @@ auto PI::BusRead<u8, false>(u32 addr) -> u8 {
     {
       addr = (addr + 2) & ~2;
       // round to nearest 4 byte boundary, keeping old LSB
-      u32 index = BYTE_ADDRESS(addr) - SREGION_PI_ROM;
+      const u32 index = BYTE_ADDRESS(addr) - SREGION_PI_ROM;
       if (index >= mem.rom.cart.size()) {
         Util::warn("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM! ({}/0x{:016X})", addr,
                    index, index, mem.rom.cart.size(), mem.rom.cart.size());
@@ -178,7 +178,7 @@ auto PI::BusRead<u16, false>(u32 addr) -> u16 {
   case REGION_PI_ROM:
     {
       addr = (addr + 2) & ~3;
-      u32 index = HALF_ADDRESS(addr) - SREGION_PI_ROM;
+      const u32 index = HALF_ADDRESS(addr) - SREGION_PI_ROM;
       if (index > mem.rom.cart.size() - 1) {
         Util::panic("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM!", addr, index, index);
       }
@@ -312,7 +312,7 @@ void PI::BusWrite<u32, false>(u32 addr, u32 val) {
       {
         if (val < CART_ISVIEWER_SIZE) {
           std::string message(val + 1, 0);
-          std::copy(mem.isviewer.begin(), mem.isviewer.begin() + val, message.begin());
+          std::copy_n(mem.isviewer.begin(), val, message.begin());
           Util::print<Util::Always>("{}", message);
         } else {
           Util::panic("ISViewer buffer size is emulated at {} bytes, but received a flush command for {} bytes!",
@@ -355,7 +355,7 @@ auto PI::BusRead<u64, false>(u32 addr) -> u64 {
     Util::panic("Reading dword from address 0x{:08X} in unsupported region: REGION_PI_SRAM", addr);
   case REGION_PI_ROM:
     {
-      u32 index = addr - SREGION_PI_ROM;
+      const u32 index = addr - SREGION_PI_ROM;
       if (index > mem.rom.cart.size() - 7) { // -7 because we're reading an entire dword
         Util::panic("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM!", addr, index, index);
       }
@@ -439,7 +439,7 @@ auto PI::Read(u32 addr) const -> u32 {
   }
 }
 
-u8 PI::GetDomain(u32 address) {
+u8 PI::GetDomain(const u32 address) {
   switch (address) {
   case REGION_PI_UNKNOWN:
   case REGION_PI_64DD_ROM:
@@ -453,13 +453,12 @@ u8 PI::GetDomain(u32 address) {
   }
 }
 
-u32 PI::AccessTiming(u8 domain, u32 length) const {
+u32 PI::AccessTiming(const u8 domain, const u32 length) const {
   uint32_t cycles = 0;
   uint32_t latency = 0;
   uint32_t pulse_width = 0;
   uint32_t release = 0;
   uint32_t page_size = 0;
-  uint32_t pages;
 
   switch (domain) {
   case 1:
@@ -478,7 +477,7 @@ u32 PI::AccessTiming(u8 domain, u32 length) const {
     Util::panic("Unknown PI domain: {}\n", domain);
   }
 
-  pages = ceil((double)length / page_size);
+  const uint32_t pages = ceil((double)length / page_size);
 
   cycles += (14 + latency) * pages;
   cycles += (pulse_width + release) * (length / 2);
@@ -489,7 +488,7 @@ u32 PI::AccessTiming(u8 domain, u32 length) const {
 // rdram -> cart
 template <>
 void PI::DMA<false>() {
-  s32 len = rdLen + 1;
+  const s32 len = rdLen + 1;
   Util::trace("PI DMA from RDRAM to CARTRIDGE (size: {} B, {:08X} to {:08X})", len, dramAddr, cartAddr);
 
   if (mem.saveType == SAVE_FLASH_1m && cartAddr >= SREGION_PI_SRAM && cartAddr < 0x08010000) {
@@ -512,7 +511,7 @@ void PI::DMA<false>() {
 // cart -> rdram
 template <>
 void PI::DMA<true>() {
-  s32 len = wrLen + 1;
+  const s32 len = wrLen + 1;
   Util::trace("PI DMA from CARTRIDGE to RDRAM (size: {} B, {:08X} to {:08X})", len, cartAddr, dramAddr);
 
   if (mem.saveType == SAVE_FLASH_1m && cartAddr >= SREGION_PI_SRAM && cartAddr < 0x08010000) {

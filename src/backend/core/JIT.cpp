@@ -4,11 +4,11 @@
 namespace n64 {
 JIT::JIT(ParallelRDP &parallel) : mem(regs, parallel) {}
 
-bool JIT::ShouldServiceInterrupt() {
-  bool interrupts_pending = (regs.cop0.status.im & regs.cop0.cause.interruptPending) != 0;
-  bool interrupts_enabled = regs.cop0.status.ie == 1;
-  bool currently_handling_exception = regs.cop0.status.exl == 1;
-  bool currently_handling_error = regs.cop0.status.erl == 1;
+bool JIT::ShouldServiceInterrupt() const {
+  const bool interrupts_pending = (regs.cop0.status.im & regs.cop0.cause.interruptPending) != 0;
+  const bool interrupts_enabled = regs.cop0.status.ie == 1;
+  const bool currently_handling_exception = regs.cop0.status.exl == 1;
+  const bool currently_handling_error = regs.cop0.status.erl == 1;
 
   return interrupts_pending && interrupts_enabled && !currently_handling_exception && !currently_handling_error;
 }
@@ -16,7 +16,7 @@ bool JIT::ShouldServiceInterrupt() {
 void JIT::CheckCompareInterrupt() {
   regs.cop0.count++;
   regs.cop0.count &= 0x1FFFFFFFF;
-  if (regs.cop0.count == (u64)regs.cop0.compare << 1) {
+  if (regs.cop0.count == static_cast<u64>(regs.cop0.compare) << 1) {
     regs.cop0.cause.ip7 = 1;
     mem.mmio.mi.UpdateInterrupt();
   }
@@ -41,10 +41,10 @@ int JIT::Step() {
     u32 paddr = 0;
     if (!regs.cop0.MapVAddr(Cop0::LOAD, pc, paddr)) {
       /*regs.cop0.HandleTLBException(pc);
-      regs.cop0.FireException(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, pc);
+      regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, pc);
       return 1;*/
       Util::panic("[JIT]: Unhandled exception TLB exception {} when retrieving PC physical address!",
-                  static_cast<int>(regs.cop0.GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD)));
+                  static_cast<int>(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD)));
     }
 
     instruction = mem.Read<u32>(regs, paddr);

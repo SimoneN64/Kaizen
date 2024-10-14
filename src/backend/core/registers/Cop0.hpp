@@ -240,9 +240,9 @@ struct Cop0 {
   s64 openbus{};
   template <class T>
   void decode(T &, u32);
-  FORCE_INLINE u32 GetRandom() {
+  [[nodiscard]] FORCE_INLINE u32 GetRandom() const {
     u32 val = rand();
-    auto wired_ = GetWired();
+    const auto wired_ = GetWired();
     u32 lower, upper;
     if (wired_ > 31) {
       lower = 0;
@@ -257,7 +257,7 @@ struct Cop0 {
   }
 
   FORCE_INLINE void Update() {
-    bool exception = status.exl || status.erl;
+    const bool exception = status.exl || status.erl;
 
     kernelMode = exception || status.ksu == 0;
     supervisorMode = !exception && status.ksu == 1;
@@ -267,17 +267,17 @@ struct Cop0 {
 
   enum TLBAccessType { LOAD, STORE };
 
-  bool ProbeTLB(TLBAccessType access_type, u64 vaddr, u32 &paddr, int *match);
-  void FireException(ExceptionCode code, int cop, s64 pc);
+  bool ProbeTLB(TLBAccessType accessType, u64 vaddr, u32 &paddr, int *match) const;
+  void FireException(ExceptionCode code, int cop, s64 pc) const;
   bool MapVAddr(TLBAccessType accessType, u64 vaddr, u32 &paddr);
-  bool UserMapVAddr32(TLBAccessType accessType, u64 vaddr, u32 &paddr);
-  bool MapVAddr32(TLBAccessType accessType, u64 vaddr, u32 &paddr);
-  bool UserMapVAddr64(TLBAccessType accessType, u64 vaddr, u32 &paddr);
-  bool MapVAddr64(TLBAccessType accessType, u64 vaddr, u32 &paddr);
+  bool UserMapVAddr32(TLBAccessType accessType, u64 vaddr, u32 &paddr) const;
+  bool MapVAddr32(TLBAccessType accessType, u64 vaddr, u32 &paddr) const;
+  bool UserMapVAddr64(TLBAccessType accessType, u64 vaddr, u32 &paddr) const;
+  bool MapVAddr64(TLBAccessType accessType, u64 vaddr, u32 &paddr) const;
 
-  TLBEntry *TLBTryMatch(u64 vaddr, int *match);
-  void HandleTLBException(u64 vaddr);
-  ExceptionCode GetTLBExceptionCode(TLBError error, TLBAccessType access_type);
+  TLBEntry *TLBTryMatch(u64 vaddr, int *match) const;
+  void HandleTLBException(u64 vaddr) const;
+  static ExceptionCode GetTLBExceptionCode(TLBError error, TLBAccessType accessType);
 
 private:
   Registers &regs;

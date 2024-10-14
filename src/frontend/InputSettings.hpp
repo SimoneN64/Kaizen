@@ -8,7 +8,7 @@
 #include <QComboBox>
 #include <QTimer>
 
-class InputSettings : public QWidget {
+class InputSettings final : public QWidget {
   bool grabbing = false;
   int whichGrabbing = -1;
 

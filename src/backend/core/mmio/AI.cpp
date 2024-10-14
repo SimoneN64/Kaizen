@@ -21,7 +21,7 @@ void AI::Reset() {
 
 // https://github.com/ares-emulator/ares/blob/master/ares/n64/ai/io.cpp
 // https://github.com/ares-emulator/ares/blob/master/LICENSE
-auto AI::Read(u32 addr) const -> u32 {
+auto AI::Read(const u32 addr) const -> u32 {
   if (addr == 0x0450000C) {
     u32 val = 0;
     val |= (dmaCount > 1);
@@ -36,7 +36,7 @@ auto AI::Read(u32 addr) const -> u32 {
   return dmaLen[0];
 }
 
-void AI::Write(u32 addr, u32 val) {
+void AI::Write(const u32 addr, const u32 val) {
   switch (addr) {
   case 0x04500000:
     if (dmaCount < 2) {
@@ -45,7 +45,7 @@ void AI::Write(u32 addr, u32 val) {
     break;
   case 0x04500004:
     {
-      u32 len = (val & 0x3FFFF) & ~7;
+      const u32 len = (val & 0x3FFFF) & ~7;
       if (dmaCount < 2) {
         if (dmaCount == 0)
           mem.mmio.mi.InterruptRaise(MI::Interrupt::AI);
@@ -62,7 +62,7 @@ void AI::Write(u32 addr, u32 val) {
     break;
   case 0x04500010:
     {
-      u32 oldDacFreq = dac.freq;
+      const u32 oldDacFreq = dac.freq;
       dacRate = val & 0x3FFF;
       dac.freq = std::max(1.f, (float)GetVideoFrequency(mem.IsROMPAL()) / (dacRate + 1)) * 1.037;
       dac.period = N64_CPU_FREQ / dac.freq;
@@ -80,7 +80,7 @@ void AI::Write(u32 addr, u32 val) {
   }
 }
 
-void AI::Step(u32 cpuCycles, float volumeL, float volumeR) {
+void AI::Step(const u32 cpuCycles, const float volumeL, const float volumeR) {
   cycles += cpuCycles;
   while (cycles > dac.period) {
     if (dmaCount == 0) {
@@ -88,18 +88,18 @@ void AI::Step(u32 cpuCycles, float volumeL, float volumeR) {
     }
 
     if (dmaLen[0] && dmaEnable) {
-      u32 addrHi = ((dmaAddr[0] >> 13) + dmaAddrCarry) & 0x7FF;
-      dmaAddr[0] = (addrHi << 13) | (dmaAddr[0] & 0x1FFF);
-      u32 data = mem.mmio.rdp.ReadRDRAM<u32>(dmaAddr[0]);
-      s16 l = s16(data >> 16);
-      s16 r = s16(data);
+      const u32 addrHi = (dmaAddr[0] >> 13) + dmaAddrCarry & 0x7FF;
+      dmaAddr[0] = addrHi << 13 | dmaAddr[0] & 0x1FFF;
+      const u32 data = mem.mmio.rdp.ReadRDRAM<u32>(dmaAddr[0]);
+      const s16 l = s16(data >> 16);
+      const s16 r = s16(data);
 
       if (volumeR > 0 && volumeL > 0) {
         device.PushSample((float)l / INT16_MAX, volumeL, (float)r / INT16_MAX, volumeR);
       }
 
-      u32 addrLo = (dmaAddr[0] + 4) & 0x1FFF;
-      dmaAddr[0] = (dmaAddr[0] & ~0x1FFF) | addrLo;
+      const u32 addrLo = dmaAddr[0] + 4 & 0x1FFF;
+      dmaAddr[0] = dmaAddr[0] & ~0x1FFF | addrLo;
       dmaAddrCarry = addrLo == 0;
       dmaLen[0] -= 4;
     }

@@ -8,13 +8,13 @@
 #include <unarr.h>
 
 namespace n64 {
-Mem::Mem(Registers &regs, ParallelRDP &parallel) : flash(saveData), mmio(*this, regs, parallel) {
+Mem::Mem(Registers &regs, ParallelRDP &parallel) : mmio(*this, regs, parallel), flash(saveData) {
   rom.cart.resize(CART_SIZE);
-  std::fill(rom.cart.begin(), rom.cart.end(), 0);
+  std::ranges::fill(rom.cart, 0);
 }
 
 void Mem::Reset() {
-  std::fill(rom.cart.begin(), rom.cart.end(), 0);
+  std::ranges::fill(rom.cart, 0);
   flash.Reset();
   if (saveData.is_mapped()) {
     std::error_code error;
@@ -87,7 +87,7 @@ FORCE_INLINE void SetROMCIC(u32 checksum, ROM &rom) {
 }
 
 std::vector<u8> Mem::OpenArchive(const std::string &path, size_t &sizeAdjusted) {
-  auto stream = ar_open_file(fs::path(path).string().c_str());
+  const auto stream = ar_open_file(fs::path(path).string().c_str());
 
   if (!stream) {
     Util::panic("Could not open archive! Are you sure it's an archive?");
@@ -115,17 +115,17 @@ std::vector<u8> Mem::OpenArchive(const std::string &path, size_t &sizeAdjusted) 
     auto filename = ar_entry_get_name(archive);
     auto extension = fs::path(filename).extension();
 
-    if (std::any_of(rom_exts.begin(), rom_exts.end(), [&](auto x) { return extension == x; })) {
-      auto size = ar_entry_get_size(archive);
+    if (std::ranges::any_of(rom_exts, [&](const auto& x) { return extension == x; })) {
+      const auto size = ar_entry_get_size(archive);
       sizeAdjusted = Util::NextPow2(size);
       buf.resize(sizeAdjusted);
       ar_entry_uncompress(archive, buf.data(), size);
       break;
-    } else {
-      ar_close_archive(archive);
-      ar_close(stream);
-      Util::panic("Could not find any rom image in the archive!");
     }
+
+    ar_close_archive(archive);
+    ar_close(stream);
+    Util::panic("Could not find any rom image in the archive!");
   }
 
   ar_close_archive(archive);
@@ -139,10 +139,10 @@ std::vector<u8> Mem::OpenROM(const std::string &filename, size_t &sizeAdjusted) 
   return buf;
 }
 
-void Mem::LoadROM(bool isArchive, const std::string &filename) {
-  size_t sizeAdjusted;
+void Mem::LoadROM(const bool isArchive, const std::string &filename) {
   u32 endianness;
   {
+    size_t sizeAdjusted;
     std::vector<u8> buf{};
     if (isArchive) {
       buf = OpenArchive(filename, sizeAdjusted);
@@ -153,7 +153,7 @@ void Mem::LoadROM(bool isArchive, const std::string &filename) {
     endianness = bswap(*reinterpret_cast<u32 *>(buf.data()));
     Util::SwapN64Rom<true>(buf, endianness);
 
-    std::copy(buf.begin(), buf.end(), rom.cart.begin());
+    std::ranges::copy(buf, rom.cart.begin());
     rom.mask = sizeAdjusted - 1;
     memcpy(&rom.header, buf.data(), sizeof(ROMHeader));
   }
@@ -178,7 +178,7 @@ void Mem::LoadROM(bool isArchive, const std::string &filename) {
     rom.gameNameCart[i] = '\0';
   }
 
-  u32 checksum = Util::crc32(0, &rom.cart[0x40], 0x9c0);
+  const u32 checksum = Util::crc32(0, &rom.cart[0x40], 0x9c0);
   SetROMCIC(checksum, rom);
   endianness = bswap(*reinterpret_cast<u32 *>(rom.cart.data()));
   Util::SwapN64Rom(rom.cart, endianness);
@@ -186,15 +186,15 @@ void Mem::LoadROM(bool isArchive, const std::string &filename) {
 }
 
 template <>
-u8 Mem::Read(n64::Registers &regs, u32 paddr) {
-  SI &si = mmio.si;
+u8 Mem::Read(Registers &regs, const u32 paddr) {
+  const SI &si = mmio.si;
 
   switch (paddr) {
   case RDRAM_REGION:
     return mmio.rdp.ReadRDRAM<u8>(paddr);
   case RSP_MEM_REGION:
     {
-      auto &src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+      const auto &src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
       return src[BYTE_ADDRESS(paddr & 0xfff)];
     }
   case REGION_CART:
@@ -206,9 +206,9 @@ u8 Mem::Read(n64::Registers &regs, u32 paddr) {
     Util::panic("MMIO Read<u8>!\n");
   case AI_REGION:
     {
-      u32 w = mmio.ai.Read(paddr & ~3);
-      int offs = 3 - (paddr & 3);
-      return (w >> (offs * 8)) & 0xff;
+      const u32 w = mmio.ai.Read(paddr & ~3);
+      const int offs = 3 - (paddr & 3);
+      return w >> offs * 8 & 0xff;
     }
   case PIF_ROM_REGION:
     return si.pif.bootrom[BYTE_ADDRESS(paddr) - PIF_ROM_REGION_START];
@@ -221,19 +221,20 @@ u8 Mem::Read(n64::Registers &regs, u32 paddr) {
     return 0;
   default:
     Util::panic("Unimplemented 8-bit read at address {:08X} (PC = {:016X})", paddr, (u64)regs.pc);
+    return 0;
   }
 }
 
 template <>
-u16 Mem::Read(n64::Registers &regs, u32 paddr) {
-  SI &si = mmio.si;
+u16 Mem::Read(Registers &regs, const u32 paddr) {
+  const SI &si = mmio.si;
 
   switch (paddr) {
   case RDRAM_REGION:
     return mmio.rdp.ReadRDRAM<u16>(paddr);
   case RSP_MEM_REGION:
     {
-      auto &src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+      const auto &src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
       return Util::ReadAccess<u16>(src, HALF_ADDRESS(paddr & 0xfff));
     }
   case MMIO_REGION:
@@ -251,19 +252,20 @@ u16 Mem::Read(n64::Registers &regs, u32 paddr) {
     return 0;
   default:
     Util::panic("Unimplemented 16-bit read at address {:08X} (PC = {:016X})", paddr, (u64)regs.pc);
+    return 0;
   }
 }
 
 template <>
-u32 Mem::Read(n64::Registers &regs, u32 paddr) {
-  SI &si = mmio.si;
+u32 Mem::Read(Registers &regs, const u32 paddr) {
+  const SI &si = mmio.si;
 
   switch (paddr) {
   case RDRAM_REGION:
     return mmio.rdp.ReadRDRAM<u32>(paddr);
   case RSP_MEM_REGION:
     {
-      auto &src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+      const auto &src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
       return Util::ReadAccess<u32>(src, paddr & 0xfff);
     }
   case MMIO_REGION:
@@ -285,15 +287,15 @@ u32 Mem::Read(n64::Registers &regs, u32 paddr) {
 }
 
 template <>
-u64 Mem::Read(n64::Registers &regs, u32 paddr) {
-  SI &si = mmio.si;
+u64 Mem::Read(Registers &regs, const u32 paddr) {
+  const SI &si = mmio.si;
 
   switch (paddr) {
   case RDRAM_REGION:
     return mmio.rdp.ReadRDRAM<u64>(paddr);
   case RSP_MEM_REGION:
     {
-      auto &src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
+      const auto &src = paddr & 0x1000 ? mmio.rsp.imem : mmio.rsp.dmem;
       return Util::ReadAccess<u64>(src, paddr & 0xfff);
     }
   case MMIO_REGION:
@@ -397,7 +399,7 @@ void Mem::Write<u16>(Registers &regs, u32 paddr, u32 val) {
 }
 
 template <>
-void Mem::Write<u32>(Registers &regs, u32 paddr, u32 val) {
+void Mem::Write<u32>(Registers &regs, const u32 paddr, const u32 val) {
   SI &si = mmio.si;
 
   switch (paddr) {
@@ -434,7 +436,7 @@ void Mem::Write<u32>(Registers &regs, u32 paddr, u32 val) {
   }
 }
 
-void Mem::Write(Registers &regs, u32 paddr, u64 val) {
+void Mem::Write(const Registers &regs, const u32 paddr, u64 val) {
   SI &si = mmio.si;
 
   switch (paddr) {
@@ -472,7 +474,7 @@ void Mem::Write(Registers &regs, u32 paddr, u64 val) {
 }
 
 template <>
-u32 Mem::BackupRead<u32>(u32 addr) {
+u32 Mem::BackupRead<u32>(const u32 addr) {
   switch (saveType) {
   case SAVE_NONE:
     return 0;
@@ -490,7 +492,7 @@ u32 Mem::BackupRead<u32>(u32 addr) {
 }
 
 template <>
-u8 Mem::BackupRead<u8>(u32 addr) {
+u8 Mem::BackupRead<u8>(const u32 addr) {
   switch (saveType) {
   case SAVE_NONE:
     return 0;
@@ -513,7 +515,7 @@ u8 Mem::BackupRead<u8>(u32 addr) {
 }
 
 template <>
-void Mem::BackupWrite<u32>(u32 addr, u32 val) {
+void Mem::BackupWrite<u32>(const u32 addr, const u32 val) {
   switch (saveType) {
   case SAVE_NONE:
     Util::warn("Accessing cartridge with save type SAVE_NONE in write word");
@@ -532,7 +534,7 @@ void Mem::BackupWrite<u32>(u32 addr, u32 val) {
 }
 
 template <>
-void Mem::BackupWrite<u8>(u32 addr, u8 val) {
+void Mem::BackupWrite<u8>(const u32 addr, const u8 val) {
   switch (saveType) {
   case SAVE_NONE:
     Util::warn("Accessing cartridge with save type SAVE_NONE in write word");
@@ -572,8 +574,8 @@ std::vector<u8> Mem::Serialize() {
 }
 
 void Mem::Deserialize(const std::vector<u8> &data) {
-  mmio.Deserialize(std::vector<u8>(data.begin(), data.begin() + mmioSize));
-  flash.Deserialize(std::vector<u8>(data.begin() + mmioSize, data.begin() + mmioSize + flashSize));
+  mmio.Deserialize(std::vector(data.begin(), data.begin() + mmioSize));
+  flash.Deserialize(std::vector(data.begin() + mmioSize, data.begin() + mmioSize + flashSize));
   memcpy(saveData.data(), data.data() + mmioSize + flashSize, saveData.size());
 }
 } // namespace n64

@@ -3,10 +3,9 @@
 #include <log.hpp>
 
 namespace n64 {
-void Interpreter::special(u32 instr) {
-  u8 mask = (instr & 0x3F);
+void Interpreter::special(const u32 instr) {
   // 00rr_rccc
-  switch (mask) { // TODO: named constants for clearer code
+  switch (const u8 mask = instr & 0x3F) {
   case SLL:
     if (instr != 0) {
       sll(instr);
@@ -166,14 +165,13 @@ void Interpreter::special(u32 instr) {
     break;
   default:
     Util::panic("Unimplemented special {} {} ({:08X}) (pc: {:016X})", (mask >> 3) & 7, mask & 7, instr,
-                (u64)regs.oldPC);
+                static_cast<u64>(regs.oldPC));
   }
 }
 
-void Interpreter::regimm(u32 instr) {
-  u8 mask = ((instr >> 16) & 0x1F);
+void Interpreter::regimm(const u32 instr) {
   // 000r_rccc
-  switch (mask) { // TODO: named constants for clearer code
+  switch (const u8 mask = instr >> 16 & 0x1F) {
   case BLTZ:
     b(instr, regs.Read<s64>(RS(instr)) < 0);
     break;
@@ -187,22 +185,22 @@ void Interpreter::regimm(u32 instr) {
     bl(instr, regs.Read<s64>(RS(instr)) >= 0);
     break;
   case TGEI:
-    trap(regs.Read<s64>(RS(instr)) >= s64(s16(instr)));
+    trap(regs.Read<s64>(RS(instr)) >= static_cast<s64>(static_cast<s16>(instr)));
     break;
   case TGEIU:
-    trap(regs.Read<u64>(RS(instr)) >= u64(s64(s16(instr))));
+    trap(regs.Read<u64>(RS(instr)) >= static_cast<u64>(static_cast<s64>(static_cast<s16>(instr))));
     break;
   case TLTI:
-    trap(regs.Read<s64>(RS(instr)) < s64(s16(instr)));
+    trap(regs.Read<s64>(RS(instr)) < static_cast<s64>(static_cast<s16>(instr)));
     break;
   case TLTIU:
-    trap(regs.Read<u64>(RS(instr)) < u64(s64(s16(instr))));
+    trap(regs.Read<u64>(RS(instr)) < static_cast<u64>(static_cast<s64>(static_cast<s16>(instr))));
     break;
   case TEQI:
-    trap(regs.Read<s64>(RS(instr)) == s64(s16(instr)));
+    trap(regs.Read<s64>(RS(instr)) == static_cast<s64>(static_cast<s16>(instr)));
     break;
   case TNEI:
-    trap(regs.Read<s64>(RS(instr)) != s64(s16(instr)));
+    trap(regs.Read<s64>(RS(instr)) != static_cast<s64>(static_cast<s16>(instr)));
     break;
   case BLTZAL:
     blink(instr, regs.Read<s64>(RS(instr)) < 0);
@@ -217,11 +215,12 @@ void Interpreter::regimm(u32 instr) {
     bllink(instr, regs.Read<s64>(RS(instr)) >= 0);
     break;
   default:
-    Util::panic("Unimplemented regimm {} {} ({:08X}) (pc: {:016X})", (mask >> 3) & 3, mask & 7, instr, (u64)regs.oldPC);
+    Util::panic("Unimplemented regimm {} {} ({:08X}) (pc: {:016X})", (mask >> 3) & 3, mask & 7, instr,
+                static_cast<u64>(regs.oldPC));
   }
 }
 
-void Interpreter::cop2Decode(u32 instr) {
+void Interpreter::cop2Decode(const u32 instr) {
   if (!regs.cop0.status.cu2) {
     regs.cop0.FireException(ExceptionCode::CoprocessorUnusable, 2, regs.oldPC);
     return;
@@ -250,10 +249,9 @@ void Interpreter::cop2Decode(u32 instr) {
   }
 }
 
-void Interpreter::Exec(u32 instr) {
-  u8 mask = (instr >> 26) & 0x3f;
+void Interpreter::Exec(const u32 instr) {
   // 00rr_rccc
-  switch (mask) { // TODO: named constants for clearer code
+  switch (const u8 mask = instr >> 26 & 0x3f) {
   case SPECIAL:
     special(instr);
     break;
@@ -416,7 +414,7 @@ void Interpreter::Exec(u32 instr) {
     sd(instr);
     break;
   default:
-    Util::panic("Unimplemented instruction {:02X} ({:08X}) (pc: {:016X})", mask, instr, (u64)regs.oldPC);
+    Util::panic("Unimplemented instruction {:02X} ({:08X}) (pc: {:016X})", mask, instr, static_cast<u64>(regs.oldPC));
   }
 }
 } // namespace n64

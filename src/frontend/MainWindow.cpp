@@ -103,7 +103,7 @@ void MainWindow::Retranslate() {
 
 void MainWindow::ConnectSignalsToSlots() noexcept {
   connect(actionOpen.get(), &QAction::triggered, this, [this]() {
-    QString file_name = QFileDialog::getOpenFileName(
+    const QString file_name = QFileDialog::getOpenFileName(
       this, "Nintendo 64 executable", QString(),
       "All supported types (*.zip *.ZIP *.7z *.7Z *.rar *.RAR *.tar *.TAR *.n64 *.N64 *.v64 *.V64 *.z64 *.Z64)");
 

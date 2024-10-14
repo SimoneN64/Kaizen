@@ -24,7 +24,7 @@ void VI::Reset() {
   swaps = {};
 }
 
-u32 VI::Read(u32 paddr) const {
+u32 VI::Read(const u32 paddr) const {
   switch (paddr) {
   case 0x04400000:
     return status.raw;
@@ -59,7 +59,7 @@ u32 VI::Read(u32 paddr) const {
   }
 }
 
-void VI::Write(u32 paddr, u32 val) {
+void VI::Write(const u32 paddr, const u32 val) {
   switch (paddr) {
   case 0x04400000:
     status.raw = val;
@@ -67,7 +67,7 @@ void VI::Write(u32 paddr, u32 val) {
     break;
   case 0x04400004:
     {
-      u32 masked = val & 0xFFFFFF;
+      const u32 masked = val & 0xFFFFFF;
       if (origin != masked) {
         swaps++;
       }

@@ -3,13 +3,13 @@
 #include <log.hpp>
 
 namespace n64 {
-void Cop0::mtc0(u32 instr) { SetReg32(RD(instr), regs.Read<u32>(RT(instr))); }
+void Cop0::mtc0(const u32 instr) { SetReg32(RD(instr), regs.Read<u32>(RT(instr))); }
 
-void Cop0::dmtc0(u32 instr) { SetReg64(RD(instr), regs.Read<u64>(RT(instr))); }
+void Cop0::dmtc0(const u32 instr) { SetReg64(RD(instr), regs.Read<u64>(RT(instr))); }
 
-void Cop0::mfc0(u32 instr) { regs.Write(RT(instr), s32(GetReg32(RD(instr)))); }
+void Cop0::mfc0(const u32 instr) { regs.Write(RT(instr), s32(GetReg32(RD(instr)))); }
 
-void Cop0::dmfc0(u32 instr) const { regs.Write(RT(instr), s64(GetReg64(RD(instr)))); }
+void Cop0::dmfc0(const u32 instr) const { regs.Write(RT(instr), s64(GetReg64(RD(instr)))); }
 
 void Cop0::eret() {
   if (status.erl) {
@@ -29,7 +29,7 @@ void Cop0::tlbr() {
     Util::panic("TLBR with TLB index {}", index.i);
   }
 
-  TLBEntry entry = tlb[index.i];
+  const TLBEntry entry = tlb[index.i];
 
   entryHi.raw = entry.entryHi.raw;
   entryLo0.raw = entry.entryLo0.raw & 0x3FFFFFFF;
@@ -40,10 +40,10 @@ void Cop0::tlbr() {
   pageMask.raw = entry.pageMask.raw;
 }
 
-void Cop0::tlbw(int index_) {
+void Cop0::tlbw(const int index_) {
   PageMask page_mask{};
   page_mask = pageMask;
-  u32 top = page_mask.mask & 0xAAA;
+  const u32 top = page_mask.mask & 0xAAA;
   page_mask.mask = top | (top >> 1);
 
   if (index_ >= 32) {
@@ -63,8 +63,7 @@ void Cop0::tlbw(int index_) {
 
 void Cop0::tlbp() {
   int match = -1;
-  TLBEntry *entry = TLBTryMatch(entryHi.raw, &match);
-  if (entry && match >= 0) {
+  if (const TLBEntry *entry = TLBTryMatch(entryHi.raw, &match); entry && match >= 0) {
     index.raw = match;
   } else {
     index.raw = 0;

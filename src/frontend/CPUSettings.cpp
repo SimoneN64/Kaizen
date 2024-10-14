@@ -2,7 +2,7 @@
 #include <JSONUtils.hpp>
 #include <log.hpp>
 
-CPUSettings::CPUSettings(nlohmann::json &settings) : settings(settings), QWidget(nullptr) {
+CPUSettings::CPUSettings(nlohmann::json &settings) : QWidget(nullptr), settings(settings) {
   cpuTypes->addItems({
     "Interpreter" //, "Dynamic Recompiler"
   });

@@ -1,6 +1,6 @@
 #include <AudioSettings.hpp>
 
-AudioSettings::AudioSettings(nlohmann::json &settings) : settings(settings), QWidget(nullptr) {
+AudioSettings::AudioSettings(nlohmann::json &settings) : QWidget(nullptr), settings(settings) {
   lockChannels->setChecked(JSONGetField<bool>(settings, "audio", "lock"));
   volumeL->setValue(JSONGetField<float>(settings, "audio", "volumeL") * 100);
   volumeR->setValue(JSONGetField<float>(settings, "audio", "volumeR") * 100);

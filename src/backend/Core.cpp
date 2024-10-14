@@ -23,7 +23,7 @@ void Core::LoadROM(const std::string &rom_) {
   std::string archive_types[] = {".zip", ".7z", ".rar", ".tar"};
 
   auto extension = fs::path(rom).extension().string();
-  bool isArchive = std::any_of(std::begin(archive_types), std::end(archive_types),
+  const bool isArchive = std::ranges::any_of(archive_types,
                                [&extension](const auto &e) { return e == extension; });
 
   cpu->GetMem().LoadROM(isArchive, rom);

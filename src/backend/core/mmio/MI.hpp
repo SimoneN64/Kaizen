@@ -21,13 +21,13 @@ struct Registers;
 struct MI {
   enum class Interrupt : u8 { VI, SI, PI, AI, DP, SP };
 
-  MI(Registers &);
+  explicit MI(Registers &);
   void Reset();
   [[nodiscard]] auto Read(u32) const -> u32;
   void Write(u32, u32);
   void InterruptRaise(Interrupt intr);
   void InterruptLower(Interrupt intr);
-  void UpdateInterrupt();
+  void UpdateInterrupt() const;
 
   u32 miMode{};
   MIIntr miIntr{}, miIntrMask{};

@@ -20,7 +20,7 @@ struct Interpreter : BaseCPU {
   Mem &GetMem() override { return mem; }
 
   Registers &GetRegs() override { return regs; }
-  Disassembler::DisassemblyResult Disassemble(u32, u32) const override;
+  [[nodiscard]] Disassembler::DisassemblyResult Disassemble(u32, u32) const override;
 
 private:
   Registers regs;
@@ -29,7 +29,7 @@ private:
   friend struct Cop1;
 #define check_address_error(mask, vaddr)                                                                               \
   (((!regs.cop0.is64BitAddressing) && (s32)(vaddr) != (vaddr)) || (((vaddr) & (mask)) != 0))
-  bool ShouldServiceInterrupt() override;
+  bool ShouldServiceInterrupt() const override;
   void CheckCompareInterrupt() override;
   std::vector<u8> Serialize() override;
   void Deserialize(const std::vector<u8> &) override;
@@ -118,7 +118,7 @@ private:
   void srav(u32);
   void srl(u32);
   void srlv(u32);
-  void trap(bool);
+  void trap(bool) const;
   void or_(u32);
   void ori(u32);
   void xor_(u32);

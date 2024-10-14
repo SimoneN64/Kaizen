@@ -47,7 +47,7 @@ static_assert(sizeof(TASMovieHeader) == 1024);
 
 struct MupenMovie {
   MupenMovie() = default;
-  MupenMovie(const fs::path &);
+  explicit MupenMovie(const fs::path &);
   bool Load(const fs::path &);
   void Reset();
   n64::Controller NextInputs();

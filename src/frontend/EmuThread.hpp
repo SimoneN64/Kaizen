@@ -9,7 +9,7 @@ namespace n64 {
 struct Core;
 }
 
-class EmuThread : public QThread {
+class EmuThread final : public QThread {
   Q_OBJECT
   RenderWidget &renderWidget;
 

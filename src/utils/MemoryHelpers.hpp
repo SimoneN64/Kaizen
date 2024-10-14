@@ -2,7 +2,6 @@
 #include <common.hpp>
 #include <cstring>
 #include <functional>
-#include <log.hpp>
 #include <byteswap.hpp>
 
 namespace Util {
@@ -17,7 +16,7 @@ static FORCE_INLINE std::vector<u8> IntegralToBuffer(const T &val) {
 }
 
 template <typename T>
-static FORCE_INLINE T ReadAccess(const u8 *data, const u32 index) {
+static constexpr FORCE_INLINE T ReadAccess(const u8 *data, const u32 index) {
   if constexpr (sizeof(T) == 8) {
     u32 hi = *reinterpret_cast<const u32 *>(&data[index + 0]);
     u32 lo = *reinterpret_cast<const u32 *>(&data[index + 4]);
@@ -29,7 +28,7 @@ static FORCE_INLINE T ReadAccess(const u8 *data, const u32 index) {
 }
 
 template <typename T>
-static FORCE_INLINE T ReadAccess(const std::vector<u8> &data, const u32 index) {
+static constexpr FORCE_INLINE T ReadAccess(const std::vector<u8> &data, const u32 index) {
   if constexpr (sizeof(T) == 8) {
     u32 hi = *reinterpret_cast<const u32 *>(&data[index + 0]);
     u32 lo = *reinterpret_cast<const u32 *>(&data[index + 4]);
@@ -41,7 +40,7 @@ static FORCE_INLINE T ReadAccess(const std::vector<u8> &data, const u32 index) {
 }
 
 template <typename T, size_t Size>
-static FORCE_INLINE T ReadAccess(const std::array<u8, Size> &data, const u32 index) {
+static constexpr FORCE_INLINE T ReadAccess(const std::array<u8, Size> &data, const u32 index) {
   if constexpr (sizeof(T) == 8) {
     u32 hi = *reinterpret_cast<const u32 *>(&data[index + 0]);
     u32 lo = *reinterpret_cast<const u32 *>(&data[index + 4]);
@@ -53,7 +52,7 @@ static FORCE_INLINE T ReadAccess(const std::array<u8, Size> &data, const u32 ind
 }
 
 template <typename T, size_t Size>
-static FORCE_INLINE void WriteAccess(std::array<u8, Size> &data, const u32 index, const T val) {
+static constexpr FORCE_INLINE void WriteAccess(std::array<u8, Size> &data, const u32 index, const T val) {
   if constexpr (sizeof(T) == 8) {
     const u32 hi = val >> 32;
     const u32 lo = val;
@@ -66,7 +65,7 @@ static FORCE_INLINE void WriteAccess(std::array<u8, Size> &data, const u32 index
 }
 
 template <typename T>
-static FORCE_INLINE void WriteAccess(std::vector<u8> &data, const u32 index, const T val) {
+static constexpr FORCE_INLINE void WriteAccess(std::vector<u8> &data, const u32 index, const T val) {
   if constexpr (sizeof(T) == 8) {
     const u32 hi = val >> 32;
     const u32 lo = val;
@@ -79,7 +78,7 @@ static FORCE_INLINE void WriteAccess(std::vector<u8> &data, const u32 index, con
 }
 
 template <typename T>
-static FORCE_INLINE void WriteAccess(u8 *data, const u32 index, const T val) {
+static constexpr FORCE_INLINE void WriteAccess(u8 *data, const u32 index, const T val) {
   if constexpr (sizeof(T) == 8) {
     const u32 hi = val >> 32;
     const u32 lo = val;
@@ -92,7 +91,7 @@ static FORCE_INLINE void WriteAccess(u8 *data, const u32 index, const T val) {
 }
 
 template <typename T>
-static FORCE_INLINE void SwapBuffer(std::vector<u8> &data) {
+static constexpr FORCE_INLINE void SwapBuffer(std::vector<u8> &data) {
   for (size_t i = 0; i < data.size(); i += sizeof(T)) {
     const T original = *reinterpret_cast<T *>(&data[i]);
     *reinterpret_cast<T *>(&data[i]) = bswap(original);
@@ -100,7 +99,7 @@ static FORCE_INLINE void SwapBuffer(std::vector<u8> &data) {
 }
 
 template <typename T, size_t Size>
-static FORCE_INLINE void SwapBuffer(std::array<u8, Size> &data) {
+static constexpr FORCE_INLINE void SwapBuffer(std::array<u8, Size> &data) {
   for (size_t i = 0; i < data.size(); i += sizeof(T)) {
     const T original = *reinterpret_cast<T *>(&data[i]);
     *reinterpret_cast<T *>(&data[i]) = bswap(original);

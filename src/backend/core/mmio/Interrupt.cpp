@@ -2,7 +2,7 @@
 #include <core/registers/Registers.hpp>
 
 namespace n64 {
-void MI::InterruptRaise(Interrupt intr) {
+void MI::InterruptRaise(const Interrupt intr) {
   switch (intr) {
   case Interrupt::VI:
     miIntr.vi = true;
@@ -27,7 +27,7 @@ void MI::InterruptRaise(Interrupt intr) {
   UpdateInterrupt();
 }
 
-void MI::InterruptLower(Interrupt intr) {
+void MI::InterruptLower(const Interrupt intr) {
   switch (intr) {
   case Interrupt::VI:
     miIntr.vi = false;
@@ -52,8 +52,8 @@ void MI::InterruptLower(Interrupt intr) {
   UpdateInterrupt();
 }
 
-void MI::UpdateInterrupt() {
-  bool interrupt = miIntr.raw & miIntrMask.raw;
+void MI::UpdateInterrupt() const {
+  const bool interrupt = miIntr.raw & miIntrMask.raw;
   regs.cop0.cause.ip2 = interrupt;
 }
 } // namespace n64

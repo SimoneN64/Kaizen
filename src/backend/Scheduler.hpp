@@ -1,5 +1,4 @@
 #pragma once
-#include <array>
 #include <functional>
 #include <log.hpp>
 #include <queue>
@@ -25,13 +24,12 @@ struct Event {
 struct IterableEvents {
   std::priority_queue<Event, std::vector<Event>, std::greater<>> events;
 
-public:
   explicit IterableEvents() = default;
   [[nodiscard]] auto top() const { return events.top(); }
   auto pop() { events.pop(); }
-  [[nodiscard]] auto begin() const { return (Event *)(&events.top()); }
+  [[nodiscard]] auto begin() const { return const_cast<Event *>(&events.top()); }
   [[nodiscard]] auto end() const { return begin() + events.size(); }
-  auto push(Event e) { events.push(e); }
+  auto push(const Event e) { events.push(e); }
 };
 
 struct Scheduler {
@@ -39,10 +37,10 @@ struct Scheduler {
 
   void EnqueueRelative(u64, EventType);
   void EnqueueAbsolute(u64, EventType);
-  u64 Remove(EventType);
+  [[nodiscard]] u64 Remove(EventType) const;
   void Tick(u64 t, n64::Mem &);
 
-  IterableEvents events;
+  IterableEvents events{};
   u64 ticks = 0;
   u8 index = 0;
 };

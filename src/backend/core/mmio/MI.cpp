@@ -66,8 +66,8 @@ void MI::Write(u32 paddr, u32 val) {
     break;
   case 0xC:
     for (int bit = 0; bit < 6; bit++) {
-      int clearbit = bit << 1;
-      int setbit = (bit << 1) + 1;
+      const int clearbit = bit << 1;
+      const int setbit = (bit << 1) + 1;
 
       if (val & (1 << clearbit)) {
         miIntrMask.raw &= ~(1 << bit);

@@ -118,9 +118,9 @@ struct Registers;
 #define DE(x) (((x) >> 11) & 0x1F)
 #define CLEAR_SET(val, clear, set)                                                                                     \
   do {                                                                                                                 \
-    if (clear && !set)                                                                                                 \
+    if ((clear) && !(set))                                                                                             \
       (val) = 0;                                                                                                       \
-    if (set && !clear)                                                                                                 \
+    if ((set) && !(clear))                                                                                             \
       (val) = 1;                                                                                                       \
   }                                                                                                                    \
   while (0)
@@ -131,13 +131,15 @@ struct RSP {
 
   FORCE_INLINE void Step() {
     gpr[0] = 0;
-    u32 instr = Util::ReadAccess<u32>(imem, pc & IMEM_DSIZE);
+    const u32 instr = Util::ReadAccess<u32>(imem, pc & IMEM_DSIZE);
     oldPC = pc & 0xFFC;
     pc = nextPC & 0xFFC;
     nextPC += 4;
 
     Exec(instr);
   }
+
+  void SetVTE(const VPR &vt, u8 e);
   auto Read(u32 addr) -> u32;
   void Write(u32 addr, u32 val);
   void Exec(u32 instr);
@@ -151,6 +153,7 @@ struct RSP {
   std::array<u8, DMEM_SIZE> dmem{};
   std::array<u8, IMEM_SIZE> imem{};
   VPR vpr[32]{};
+  VPR vte{};
   s32 gpr[32]{};
   VPR vce{};
   s16 divIn{}, divOut{};
@@ -167,13 +170,13 @@ struct RSP {
 
   bool semaphore = false;
 
-  FORCE_INLINE void SetPC(u16 val) {
+  FORCE_INLINE void SetPC(const u16 val) {
     oldPC = pc & 0xFFC;
     pc = val & 0xFFC;
     nextPC = pc + 4;
   }
 
-  FORCE_INLINE s64 GetACC(int e) const {
+  [[nodiscard]] FORCE_INLINE s64 GetACC(const int e) const {
     s64 val = u64(acc.h.element[e]) << 32;
     val |= u64(acc.m.element[e]) << 16;
     val |= u64(acc.l.element[e]) << 00;
@@ -183,69 +186,69 @@ struct RSP {
     return val;
   }
 
-  FORCE_INLINE void SetACC(int e, s64 val) {
+  FORCE_INLINE void SetACC(const int e, const s64 val) {
     acc.h.element[e] = val >> 32;
     acc.m.element[e] = val >> 16;
     acc.l.element[e] = val;
   }
 
-  FORCE_INLINE u16 GetVCO() const {
+  [[nodiscard]] FORCE_INLINE u16 GetVCO() const {
     u16 value = 0;
     for (int i = 0; i < 8; i++) {
-      bool h = vco.h.element[7 - i] != 0;
-      bool l = vco.l.element[7 - i] != 0;
-      u32 mask = (l << i) | (h << (i + 8));
+      const bool h = vco.h.element[7 - i] != 0;
+      const bool l = vco.l.element[7 - i] != 0;
+      const u32 mask = (l << i) | (h << (i + 8));
       value |= mask;
     }
     return value;
   }
 
-  FORCE_INLINE u16 GetVCC() const {
+  [[nodiscard]] FORCE_INLINE u16 GetVCC() const {
     u16 value = 0;
     for (int i = 0; i < 8; i++) {
-      bool h = vcc.h.element[7 - i] != 0;
-      bool l = vcc.l.element[7 - i] != 0;
-      u32 mask = (l << i) | (h << (i + 8));
+      const bool h = vcc.h.element[7 - i] != 0;
+      const bool l = vcc.l.element[7 - i] != 0;
+      const u32 mask = (l << i) | (h << (i + 8));
       value |= mask;
     }
     return value;
   }
 
-  FORCE_INLINE u8 GetVCE() const {
+  [[nodiscard]] FORCE_INLINE u8 GetVCE() const {
     u8 value = 0;
     for (int i = 0; i < 8; i++) {
-      bool l = vce.element[ELEMENT_INDEX(i)] != 0;
+      const bool l = vce.element[ELEMENT_INDEX(i)] != 0;
       value |= (l << i);
     }
     return value;
   }
 
-  FORCE_INLINE u32 ReadWord(u32 addr) {
+  [[nodiscard]] FORCE_INLINE u32 ReadWord(u32 addr) const {
     addr &= 0xfff;
     return GET_RSP_WORD(addr);
   }
 
-  FORCE_INLINE void WriteWord(u32 addr, u32 val) {
+  FORCE_INLINE void WriteWord(u32 addr, const u32 val) {
     addr &= 0xfff;
     SET_RSP_WORD(addr, val);
   }
 
-  FORCE_INLINE u16 ReadHalf(u32 addr) {
+  [[nodiscard]] FORCE_INLINE u16 ReadHalf(u32 addr) const {
     addr &= 0xfff;
     return GET_RSP_HALF(addr);
   }
 
-  FORCE_INLINE void WriteHalf(u32 addr, u16 val) {
+  FORCE_INLINE void WriteHalf(u32 addr, const u16 val) {
     addr &= 0xfff;
     SET_RSP_HALF(addr, val);
   }
 
-  FORCE_INLINE u8 ReadByte(u32 addr) {
+  [[nodiscard]] FORCE_INLINE u8 ReadByte(u32 addr) const {
     addr &= 0xfff;
     return RSP_BYTE(addr);
   }
 
-  FORCE_INLINE void WriteByte(u32 addr, u8 val) {
+  FORCE_INLINE void WriteByte(u32 addr, const u8 val) {
     addr &= 0xfff;
     RSP_BYTE(addr) = val;
   }
@@ -364,8 +367,8 @@ struct RSP {
   void vor(u32 instr);
   void vnor(u32 instr);
   void vzero(u32 instr);
-  void mfc0(RDP &rdp, u32 instr);
-  void mtc0(u32 instr);
+  void mfc0(const RDP &rdp, u32 instr);
+  void mtc0(u32 instr) const;
   void mfc2(u32 instr);
   void mtc2(u32 instr);
 
@@ -376,13 +379,13 @@ struct RSP {
 private:
   Registers &regs;
   Mem &mem;
-  FORCE_INLINE void branch(u16 address, bool cond) {
+  FORCE_INLINE void branch(const u16 address, const bool cond) {
     if (cond) {
       nextPC = address & 0xFFC;
     }
   }
 
-  FORCE_INLINE void branch_likely(u16 address, bool cond) {
+  FORCE_INLINE void branch_likely(const u16 address, const bool cond) {
     if (cond) {
       nextPC = address & 0xFFC;
     } else {

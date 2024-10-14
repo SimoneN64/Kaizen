@@ -10,7 +10,7 @@ namespace n64 {
 struct Core;
 }
 
-struct QtInstanceFactory : Vulkan::InstanceFactory {
+struct QtInstanceFactory final : Vulkan::InstanceFactory {
   VkInstance create_instance(const VkInstanceCreateInfo *info) override {
     handle.setApiVersion({1, 3, 0});
     QByteArrayList exts;
@@ -36,7 +36,7 @@ struct QtInstanceFactory : Vulkan::InstanceFactory {
   QVulkanInstance handle;
 };
 
-class QtParallelRdpWindowInfo : public ParallelRDP::WindowInfo {
+class QtParallelRdpWindowInfo final : public ParallelRDP::WindowInfo {
 public:
   explicit QtParallelRdpWindowInfo(QWindow *window) : window(window) {}
   CoordinatePair get_window_size() override {
@@ -56,8 +56,8 @@ public:
     const auto &extensions = window->vulkanInstance()->supportedExtensions();
     vec.reserve(extensions.size());
 
-    for (const auto &ext : extensions) {
-      vec.emplace_back(ext.name);
+    for (const auto &[name, _] : extensions) {
+      vec.emplace_back(name);
     }
 
     return vec;
@@ -96,7 +96,7 @@ private:
   bool canPollEvents = true;
 };
 
-class RenderWidget : public QWidget {
+class RenderWidget final : public QWidget {
 public:
   [[nodiscard]] VkInstance instance() const { return qtVkInstanceFactory->handle.vkInstance(); }
   explicit RenderWidget(const std::shared_ptr<n64::Core> &);

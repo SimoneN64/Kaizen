@@ -184,11 +184,11 @@ struct PIF {
   void Reset();
   void MaybeLoadMempak();
   void LoadEeprom(SaveType, const std::string &);
-  void ProcessCommands(Mem &);
+  void ProcessCommands(const Mem &);
   void InitDevices(SaveType);
   void CICChallenge();
-  void Execute();
-  void HLE(bool pal, CICType cicType);
+  void Execute() const;
+  void HLE(bool pal, CICType cicType) const;
   bool ReadButtons(u8 *);
   void ControllerID(u8 *) const;
   void MempakRead(const u8 *, u8 *);
@@ -214,26 +214,26 @@ struct PIF {
   Mem &mem;
   Registers &regs;
 
-  FORCE_INLINE u8 Read(u32 addr) {
+  [[nodiscard]] FORCE_INLINE u8 Read(u32 addr) const {
     addr &= 0x7FF;
     if (addr < 0x7c0)
       return bootrom[addr];
     return ram[addr & PIF_RAM_DSIZE];
   }
 
-  FORCE_INLINE void Write(u32 addr, u8 val) {
+  FORCE_INLINE void Write(u32 addr, const u8 val) {
     addr &= 0x7FF;
     if (addr < 0x7c0)
       return;
     ram[addr & PIF_RAM_DSIZE] = val;
   }
 
-  FORCE_INLINE AccessoryType GetAccessoryType() const {
+  [[nodiscard]] FORCE_INLINE AccessoryType GetAccessoryType() const {
     if (channel >= 4 || joybusDevices[channel].type != JOYBUS_CONTROLLER) {
       return ACCESSORY_NONE;
-    } else {
-      return joybusDevices[channel].accessoryType;
     }
+
+    return joybusDevices[channel].accessoryType;
   }
 };
 } // namespace n64

@@ -26,9 +26,9 @@ template void Cop1::decode<JIT>(JIT &, u32);
 
 void Cop1::decodeInterp(Interpreter &cpu, u32 instr) {
 
-  u8 mask_sub = (instr >> 21) & 0x1F;
-  u8 mask_fun = instr & 0x3F;
-  u8 mask_branch = (instr >> 16) & 0x1F;
+  const u8 mask_sub = (instr >> 21) & 0x1F;
+  const u8 mask_fun = instr & 0x3F;
+  const u8 mask_branch = (instr >> 16) & 0x1F;
   switch (mask_sub) {
   // 000r_rccc
   case 0x00:

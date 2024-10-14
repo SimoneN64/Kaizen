@@ -11,7 +11,7 @@
 #include <QGroupBox>
 #include <QVBoxLayout>
 
-class SettingsWindow : public QWidget {
+class SettingsWindow final : public QWidget {
   std::unique_ptr<QPushButton> cancel = std::make_unique<QPushButton>("Cancel");
   std::unique_ptr<QPushButton> apply = std::make_unique<QPushButton>("Apply");
   std::unique_ptr<QFileIconProvider> iconProv = std::make_unique<QFileIconProvider>();
@@ -28,8 +28,8 @@ public:
   SettingsWindow();
   void hideEvent(QHideEvent *event) override { emit gotClosed(); }
   void showEvent(QShowEvent *event) override { emit gotOpened(); }
-  float getVolumeL() { return float(audioSettings->volumeL->value()) / 100.f; }
-  float getVolumeR() { return float(audioSettings->volumeR->value()) / 100.f; }
+  [[nodiscard]] float getVolumeL() const { return static_cast<float>(audioSettings->volumeL->value()) / 100.f; }
+  [[nodiscard]] float getVolumeR() const { return static_cast<float>(audioSettings->volumeR->value()) / 100.f; }
 
   std::array<Qt::Key, 18> keyMap{};
   nlohmann::json settings;

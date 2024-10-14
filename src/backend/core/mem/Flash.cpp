@@ -50,7 +50,7 @@ void Flash::Load(SaveType saveType, const std::string &path) {
   }
 }
 
-void Flash::CommandExecute() {
+void Flash::CommandExecute() const {
   Util::trace("Flash::CommandExecute");
   switch (state) {
   case FlashState::Idle:
@@ -119,7 +119,7 @@ std::vector<u8> Flash::Serialize() {
   index += sizeof(eraseOffs);
   memcpy(res.data() + index, &writeOffs, sizeof(writeOffs));
   index += sizeof(writeOffs);
-  std::copy(writeBuf.begin(), writeBuf.end(), res.begin() + index);
+  std::ranges::copy(writeBuf, res.begin() + index);
 
   return res;
 }
@@ -192,31 +192,31 @@ void Flash::Write<u8>(u32 index, u8 val) {
 }
 
 template <>
-u8 Flash::Read<u8>(u32 index) const {
+u8 Flash::Read<u8>(const u32 index) const {
   switch (state) {
   case FlashState::Idle:
     Util::panic("Flash read byte while in state FLASH_STATE_IDLE");
   case FlashState::Write:
     Util::panic("Flash read byte while in state FLASH_STATE_WRITE");
   case FlashState::Read:
-    {
-      if (saveData.is_mapped()) {
-        u8 value = saveData[index];
-        Util::trace("Flash read byte in state read: index {:08X} = {:02X}", index, value);
-        return value;
-      } else {
-        Util::panic("Accessing flash when not mapped!");
-      }
+    if (saveData.is_mapped()) {
+      const u8 value = saveData[index];
+      Util::trace("Flash read byte in state read: index {:08X} = {:02X}", index, value);
+      return value;
     }
+
+    Util::panic("Accessing flash when not mapped!");
+
   case FlashState::Status:
     {
-      u32 offset = (7 - (index % 8)) * 8;
-      u8 value = (status >> offset) & 0xFF;
+      const u32 offset = (7 - (index % 8)) * 8;
+      const u8 value = (status >> offset) & 0xFF;
       Util::trace("Flash read byte in state status: index {:08X} = {:02X}", index, value);
       return value;
     }
   default:
     Util::panic("Flash read byte while in unknown state");
+    return 0;
   }
 }
 

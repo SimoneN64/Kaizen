@@ -62,7 +62,7 @@ struct Flash {
     FLASH_COMMAND_READ = 0xF0,
   };
 
-  void CommandExecute();
+  void CommandExecute() const;
   void CommandStatus();
   void CommandSetEraseOffs(u32);
   void CommandErase();
@@ -96,7 +96,7 @@ struct Mem {
   T Read(Registers &, u32);
   template <typename T>
   void Write(Registers &, u32, u32);
-  void Write(Registers &, u32, u64);
+  void Write(const Registers &, u32, u64);
 
   template <typename T>
   T BackupRead(u32);
@@ -108,21 +108,21 @@ struct Mem {
   FORCE_INLINE void DumpRDRAM() const {
     std::vector<u8> temp{};
     temp.resize(RDRAM_SIZE);
-    std::copy(mmio.rdp.rdram.begin(), mmio.rdp.rdram.end(), temp.begin());
+    std::ranges::copy(mmio.rdp.rdram, temp.begin());
     Util::SwapBuffer<u32>(temp);
     Util::WriteFileBinary(temp, "rdram.bin");
   }
 
   FORCE_INLINE void DumpIMEM() const {
     std::array<u8, IMEM_SIZE> temp{};
-    std::copy(mmio.rsp.imem.begin(), mmio.rsp.imem.end(), temp.begin());
+    std::ranges::copy(mmio.rsp.imem, temp.begin());
     Util::SwapBuffer<u32>(temp);
     Util::WriteFileBinary(temp, "imem.bin");
   }
 
   FORCE_INLINE void DumpDMEM() const {
     std::array<u8, DMEM_SIZE> temp{};
-    std::copy(mmio.rsp.dmem.begin(), mmio.rsp.dmem.end(), temp.begin());
+    std::ranges::copy(mmio.rsp.dmem, temp.begin());
     Util::SwapBuffer<u32>(temp);
     Util::WriteFileBinary(temp, "dmem.bin");
   }
@@ -141,9 +141,9 @@ private:
   mio::mmap_sink saveData{};
   int mmioSize{}, flashSize{};
 
-  FORCE_INLINE bool IsROMPAL() {
-    static const char pal_codes[] = {'D', 'F', 'I', 'P', 'S', 'U', 'X', 'Y'};
-    return std::any_of(std::begin(pal_codes), std::end(pal_codes), [this](char a) { return rom.cart[0x3d] == a; });
+  [[nodiscard]] FORCE_INLINE bool IsROMPAL() const {
+    static constexpr char pal_codes[] = {'D', 'F', 'I', 'P', 'S', 'U', 'X', 'Y'};
+    return std::ranges::any_of(pal_codes, [this](char a) { return rom.cart[0x3d] == a; });
   }
 };
 } // namespace n64

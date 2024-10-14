@@ -85,7 +85,7 @@ FORCE_INLINE size_t GetSaveSize(SaveType saveType) {
   }
 }
 
-void PIF::LoadEeprom(SaveType saveType, const std::string &path) {
+void PIF::LoadEeprom(const SaveType saveType, const std::string &path) {
   if (saveType == SAVE_EEPROM_16k || saveType == SAVE_EEPROM_4k) {
     fs::path eepromPath_ = path;
     if (!savePath.empty()) {
@@ -134,7 +134,7 @@ void PIF::CICChallenge() {
     challenge[i * 2 + 1] = (ram[0x30 + i] >> 0) & 0x0F;
   }
 
-  n64_cic_nus_6105((char *)challenge, (char *)response, CHL_LEN - 2);
+  n64_cic_nus_6105(reinterpret_cast<char *>(challenge), reinterpret_cast<char *>(response), CHL_LEN - 2);
 
   for (int i = 0; i < 15; i++) {
     ram[0x30 + i] = (response[i * 2] << 4) + response[i * 2 + 1];
@@ -145,7 +145,7 @@ FORCE_INLINE u8 DataCRC(const u8 *data) {
   u8 crc = 0;
   for (int i = 0; i <= 32; i++) {
     for (int j = 7; j >= 0; j--) {
-      u8 xorVal = ((crc & 0x80) != 0) ? 0x85 : 0x00;
+      const u8 xorVal = ((crc & 0x80) != 0) ? 0x85 : 0x00;
 
       crc <<= 1;
       if (i < 32) {
@@ -164,27 +164,25 @@ FORCE_INLINE u8 DataCRC(const u8 *data) {
 #define BCD_ENCODE(x) (((x) / 10) << 4 | ((x) % 10))
 #define BCD_DECODE(x) (((x) >> 4) * 10 + ((x) & 15))
 
-void PIF::ProcessCommands(Mem &mem) {
-  u8 control = ram[63];
+void PIF::ProcessCommands(const Mem &mem) {
+  const u8 control = ram[63];
   if (control & 1) {
     channel = 0;
     int i = 0;
     while (i < 63) {
       u8 *cmd = &ram[i++];
-      u8 cmdlen = cmd[CMD_LEN] & 0x3F;
 
-      if (cmdlen == 0 || cmdlen == 0x3D) {
+      if (const u8 cmdlen = cmd[CMD_LEN] & 0x3F; cmdlen == 0 || cmdlen == 0x3D) {
         channel++;
       } else if (cmdlen == 0x3E) {
         break;
       } else if (cmdlen == 0x3F) {
-        continue;
       } else {
-        u8 r = ram[i++];
+        const u8 r = ram[i++];
         if (r == 0xFE) {
           break;
         }
-        u8 reslen = r & 0x3F;
+        const u8 reslen = r & 0x3F;
         u8 *res = &ram[i + cmdlen];
 
         switch (cmd[CMD_IDX]) {
@@ -225,7 +223,7 @@ void PIF::ProcessCommands(Mem &mem) {
           case 2:
             {
               auto now = std::time(nullptr);
-              auto *gmtm = gmtime(&now);
+              const auto *gmtm = gmtime(&now);
               res[0] = BCD_ENCODE(gmtm->tm_sec);
               res[1] = BCD_ENCODE(gmtm->tm_min);
               res[2] = BCD_ENCODE(gmtm->tm_hour) + 0x80;
@@ -321,7 +319,7 @@ void PIF::MempakWrite(u8 *cmd, u8 *res) {
 void PIF::EepromRead(const u8 *cmd, u8 *res, const Mem &mem) const {
   assert(mem.saveType == SAVE_EEPROM_4k || mem.saveType == SAVE_EEPROM_16k);
   if (channel == 4) {
-    u8 offset = cmd[3];
+    const u8 offset = cmd[3];
     if ((offset * 8) >= GetSaveSize(mem.saveType)) {
       Util::panic("Out of range EEPROM read! offset: {:02X}", offset);
     }
@@ -335,7 +333,7 @@ void PIF::EepromRead(const u8 *cmd, u8 *res, const Mem &mem) const {
 void PIF::EepromWrite(const u8 *cmd, u8 *res, const Mem &mem) {
   assert(mem.saveType == SAVE_EEPROM_4k || mem.saveType == SAVE_EEPROM_16k);
   if (channel == 4) {
-    u8 offset = cmd[3];
+    const u8 offset = cmd[3];
     if ((offset * 8) >= GetSaveSize(mem.saveType)) {
       Util::panic("Out of range EEPROM write! offset: {:02X}", offset);
     }
@@ -348,7 +346,7 @@ void PIF::EepromWrite(const u8 *cmd, u8 *res, const Mem &mem) {
   }
 }
 
-void PIF::HLE(bool pal, CICType cicType) {
+void PIF::HLE(const bool pal, const CICType cicType) const {
   mem.Write<u32>(regs, PIF_RAM_REGION_START + 0x24, cicSeeds[cicType]);
 
   switch (cicType) {
@@ -609,13 +607,13 @@ void PIF::HLE(bool pal, CICType cicType) {
   regs.Write(22, (cicSeeds[cicType] >> 8) & 0xFF);
   regs.cop0.Reset();
   mem.Write<u32>(regs, 0x04300004, 0x01010101);
-  std::copy(mem.rom.cart.begin(), mem.rom.cart.begin() + 0x1000, mem.mmio.rsp.dmem.begin());
-  regs.SetPC32(s32(0xA4000040));
+  std::copy_n(mem.rom.cart.begin(), 0x1000, mem.mmio.rsp.dmem.begin());
+  regs.SetPC32(static_cast<s32>(0xA4000040));
 }
 
-void PIF::Execute() {
-  CICType cicType = mem.rom.cicType;
-  bool pal = mem.rom.pal;
+void PIF::Execute() const {
+  const CICType cicType = mem.rom.cicType;
+  const bool pal = mem.rom.pal;
   mem.Write<u32>(regs, PIF_RAM_REGION_START + 0x24, cicSeeds[cicType]);
   switch (cicType) {
   case UNKNOWN_CIC_TYPE:

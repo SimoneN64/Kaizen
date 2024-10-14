@@ -2,16 +2,16 @@
 #include <core/Mem.hpp>
 #include <core/registers/Registers.hpp>
 
-void Scheduler::EnqueueRelative(u64 t, const EventType type) { EnqueueAbsolute(t + ticks, type); }
+void Scheduler::EnqueueRelative(const u64 t, const EventType type) { EnqueueAbsolute(t + ticks, type); }
 
-void Scheduler::EnqueueAbsolute(u64 t, const EventType type) { events.push({t, type}); }
+void Scheduler::EnqueueAbsolute(const u64 t, const EventType type) { events.push({t, type}); }
 
-u64 Scheduler::Remove(EventType type) {
-  for (auto &e : events) {
-    if (e.type == type) {
-      u64 ret = e.time - ticks;
-      e.type = NONE;
-      e.time = ticks;
+u64 Scheduler::Remove(const EventType eventType) const {
+  for (auto &[time, type] : events) {
+    if (type == eventType) {
+      const u64 ret = time - ticks;
+      type = NONE;
+      time = ticks;
       return ret;
     }
   }
@@ -19,14 +19,14 @@ u64 Scheduler::Remove(EventType type) {
   return 0;
 }
 
-void Scheduler::Tick(u64 t, n64::Mem &mem) {
+void Scheduler::Tick(const u64 t, n64::Mem &mem) {
   ticks += t;
   n64::MI &mi = mem.mmio.mi;
   n64::SI &si = mem.mmio.si;
   n64::PI &pi = mem.mmio.pi;
 
   while (ticks >= events.top().time) {
-    switch (auto type = events.top().type) {
+    switch (const auto type = events.top().type) {
     case SI_DMA:
       si.DMA();
       break;

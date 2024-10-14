@@ -36,7 +36,7 @@ u32 MMIO::Read(u32 addr) {
   }
 }
 
-void MMIO::Write(u32 addr, u32 val) {
+void MMIO::Write(const u32 addr, const u32 val) {
   switch (addr) {
   case RSP_REGION:
     rsp.Write(addr, val);
@@ -82,14 +82,30 @@ std::vector<u8> MMIO::Serialize() {
   index += sizeof(DPC);
   memcpy(res.data() + index, rdp.cmd_buf, 0xFFFFF);
   index += 0xFFFFF;
-  std::copy(rdp.rdram.begin(), rdp.rdram.end(), res.begin() + index);
+  std::ranges::copy(rdp.rdram, res.begin() + index);
   index += RDRAM_SIZE;
   memcpy(res.data() + index, &mi, sizeof(MI));
   index += sizeof(MI);
   memcpy(res.data() + index, &vi, sizeof(VI));
   index += sizeof(VI);
-  memcpy(res.data() + index, &ai, sizeof(AI));
-  index += sizeof(AI);
+  memcpy(res.data() + index, &ai.dmaEnable, sizeof(ai.dmaEnable));
+  index += sizeof(ai.dmaEnable);
+  memcpy(res.data() + index, &ai.dacRate, sizeof(ai.dacRate));
+  index += sizeof(ai.dacRate);
+  memcpy(res.data() + index, &ai.bitrate, sizeof(ai.bitrate));
+  index += sizeof(ai.bitrate);
+  memcpy(res.data() + index, &ai.dmaCount, sizeof(ai.dmaCount));
+  index += sizeof(ai.dmaCount);
+  memcpy(res.data() + index, &ai.dmaLen, sizeof(ai.dmaLen));
+  index += sizeof(ai.dmaLen);
+  memcpy(res.data() + index, &ai.dmaAddr, sizeof(ai.dmaAddr));
+  index += sizeof(ai.dmaAddr);
+  memcpy(res.data() + index, &ai.dmaAddrCarry, sizeof(ai.dmaAddrCarry));
+  index += sizeof(ai.dmaAddrCarry);
+  memcpy(res.data() + index, &ai.cycles, sizeof(ai.cycles));
+  index += sizeof(ai.cycles);
+  memcpy(res.data() + index, &ai.dac, sizeof(ai.dac));
+  index += sizeof(ai.dac);
   memcpy(res.data() + index, &pi, sizeof(PI));
   index += sizeof(PI);
   memcpy(res.data() + index, &ri, sizeof(RI));
@@ -113,14 +129,30 @@ void MMIO::Deserialize(const std::vector<u8> &data) {
   index += sizeof(DPC);
   memcpy(rdp.cmd_buf, data.data() + index, 0xFFFFF);
   index += 0xFFFFF;
-  std::copy(data.begin() + index, data.begin() + index + RDRAM_SIZE, rdp.rdram.begin());
+  std::copy_n(data.begin() + index, RDRAM_SIZE, rdp.rdram.begin());
   index += RDRAM_SIZE;
   memcpy(&mi, data.data() + index, sizeof(MI));
   index += sizeof(MI);
   memcpy(&vi, data.data() + index, sizeof(VI));
   index += sizeof(VI);
-  memcpy(&ai, data.data() + index, sizeof(AI));
-  index += sizeof(AI);
+  memcpy(&ai.dmaEnable, data.data() + index, sizeof(ai.dmaEnable));
+  index += sizeof(ai.dmaEnable);
+  memcpy(&ai.dacRate, data.data() + index, sizeof(ai.dacRate));
+  index += sizeof(ai.dacRate);
+  memcpy(&ai.bitrate, data.data() + index, sizeof(ai.bitrate));
+  index += sizeof(ai.bitrate);
+  memcpy(&ai.dmaCount, data.data() + index, sizeof(ai.dmaCount));
+  index += sizeof(ai.dmaCount);
+  memcpy(&ai.dmaLen, data.data() + index, sizeof(ai.dmaLen));
+  index += sizeof(ai.dmaLen);
+  memcpy(&ai.dmaAddr, data.data() + index, sizeof(ai.dmaAddr));
+  index += sizeof(ai.dmaAddr);
+  memcpy(&ai.dmaAddrCarry, data.data() + index, sizeof(ai.dmaAddrCarry));
+  index += sizeof(ai.dmaAddrCarry);
+  memcpy(&ai.cycles, data.data() + index, sizeof(ai.cycles));
+  index += sizeof(ai.cycles);
+  memcpy(&ai.dac, data.data() + index, sizeof(ai.dac));
+  index += sizeof(ai.dac);
   memcpy(&pi, data.data() + index, sizeof(PI));
   index += sizeof(PI);
   memcpy(&ri, data.data() + index, sizeof(RI));

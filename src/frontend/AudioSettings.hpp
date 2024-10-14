@@ -6,7 +6,7 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
-class AudioSettings : public QWidget {
+class AudioSettings final : public QWidget {
   std::unique_ptr<QCheckBox> lockChannels = std::make_unique<QCheckBox>();
   std::unique_ptr<QLabel> labelLock = std::make_unique<QLabel>("Lock channels:");
   std::unique_ptr<QLabel> labelL = std::make_unique<QLabel>("Volume L");
@@ -17,7 +17,7 @@ class AudioSettings : public QWidget {
 public:
   std::unique_ptr<QSlider> volumeL = std::make_unique<QSlider>(Qt::Horizontal),
                            volumeR = std::make_unique<QSlider>(Qt::Horizontal);
-  AudioSettings(nlohmann::json &);
+  explicit AudioSettings(nlohmann::json &);
   nlohmann::json &settings;
 Q_SIGNALS:
   void modified();

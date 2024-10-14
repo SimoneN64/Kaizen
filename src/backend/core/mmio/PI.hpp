@@ -9,7 +9,7 @@ struct Registers;
 struct PI {
   PI(Mem &, Registers &);
   void Reset();
-  auto Read(u32) const -> u32;
+  [[nodiscard]] auto Read(u32) const -> u32;
   void Write(u32, u32);
 
   template <typename T, bool isDma>

@@ -12,11 +12,11 @@
 #include <RenderWidget.hpp>
 #include <Debugger.hpp>
 
-class MainWindow : public QMainWindow {
+class MainWindow final : public QMainWindow {
   Q_OBJECT
 
 public:
-  MainWindow(const std::shared_ptr<n64::Core> &) noexcept;
+  explicit MainWindow(const std::shared_ptr<n64::Core> &) noexcept;
 
   std::unique_ptr<QAction> actionOpenDebuggerWindow{};
   std::unique_ptr<QAction> actionAbout{};

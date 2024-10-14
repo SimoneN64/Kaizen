@@ -75,15 +75,15 @@ void KaizenQt::Quit() const noexcept {
   QApplication::quit();
 }
 
-void KaizenQt::LoadTAS(const QString &fileName) const noexcept {
-  if (emuThread->core->LoadTAS(fs::path(fileName.toStdString()))) {
-    auto gameNameDB = emuThread->core->cpu->GetMem().rom.gameNameDB;
-    auto movieName = fs::path(fileName.toStdString()).stem().string();
+void KaizenQt::LoadTAS(const QString &path) const noexcept {
+  if (emuThread->core->LoadTAS(fs::path(path.toStdString()))) {
+    const auto gameNameDB = emuThread->core->cpu->GetMem().rom.gameNameDB;
+    const auto movieName = fs::path(path.toStdString()).stem().string();
     Util::RPC::GetInstance().Update(Util::RPC::MovieReplay, gameNameDB, movieName);
     return;
   }
 
-  Util::panic("Could not load TAS movie {}!", fileName.toStdString());
+  Util::panic("Could not load TAS movie {}!", path.toStdString());
 }
 
 void KaizenQt::keyPressEvent(QKeyEvent *e) {

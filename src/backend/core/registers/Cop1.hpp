@@ -131,9 +131,9 @@ struct Cop1 {
   template <typename T>
   bool CheckResult(T &);
   template <typename T>
-  bool CheckArg(T &);
+  bool CheckArg(T);
   template <typename T>
-  bool CheckArgs(T &, T &);
+  bool CheckArgs(T, T);
   template <typename T>
   bool isqnan(T);
 
@@ -141,9 +141,9 @@ struct Cop1 {
   bool XORDERED(T fs, T ft);
 
   template <typename T>
-  bool CheckCVTArg(float &f);
+  bool CheckCVTArg(float f);
   template <typename T>
-  bool CheckCVTArg(double &f);
+  bool CheckCVTArg(double f);
 
   template <bool cvt = false>
   bool TestExceptions();
@@ -156,11 +156,11 @@ struct Cop1 {
 
 private:
   template <typename T>
-  auto FGR_T(Cop0Status &, u32) -> T &;
+  auto FGR_T(const Cop0Status &, u32) -> T &;
   template <typename T>
-  auto FGR_S(Cop0Status &, u32) -> T &;
+  auto FGR_S(const Cop0Status &, u32) -> T &;
   template <typename T>
-  auto FGR_D(Cop0Status &, u32) -> T &;
+  auto FGR_D(const Cop0Status &, u32) -> T &;
   void decodeInterp(Interpreter &, u32);
   void decodeJIT(JIT &, u32);
   void absd(u32 instr);

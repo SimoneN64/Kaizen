@@ -43,7 +43,7 @@ void Cop0::Reset() {
   openbus = {};
 }
 
-u32 Cop0::GetReg32(u8 addr) {
+u32 Cop0::GetReg32(const u8 addr) {
   switch (addr) {
   case COP0_REG_INDEX:
     return index.raw & INDEX_MASK;
@@ -108,7 +108,7 @@ u32 Cop0::GetReg32(u8 addr) {
   }
 }
 
-u64 Cop0::GetReg64(u8 addr) const {
+u64 Cop0::GetReg64(const u8 addr) const {
   switch (addr) {
   case COP0_REG_ENTRYLO0:
     return entryLo0.raw;
@@ -145,7 +145,7 @@ u64 Cop0::GetReg64(u8 addr) const {
   }
 }
 
-void Cop0::SetReg32(u8 addr, u32 value) {
+void Cop0::SetReg32(const u8 addr, const u32 value) {
   openbus = value & 0xFFFFFFFF;
   switch (addr) {
   case COP0_REG_INDEX:
@@ -241,7 +241,7 @@ void Cop0::SetReg32(u8 addr, u32 value) {
   }
 }
 
-void Cop0::SetReg64(u8 addr, u64 value) {
+void Cop0::SetReg64(const u8 addr, const u64 value) {
   openbus = value;
   switch (addr) {
   case COP0_REG_ENTRYLO0:
@@ -286,24 +286,23 @@ void Cop0::SetReg64(u8 addr, u64 value) {
   }
 }
 
-static FORCE_INLINE u64 getVPN(u64 addr, u64 pageMask) {
-  u64 mask = pageMask | 0x1fff;
-  u64 vpn = (addr & 0xFFFFFFFFFF) | ((addr >> 22) & 0x30000000000);
+static FORCE_INLINE u64 getVPN(const u64 addr, const u64 pageMask) {
+  const u64 mask = pageMask | 0x1fff;
+  const u64 vpn = addr & 0xFFFFFFFFFF | addr >> 22 & 0x30000000000;
 
   return vpn & ~mask;
 }
 
-TLBEntry *Cop0::TLBTryMatch(u64 vaddr, int *match) {
+TLBEntry *Cop0::TLBTryMatch(const u64 vaddr, int *match) const {
   for (int i = 0; i < 32; i++) {
-    TLBEntry *entry = &regs.cop0.tlb[i];
-    if (entry->initialized) {
-      u64 entry_vpn = getVPN(entry->entryHi.raw, entry->pageMask.raw);
-      u64 vaddr_vpn = getVPN(vaddr, entry->pageMask.raw);
+    if (TLBEntry *entry = &regs.cop0.tlb[i]; entry->initialized) {
+      const u64 entry_vpn = getVPN(entry->entryHi.raw, entry->pageMask.raw);
+      const u64 vaddr_vpn = getVPN(vaddr, entry->pageMask.raw);
 
-      bool vpn_match = entry_vpn == vaddr_vpn;
-      bool asid_match = entry->global || (regs.cop0.entryHi.asid == entry->entryHi.asid);
+      const bool vpn_match = entry_vpn == vaddr_vpn;
 
-      if (vpn_match && asid_match) {
+      if (const bool asid_match = entry->global || regs.cop0.entryHi.asid == entry->entryHi.asid;
+          vpn_match && asid_match) {
         if (match) {
           *match = i;
         }
@@ -315,15 +314,15 @@ TLBEntry *Cop0::TLBTryMatch(u64 vaddr, int *match) {
   return nullptr;
 }
 
-bool Cop0::ProbeTLB(TLBAccessType access_type, u64 vaddr, u32 &paddr, int *match) {
-  TLBEntry *entry = TLBTryMatch(vaddr, match);
+bool Cop0::ProbeTLB(const TLBAccessType accessType, const u64 vaddr, u32 &paddr, int *match) const {
+  const TLBEntry *entry = TLBTryMatch(vaddr, match);
   if (!entry) {
     regs.cop0.tlbError = MISS;
     return false;
   }
 
-  u32 mask = (entry->pageMask.mask << 12) | 0xFFF;
-  u32 odd = vaddr & (mask + 1);
+  const u32 mask = entry->pageMask.mask << 12 | 0xFFF;
+  const u32 odd = vaddr & (mask + 1);
   u32 pfn;
 
   if (!odd) {
@@ -332,7 +331,7 @@ bool Cop0::ProbeTLB(TLBAccessType access_type, u64 vaddr, u32 &paddr, int *match
       return false;
     }
 
-    if (access_type == STORE && !entry->entryLo0.d) {
+    if (accessType == STORE && !entry->entryLo0.d) {
       regs.cop0.tlbError = MODIFICATION;
       return false;
     }
@@ -344,7 +343,7 @@ bool Cop0::ProbeTLB(TLBAccessType access_type, u64 vaddr, u32 &paddr, int *match
       return false;
     }
 
-    if (access_type == STORE && !entry->entryLo1.d) {
+    if (accessType == STORE && !entry->entryLo1.d) {
       regs.cop0.tlbError = MODIFICATION;
       return false;
     }
@@ -352,14 +351,13 @@ bool Cop0::ProbeTLB(TLBAccessType access_type, u64 vaddr, u32 &paddr, int *match
     pfn = entry->entryLo1.pfn;
   }
 
-  paddr = (pfn << 12) | (vaddr & mask);
+  paddr = pfn << 12 | vaddr & mask;
 
   return true;
 }
 
-FORCE_INLINE bool Is64BitAddressing(Cop0 &cp0, u64 addr) {
-  u8 region = (addr >> 62) & 3;
-  switch (region) {
+FORCE_INLINE bool Is64BitAddressing(const Cop0 &cp0, const u64 addr) {
+  switch (addr >> 62 & 3) {
   case 0b00:
     return cp0.status.ux;
   case 0b01:
@@ -371,8 +369,8 @@ FORCE_INLINE bool Is64BitAddressing(Cop0 &cp0, u64 addr) {
   }
 }
 
-void Cop0::FireException(ExceptionCode code, int cop, s64 pc) {
-  bool old_exl = regs.cop0.status.exl;
+void Cop0::FireException(const ExceptionCode code, const int cop, s64 pc) const {
+  const bool old_exl = regs.cop0.status.exl;
 
   if (!regs.cop0.status.exl) {
     if ((regs.cop0.cause.branchDelay = regs.prevDelaySlot)) {
@@ -424,18 +422,18 @@ void Cop0::FireException(ExceptionCode code, int cop, s64 pc) {
   regs.cop0.Update();
 }
 
-void Cop0::HandleTLBException(u64 vaddr) {
-  u64 vpn2 = (vaddr >> 13) & 0x7FFFF;
-  u64 xvpn2 = (vaddr >> 13) & 0x7FFFFFF;
+void Cop0::HandleTLBException(const u64 vaddr) const {
+  const u64 vpn2 = vaddr >> 13 & 0x7FFFF;
+  const u64 xvpn2 = vaddr >> 13 & 0x7FFFFFF;
   regs.cop0.badVaddr = vaddr;
   regs.cop0.context.badvpn2 = vpn2;
   regs.cop0.xcontext.badvpn2 = xvpn2;
-  regs.cop0.xcontext.r = (vaddr >> 62) & 3;
+  regs.cop0.xcontext.r = vaddr >> 62 & 3;
   regs.cop0.entryHi.vpn2 = xvpn2;
-  regs.cop0.entryHi.r = (vaddr >> 62) & 3;
+  regs.cop0.entryHi.r = vaddr >> 62 & 3;
 }
 
-ExceptionCode Cop0::GetTLBExceptionCode(TLBError error, TLBAccessType accessType) {
+ExceptionCode Cop0::GetTLBExceptionCode(const TLBError error, const TLBAccessType accessType) {
   switch (error) {
   case NONE:
     Util::panic("Getting TLB exception with error NONE");
@@ -448,6 +446,7 @@ ExceptionCode Cop0::GetTLBExceptionCode(TLBError error, TLBAccessType accessType
     return accessType == LOAD ? ExceptionCode::AddressErrorLoad : ExceptionCode::AddressErrorStore;
   default:
     Util::panic("Getting TLB exception for unknown error code! ({})", static_cast<u8>(error));
+    return {};
   }
 }
 
@@ -467,9 +466,9 @@ template void Cop0::decode<JIT>(JIT &, u32);
 
 void Cop0::decodeJIT(JIT &cpu, u32 instr) {}
 
-void Cop0::decodeInterp(u32 instr) {
-  u8 mask_cop = (instr >> 21) & 0x1F;
-  u8 mask_cop2 = instr & 0x3F;
+void Cop0::decodeInterp(const u32 instr) {
+  const u8 mask_cop = instr >> 21 & 0x1F;
+  const u8 mask_cop2 = instr & 0x3F;
   switch (mask_cop) {
   case 0x00:
     mfc0(instr);
@@ -510,13 +509,17 @@ void Cop0::decodeInterp(u32 instr) {
   }
 }
 
-bool Cop0::MapVAddr(TLBAccessType accessType, u64 vaddr, u32 &paddr) {
+bool Cop0::MapVAddr(const TLBAccessType accessType, const u64 vaddr, u32 &paddr) {
   if (regs.cop0.is64BitAddressing) [[unlikely]] {
     if (regs.cop0.kernelMode) [[likely]] {
       return MapVAddr64(accessType, vaddr, paddr);
-    } else if (regs.cop0.userMode) {
+    }
+
+    if (regs.cop0.userMode) {
       return UserMapVAddr64(accessType, vaddr, paddr);
-    } else if (regs.cop0.supervisorMode) {
+    }
+
+    if (regs.cop0.supervisorMode) {
       Util::panic("Supervisor mode memory access, 64 bit mode");
     } else {
       Util::panic("Unknown mode! This should never happen!");
@@ -524,9 +527,13 @@ bool Cop0::MapVAddr(TLBAccessType accessType, u64 vaddr, u32 &paddr) {
   } else {
     if (regs.cop0.kernelMode) [[likely]] {
       return MapVAddr32(accessType, vaddr, paddr);
-    } else if (regs.cop0.userMode) {
+    }
+
+    if (regs.cop0.userMode) {
       return UserMapVAddr32(accessType, vaddr, paddr);
-    } else if (regs.cop0.supervisorMode) {
+    }
+
+    if (regs.cop0.supervisorMode) {
       Util::panic("Supervisor mode memory access, 32 bit mode");
     } else {
       Util::panic("Unknown mode! This should never happen!");
@@ -534,7 +541,7 @@ bool Cop0::MapVAddr(TLBAccessType accessType, u64 vaddr, u32 &paddr) {
   }
 }
 
-bool Cop0::UserMapVAddr32(TLBAccessType accessType, u64 vaddr, u32 &paddr) {
+bool Cop0::UserMapVAddr32(const TLBAccessType accessType, const u64 vaddr, u32 &paddr) const {
   switch (vaddr) {
   case VREGION_KUSEG:
     return ProbeTLB(accessType, s64(s32(vaddr)), paddr, nullptr);
@@ -544,8 +551,8 @@ bool Cop0::UserMapVAddr32(TLBAccessType accessType, u64 vaddr, u32 &paddr) {
   }
 }
 
-bool Cop0::MapVAddr32(TLBAccessType accessType, u64 vaddr, u32 &paddr) {
-  switch ((u32(vaddr) >> 29) & 7) {
+bool Cop0::MapVAddr32(const TLBAccessType accessType, const u64 vaddr, u32 &paddr) const {
+  switch (u32(vaddr) >> 29 & 7) {
   case 0 ... 3:
   case 7:
     return ProbeTLB(accessType, s64(s32(vaddr)), paddr, nullptr);
@@ -561,7 +568,7 @@ bool Cop0::MapVAddr32(TLBAccessType accessType, u64 vaddr, u32 &paddr) {
   return false;
 }
 
-bool Cop0::UserMapVAddr64(TLBAccessType accessType, u64 vaddr, u32 &paddr) {
+bool Cop0::UserMapVAddr64(const TLBAccessType accessType, const u64 vaddr, u32 &paddr) const {
   switch (vaddr) {
   case VREGION_XKUSEG:
     return ProbeTLB(accessType, vaddr, paddr, nullptr);
@@ -571,7 +578,7 @@ bool Cop0::UserMapVAddr64(TLBAccessType accessType, u64 vaddr, u32 &paddr) {
   }
 }
 
-bool Cop0::MapVAddr64(TLBAccessType accessType, u64 vaddr, u32 &paddr) {
+bool Cop0::MapVAddr64(const TLBAccessType accessType, const u64 vaddr, u32 &paddr) const {
   switch (vaddr) {
   case VREGION_XKUSEG:
   case VREGION_XKSSEG:
@@ -581,15 +588,13 @@ bool Cop0::MapVAddr64(TLBAccessType accessType, u64 vaddr, u32 &paddr) {
       if (!regs.cop0.kernelMode) {
         Util::panic("Access to XKPHYS address 0x{:016X} when outside kernel mode!", vaddr);
       }
-      u8 high_two_bits = (vaddr >> 62) & 0b11;
-      if (high_two_bits != 0b10) {
+      if (const u8 high_two_bits = (vaddr >> 62) & 0b11; high_two_bits != 0b10) {
         Util::panic("Access to XKPHYS address 0x{:016X} with high two bits != 0b10!", vaddr);
       }
-      u8 subsegment = (vaddr >> 59) & 0b11;
+      const u8 subsegment = (vaddr >> 59) & 0b11;
       bool cached = subsegment != 2; // do something with this eventually
       // If any bits in the range of 58:32 are set, the address is invalid.
-      bool valid = (vaddr & 0x07FFFFFF00000000) == 0;
-      if (!valid) {
+      if (const bool valid = (vaddr & 0x07FFFFFF00000000) == 0; !valid) {
         regs.cop0.tlbError = DISALLOWED_ADDRESS;
         return false;
       }

@@ -1,9 +1,9 @@
 #include <Disassembler.hpp>
 
-Disassembler::DisassemblyResult Disassembler::DisassembleSimple(u32 address, u32 instruction) {
+Disassembler::DisassemblyResult Disassembler::DisassembleSimple(const u32 address, const u32 instruction) const {
   cs_insn *insn;
-  auto bytes = Util::IntegralToBuffer(instruction);
-  auto count = cs_disasm(handle, bytes.data(), bytes.size(), address, 0, &insn);
+  const auto bytes = Util::IntegralToBuffer(instruction);
+  const auto count = cs_disasm(handle, bytes.data(), bytes.size(), address, 0, &insn);
 
   if (count <= 0)
     return {};
@@ -15,10 +15,10 @@ Disassembler::DisassemblyResult Disassembler::DisassembleSimple(u32 address, u32
   return result;
 }
 
-Disassembler::DisassemblyResult Disassembler::DisassembleDetailed(u32 address, u32 instruction) {
+Disassembler::DisassemblyResult Disassembler::DisassembleDetailed(const u32 address, const u32 instruction) const {
   cs_insn *insn;
-  auto bytes = Util::IntegralToBuffer(instruction);
-  auto count = cs_disasm(handle, bytes.data(), bytes.size(), address, 0, &insn);
+  const auto bytes = Util::IntegralToBuffer(instruction);
+  const auto count = cs_disasm(handle, bytes.data(), bytes.size(), address, 0, &insn);
 
   if (count <= 0)
     return {};
@@ -27,10 +27,10 @@ Disassembler::DisassemblyResult Disassembler::DisassembleDetailed(u32 address, u
   result.address = insn[0].address;
   result.mnemonic = insn[0].mnemonic;
 
-  result.full += result.address + ":\t";
+  result.full += fmt::format("0x{:016X}", result.address) + ":\t";
   result.full += result.mnemonic + "\t";
 
-  cs_detail *details = insn[0].detail;
+  const cs_detail *details = insn[0].detail;
   auto formatOperand = [&](const cs_mips_op &operand) {
     switch (operand.type) {
     case MIPS_OP_IMM:
@@ -39,6 +39,8 @@ Disassembler::DisassemblyResult Disassembler::DisassembleDetailed(u32 address, u
       return fmt::format("{}(0x{:X})", cs_reg_name(handle, operand.mem.base), operand.mem.disp);
     case MIPS_OP_REG:
       return fmt::format("{}", cs_reg_name(handle, operand.reg));
+    default:
+      return std::string{""};
     }
   };
 

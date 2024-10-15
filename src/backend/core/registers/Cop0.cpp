@@ -293,7 +293,13 @@ static FORCE_INLINE u64 getVPN(const u64 addr, const u64 pageMask) {
   return vpn & ~mask;
 }
 
-TLBEntry *Cop0::TLBTryMatch(const u64 vaddr, int *match) const {
+TLBEntry *Cop0::TLBTryMatch(const u64 vaddr, int* index) {
+  if (tlbCache.contains(vaddr)) {
+    if (index)
+      *index = tlbCache[vaddr].index;
+    return tlbCache[vaddr].entry;
+  }
+
   for (int i = 0; i < 32; i++) {
     if (TLBEntry *entry = &regs.cop0.tlb[i]; entry->initialized) {
       const u64 entry_vpn = getVPN(entry->entryHi.raw, entry->pageMask.raw);
@@ -303,9 +309,10 @@ TLBEntry *Cop0::TLBTryMatch(const u64 vaddr, int *match) const {
 
       if (const bool asid_match = entry->global || regs.cop0.entryHi.asid == entry->entryHi.asid;
           vpn_match && asid_match) {
-        if (match) {
-          *match = i;
-        }
+        tlbCache[vaddr].entry = entry;
+        tlbCache[vaddr].index = i;
+        if (index)
+          *index = i;
         return entry;
       }
     }
@@ -314,8 +321,8 @@ TLBEntry *Cop0::TLBTryMatch(const u64 vaddr, int *match) const {
   return nullptr;
 }
 
-bool Cop0::ProbeTLB(const TLBAccessType accessType, const u64 vaddr, u32 &paddr, int *match) const {
-  const TLBEntry *entry = TLBTryMatch(vaddr, match);
+bool Cop0::ProbeTLB(const TLBAccessType accessType, const u64 vaddr, u32 &paddr) {
+  const TLBEntry *entry = TLBTryMatch(vaddr, nullptr);
   if (!entry) {
     regs.cop0.tlbError = MISS;
     return false;
@@ -541,21 +548,21 @@ bool Cop0::MapVAddr(const TLBAccessType accessType, const u64 vaddr, u32 &paddr)
   }
 }
 
-bool Cop0::UserMapVAddr32(const TLBAccessType accessType, const u64 vaddr, u32 &paddr) const {
+bool Cop0::UserMapVAddr32(const TLBAccessType accessType, const u64 vaddr, u32 &paddr) {
   switch (vaddr) {
   case VREGION_KUSEG:
-    return ProbeTLB(accessType, s64(s32(vaddr)), paddr, nullptr);
+    return ProbeTLB(accessType, s64(s32(vaddr)), paddr);
   default:
     regs.cop0.tlbError = DISALLOWED_ADDRESS;
     return false;
   }
 }
 
-bool Cop0::MapVAddr32(const TLBAccessType accessType, const u64 vaddr, u32 &paddr) const {
+bool Cop0::MapVAddr32(const TLBAccessType accessType, const u64 vaddr, u32 &paddr) {
   switch (u32(vaddr) >> 29 & 7) {
   case 0 ... 3:
   case 7:
-    return ProbeTLB(accessType, s64(s32(vaddr)), paddr, nullptr);
+    return ProbeTLB(accessType, s64(s32(vaddr)), paddr);
   case 4 ... 5:
     paddr = vaddr & 0x1FFFFFFF;
     return true;
@@ -568,21 +575,21 @@ bool Cop0::MapVAddr32(const TLBAccessType accessType, const u64 vaddr, u32 &padd
   return false;
 }
 
-bool Cop0::UserMapVAddr64(const TLBAccessType accessType, const u64 vaddr, u32 &paddr) const {
+bool Cop0::UserMapVAddr64(const TLBAccessType accessType, const u64 vaddr, u32 &paddr) {
   switch (vaddr) {
   case VREGION_XKUSEG:
-    return ProbeTLB(accessType, vaddr, paddr, nullptr);
+    return ProbeTLB(accessType, vaddr, paddr);
   default:
     regs.cop0.tlbError = DISALLOWED_ADDRESS;
     return false;
   }
 }
 
-bool Cop0::MapVAddr64(const TLBAccessType accessType, const u64 vaddr, u32 &paddr) const {
+bool Cop0::MapVAddr64(const TLBAccessType accessType, const u64 vaddr, u32 &paddr) {
   switch (vaddr) {
   case VREGION_XKUSEG:
   case VREGION_XKSSEG:
-    return ProbeTLB(accessType, vaddr, paddr, nullptr);
+    return ProbeTLB(accessType, vaddr, paddr);
   case VREGION_XKPHYS:
     {
       if (!regs.cop0.kernelMode) {
@@ -602,7 +609,7 @@ bool Cop0::MapVAddr64(const TLBAccessType accessType, const u64 vaddr, u32 &padd
       return true;
     }
   case VREGION_XKSEG:
-    return ProbeTLB(accessType, vaddr, paddr, nullptr);
+    return ProbeTLB(accessType, vaddr, paddr);
   case VREGION_CKSEG0:
     // Identical to kseg0 in 32 bit mode.
     // Unmapped translation. Subtract the base address of the space to get the physical address.
@@ -618,7 +625,7 @@ bool Cop0::MapVAddr64(const TLBAccessType accessType, const u64 vaddr, u32 &padd
   case VREGION_CKSSEG:
     Util::panic("Resolving virtual address 0x{:016X} (VREGION_CKSSEG) in 64 bit mode", vaddr);
   case VREGION_CKSEG3:
-    return ProbeTLB(accessType, vaddr, paddr, nullptr);
+    return ProbeTLB(accessType, vaddr, paddr);
   case VREGION_XBAD1:
   case VREGION_XBAD2:
   case VREGION_XBAD3:

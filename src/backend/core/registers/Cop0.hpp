@@ -1,6 +1,7 @@
 #pragma once
 #include <common.hpp>
-#include "log.hpp"
+#include <log.hpp>
+#include <unordered_map>
 
 namespace n64 {
 #define STATUS_MASK 0xFF57FFFF
@@ -160,6 +161,12 @@ struct TLBEntry {
   PageMask pageMask;
 
   bool global;
+
+  auto operator==(const TLBEntry& other) {
+    return initialized == other.initialized && entryLo0.raw == other.entryLo0.raw &&
+      entryLo1.raw == other.entryLo1.raw && entryHi.raw == other.entryHi.raw && pageMask.raw == other.pageMask.raw &&
+      global == other.global;
+  }
 };
 
 enum TLBError : u8 { NONE, MISS, INVALID, MODIFICATION, DISALLOWED_ADDRESS };
@@ -236,6 +243,12 @@ struct Cop0 {
   s64 ErrorEPC{};
   u32 r31{};
   TLBEntry tlb[32]{};
+  struct TLBCachedEntry {
+    int index = -1;
+    TLBEntry *entry = nullptr;
+  };
+
+  std::unordered_map<u64, TLBCachedEntry> tlbCache;
   TLBError tlbError = NONE;
   s64 openbus{};
   template <class T>
@@ -267,15 +280,15 @@ struct Cop0 {
 
   enum TLBAccessType { LOAD, STORE };
 
-  bool ProbeTLB(TLBAccessType accessType, u64 vaddr, u32 &paddr, int *match) const;
+  bool ProbeTLB(TLBAccessType accessType, u64 vaddr, u32 &paddr);
   void FireException(ExceptionCode code, int cop, s64 pc) const;
   bool MapVAddr(TLBAccessType accessType, u64 vaddr, u32 &paddr);
-  bool UserMapVAddr32(TLBAccessType accessType, u64 vaddr, u32 &paddr) const;
-  bool MapVAddr32(TLBAccessType accessType, u64 vaddr, u32 &paddr) const;
-  bool UserMapVAddr64(TLBAccessType accessType, u64 vaddr, u32 &paddr) const;
-  bool MapVAddr64(TLBAccessType accessType, u64 vaddr, u32 &paddr) const;
+  bool UserMapVAddr32(TLBAccessType accessType, u64 vaddr, u32 &paddr);
+  bool MapVAddr32(TLBAccessType accessType, u64 vaddr, u32 &paddr);
+  bool UserMapVAddr64(TLBAccessType accessType, u64 vaddr, u32 &paddr);
+  bool MapVAddr64(TLBAccessType accessType, u64 vaddr, u32 &paddr);
 
-  TLBEntry *TLBTryMatch(u64 vaddr, int *match) const;
+  TLBEntry *TLBTryMatch(u64 vaddr, int* index);
   void HandleTLBException(u64 vaddr) const;
   static ExceptionCode GetTLBExceptionCode(TLBError error, TLBAccessType accessType);
 

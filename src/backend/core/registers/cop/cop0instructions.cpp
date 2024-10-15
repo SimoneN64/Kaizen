@@ -50,6 +50,17 @@ void Cop0::tlbw(const int index_) {
     Util::panic("TLBWI with TLB index {}", index_);
   }
 
+  for (auto &[key, cachedTlb] : tlbCache) {
+    auto &[cachedIndex, cachedEntry] = cachedTlb;
+    if (cachedEntry) {
+      if (*cachedEntry == tlb[index_]) {
+        cachedIndex = -1;
+        cachedEntry = nullptr;
+        break;
+      }
+    }
+  }
+
   tlb[index_].entryHi.raw = entryHi.raw;
   tlb[index_].entryHi.vpn2 &= ~page_mask.mask;
 

@@ -65,7 +65,7 @@ void AI::Write(const u32 addr, const u32 val) {
       const u32 oldDacFreq = dac.freq;
       dacRate = val & 0x3FFF;
       dac.freq = std::max(1.f, (float)GetVideoFrequency(mem.IsROMPAL()) / (dacRate + 1)) * 1.037;
-      dac.period = N64_CPU_FREQ / dac.freq;
+      dac.period = GetVideoFrequency(mem.IsROMPAL()) / dac.freq;
       if (oldDacFreq != dac.freq) {
         device.AdjustSampleRate(dac.freq);
       }
@@ -95,7 +95,7 @@ void AI::Step(const u32 cpuCycles, const float volumeL, const float volumeR) {
       const s16 r = s16(data);
 
       if (volumeR > 0 && volumeL > 0) {
-        device.PushSample((float)l / INT16_MAX, volumeL, (float)r / INT16_MAX, volumeR);
+        device.PushSample((float)l / std::numeric_limits<s16>::max(), volumeL, (float)r / std::numeric_limits<s16>::max(), volumeR);
       }
 
       const u32 addrLo = dmaAddr[0] + 4 & 0x1FFF;

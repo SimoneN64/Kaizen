@@ -4,8 +4,7 @@
 #include <immintrin.h>
 
 namespace Util {
-template <typename T>
-static FORCE_INLINE T roundCeil(float f) {
+static FORCE_INLINE auto roundCeil(float f) {
 #ifdef SIMD_SUPPORT
   __m128 t = _mm_set_ss(f);
   t = _mm_round_ss(t, t, _MM_FROUND_TO_POS_INF);
@@ -15,8 +14,7 @@ static FORCE_INLINE T roundCeil(float f) {
 #endif
 }
 
-template <typename T>
-static FORCE_INLINE T roundCeil(double f) {
+static FORCE_INLINE auto roundCeil(double f) {
 #ifdef SIMD_SUPPORT
   __m128d t = _mm_set_sd(f);
   t = _mm_round_sd(t, t, _MM_FROUND_TO_POS_INF);
@@ -26,8 +24,7 @@ static FORCE_INLINE T roundCeil(double f) {
 #endif
 }
 
-template <typename T>
-static FORCE_INLINE T roundNearest(float f) {
+static FORCE_INLINE auto roundNearest(float f) {
 #ifdef SIMD_SUPPORT
   __m128 t = _mm_set_ss(f);
   t = _mm_round_ss(t, t, _MM_FROUND_TO_NEAREST_INT);
@@ -37,8 +34,7 @@ static FORCE_INLINE T roundNearest(float f) {
 #endif
 }
 
-template <typename T>
-static FORCE_INLINE T roundNearest(double f) {
+static FORCE_INLINE auto roundNearest(double f) {
 #ifdef SIMD_SUPPORT
   __m128d t = _mm_set_sd(f);
   t = _mm_round_sd(t, t, _MM_FROUND_TO_NEAREST_INT);
@@ -48,8 +44,7 @@ static FORCE_INLINE T roundNearest(double f) {
 #endif
 }
 
-template <typename T>
-static FORCE_INLINE T roundCurrent(float f) {
+static FORCE_INLINE auto roundCurrent(float f) {
 #ifdef SIMD_SUPPORT
   auto t = _mm_set_ss(f);
   t = _mm_round_ss(t, t, _MM_FROUND_CUR_DIRECTION);
@@ -59,8 +54,7 @@ static FORCE_INLINE T roundCurrent(float f) {
 #endif
 }
 
-template <typename T>
-static FORCE_INLINE T roundCurrent(double f) {
+static FORCE_INLINE auto roundCurrent(double f) {
 #ifdef SIMD_SUPPORT
   auto t = _mm_set_sd(f);
   t = _mm_round_sd(t, t, _MM_FROUND_CUR_DIRECTION);
@@ -71,8 +65,7 @@ static FORCE_INLINE T roundCurrent(double f) {
 }
 
 
-template <typename T>
-static FORCE_INLINE T roundFloor(float f) {
+static FORCE_INLINE auto roundFloor(float f) {
 #ifdef SIMD_SUPPORT
   __m128 t = _mm_set_ss(f);
   t = _mm_round_ss(t, t, _MM_FROUND_TO_NEG_INF);
@@ -82,8 +75,7 @@ static FORCE_INLINE T roundFloor(float f) {
 #endif
 }
 
-template <typename T>
-static FORCE_INLINE T roundFloor(double f) {
+static FORCE_INLINE auto roundFloor(double f) {
 #ifdef SIMD_SUPPORT
   __m128d t = _mm_set_sd(f);
   t = _mm_round_sd(t, t, _MM_FROUND_TO_NEG_INF);
@@ -93,8 +85,7 @@ static FORCE_INLINE T roundFloor(double f) {
 #endif
 }
 
-template <typename T>
-static FORCE_INLINE T roundTrunc(float f) {
+static FORCE_INLINE auto roundTrunc(float f) {
 #ifdef SIMD_SUPPORT
   __m128 t = _mm_set_ss(f);
   t = _mm_round_ss(t, t, _MM_FROUND_TO_ZERO);
@@ -104,8 +95,7 @@ static FORCE_INLINE T roundTrunc(float f) {
 #endif
 }
 
-template <typename T>
-static FORCE_INLINE T roundTrunc(double f) {
+static FORCE_INLINE auto roundTrunc(double f) {
 #ifdef SIMD_SUPPORT
   __m128d t = _mm_set_sd(f);
   t = _mm_round_sd(t, t, _MM_FROUND_TO_ZERO);

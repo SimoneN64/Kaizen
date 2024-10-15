@@ -146,27 +146,11 @@ union Index {
 
 struct TLBEntry {
   bool initialized;
-  union {
-    u32 raw;
-    struct {
-      unsigned : 1;
-      unsigned v : 1;
-      unsigned d : 1;
-      unsigned c : 3;
-      unsigned pfn : 20;
-      unsigned : 6;
-    };
-  } entryLo0, entryLo1;
+  EntryLo entryLo0, entryLo1;
   EntryHi entryHi;
   PageMask pageMask;
 
   bool global;
-
-  auto operator==(const TLBEntry& other) {
-    return initialized == other.initialized && entryLo0.raw == other.entryLo0.raw &&
-      entryLo1.raw == other.entryLo1.raw && entryHi.raw == other.entryHi.raw && pageMask.raw == other.pageMask.raw &&
-      global == other.global;
-  }
 };
 
 enum TLBError : u8 { NONE, MISS, INVALID, MODIFICATION, DISALLOWED_ADDRESS };
@@ -243,12 +227,6 @@ struct Cop0 {
   s64 ErrorEPC{};
   u32 r31{};
   TLBEntry tlb[32]{};
-  struct TLBCachedEntry {
-    int index = -1;
-    TLBEntry *entry = nullptr;
-  };
-
-  std::unordered_map<u64, TLBCachedEntry> tlbCache;
   TLBError tlbError = NONE;
   s64 openbus{};
   template <class T>
@@ -280,7 +258,7 @@ struct Cop0 {
 
   enum TLBAccessType { LOAD, STORE };
 
-  bool ProbeTLB(TLBAccessType accessType, u64 vaddr, u32 &paddr);
+  bool ProbeTLB(TLBAccessType accessType, u64 vaddr, u32 &paddr) const;
   void FireException(ExceptionCode code, int cop, s64 pc) const;
   bool MapVAddr(TLBAccessType accessType, u64 vaddr, u32 &paddr);
   bool UserMapVAddr32(TLBAccessType accessType, u64 vaddr, u32 &paddr);
@@ -288,7 +266,8 @@ struct Cop0 {
   bool UserMapVAddr64(TLBAccessType accessType, u64 vaddr, u32 &paddr);
   bool MapVAddr64(TLBAccessType accessType, u64 vaddr, u32 &paddr);
 
-  TLBEntry *TLBTryMatch(u64 vaddr, int* index);
+  TLBEntry *TLBTryMatch(u64 vaddr, int &index) const;
+  TLBEntry *TLBTryMatch(u64 vaddr) const;
   void HandleTLBException(u64 vaddr) const;
   static ExceptionCode GetTLBExceptionCode(TLBError error, TLBAccessType accessType);
 

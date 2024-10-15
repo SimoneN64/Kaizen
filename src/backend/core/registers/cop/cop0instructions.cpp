@@ -1,6 +1,7 @@
 #include <core/registers/Cop0.hpp>
 #include <core/registers/Registers.hpp>
 #include <log.hpp>
+#include <ranges>
 
 namespace n64 {
 void Cop0::mtc0(const u32 instr) { SetReg32(RD(instr), regs.Read<u32>(RT(instr))); }
@@ -50,17 +51,6 @@ void Cop0::tlbw(const int index_) {
     Util::panic("TLBWI with TLB index {}", index_);
   }
 
-  for (auto &[key, cachedTlb] : tlbCache) {
-    auto &[cachedIndex, cachedEntry] = cachedTlb;
-    if (cachedEntry) {
-      if (*cachedEntry == tlb[index_]) {
-        cachedIndex = -1;
-        cachedEntry = nullptr;
-        break;
-      }
-    }
-  }
-
   tlb[index_].entryHi.raw = entryHi.raw;
   tlb[index_].entryHi.vpn2 &= ~page_mask.mask;
 
@@ -74,7 +64,7 @@ void Cop0::tlbw(const int index_) {
 
 void Cop0::tlbp() {
   int match = -1;
-  if (const TLBEntry *entry = TLBTryMatch(entryHi.raw, &match); entry && match >= 0) {
+  if (const TLBEntry *entry = TLBTryMatch(entryHi.raw, match); entry && match >= 0) {
     index.raw = match;
   } else {
     index.raw = 0;

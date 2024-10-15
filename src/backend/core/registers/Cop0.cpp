@@ -293,13 +293,7 @@ static FORCE_INLINE u64 getVPN(const u64 addr, const u64 pageMask) {
   return vpn & ~mask;
 }
 
-TLBEntry *Cop0::TLBTryMatch(const u64 vaddr, int* index) {
-  if (tlbCache.contains(vaddr)) {
-    if (index)
-      *index = tlbCache[vaddr].index;
-    return tlbCache[vaddr].entry;
-  }
-
+TLBEntry *Cop0::TLBTryMatch(const u64 vaddr, int &index) const {
   for (int i = 0; i < 32; i++) {
     if (TLBEntry *entry = &regs.cop0.tlb[i]; entry->initialized) {
       const u64 entry_vpn = getVPN(entry->entryHi.raw, entry->pageMask.raw);
@@ -309,10 +303,7 @@ TLBEntry *Cop0::TLBTryMatch(const u64 vaddr, int* index) {
 
       if (const bool asid_match = entry->global || regs.cop0.entryHi.asid == entry->entryHi.asid;
           vpn_match && asid_match) {
-        tlbCache[vaddr].entry = entry;
-        tlbCache[vaddr].index = i;
-        if (index)
-          *index = i;
+        index = i;
         return entry;
       }
     }
@@ -321,44 +312,47 @@ TLBEntry *Cop0::TLBTryMatch(const u64 vaddr, int* index) {
   return nullptr;
 }
 
-bool Cop0::ProbeTLB(const TLBAccessType accessType, const u64 vaddr, u32 &paddr) {
-  const TLBEntry *entry = TLBTryMatch(vaddr, nullptr);
+TLBEntry *Cop0::TLBTryMatch(const u64 vaddr) const {
+  for (auto &i : regs.cop0.tlb) {
+    if (TLBEntry *entry = &i; entry->initialized) {
+      const u64 entry_vpn = getVPN(entry->entryHi.raw, entry->pageMask.raw);
+      const u64 vaddr_vpn = getVPN(vaddr, entry->pageMask.raw);
+
+      const bool vpn_match = entry_vpn == vaddr_vpn;
+
+      if (const bool asid_match = entry->global || regs.cop0.entryHi.asid == entry->entryHi.asid;
+          vpn_match && asid_match) {
+        return entry;
+      }
+    }
+  }
+
+  return nullptr;
+}
+
+bool Cop0::ProbeTLB(const TLBAccessType accessType, const u64 vaddr, u32 &paddr) const {
+  const TLBEntry *entry = TLBTryMatch(vaddr);
   if (!entry) {
     regs.cop0.tlbError = MISS;
     return false;
   }
 
   const u32 mask = entry->pageMask.mask << 12 | 0xFFF;
-  const u32 odd = vaddr & (mask + 1);
-  u32 pfn;
+  const u32 odd = vaddr & mask + 1;
 
-  if (!odd) {
-    if (!entry->entryLo0.v) {
-      regs.cop0.tlbError = INVALID;
-      return false;
-    }
+  const EntryLo entryLo = odd ? entry->entryLo1 : entry->entryLo0;
 
-    if (accessType == STORE && !entry->entryLo0.d) {
-      regs.cop0.tlbError = MODIFICATION;
-      return false;
-    }
-
-    pfn = entry->entryLo0.pfn;
-  } else {
-    if (!entry->entryLo1.v) {
-      regs.cop0.tlbError = INVALID;
-      return false;
-    }
-
-    if (accessType == STORE && !entry->entryLo1.d) {
-      regs.cop0.tlbError = MODIFICATION;
-      return false;
-    }
-
-    pfn = entry->entryLo1.pfn;
+  if (!entryLo.v) {
+    regs.cop0.tlbError = INVALID;
+    return false;
   }
 
-  paddr = pfn << 12 | vaddr & mask;
+  if (accessType == STORE && !entryLo.d) {
+    regs.cop0.tlbError = MODIFICATION;
+    return false;
+  }
+
+  paddr = entryLo.pfn << 12 | vaddr & mask;
 
   return true;
 }
@@ -559,10 +553,10 @@ bool Cop0::UserMapVAddr32(const TLBAccessType accessType, const u64 vaddr, u32 &
 }
 
 bool Cop0::MapVAddr32(const TLBAccessType accessType, const u64 vaddr, u32 &paddr) {
-  switch (u32(vaddr) >> 29 & 7) {
+  switch (static_cast<u32>(vaddr) >> 29 & 7) {
   case 0 ... 3:
   case 7:
-    return ProbeTLB(accessType, s64(s32(vaddr)), paddr);
+    return ProbeTLB(accessType, static_cast<s32>(vaddr), paddr);
   case 4 ... 5:
     paddr = vaddr & 0x1FFFFFFF;
     return true;

@@ -38,7 +38,7 @@ void AudioDevice::PushSample(const float left, const float volumeL, const float 
 
   if (const auto availableBytes = static_cast<float>(SDL_GetAudioStreamAvailable(audioStream));
       availableBytes <= BYTES_PER_HALF_SECOND) {
-    SDL_PutAudioStreamData(audioStream, samples, 2 * sizeof(float));
+    SDL_PutAudioStreamData(audioStream, samples, 2 * SYSTEM_SAMPLE_SIZE);
   }
 
   if (!running) {
@@ -47,10 +47,13 @@ void AudioDevice::PushSample(const float left, const float volumeL, const float 
   }
 }
 
-void AudioDevice::AdjustSampleRate(const int sampleRate) {
+void AudioDevice::AdjustSampleRate(int sampleRate) {
   LockMutex();
   SDL_DestroyAudioStream(audioStream);
 
+  if (sampleRate < 4000) { // hack for Animal Forest. It requests a frequency of 3000-something. Weird asf
+    sampleRate *= 4000.f / static_cast<float>(sampleRate);
+  }
   request = {SYSTEM_SAMPLE_FORMAT, 2, sampleRate};
 
   audioStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &request, nullptr, nullptr);

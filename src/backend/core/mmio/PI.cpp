@@ -249,7 +249,7 @@ auto PI::BusRead<u32, false>(u32 addr) -> u32 {
     return mem.BackupRead<u32>(addr);
   case REGION_PI_ROM:
     {
-      u32 index = addr - SREGION_PI_ROM;
+      const u32 index = addr - SREGION_PI_ROM;
       if (index > mem.rom.cart.size() - 3) { // -3 because we're reading an entire word
         switch (addr) {
         case REGION_CART_ISVIEWER_BUFFER:
@@ -261,9 +261,9 @@ auto PI::BusRead<u32, false>(u32 addr) -> u32 {
         }
         Util::warn("Address 0x{:08X} accessed an index {}/0x{:X} outside the bounds of the ROM!", addr, index, index);
         return 0;
-      } else {
-        return Util::ReadAccess<u32>(mem.rom.cart, index);
       }
+
+      return Util::ReadAccess<u32>(mem.rom.cart, index);
     }
   default:
     Util::panic("Should never end up here! Access to address {:08X} which did not match any PI bus regions!", addr);

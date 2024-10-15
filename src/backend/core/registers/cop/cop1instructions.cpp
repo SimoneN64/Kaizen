@@ -492,7 +492,7 @@ void Cop1::ceills(const u32 instr) {
   const auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s64>(fs))
     return;
-  CHECK_FPE_CONST(s64, fd, Util::roundCeil<s64>(fs));
+  CHECK_FPE_CONST(s64, fd, Util::roundCeil(fs));
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -502,7 +502,7 @@ void Cop1::ceilld(const u32 instr) {
   const auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s64>(fs))
     return;
-  CHECK_FPE_CONST(s64, fd, Util::roundCeil<s64>(fs))
+  CHECK_FPE_CONST(s64, fd, Util::roundCeil(fs))
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -512,7 +512,7 @@ void Cop1::ceilws(const u32 instr) {
   const auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s32>(fs))
     return;
-  CHECK_FPE_CONV_CONST(s32, fd, Util::roundCeil<s32>(fs))
+  CHECK_FPE_CONV_CONST(s32, fd, Util::roundCeil(fs))
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -522,7 +522,7 @@ void Cop1::ceilwd(const u32 instr) {
   const auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s32>(fs))
     return;
-  CHECK_FPE_CONV_CONST(s32, fd, Util::roundCeil<s32>(fs))
+  CHECK_FPE_CONV_CONST(s32, fd, Util::roundCeil(fs))
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -646,7 +646,7 @@ void Cop1::cvtwd(const u32 instr) {
   const auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s32>(fs))
     return;
-  CHECK_FPE_CONV_CONST(s32, fd, Util::roundCurrent<s32>(fs))
+  CHECK_FPE_CONV_CONST(s32, fd, Util::roundCurrent(fs))
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -656,7 +656,7 @@ void Cop1::cvtws(const u32 instr) {
   const auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s32>(fs))
     return;
-  CHECK_FPE_CONV_CONST(s32, fd, Util::roundCurrent<s32>(fs))
+  CHECK_FPE_CONV_CONST(s32, fd, Util::roundCurrent(fs))
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -666,7 +666,7 @@ void Cop1::cvtls(const u32 instr) {
   const auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s64>(fs))
     return;
-  CHECK_FPE_CONST(s64, fd, Util::roundCurrent<s64>(fs))
+  CHECK_FPE_CONST(s64, fd, Util::roundCurrent(fs))
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -703,7 +703,7 @@ void Cop1::cvtld(const u32 instr) {
   const auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s64>(fs))
     return;
-  CHECK_FPE_CONST(s64, fd, Util::roundCurrent<s64>(fs))
+  CHECK_FPE_CONST(s64, fd, Util::roundCurrent(fs))
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -1074,7 +1074,7 @@ void Cop1::roundls(const u32 instr) {
   const auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s64>(fs))
     return;
-  CHECK_FPE_CONST(s64, fd, Util::roundNearest<s64>(fs))
+  CHECK_FPE_CONST(s64, fd, Util::roundNearest(fs))
   if (fd != fs && SetCauseInexact()) {
     regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return;
@@ -1088,7 +1088,7 @@ void Cop1::roundld(const u32 instr) {
   const auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s64>(fs))
     return;
-  CHECK_FPE_CONST(s64, fd, Util::roundNearest<s64>(fs))
+  CHECK_FPE_CONST(s64, fd, Util::roundNearest(fs))
   if (fd != fs && SetCauseInexact()) {
     regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return;
@@ -1102,7 +1102,7 @@ void Cop1::roundws(const u32 instr) {
   const auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s32>(fs))
     return;
-  CHECK_FPE_CONV_CONST(s32, fd, Util::roundNearest<s32>(fs))
+  CHECK_FPE_CONV_CONST(s32, fd, Util::roundNearest(fs))
   if (fd != fs && SetCauseInexact()) {
     regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return;
@@ -1116,7 +1116,7 @@ void Cop1::roundwd(const u32 instr) {
   const auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s32>(fs))
     return;
-  CHECK_FPE_CONV_CONST(s32, fd, Util::roundNearest<s32>(fs))
+  CHECK_FPE_CONV_CONST(s32, fd, Util::roundNearest(fs))
   if (fd != fs && SetCauseInexact()) {
     regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return;
@@ -1130,7 +1130,7 @@ void Cop1::floorls(const u32 instr) {
   const auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s64>(fs))
     return;
-  CHECK_FPE_CONST(s64, fd, Util::roundFloor<s64>(fs))
+  CHECK_FPE_CONST(s64, fd, Util::roundFloor(fs))
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -1140,7 +1140,7 @@ void Cop1::floorld(const u32 instr) {
   const auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s64>(fs))
     return;
-  CHECK_FPE_CONST(s64, fd, Util::roundFloor<s64>(fs))
+  CHECK_FPE_CONST(s64, fd, Util::roundFloor(fs))
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -1150,7 +1150,7 @@ void Cop1::floorws(const u32 instr) {
   const auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s32>(fs))
     return;
-  CHECK_FPE_CONV_CONST(s32, fd, Util::roundFloor<s32>(fs))
+  CHECK_FPE_CONV_CONST(s32, fd, Util::roundFloor(fs))
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -1160,7 +1160,7 @@ void Cop1::floorwd(const u32 instr) {
   const auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s32>(fs))
     return;
-  CHECK_FPE_CONV_CONST(s32, fd, Util::roundFloor<s32>(fs))
+  CHECK_FPE_CONV_CONST(s32, fd, Util::roundFloor(fs))
   FGR_D<s32>(regs.cop0.status, FD(instr)) = fd;
 }
 
@@ -1170,7 +1170,7 @@ void Cop1::truncws(const u32 instr) {
   const auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s32>(fs))
     return;
-  CHECK_FPE_CONV_CONST(s32, fd, Util::roundTrunc<s32>(fs))
+  CHECK_FPE_CONV_CONST(s32, fd, Util::roundTrunc(fs))
   if (static_cast<float>(fd) != fs && SetCauseInexact()) {
     regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return;
@@ -1184,7 +1184,7 @@ void Cop1::truncwd(const u32 instr) {
   const auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s32>(fs))
     return;
-  CHECK_FPE_CONV_CONST(s32, fd, Util::roundTrunc<s32>(fs))
+  CHECK_FPE_CONV_CONST(s32, fd, Util::roundTrunc(fs))
   if (static_cast<double>(fd) != fs && SetCauseInexact()) {
     regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return;
@@ -1198,7 +1198,7 @@ void Cop1::truncls(const u32 instr) {
   const auto fs = FGR_S<float>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s64>(fs))
     return;
-  CHECK_FPE_CONST(s64, fd, Util::roundTrunc<s64>(fs))
+  CHECK_FPE_CONST(s64, fd, Util::roundTrunc(fs))
   if (static_cast<float>(fd) != fs && SetCauseInexact()) {
     regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return;
@@ -1212,7 +1212,7 @@ void Cop1::truncld(const u32 instr) {
   const auto fs = FGR_S<double>(regs.cop0.status, FS(instr));
   if (!CheckCVTArg<s64>(fs))
     return;
-  CHECK_FPE_CONST(s64, fd, Util::roundTrunc<s64>(fs))
+  CHECK_FPE_CONST(s64, fd, Util::roundTrunc(fs))
   if (static_cast<double>(fd) != fs && SetCauseInexact()) {
     regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
     return;

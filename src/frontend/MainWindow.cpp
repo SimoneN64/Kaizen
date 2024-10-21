@@ -1,4 +1,5 @@
 #include <MainWindow.hpp>
+#include <QLabel>
 
 MainWindow::MainWindow(const std::shared_ptr<n64::Core> &core) noexcept {
   if (objectName().isEmpty())
@@ -48,6 +49,8 @@ MainWindow::MainWindow(const std::shared_ptr<n64::Core> &core) noexcept {
   setMenuBar(menubar.get());
   statusbar = std::make_unique<QStatusBar>(this);
   statusbar->setObjectName("statusbar");
+  fpsCounter = std::make_unique<QLabel>("Not playing");
+  statusbar->addPermanentWidget(fpsCounter.get());
   setStatusBar(statusbar.get());
 
   menubar->addAction(menuFile->menuAction());

@@ -14,7 +14,7 @@ class EmuThread final : public QThread {
   RenderWidget &renderWidget;
 
 public:
-  explicit EmuThread(const std::shared_ptr<n64::Core> &, RenderWidget &, SettingsWindow &) noexcept;
+  explicit EmuThread(const std::shared_ptr<n64::Core> &, QLabel &, RenderWidget &, SettingsWindow &) noexcept;
 
   void run() noexcept override;
   void TogglePause() const noexcept;
@@ -24,4 +24,5 @@ public:
 
   std::shared_ptr<n64::Core> core;
   SettingsWindow &settings;
+  QLabel &fps;
 };

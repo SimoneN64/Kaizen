@@ -11,7 +11,7 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   core = std::make_shared<n64::Core>();
   mainWindow = std::make_unique<MainWindow>(core);
   settingsWindow = std::make_unique<SettingsWindow>();
-  emuThread = std::make_unique<EmuThread>(core, *mainWindow->vulkanWidget, *settingsWindow);
+  emuThread = std::make_unique<EmuThread>(core, *mainWindow->fpsCounter, *mainWindow->vulkanWidget, *settingsWindow);
   debugger = std::make_unique<Debugger>();
 
   ConnectMainWindowSignalsToSlots();
@@ -40,7 +40,7 @@ void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept {
   connect(mainWindow.get(), &MainWindow::OpenROM, this, &KaizenQt::LoadROM);
   connect(mainWindow.get(), &MainWindow::Exit, this, &KaizenQt::Quit);
   connect(mainWindow.get(), &MainWindow::Reset, emuThread.get(), &EmuThread::Reset);
-  connect(mainWindow.get(), &MainWindow::Stop, emuThread.get(), &EmuThread::Stop);
+  connect(mainWindow.get(), &MainWindow::Stop, this, [this] { emuThread->requestInterruption(); });
   connect(mainWindow.get(), &MainWindow::Pause, emuThread.get(), &EmuThread::TogglePause);
 }
 

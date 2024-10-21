@@ -35,6 +35,7 @@ public:
   std::unique_ptr<QMenu> menuTools{};
   std::unique_ptr<QMenu> menuAbout{};
   std::unique_ptr<QStatusBar> statusbar{};
+  std::unique_ptr<QLabel> fpsCounter{};
 
 private:
   void Retranslate();

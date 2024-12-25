@@ -3,7 +3,6 @@
 #include <backend/RomHelpers.hpp>
 #include <cassert>
 #include <core/Interpreter.hpp>
-#include <core/registers/Cop0.hpp>
 #include <core/registers/Registers.hpp>
 #include <unarr.h>
 
@@ -115,7 +114,7 @@ std::vector<u8> Mem::OpenArchive(const std::string &path, size_t &sizeAdjusted) 
     auto filename = ar_entry_get_name(archive);
     auto extension = fs::path(filename).extension();
 
-    if (std::ranges::any_of(rom_exts, [&](const auto& x) { return extension == x; })) {
+    if (std::ranges::any_of(rom_exts, [&](const auto &x) { return extension == x; })) {
       const auto size = ar_entry_get_size(archive);
       sizeAdjusted = Util::NextPow2(size);
       buf.resize(sizeAdjusted);
@@ -283,6 +282,7 @@ u32 Mem::Read(Registers &regs, const u32 paddr) {
     return 0;
   default:
     Util::panic("Unimplemented 32-bit read at address {:08X} (PC = {:016X})", paddr, (u64)regs.pc);
+    return 0;
   }
 }
 
@@ -313,6 +313,7 @@ u64 Mem::Read(Registers &regs, const u32 paddr) {
     return 0;
   default:
     Util::panic("Unimplemented 32-bit read at address {:08X} (PC = {:016X})", paddr, (u64)regs.pc);
+    return 0;
   }
 }
 

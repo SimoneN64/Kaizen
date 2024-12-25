@@ -12,6 +12,7 @@ void EmuThread::run() noexcept {
   auto lastSample = std::chrono::high_resolution_clock::now();
   auto avgFps = 16.667;
   auto sampledFps = 0;
+  static bool oneSecondPassed = false;
 
   fps.setText(fmt::format("{:.2f} FPS", 1000.0 / avgFps).c_str());
 
@@ -34,6 +35,10 @@ void EmuThread::run() noexcept {
 
     if (const auto elapsedSinceLastSample = std::chrono::duration<double>(endFrameTime - lastSample) / 1s;
         elapsedSinceLastSample >= 1.0) {
+      if (!oneSecondPassed) {
+        oneSecondPassed = true;
+        continue;
+      }
       lastSample = endFrameTime;
       avgFps /= sampledFps;
       sampledFps = 0;

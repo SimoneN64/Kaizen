@@ -11,6 +11,7 @@ Rewrite of my Nintendo 64 emulator "[shibumi](https://github.com/SimoneN64/shibu
 | Release                                                                                    |
 |--------------------------------------------------------------------------------------------|
 | [ Linux ](https://nightly.link/SimoneN64/Kaizen/workflows/build/master/kaizen-linux.zip)   |
+| [ Windows ](https://nightly.link/SimoneN64/Kaizen/workflows/build/master/kaizen-windows.zip)   |
 
 ## Socials
 We have a [Discord server](https://discord.gg/htzNd2rRF6)

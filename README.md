@@ -65,7 +65,7 @@ Your GPU needs to support Vulkan 1.1+, because the RDP is implemented via [ParaL
 - [ ] TAS tools: TAS input, recording (using Mupen's format), save-states, rewind and frame-advance
 - [ ] Cheat support
 - [ ] Allow to optionally pass a PIF image for the boot process (it's HLE'd at the moment)
-- [ ] Windows support when it stops being a pain in the rectum.
+- [x] Windows support
 
 This list will probably grow with time!
 

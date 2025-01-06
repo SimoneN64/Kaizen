@@ -79,6 +79,75 @@ void JIT::and_(u32 instr) {
   }
 }
 
+void branch(Registers &regs, const bool cond, const s64 address) {
+  regs.delaySlot = true;
+  if (cond) {
+    regs.nextPC = address;
+  }
+}
+
+void branch_likely(Registers &regs, const bool cond, const s64 address) {
+  if (cond) {
+    regs.delaySlot = true;
+    regs.nextPC = address;
+  } else {
+    regs.SetPC64(regs.nextPC);
+  }
+}
+
+bool EvaluateCondition(Registers &regs, BranchCondition, u32, u32) {
+  Util::panic("[JIT]: non-constant EvaluateCondition!");
+}
+
+bool EvaluateConditionConstant(Registers &regs, const BranchCondition cond, const u32 reg1, const u32 reg2) {
+  switch (cond) {
+  case EQ:
+    return regs.Read<s64>(reg1) == regs.Read<s64>(reg2);
+  case NE:
+    return regs.Read<s64>(reg1) != regs.Read<s64>(reg2);
+  case LT:
+    return regs.Read<s64>(reg1) < regs.Read<s64>(reg2);
+  case LE:
+    return regs.Read<s64>(reg1) <= regs.Read<s64>(reg2);
+  case GT:
+    return regs.Read<s64>(reg1) > regs.Read<s64>(reg2);
+  case GE:
+    return regs.Read<s64>(reg1) >= regs.Read<s64>(reg2);
+  case LTU:
+    return regs.Read<u64>(reg1) < regs.Read<u64>(reg2);
+  case LEU:
+    return regs.Read<u64>(reg1) <= regs.Read<u64>(reg2);
+  case GTU:
+    return regs.Read<u64>(reg1) > regs.Read<u64>(reg2);
+  case GEU:
+    return regs.Read<u64>(reg1) >= regs.Read<u64>(reg2);
+  }
+}
+
+void JIT::b(u32 instr, BranchCondition cond, u32 reg1, u32 reg2) {
+  bool isConstant = regs.IsRegConstant(reg1, reg2);
+  if (isConstant) {
+    const s16 imm = instr;
+    const s64 offset = u64((s64)imm) << 2;
+    const s64 address = regs.pc + offset;
+    branch(regs, EvaluateConditionConstant(regs, cond, reg1, reg2), address);
+  }
+}
+
+void JIT::b(u32 instr, BranchCondition cond, u32 reg) {}
+
+void JIT::blink(u32 instr, BranchCondition cond, u32 reg1, u32 reg2) {}
+
+void JIT::blink(u32 instr, BranchCondition cond, u32 reg) {}
+
+void JIT::bl(u32 instr, BranchCondition cond, u32 reg1, u32 reg2) {}
+
+void JIT::bl(u32 instr, BranchCondition cond, u32 reg) {}
+
+void JIT::bllink(u32 instr, BranchCondition cond, u32 reg1, u32 reg2) {}
+
+void JIT::bllink(u32 instr, BranchCondition cond, u32 reg) {}
+
 void JIT::dadd(u32 instr) {
   if (regs.IsRegConstant(RS(instr), RT(instr))) {
     auto rs = regs.Read<u64>(RS(instr));

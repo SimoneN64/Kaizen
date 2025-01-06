@@ -85,8 +85,6 @@ union FCR31 {
   }
 };
 
-enum CompConds { F, UN, EQ, UEQ, OLT, ULT, OLE, ULE, SF, NGLE, SEQ, NGL, LT, NGE, LE, NGT };
-
 union FloatingPointReg {
   struct {
     s32 int32;

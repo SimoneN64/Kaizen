@@ -1,9 +1,9 @@
+#pragma once
 #include <CpuDefinitions.hpp>
 
 namespace n64 {
-static inline bool SpecialEndsBlock(u32 instr) {
-  u8 mask = instr & 0x3F;
-  switch (mask) {
+static bool SpecialEndsBlock(const u32 instr) {
+  switch (instr & 0x3F) {
   case JR:
   case JALR:
   case SYSCALL:
@@ -20,9 +20,8 @@ static inline bool SpecialEndsBlock(u32 instr) {
   }
 }
 
-static inline bool InstrEndsBlock(u32 instr) {
-  u8 mask = (instr >> 26) & 0x3f;
-  switch (mask) {
+static bool InstrEndsBlock(const u32 instr) {
+  switch (instr >> 26 & 0x3f) {
   case SPECIAL:
     return SpecialEndsBlock(instr);
   case REGIMM:

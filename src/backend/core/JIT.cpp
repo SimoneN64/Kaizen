@@ -23,7 +23,7 @@ void JIT::CheckCompareInterrupt() {
 }
 
 int JIT::Step() {
-  u32 instruction;
+  u32 instruction = 0;
   s64 pc = regs.pc;
 
   do {
@@ -32,19 +32,23 @@ int JIT::Step() {
     // regs.prevDelaySlot = regs.delaySlot;
     // regs.delaySlot = false;
 
-    /*if (check_address_error(0b11, u64(pc))) [[unlikely]] {
-      regs.cop0.HandleTLBException(pc);
+    if (check_address_error(0b11, u64(pc))) [[unlikely]] {
+      /*regs.cop0.HandleTLBException(pc);
       regs.cop0.FireException(ExceptionCode::AddressErrorLoad, 0, pc);
-      return 1;
-    }*/
+      return 1;*/
+
+      Util::panic("[JIT]: Unhandled exception ADL due to unaligned PC virtual value! (0x{:016lX})",
+                  static_cast<u64>(regs.pc));
+    }
 
     u32 paddr = 0;
     if (!regs.cop0.MapVAddr(Cop0::LOAD, pc, paddr)) {
       /*regs.cop0.HandleTLBException(pc);
       regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, pc);
       return 1;*/
-      Util::panic("[JIT]: Unhandled exception TLB exception {} when retrieving PC physical address!",
-                  static_cast<int>(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD)));
+      Util::panic(
+        "[JIT]: Unhandled exception TLB exception {} when retrieving PC physical address! (virtual: 0x{:016lX})",
+        static_cast<int>(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD)), static_cast<u64>(regs.pc));
     }
 
     instruction = mem.Read<u32>(regs, paddr);
@@ -56,9 +60,11 @@ int JIT::Step() {
 
     pc += 4;
 
-    // Exec(instruction);
+    Emit(instruction);
   }
   while (!InstrEndsBlock(instruction));
+
+  // emit code to store the value of pc
 
   return 1;
 }

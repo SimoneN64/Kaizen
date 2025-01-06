@@ -2,9 +2,22 @@
 #include <BaseCPU.hpp>
 #include <Mem.hpp>
 #include <vector>
+#include <xbyak.h>
 
 namespace n64 {
 struct Core;
+
+static constexpr u32 kAddressSpaceSize = 0x8000'0000; // >> 20 = 0x800
+static constexpr u32 kLowerSize = kAddressSpaceSize >> 20; // 0x800
+static constexpr u32 kUpperSize = 1 << 20; // 0x100000
+static constexpr u32 kCodeCacheSize = 32_mb;
+static constexpr u32 kCodeCacheAllocSize = kCodeCacheSize + 4096;
+
+struct CodeGenerator : Xbyak::CodeGenerator {
+  CodeGenerator() : Xbyak::CodeGenerator{kCodeCacheSize} {}
+};
+
+enum BranchCondition { EQ, NE, GT, GE, LT, LE, GTU, GEU, LTU, LEU };
 
 struct JIT : BaseCPU {
   explicit JIT(ParallelRDP &);
@@ -23,19 +36,21 @@ struct JIT : BaseCPU {
   [[nodiscard]] Disassembler::DisassemblyResult Disassemble(u32, u32) const override { return {}; }
 
 private:
+  CodeGenerator code;
   Registers regs;
   Mem mem;
   u64 cop2Latch{};
   friend struct Cop1;
+
 #define check_address_error(mask, vaddr)                                                                               \
   (((!regs.cop0.is64BitAddressing) && (s32)(vaddr) != (vaddr)) || (((vaddr) & (mask)) != 0))
-  bool ShouldServiceInterrupt() const override;
+
+  [[nodiscard]] bool ShouldServiceInterrupt() const override;
   void CheckCompareInterrupt() override;
   std::vector<u8> Serialize() override;
   void Deserialize(const std::vector<u8> &) override;
 
   void Emit(u32);
-  void cop2Decode(u32);
   void special(u32);
   void regimm(u32);
   void add(u32);
@@ -44,12 +59,14 @@ private:
   void addiu(u32);
   void andi(u32);
   void and_(u32);
-  void branch(bool, s64);
-  void branch_likely(bool, s64);
-  void b(u32, bool);
-  void blink(u32, bool);
-  void bl(u32, bool);
-  void bllink(u32, bool);
+  void b(u32 instr, BranchCondition, u32 reg1, u32 reg2);
+  void b(u32 instr, BranchCondition, u32 reg);
+  void blink(u32 instr, BranchCondition, u32 reg1, u32 reg2);
+  void blink(u32 instr, BranchCondition, u32 reg);
+  void bl(u32 instr, BranchCondition, u32 reg1, u32 reg2);
+  void bl(u32 instr, BranchCondition, u32 reg);
+  void bllink(u32 instr, BranchCondition, u32 reg1, u32 reg2);
+  void bllink(u32 instr, BranchCondition, u32 reg);
   void dadd(u32);
   void daddu(u32);
   void daddi(u32);
@@ -79,6 +96,7 @@ private:
   void lbu(u32);
   void lb(u32);
   void ld(u32);
+  void ldc1(u32);
   void ldl(u32);
   void ldr(u32);
   void lh(u32);
@@ -86,6 +104,7 @@ private:
   void ll(u32);
   void lld(u32);
   void lw(u32);
+  void lwc1(u32);
   void lwl(u32);
   void lwu(u32);
   void lwr(u32);
@@ -100,6 +119,7 @@ private:
   void sc(u32);
   void scd(u32);
   void sd(u32);
+  void sdc1(u32);
   void sdl(u32);
   void sdr(u32);
   void sh(u32);
@@ -114,6 +134,7 @@ private:
   void sllv(u32);
   void sub(u32);
   void subu(u32);
+  void swc1(u32);
   void sra(u32);
   void srav(u32);
   void srl(u32);
@@ -123,12 +144,5 @@ private:
   void ori(u32);
   void xor_(u32);
   void xori(u32);
-
-  void mtc2(u32);
-  void mfc2(u32);
-  void dmtc2(u32);
-  void dmfc2(u32);
-  void ctc2(u32);
-  void cfc2(u32);
 };
 } // namespace n64

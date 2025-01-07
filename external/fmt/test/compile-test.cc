@@ -8,6 +8,7 @@
 #include "fmt/compile.h"
 
 #include <type_traits>
+#include <vector>
 
 #include "fmt/chrono.h"
 #include "fmt/ranges.h"
@@ -229,10 +230,14 @@ TEST(compile_test, unknown_format_fallback) {
   EXPECT_EQ(" 42 ",
             fmt::format(FMT_COMPILE("{name:^4}"), fmt::arg("name", 42)));
 
-  std::vector<char> v;
-  fmt::format_to(std::back_inserter(v), FMT_COMPILE("{name:^4}"),
+  std::vector<char> v1;
+  fmt::format_to(std::back_inserter(v1), FMT_COMPILE("{}"), 42);
+  EXPECT_EQ("42", fmt::string_view(v1.data(), v1.size()));
+
+  std::vector<char> v2;
+  fmt::format_to(std::back_inserter(v2), FMT_COMPILE("{name:^4}"),
                  fmt::arg("name", 42));
-  EXPECT_EQ(" 42 ", fmt::string_view(v.data(), v.size()));
+  EXPECT_EQ(" 42 ", fmt::string_view(v2.data(), v2.size()));
 
   char buffer[4];
   auto result = fmt::format_to_n(buffer, 4, FMT_COMPILE("{name:^5}"),
@@ -265,11 +270,23 @@ TEST(compile_test, to_string_and_formatter) {
   fmt::format(FMT_COMPILE("{}"), to_stringable());
 }
 
+struct std_context_test {};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<std_context_test> : formatter<int> {
+  auto format(std_context_test, format_context& ctx) const
+      -> decltype(ctx.out()) {
+    return ctx.out();
+  }
+};
+FMT_END_NAMESPACE
+
 TEST(compile_test, print) {
   EXPECT_WRITE(stdout, fmt::print(FMT_COMPILE("Don't {}!"), "panic"),
                "Don't panic!");
   EXPECT_WRITE(stderr, fmt::print(stderr, FMT_COMPILE("Don't {}!"), "panic"),
                "Don't panic!");
+  fmt::print(FMT_COMPILE("{}"), std_context_test());
 }
 #endif
 

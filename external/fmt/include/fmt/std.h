@@ -27,7 +27,8 @@
 
 // Check FMT_CPLUSPLUS to suppress a bogus warning in MSVC.
 #  if FMT_CPLUSPLUS >= 201703L
-#    if FMT_HAS_INCLUDE(<filesystem>)
+#    if FMT_HAS_INCLUDE(<filesystem>) && \
+        (!defined(FMT_CPP_LIB_FILESYSTEM) || FMT_CPP_LIB_FILESYSTEM != 0)
 #      include <filesystem>
 #    endif
 #    if FMT_HAS_INCLUDE(<variant>)
@@ -183,7 +184,8 @@ FMT_END_NAMESPACE
 FMT_BEGIN_NAMESPACE
 FMT_EXPORT
 template <std::size_t N, typename Char>
-struct formatter<std::bitset<N>, Char> : nested_formatter<string_view> {
+struct formatter<std::bitset<N>, Char>
+    : nested_formatter<basic_string_view<Char>, Char> {
  private:
   // Functor because C++11 doesn't support generic lambdas.
   struct writer {
@@ -203,7 +205,7 @@ struct formatter<std::bitset<N>, Char> : nested_formatter<string_view> {
   template <typename FormatContext>
   auto format(const std::bitset<N>& bs, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    return write_padded(ctx, writer{bs});
+    return this->write_padded(ctx, writer{bs});
   }
 };
 
@@ -433,8 +435,8 @@ template <> struct formatter<std::error_code> {
   }
 
   template <typename FormatContext>
-  FMT_CONSTEXPR20 auto format(const std::error_code& ec, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
+  FMT_CONSTEXPR20 auto format(const std::error_code& ec,
+                              FormatContext& ctx) const -> decltype(ctx.out()) {
     auto specs = specs_;
     detail::handle_dynamic_spec(specs.dynamic_width(), specs.width, width_ref_,
                                 ctx);
@@ -694,9 +696,7 @@ template <typename T, typename Char> struct formatter<std::complex<T>, Char> {
 
     auto outer_specs = format_specs();
     outer_specs.width = specs.width;
-    auto fill = specs.template fill<Char>();
-    if (fill)
-      outer_specs.set_fill(basic_string_view<Char>(fill, specs.fill_size()));
+    outer_specs.set_fill(specs);
     outer_specs.set_align(specs.align());
 
     specs.width = 0;

@@ -28,11 +28,6 @@
 #  define FMT_RANGES_TEST_ENABLE_C_STYLE_ARRAY
 #endif
 
-#if !FMT_MSC_VERSION || FMT_MSC_VERSION > 1910
-#  define FMT_RANGES_TEST_ENABLE_JOIN
-#  define FMT_RANGES_TEST_ENABLE_FORMAT_STRUCT
-#endif
-
 #ifdef FMT_RANGES_TEST_ENABLE_C_STYLE_ARRAY
 TEST(ranges_test, format_array) {
   int arr[] = {1, 2, 3, 5, 7, 11};
@@ -213,7 +208,6 @@ TEST(ranges_test, tuple_parse_calls_element_parse) {
   EXPECT_THROW(f.parse(ctx), bad_format);
 }
 
-#ifdef FMT_RANGES_TEST_ENABLE_FORMAT_STRUCT
 struct tuple_like {
   int i;
   std::string str;
@@ -246,7 +240,6 @@ TEST(ranges_test, format_struct) {
   auto t = tuple_like{42, "foo"};
   EXPECT_EQ(fmt::format("{}", t), "(42, \"foo\")");
 }
-#endif  // FMT_RANGES_TEST_ENABLE_FORMAT_STRUCT
 
 TEST(ranges_test, format_to) {
   char buf[10];
@@ -401,7 +394,6 @@ TEST(ranges_test, join_bytes) {
 }
 #endif
 
-#ifdef FMT_RANGES_TEST_ENABLE_JOIN
 TEST(ranges_test, join_tuple) {
   // Value tuple args.
   auto t1 = std::tuple<char, int, float>('a', 1, 2.0f);
@@ -419,6 +411,10 @@ TEST(ranges_test, join_tuple) {
   // Single element tuple.
   auto t4 = std::tuple<float>(4.0f);
   EXPECT_EQ(fmt::format("{}", fmt::join(t4, "/")), "4");
+
+  // Tuple-like.
+  auto t5 = tuple_like{42, "foo"};
+  EXPECT_EQ(fmt::format("{}", fmt::join(t5, ", ")), "42, foo");
 
 #  if FMT_TUPLE_JOIN_SPECIFIERS
   // Specs applied to each element.
@@ -532,8 +528,6 @@ auto end(const vec& v) -> const int* { return v.n + 2; }
 TEST(ranges_test, format_join_adl_begin_end) {
   EXPECT_EQ(fmt::format("{}", fmt::join(adl::vec(), "/")), "42/43");
 }
-
-#endif  // FMT_RANGES_TEST_ENABLE_JOIN
 
 #if defined(__cpp_lib_ranges) && __cpp_lib_ranges >= 202207L
 TEST(ranges_test, nested_ranges) {

@@ -3,7 +3,7 @@
 // |  |  |__   |  |  | | | |  version 3.11.3
 // |_____|_____|_____|_|___|  https://github.com/nlohmann/json
 //
-// SPDX-FileCopyrightText: 2013-2023 Niels Lohmann <https://nlohmann.me>
+// SPDX-FileCopyrightText: 2013 - 2024 Niels Lohmann <https://nlohmann.me>
 // SPDX-License-Identifier: MIT
 
 #include "doctest_compatibility.h"
@@ -23,7 +23,7 @@ struct trait_test_arg
     static constexpr bool max_in_range = MaxInRange;
 };
 
-TEST_CASE_TEMPLATE_DEFINE("value_in_range_of trait", T, value_in_range_of_test)
+TEST_CASE_TEMPLATE_DEFINE("value_in_range_of trait", T, value_in_range_of_test) // NOLINT(readability-math-missing-parentheses)
 {
     using nlohmann::detail::value_in_range_of;
 

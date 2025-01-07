@@ -3,7 +3,7 @@
 // |  |  |__   |  |  | | | |  version 3.11.3
 // |_____|_____|_____|_|___|  https://github.com/nlohmann/json
 //
-// SPDX-FileCopyrightText: 2013-2023 Niels Lohmann <https://nlohmann.me>
+// SPDX-FileCopyrightText: 2013 - 2024 Niels Lohmann <https://nlohmann.me>
 // SPDX-License-Identifier: MIT
 
 #include "doctest_compatibility.h"
@@ -621,7 +621,7 @@ TEST_CASE("BSON input/output_adapters")
     {
         SECTION("std::ostringstream")
         {
-            std::basic_ostringstream<std::uint8_t> ss;
+            std::basic_ostringstream<char> ss;
             json::to_bson(json_representation, ss);
             json j3 = json::from_bson(ss.str());
             CHECK(json_representation == j3);

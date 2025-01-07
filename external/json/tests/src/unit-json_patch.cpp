@@ -3,7 +3,7 @@
 // |  |  |__   |  |  | | | |  version 3.11.3
 // |_____|_____|_____|_|___|  https://github.com/nlohmann/json
 //
-// SPDX-FileCopyrightText: 2013-2023 Niels Lohmann <https://nlohmann.me>
+// SPDX-FileCopyrightText: 2013 - 2024 Niels Lohmann <https://nlohmann.me>
 // SPDX-License-Identifier: MIT
 
 #include "doctest_compatibility.h"
@@ -1305,7 +1305,7 @@ TEST_CASE("JSON patch")
                 const auto& doc = test["doc"];
                 const auto& patch = test["patch"];
 
-                if (test.count("error") == 0)
+                if (test.count("error") == 0) // NOLINT(readability-container-contains)
                 {
                     // if an expected value is given, use it; use doc otherwise
                     const auto& expected = test.value("expected", doc);

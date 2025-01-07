@@ -3,7 +3,7 @@
 // |  |  |__   |  |  | | | |  version 3.11.3
 // |_____|_____|_____|_|___|  https://github.com/nlohmann/json
 //
-// SPDX-FileCopyrightText: 2013-2023 Niels Lohmann <https://nlohmann.me>
+// SPDX-FileCopyrightText: 2013 - 2024 Niels Lohmann <https://nlohmann.me>
 // SPDX-License-Identifier: MIT
 
 #include "doctest_compatibility.h"
@@ -23,7 +23,7 @@ json::lexer::token_type scan_string(const char* s, const bool ignore_comments)
 }
 } // namespace
 
-std::string get_error_message(const char* s, bool ignore_comments = false);
+std::string get_error_message(const char* s, bool ignore_comments = false); // NOLINT(misc-use-internal-linkage)
 std::string get_error_message(const char* s, const bool ignore_comments)
 {
     auto ia = nlohmann::detail::input_adapter(s);

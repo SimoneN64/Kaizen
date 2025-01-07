@@ -3,7 +3,7 @@
 // |  |  |__   |  |  | | | |  version 3.11.3
 // |_____|_____|_____|_|___|  https://github.com/nlohmann/json
 //
-// SPDX-FileCopyrightText: 2013-2023 Niels Lohmann <https://nlohmann.me>
+// SPDX-FileCopyrightText: 2013 - 2024 Niels Lohmann <https://nlohmann.me>
 // SPDX-FileCopyrightText: 2018 The Abseil Authors
 // SPDX-License-Identifier: MIT
 
@@ -162,7 +162,7 @@ struct static_const
 #endif
 
 template<typename T, typename... Args>
-inline constexpr std::array<T, sizeof...(Args)> make_array(Args&& ... args)
+constexpr std::array<T, sizeof...(Args)> make_array(Args&& ... args)
 {
     return std::array<T, sizeof...(Args)> {{static_cast<T>(std::forward<Args>(args))...}};
 }

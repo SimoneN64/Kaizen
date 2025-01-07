@@ -21,7 +21,7 @@ Constant.
 ## Possible implementation
 
 ```cpp
-constexpr bool is_primitive() const noexcept
+constexpr bool is_structured() const noexcept
 {
     return is_array() || is_object();
 }

@@ -75,7 +75,7 @@ Likewise, when calling `template get<your_type>()` or `get_to(your_type&)`, the 
 Some important things:
 
 * Those methods **MUST** be in your type's namespace (which can be the global namespace), or the library will not be able to locate them (in this example, they are in namespace `ns`, where `person` is defined).
-* Those methods **MUST** be available (e.g., proper headers must be included) everywhere you use these conversions. Look at [issue 1108](https://github.com/nlohmann/json/issues/1108) for errors that may occur otherwise.
+* Those methods **MUST** be available (e.g., proper headers must be included) everywhere you use these conversions. Look at [#1108](https://github.com/nlohmann/json/issues/1108) for errors that may occur otherwise.
 * When using `template get<your_type>()`, `your_type` **MUST** be [DefaultConstructible](https://en.cppreference.com/w/cpp/named_req/DefaultConstructible). (There is a way to bypass this requirement described later.)
 * In function `from_json`, use function [`at()`](../api/basic_json/at.md) to access the object values rather than `operator[]`. In case a key does not exist, `at` throws an exception that you can handle, whereas `operator[]` exhibits undefined behavior.
 * You do not need to add serializers or deserializers for STL types like `std::vector`: the library already implements these.
@@ -265,7 +265,7 @@ struct bad_serializer
     }
 
     template <typename BasicJsonType>
-    static void to_json(const BasicJsonType& j, T& value) {
+    static void from_json(const BasicJsonType& j, T& value) {
       // this calls BasicJsonType::json_serializer<T>::from_json(j, value);
       // if BasicJsonType::json_serializer == bad_serializer ... oops!
       value = j.template template get<T>(); // oops!

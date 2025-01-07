@@ -2,27 +2,30 @@
 
 The library uses a SAX-like interface with the following functions:
 
-```plantuml
-interface json::sax_t {
-    + {abstract} bool null()
+```mermaid
+classDiagram
 
-    + {abstract} bool boolean(bool val)
-
-    + {abstract} bool number_integer(number_integer_t val)
-    + {abstract} bool number_unsigned(number_unsigned_t val)
-
-    + {abstract} bool number_float(number_float_t val, const string_t& s)
-
-    + {abstract} bool string(string_t& val)
-    + {abstract} bool binary(binary_t& val)
-
-    + {abstract} bool start_object(std::size_t elements)
-    + {abstract} bool end_object()
-    + {abstract} bool start_array(std::size_t elements)
-    + {abstract} bool end_array()
-    + {abstract} bool key(string_t& val)
-
-    + {abstract} bool parse_error(std::size_t position, const std::string& last_token, const json::exception& ex)
+class sax_t ["json::sax_t"] {
+    <<interface>>
+    +bool null()*
+    
+    +bool boolean(bool val)*
+    
+    +bool number_integer(number_integer_t val)*
+    +bool number_unsigned(number_unsigned_t val)*
+    
+    +bool number_float(number_float_t val, const string_t& s)*
+    
+    +bool string(string_t& val)*
+    +bool binary(binary_t& val)*
+    
+    +bool start_object(std::size_t elements)*
+    +bool end_object()*
+    +bool start_array(std::size_t elements)*
+    +bool end_array()*
+    +bool key(string_t& val)*
+    
+    +bool parse_error(std::size_t position, const std::string& last_token, const json::exception& ex)*
 }
 ```
 

@@ -6,24 +6,33 @@
 
 All exceptions inherit from class `json::exception` (which in turn inherits from `std::exception`). It is used as the base class for all exceptions thrown by the `basic_json` class. This class can hence be used as "wildcard" to catch exceptions.
 
-```plantuml
-std::exception <|-- json::exception
-json::exception <|-- json::parse_error
-json::exception <|-- json::invalid_iterator
-json::exception <|-- json::type_error
-json::exception <|-- json::out_of_range
-json::exception <|-- json::other_error
+``` mermaid
+classDiagram
+  direction LR
+    class `std::exception` {
+        <<interface>>
+    }
 
-interface std::exception {}
+    class `json::exception` {
+        +const int id
+        +const char* what() const
+    }
 
-class json::exception {
-    + const int id
-    + const char* what() const
-}
+    class `json::parse_error` {
+        +const std::size_t byte
+    }
 
-class json::parse_error {
-    + const std::size_t byte
-}
+    class `json::invalid_iterator`
+    class `json::type_error`
+    class `json::out_of_range`
+    class `json::other_error`
+
+    `std::exception` <|-- `json::exception`
+    `json::exception` <|-- `json::parse_error`
+    `json::exception` <|-- `json::invalid_iterator`
+    `json::exception` <|-- `json::type_error`
+    `json::exception` <|-- `json::out_of_range`
+    `json::exception` <|-- `json::other_error`
 ```
 
 ### Switch off exceptions

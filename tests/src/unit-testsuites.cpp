@@ -3,7 +3,7 @@
 // |  |  |__   |  |  | | | |  version 3.11.3
 // |_____|_____|_____|_|___|  https://github.com/nlohmann/json
 //
-// SPDX-FileCopyrightText: 2013-2023 Niels Lohmann <https://nlohmann.me>
+// SPDX-FileCopyrightText: 2013 - 2024 Niels Lohmann <https://nlohmann.me>
 // SPDX-License-Identifier: MIT
 
 #include "doctest_compatibility.h"
@@ -163,7 +163,7 @@ TEST_CASE("compliance tests from nativejson-benchmark")
         TEST_DOUBLE("[2.2250738585072012e-308]",
                     2.2250738585072014e-308);
 
-        // More closer to normal/subnormal boundary
+        // Closer to normal/subnormal boundary
         // boundary = 2^-1022 - 2^-1075 = 2.225073858507201136057409796709131975934819546351645648... ¡Á 10^-308
         TEST_DOUBLE("[2.22507385850720113605740979670913197593481954635164564e-308]",
                     2.2250738585072009e-308);
@@ -312,7 +312,7 @@ TEST_CASE("test suite from json-test-suite")
 {
     SECTION("read all sample.json")
     {
-        // read a file with all unicode characters stored as single-character
+        // read a file with all Unicode characters stored as single-character
         // strings in a JSON array
         std::ifstream f(TEST_DATA_DIRECTORY "/json_testsuite/sample.json");
         json j;

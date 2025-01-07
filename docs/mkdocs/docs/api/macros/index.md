@@ -42,13 +42,26 @@ header. See also the [macro overview page](../../features/macros.md).
 - [**JSON_DISABLE_ENUM_SERIALIZATION**](json_disable_enum_serialization.md) - switch off default serialization/deserialization functions for enums
 - [**JSON_USE_IMPLICIT_CONVERSIONS**](json_use_implicit_conversions.md) - control implicit conversions
 
-<!-- comment-->
 ## Comparison behavior
 
 - [**JSON_USE_LEGACY_DISCARDED_VALUE_COMPARISON**](json_use_legacy_discarded_value_comparison.md) -
   control comparison of discarded values
 
 ## Serialization/deserialization macros
+
+- Enum: [**NLOHMANN_JSON_SERIALIZE_ENUM**](nlohmann_json_serialize_enum.md)
+- Class/struct:
+    - Do you need to serialize private variables?
+        - Yes? Do you only need serialization?
+            - Yes? `NLOHMANN_DEFINE_TYPE_INTRUSIVE_ONLY_SERIALIZE`
+            - No? Allow deserialization of JSON values with missing values?
+                - Yes? `NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT`
+                - No? `NLOHMANN_DEFINE_TYPE_INTRUSIVE`
+        - No? Do you only need serialization?
+            - Yes? `NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_ONLY_SERIALIZE`
+            - No? Allow deserialization of JSON values with missing values?
+                - Yes? `NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT`
+                - No? `NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE`
 
 - [**NLOHMANN_DEFINE_TYPE_INTRUSIVE(type, member...)**<br>**NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(type, member...)**
 <br>**NLOHMANN_DEFINE_TYPE_INTRUSIVE_ONLY_SERIALIZE(type, member...)**][DefInt]

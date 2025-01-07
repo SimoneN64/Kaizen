@@ -1,5 +1,3 @@
-[![Issue Stats](http://issuestats.com/github/nlohmann/json/badge/pr?style=flat)](http://issuestats.com/github/nlohmann/json) [![Issue Stats](http://issuestats.com/github/nlohmann/json/badge/issue?style=flat)](http://issuestats.com/github/nlohmann/json)
-
 # How to contribute
 
 This project started as a little excuse to exercise some of the cool new C++11 features. Over time, people actually started to use the JSON library (yey!) and started to help improve it by proposing features, finding bugs, or even fixing my mistakes. I am really [thankful](https://github.com/nlohmann/json/blob/master/README.md#thanks) for this and try to keep track of all the helpers.
@@ -22,7 +20,7 @@ Clearly describe the issue:
 - If you propose a change or addition, try to give an **example** how the improved code could look like or how to use it.
 - If you found a compilation error, please tell us which **compiler** (version and operating system) you used and paste the (relevant part of) the error messages to the ticket.
 
-Please stick to the provided issue template ([bug report](https://github.com/nlohmann/json/blob/develop/.github/ISSUE_TEMPLATE/bug.yml) if possible. For questions, feature or support requests, please [open a discussion](https://github.com/nlohmann/json/discussions/new).
+Please stick to the provided issue template ([bug report](https://github.com/nlohmann/json/blob/develop/.github/ISSUE_TEMPLATE/bug.yaml) if possible. For questions, feature or support requests, please [open a discussion](https://github.com/nlohmann/json/discussions/new).
 
 ## Files to change
 

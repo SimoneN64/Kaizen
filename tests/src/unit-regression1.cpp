@@ -3,13 +3,18 @@
 // |  |  |__   |  |  | | | |  version 3.11.3
 // |_____|_____|_____|_|___|  https://github.com/nlohmann/json
 //
-// SPDX-FileCopyrightText: 2013-2023 Niels Lohmann <https://nlohmann.me>
+// SPDX-FileCopyrightText: 2013 - 2024 Niels Lohmann <https://nlohmann.me>
 // SPDX-License-Identifier: MIT
 
 #include "doctest_compatibility.h"
 
 // for some reason including this after the json header leads to linker errors with VS 2017...
 #include <locale>
+
+// skip tests if JSON_DisableEnumSerialization=ON (#4384)
+#if defined(JSON_DISABLE_ENUM_SERIALIZATION) && (JSON_DISABLE_ENUM_SERIALIZATION == 1)
+    #define SKIP_TESTS_FOR_ENUM_SERIALIZATION
+#endif
 
 #define JSON_TESTS_PRIVATE
 #include <nlohmann/json.hpp>
@@ -169,6 +174,7 @@ TEST_CASE("regression tests 1")
         }
     }
 
+#ifndef SKIP_TESTS_FOR_ENUM_SERIALIZATION
     SECTION("pull request #71 - handle enum type")
     {
         enum { t = 0, u = 102};
@@ -191,6 +197,7 @@ TEST_CASE("regression tests 1")
             {"game_type", t}
         }));
     }
+#endif
 
     SECTION("issue #76 - dump() / parse() not idempotent")
     {
@@ -1328,10 +1335,10 @@ TEST_CASE("regression tests 1")
         {
             std::ifstream is;
             is.exceptions(
-                is.exceptions()
-                | std::ios_base::failbit
-                | std::ios_base::badbit
-            ); // handle different exceptions as 'file not found', 'permission denied'
+                  is.exceptions()
+                  | std::ios_base::failbit
+                  | std::ios_base::badbit
+              ); // handle different exceptions as 'file not found', 'permission denied'
 
             is.open(TEST_DATA_DIRECTORY "/regression/working_file.json");
             json _;
@@ -1341,10 +1348,10 @@ TEST_CASE("regression tests 1")
         {
             std::ifstream is;
             is.exceptions(
-                is.exceptions()
-                | std::ios_base::failbit
-                | std::ios_base::badbit
-            ); // handle different exceptions as 'file not found', 'permission denied'
+                  is.exceptions()
+                  | std::ios_base::failbit
+                  | std::ios_base::badbit
+              ); // handle different exceptions as 'file not found', 'permission denied'
 
             is.open(TEST_DATA_DIRECTORY "/json_nlohmann_tests/all_unicode.json.cbor",
                     std::ios_base::in | std::ios_base::binary);

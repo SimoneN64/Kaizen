@@ -35,3 +35,11 @@ install_venv: requirements.txt
 # uninstall the virtual environment
 uninstall_venv: clean
 	rm -fr venv
+
+update_requirements:
+	rm -fr venv_small
+	python3 -mvenv venv_small
+	venv_small/bin/pip3 install pur
+	venv_small/bin/pur -r requirements.txt
+	rm -fr venv_small venv
+	make install_venv

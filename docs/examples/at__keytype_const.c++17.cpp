@@ -36,7 +36,7 @@ int main()
         // try to read from a nonexisting key using string_view
         std::cout << object.at("the fast"sv) << '\n';
     }
-    catch (const json::out_of_range)
+    catch (const json::out_of_range& e)
     {
         std::cout << "out of range" << '\n';
     }

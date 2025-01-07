@@ -100,6 +100,13 @@ When defined to `0`, implicit conversions are switched off. By default, implicit
 
 See [full documentation of `JSON_USE_IMPLICIT_CONVERSIONS`](../api/macros/json_use_implicit_conversions.md).
 
+## `NLOHMANN_DEFINE_DERIVED_TYPE_INTRUSIVE(type, base_type, member...)`
+## `NLOHMANN_DEFINE_DERIVED_TYPE_INTRUSIVE_WITH_DEFAULT(type, base_type, member...)`
+## `NLOHMANN_DEFINE_DERIVED_TYPE_INTRUSIVE_ONLY_SERIALIZE(type, base_type, member...)`
+## `NLOHMANN_DEFINE_DERIVED_TYPE_NON_INTRUSIVE(type, base_type, member...)`
+## `NLOHMANN_DEFINE_DERIVED_TYPE_NON_INTRUSIVE_WITH_DEFAULT(type, base_type, member...)`
+## `NLOHMANN_DEFINE_DERIVED_TYPE_NON_INTRUSIVE_ONLY_SERIALIZE(type, base_type, member...)`
+
 ## `NLOHMANN_DEFINE_TYPE_INTRUSIVE(type, member...)`
 
 This macro can be used to simplify the serialization/deserialization of types if (1) want to use a JSON object as

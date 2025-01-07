@@ -4,8 +4,12 @@ Upstream-Contact: Niels Lohmann <mail@nlohmann.me>
 Source: https://github.com/nlohmann/json
 
 Files: *
-Copyright: 2013-2022 Niels Lohmann <https://nlohmann.me>
+Copyright: 2013-2024 Niels Lohmann <https://nlohmann.me>
 License: MIT
+
+Files: include/nlohmann/thirdparty/hedley.hpp
+Copyright: 2016-2021 Evan Nemerson <evan@nemerson.com>
+License: CC0
 
 Files: tests/thirdparty/doctest/*
 Copyright: 2016-2021 Viktor Kirilov
@@ -16,7 +20,7 @@ Copyright: 2015-2017 Niels Lohmann
 License: MIT
 
 Files: tests/thirdparty/Fuzzer/*
-Copyright: 2003-2022, LLVM Project.
+Copyright: 2003-2022 LLVM Project.
 License: Apache-2.0
 
 Files: tests/thirdparty/imapdl/*

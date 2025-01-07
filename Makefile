@@ -142,29 +142,16 @@ pvs_studio:
 # Code format and source amalgamation
 ##########################################################################
 
+ASTYLE=tools/astyle/venv/bin/astyle
+
+install_astyle:
+	@test -d tools/astyle/venv || python3 -mvenv tools/astyle/venv ; tools/astyle/venv/bin/pip3 install --quiet --upgrade pip
+	@test -f $(ASTYLE) || tools/astyle/venv/bin/pip3 install --quiet -r tools/astyle/requirements.txt
+	@$(ASTYLE) --version
+
 # call the Artistic Style pretty printer on all source files
-pretty:
-	astyle \
-	    --style=allman \
-	    --indent=spaces=4 \
-	    --indent-modifiers \
-	    --indent-switches \
-	    --indent-preproc-block \
-	    --indent-preproc-define \
-	    --indent-col1-comments \
-	    --pad-oper \
-	    --pad-header \
-	    --align-pointer=type \
-	    --align-reference=type \
-	    --add-braces \
-	    --squeeze-lines=2 \
-	    --convert-tabs \
-	    --close-templates \
-	    --lineend=linux \
-	    --preserve-date \
-	    --suffix=none \
-	    --formatted \
-	   $(SRCS) $(TESTS_SRCS) $(AMALGAMATED_FILE) $(AMALGAMATED_FWD_FILE) docs/examples/*.cpp
+pretty: install_astyle
+	$(ASTYLE) --project=tools/astyle/.astylerc $(SRCS) $(TESTS_SRCS) $(AMALGAMATED_FILE) $(AMALGAMATED_FWD_FILE) docs/examples/*.cpp
 
 # call the Clang-Format on all source files
 pretty_format:
@@ -280,6 +267,6 @@ serve_header:
 ##########################################################################
 
 reuse:
-	pipx run reuse addheader --recursive single_include include -tjson --license MIT --copyright "Niels Lohmann <https://nlohmann.me>" --year "2013-2022"
-	pipx run reuse addheader $(TESTS_SRCS) --style=c -tjson_support --license MIT --copyright "Niels Lohmann <https://nlohmann.me>" --year "2013-2022"
+	pipx run reuse annotate --recursive single_include include -tjson --license MIT --copyright "Niels Lohmann <https://nlohmann.me>" --year "2013-2024" --merge-copyrights
+	pipx run reuse annotate $(TESTS_SRCS) -tjson_support --license MIT --copyright "Niels Lohmann <https://nlohmann.me>" --year "2013-2024" --merge-copyrights
 	pipx run reuse lint

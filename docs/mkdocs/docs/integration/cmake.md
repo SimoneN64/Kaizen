@@ -119,9 +119,7 @@ automatically download a release as a dependency at configure type.
     )
     ```
 
-    However, the repository <https://github.com/nlohmann/json> download size is quite large. You might want to depend on
-    a smaller repository. For instance, you might want to replace the URL in the example by
-    <https://github.com/ArthurSonzogni/nlohmann_json_cmake_fetchcontent>.
+    However, the repository <https://github.com/nlohmann/json> download size is quite large.
 
 ## CMake Options
 
@@ -136,6 +134,9 @@ Enable CI build targets. The exact targets are used during the several CI steps 
 ### `JSON_Diagnostics`
 
 Enable [extended diagnostic messages](../home/exceptions.md#extended-diagnostic-messages) by defining macro [`JSON_DIAGNOSTICS`](../api/macros/json_diagnostics.md). This option is `OFF` by default.
+
+### `JSON_Diagnostic_Positions`
+Enable position diagnostics by defining macro [`JSON_DIAGNOSTIC_POSITIONS`](../api/macros/json_diagnostic_positions.md). This option is off by default.
 
 ### `JSON_DisableEnumSerialization`
 

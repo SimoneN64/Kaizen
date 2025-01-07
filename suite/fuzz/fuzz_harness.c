@@ -117,6 +117,21 @@ int main(int argc, char **argv)
       (cs_mode)CS_MODE_M680X_6809,
       "M680X_M6809"
     },
+    {
+        CS_ARCH_XTENSA,
+        (cs_mode)CS_MODE_XTENSA_ESP32,
+        "Xtensa ESP32"
+    },
+    {
+        CS_ARCH_XTENSA,
+        (cs_mode)CS_MODE_XTENSA_ESP32S2,
+        "Xtensa ESP32S2"
+    },
+    {
+        CS_ARCH_XTENSA,
+        (cs_mode)CS_MODE_XTENSA_ESP8266,
+        "Xtensa ESP8266"
+    },
   };
 
   // Read input

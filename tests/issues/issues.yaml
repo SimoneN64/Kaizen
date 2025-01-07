@@ -251,7 +251,7 @@ test_cases:
               -
                 type: AARCH64_OP_SME
                 sme:
-                  type: AARCH64_SME_MATRIX_SLICE_REG
+                  type: AARCH64_SME_OP_TILE_VEC
                   tile: za0.s
                   slice_reg: w12
                   slice_offset_imm: 2
@@ -3936,7 +3936,7 @@ test_cases:
                 imm: 0xfffff6e8
                 size: 4
           regs_read: [ esp, eip ]
-          regs_write: [ esp ]
+          regs_write: [ esp, eip ]
           groups: [ call, branch_relative, not64bitmode ]
   -
     input:
@@ -5125,7 +5125,6 @@ test_cases:
                 vas: AARCH64LAYOUT_VL_D
           regs_read: [ za0.d, za1.d, za2.d, za3.d, za4.d, za5.d, za6.d, za7.d ]
           groups: [ HasSME ]
-
   -
     input:
       address: 0x0
@@ -5246,3 +5245,416 @@ test_cases:
               -
                 type: SH_OP_REG
                 reg: r2
+  -
+    input:
+      name: "issue 2471 -- PNx was register"
+      bytes: [ 0x10, 0x80, 0x40, 0xa1 ]
+      arch: "CS_ARCH_AARCH64"
+      options: [ CS_OPT_DETAIL ]
+      address: 0x0
+    expected:
+      insns:
+      -
+        asm_text: "ld1b	{ z16.b, z20.b, z24.b, z28.b }, pn8/z, [x0]"
+        is_alias: 1
+        details:
+          aarch64:
+            operands:
+              -
+                type: AARCH64_OP_REG
+                reg: z16
+                is_list_member: 1
+                access: CS_AC_WRITE
+                vas: AARCH64LAYOUT_VL_B
+              -
+                type: AARCH64_OP_REG
+                reg: z20
+                is_list_member: 1
+                access: CS_AC_WRITE
+                vas: AARCH64LAYOUT_VL_B
+              -
+                type: AARCH64_OP_REG
+                reg: z24
+                is_list_member: 1
+                access: CS_AC_WRITE
+                vas: AARCH64LAYOUT_VL_B
+              -
+                type: AARCH64_OP_REG
+                reg: z28
+                is_list_member: 1
+                access: CS_AC_WRITE
+                vas: AARCH64LAYOUT_VL_B
+              -
+                type: AARCH64_OP_PRED
+                pred_reg: pn8
+                access: CS_AC_READ
+              -
+                type: AARCH64_OP_MEM
+                mem_base: x0
+                access: CS_AC_READ
+          regs_read: [pn8, x0]
+          regs_write: [z16, z20, z24, z28]
+          groups: [ HasSME2 ]
+  -
+    input:
+      name: "issue 2472 -- Shift immediate is 0"
+      bytes: [ 0x01, 0x21, 0x50, 0x05 ]
+      arch: "CS_ARCH_AARCH64"
+      options: [ CS_OPT_DETAIL ]
+      address: 0x0
+    expected:
+      insns:
+      -
+        asm_text: "mov	z1.h, p0/z, #0x800"
+        details:
+          aarch64:
+            operands:
+              -
+                type: AARCH64_OP_REG
+                reg: z1
+                access: CS_AC_WRITE
+                vas: AARCH64LAYOUT_VL_H
+              -
+                type: AARCH64_OP_PRED
+                pred_reg: p0
+                access: CS_AC_READ
+              -
+                type: AARCH64_OP_IMM
+                imm: 0x800
+                access: CS_AC_READ
+          regs_read: [ p0 ]
+          regs_write: [ z1 ]
+          groups: [ HasSVEorSME ]
+  -
+    input:
+      name: "issue 2472 -- Extra fp for EXACTFPIMM"
+      bytes: [ 0x05, 0x84, 0xd8, 0x65 ]
+      arch: "CS_ARCH_AARCH64"
+      options: [ CS_OPT_DETAIL ]
+      address: 0x0
+    expected:
+      insns:
+      -
+        asm_text: "fadd	z5.d, p1/m, z5.d, #0.5"
+        details:
+          aarch64:
+            operands:
+              -
+                type: AARCH64_OP_REG
+                reg: z5
+                access: CS_AC_READ_WRITE
+                vas: AARCH64LAYOUT_VL_D
+              -
+                type: AARCH64_OP_PRED
+                pred_reg: p1
+                access: CS_AC_READ
+              -
+                type: AARCH64_OP_REG
+                reg: z5
+                access: CS_AC_READ_WRITE
+                vas: AARCH64LAYOUT_VL_D
+              -
+                type: AARCH64_OP_SYSIMM
+                sub_type: AARCH64_OP_EXACTFPIMM
+                sys_raw_val: 1
+                fp: 0.5
+                fp_set: true
+  -
+    input:
+      name: "issue 2472 -- Incorrectly has NZCV in reg mod list"
+      bytes: [ 0x42, 0xd0, 0x3b, 0xd5 ]
+      arch: "CS_ARCH_AARCH64"
+      options: [ CS_OPT_DETAIL ]
+      address: 0x0
+    expected:
+      insns:
+      -
+        asm_text: "mrs	x2, TPIDR_EL0"
+        details:
+          aarch64:
+            operands:
+              -
+                type: AARCH64_OP_REG
+                reg: x2
+                access: CS_AC_WRITE
+              -
+                type: AARCH64_OP_SYSREG
+                sub_type: AARCH64_OP_REG_MRS
+                sys_raw_val: 0xde82
+            update_flags: -1
+          regs_write: [ x2 ]
+          groups: [ privilege ]
+  -
+    input:
+      name: "issue 2472 -- CASAL source operand has incorrectly the WRITE flag set"
+      bytes: [ 0x02, 0xfc, 0xe1, 0x88 ]
+      arch: "CS_ARCH_AARCH64"
+      options: [ CS_OPT_DETAIL ]
+      address: 0x0
+    expected:
+      insns:
+      -
+        asm_text: "casal	w1, w2, [x0]"
+        details:
+          aarch64:
+            operands:
+              -
+                type: AARCH64_OP_REG
+                reg: w1
+                access: CS_AC_READ
+              -
+                type: AARCH64_OP_REG
+                reg: w2
+                access: CS_AC_READ
+              -
+                type: AARCH64_OP_MEM
+                mem_base: x0
+                access: CS_AC_READ_WRITE
+          regs_read: [ w1, w2, x0 ]
+  -
+    input:
+      name: "issue ldr offset as imm: https://github.com/capstone-engine/capstone/issues/2015#issuecomment-2373660217"
+      bytes: [ 0x01, 0xa4, 0x40, 0xf8 ]
+      arch: "CS_ARCH_AARCH64"
+      options: [ CS_OPT_DETAIL ]
+      address: 0x0
+    expected:
+      insns:
+      -
+        asm_text: "ldr	x1, [x0], #0xa"
+        details:
+          aarch64:
+            operands:
+              -
+                type: AARCH64_OP_REG
+                reg: x1
+                access: CS_AC_WRITE
+              -
+                type: AARCH64_OP_MEM
+                mem_base: x0
+                mem_disp: 0xa
+                access: CS_AC_READ
+            post_indexed: 1
+          writeback: 1
+          regs_read: [ x0 ]
+          regs_write: [ x0, x1 ]
+  -
+    input:
+      name: "TriCore EA calculation with disponent - #2504"
+      bytes: [ 0xfd,0xc0,0xe2,0x48,
+               0xdd,0x8a,0x2b,0x53,
+               0xdd,0x97,0x3e,0x94,
+               0xdd,0xd6,0x4d,0x85,
+               0x9d,0xcb,0x01,0x42,
+               0x9d,0x56,0xce,0x04,
+               0x9d,0xce,0x71,0x03,
+               0xe1,0xec,0xe3,0xb1,
+               0xe1,0x23,0xf7,0x37,
+               0xe1,0xa1,0x33,0xf7,
+               0xed,0xec,0xe3,0xb1,
+               0xed,0x23,0xf7,0x37,
+               0x6d,0x90,0xa7,0x8e,
+               0xed,0xa1,0x33,0xf7,
+               0x6d,0xb7,0xe0,0xba,
+               0x1b,0x00,0x30,0x00,
+               0x5c,0x56,
+               0x5c,0x97,
+               0x5c,0xc4,
+               0x5c,0xcd ]
+      arch: "CS_ARCH_TRICORE"
+      options: [ CS_OPT_DETAIL, CS_MODE_TRICORE_162 ]
+      address: 0x80000000
+    expected:
+      insns:
+        -
+          asm_text: "loop a12, #0x7fff91c4"
+        -
+          asm_text: "jla #0x8014a656"
+        -
+          asm_text: "jla #0x900f287c"
+        -
+          asm_text: "jla #0xd00d0a9a"
+        -
+          asm_text: "ja #0xc0168402"
+        -
+          asm_text: "ja #0x500c099c"
+        -
+          asm_text: "ja #0xc01c06e2"
+        -
+          asm_text: "fcalla #0xe01963c6"
+        -
+          asm_text: "fcalla #0x20066fee"
+        -
+          asm_text: "fcalla #0xa003ee66"
+        -
+          asm_text: "calla #0xe01963c6"
+        -
+          asm_text: "calla #0x20066fee"
+        -
+          asm_text: "call #0x7f211d7e"
+        -
+          asm_text: "calla #0xa003ee66"
+        -
+          asm_text: "call #0x7f6f75f8"
+        -
+          asm_text: "addi d0, d0, #0x300"
+        -
+          asm_text: "call #0x800000ec"
+        -
+          asm_text: "call #0x7fffff70"
+        -
+          asm_text: "call #0x7fffffcc"
+        -
+          asm_text: "call #0x7fffffe0"
+  -
+    input:
+      name: "issue 2458 -- UB on PPC because vargs are not casted (AArch64)"
+      bytes: [ 0x20, 0x48, 0x62, 0xf8 ]
+      arch: "CS_ARCH_AARCH64"
+      options: [ CS_OPT_DETAIL ]
+      address: 0x0
+    expected:
+      insns:
+      -
+        asm_text: "ldr x0, [x1, w2, uxtw]"
+        details:
+          aarch64:
+            operands:
+              -
+                type: AARCH64_OP_REG
+                reg: x0
+                access: CS_AC_WRITE
+              -
+                type: AARCH64_OP_MEM
+                mem_base: x1
+                mem_index: w2
+                access: CS_AC_READ
+          regs_read: [ x1, w2 ]
+          regs_write: [ x0 ]
+  -
+    input:
+      name: "issue 2572 - Missing access of memory operand"
+      bytes: [ 0x00, 0x10, 0x40, 0xb8 ]
+      arch: "CS_ARCH_AARCH64"
+      options: [ CS_OPT_DETAIL ]
+      address: 0x0
+    expected:
+      insns:
+      -
+        asm_text: "ldur	w0, [x0, #1]"
+        details:
+          aarch64:
+            operands:
+              -
+                type: AARCH64_OP_REG
+                reg: w0
+                access: CS_AC_WRITE
+              -
+                type: AARCH64_OP_MEM
+                mem_base: x0
+                mem_disp: 0x1
+                access: CS_AC_READ
+          regs_read: [ x0 ]
+          regs_write: [ w0 ]
+  -
+    input:
+      name: "issue 2572 - Missing access of memory operand"
+      bytes: [ 0x9f, 0xf1, 0x0f, 0x78 ]
+      arch: "CS_ARCH_AARCH64"
+      options: [ CS_OPT_DETAIL ]
+      address: 0x0
+    expected:
+      insns:
+      -
+        asm_text: "sturh wzr, [x12, #255]"
+        details:
+          aarch64:
+            operands:
+              -
+                type: AARCH64_OP_REG
+                reg: wzr
+                access: CS_AC_READ
+              -
+                type: AARCH64_OP_MEM
+                mem_base: x12
+                mem_disp: 255
+                access: CS_AC_WRITE
+          regs_read: [ wzr, x12 ]
+
+  - input:
+      name: "loongarch 32 jirl alias with details"
+      bytes: [ 0x20, 0x00, 0x00, 0x4c ]
+      arch: "CS_ARCH_LOONGARCH"
+      options: [ CS_MODE_LOONGARCH32, CS_OPT_DETAIL ]
+      address: 0x0
+    expected:
+      insns:
+      - asm_text: "ret"
+        is_alias: 1
+        details:
+          loongarch:
+            operands: []
+          regs_read: []
+
+  - input:
+      name: "loongarch 32 jirl alias with details & real"
+      bytes: [ 0x20, 0x00, 0x00, 0x4c ]
+      arch: "CS_ARCH_LOONGARCH"
+      options: [ CS_MODE_LOONGARCH32, CS_OPT_DETAIL, CS_OPT_DETAIL_REAL ]
+      address: 0x0
+    expected:
+      insns:
+      - asm_text: "ret"
+        is_alias: 1
+        details:
+          loongarch:
+            operands:
+              - type: LOONGARCH_OP_REG
+                reg: zero
+                access: CS_AC_WRITE
+              - type: LOONGARCH_OP_REG
+                reg: ra
+                access: CS_AC_READ
+              - type: LOONGARCH_OP_IMM
+                imm: 0
+                access: CS_AC_READ
+          regs_read: [ ra ]
+
+  - input:
+      name: "loongarch 64 jirl alias with details"
+      bytes: [ 0x20, 0x00, 0x00, 0x4c ]
+      arch: "CS_ARCH_LOONGARCH"
+      options: [ CS_MODE_LOONGARCH64, CS_OPT_DETAIL ]
+      address: 0x0
+    expected:
+      insns:
+      - asm_text: "ret"
+        is_alias: 1
+        details:
+          loongarch:
+            operands: []
+          regs_read: []
+
+  - input:
+      name: "loongarch 64 jirl alias with details & real"
+      bytes: [ 0x20, 0x00, 0x00, 0x4c ]
+      arch: "CS_ARCH_LOONGARCH"
+      options: [ CS_MODE_LOONGARCH64, CS_OPT_DETAIL, CS_OPT_DETAIL_REAL ]
+      address: 0x0
+    expected:
+      insns:
+      - asm_text: "ret"
+        is_alias: 1
+        details:
+          loongarch:
+            operands:
+              - type: LOONGARCH_OP_REG
+                reg: zero
+                access: CS_AC_WRITE
+              - type: LOONGARCH_OP_REG
+                reg: ra
+                access: CS_AC_READ
+              - type: LOONGARCH_OP_IMM
+                imm: 0
+                access: CS_AC_READ
+          regs_read: [ ra ]

@@ -33,6 +33,8 @@ typedef struct insn_map {
 		loongarch_suppl_info loongarch;
 		aarch64_suppl_info aarch64;
 		systemz_suppl_info systemz;
+		arm_suppl_info arm;
+		xtensa_suppl_info xtensa;
 	} suppl_info; // Supplementary information for each instruction.
 #endif
 } insn_map;
@@ -142,6 +144,8 @@ DECL_get_detail_op(loongarch, LoongArch);
 DECL_get_detail_op(mips, Mips);
 DECL_get_detail_op(riscv, RISCV);
 DECL_get_detail_op(systemz, SystemZ);
+DECL_get_detail_op(xtensa, Xtensa);
+DECL_get_detail_op(bpf, BPF);
 
 /// Increments the detail->arch.op_count by one.
 #define DEFINE_inc_detail_op_count(arch, ARCH) \
@@ -177,6 +181,10 @@ DEFINE_inc_detail_op_count(riscv, RISCV);
 DEFINE_dec_detail_op_count(riscv, RISCV);
 DEFINE_inc_detail_op_count(systemz, SystemZ);
 DEFINE_dec_detail_op_count(systemz, SystemZ);
+DEFINE_inc_detail_op_count(xtensa, Xtensa);
+DEFINE_dec_detail_op_count(xtensa, Xtensa);
+DEFINE_inc_detail_op_count(bpf, BPF);
+DEFINE_dec_detail_op_count(bpf, BPF);
 
 /// Returns true if a memory operand is currently edited.
 static inline bool doing_mem(const MCInst *MI)
@@ -208,10 +216,12 @@ DEFINE_get_arch_detail(loongarch, LoongArch);
 DEFINE_get_arch_detail(mips, Mips);
 DEFINE_get_arch_detail(riscv, RISCV);
 DEFINE_get_arch_detail(systemz, SystemZ);
+DEFINE_get_arch_detail(xtensa, Xtensa);
+DEFINE_get_arch_detail(bpf, BPF);
 
 #define DEFINE_check_safe_inc(Arch, ARCH) \
-	static inline void Arch##_check_safe_inc() { \
-		CS_ASSERT(Arch##_get_detail(MI)->op_count + 1 < NUM_##ARCH##_OPS); \
+	static inline void Arch##_check_safe_inc(const MCInst *MI) { \
+		assert(Arch##_get_detail(MI)->op_count + 1 < NUM_##ARCH##_OPS); \
 	}
 
 DEFINE_check_safe_inc(ARM, ARM);
@@ -224,6 +234,7 @@ DEFINE_check_safe_inc(LoongArch, LOONGARCH);
 DEFINE_check_safe_inc(RISCV, RISCV);
 DEFINE_check_safe_inc(SystemZ, SYSTEMZ);
 DEFINE_check_safe_inc(Mips, MIPS);
+DEFINE_check_safe_inc(BPF, BPF);
 
 static inline bool detail_is_set(const MCInst *MI)
 {

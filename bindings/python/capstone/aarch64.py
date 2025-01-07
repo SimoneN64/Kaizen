@@ -52,14 +52,14 @@ class AArch64SysOpSysReg(ctypes.Union):
         ('sysreg', ctypes.c_uint),
         ('tlbi', ctypes.c_uint),
         ('ic', ctypes.c_uint),
-        ('raw_val', ctypes.c_uint64),
+        ('raw_val', ctypes.c_int),
     )
 
 class AArch64SysOpSysImm(ctypes.Union):
     _fields_ = (
         ('dbnxs', ctypes.c_uint),
         ('exactfpimm', ctypes.c_uint),
-        ('raw_val', ctypes.c_uint64),
+        ('raw_val', ctypes.c_int),
     )
 
 class AArch64SysOpSysAlias(ctypes.Union):
@@ -79,7 +79,7 @@ class AArch64SysOpSysAlias(ctypes.Union):
         ('bti', ctypes.c_uint),
         ('svepredpat', ctypes.c_uint),
         ('sveveclenspecifier', ctypes.c_uint),
-        ('raw_val', ctypes.c_uint64),
+        ('raw_val', ctypes.c_int),
     )
 class AArch64SysOp(ctypes.Structure):
     _fields_ = (
@@ -96,7 +96,6 @@ class AArch64OpValue(ctypes.Union):
         ('imm_range', AArch64ImmRange),
         ('fp', ctypes.c_double),
         ('mem', AArch64OpMem),
-        ('sysop', AArch64SysOp),
         ('sme', AArch64OpSme),
         ('pred', AArch64OpPred),
     )
@@ -110,6 +109,7 @@ class AArch64Op(ctypes.Structure):
         ('type', ctypes.c_uint),
         ('is_vreg', ctypes.c_bool),
         ('value', AArch64OpValue),
+        ('sysop', AArch64SysOp),
         ('access', ctypes.c_uint8),
         ('is_list_member', ctypes.c_bool),
     )
@@ -136,7 +136,7 @@ class AArch64Op(ctypes.Structure):
 
     @property
     def sysop(self):
-        return self.value.sysop
+        return self.sysop
 
     @property
     def sme(self):

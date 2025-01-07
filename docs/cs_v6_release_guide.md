@@ -109,8 +109,9 @@ Nonetheless, we hope this additional information is useful to you.
 **AArch64**
 
 - Updated to LLVM-18
-- Adding new instructions of SME, SVE2 extensions. With it the `sme` and `pred` operands are added.
+- Adding new instructions of SME, SVE2 extensions. With it the new `sme` and `pred` operands are added.
 - System operands are provided with way more detail in separated operand.
+	- The `EXACTFPIMM` operand also sets the `fp` field.
 
 **PPC**
 
@@ -169,6 +170,19 @@ Nonetheless, we hope this additional information is useful to you.
 **RISCV**
 
 - Operands have now read/write access information
+
+**Xtensa**
+
+- Architecture support was added (based on LLVM-18).
+- Support for `LITBASE`. Set the `LITBASE` with `cs_option(handle, CS_OPT_LITBASE, litbase_value)`.
+
+**BPF**
+
+- Added support for eBPF `ATOMIC` class instructions (using Linux mnemonics, not GNU ones. E.g. `acmpxchg64` instead of `axchg`)
+- Added support for eBPF signed `ALU` class instructions (`sdiv`, `smod`, `movs` variants. E.g. `smod r9, 0xc9d1d20b`)
+- Added support for eBPF `JMP32` class instructions (E.g. `jslt32 r7, -0xa46e0bd, -0x33f1`)
+- Updated the syntax for eBPF legacy packet instructions (similar to LLVM mnemonics, not GNU ones (E.g. `ldabsw [skb-0x8]`). `skb` is the socket buffer.
+- Corrected the signedness interpretation of `immidiate` and `offset` operands
 
 **UX**
 
@@ -298,7 +312,7 @@ Such an instruction is ill-defined in LLVM and should be fixed upstream.
 
 | Keyword | Change | Justification |
 |---------|--------|---------------|
-| `ARMCC_*` | `ARMCC_EQ == 0` but `ARMCC_INVALID != 0` | They match the LLVM enum. Better for LLVM compatibility and code generation. |
+| `ARMCC_*` | `ARMCC_EQ == 0` but `ARMCC_INVALID != 0` | They match the LLVM enum. Better for LLVM compatibility and code generation. Check the compatibility option below. |
 | `ARM_CC` | `ARM_CC` → `ARMCC` and value change | They match the same LLVM enum. Better for LLVM compatibility and code generation. |
 | Post-index | Post-index memory access has the disponent now set in the `MEMORY` operand! No longer as separated `reg`/`imm` operand. | The CS memory operand had a field which was there for disponents. Not having it set, for post-index operands was inconsistent. |
 | Sign `mem.disp` | `mem.disp` is now always positive and the `subtracted` flag indicates if it should be subtracted. | It was inconsistent before. |
@@ -333,6 +347,7 @@ Such an instruction is ill-defined in LLVM and should be fixed upstream.
 | Instruction alias | Many instruction alias (e.g. `BF`) were removed from the instruction enum (see new alias feature below). | Alias information is provided separately in their own fields. |
 | `crx` | `ppc_ops_crx` was removed. | It was never used in the first place. |
 | `(RA\|0)` | The `(RA\|0)` cases (see ISA for details) for which `0` is used, the `PPC_REG_ZERO` register is used. The register name of it is `0`. | Mimics LLVM behavior. |
+| `cr` `un/so` bit. | The verbose condition register names changes the `so` bit name to `un`. Just as LLVM does. | Mimics LLVM behavior. |
 
 **Mips**
 
@@ -352,7 +367,7 @@ Such an instruction is ill-defined in LLVM and should be fixed upstream.
 | SYSZ -> SystemZ | `SYSZ` was everywhere renamed to `SystemZ` to match the LLVM naming. | See below |
 | `SYSTEMZ_CC_*` | `SYSTEMZ_CC_O = 0` and `SYSTEMZ_CC_INVALID != 0` | They match the same LLVM values. Better for LLVM compatibility and code generation. |
 
-### Notes about AArch64 and SystemZ renaming
+### Notes about AArch64, SystemZ and ARM renaming
 
 `ARM64` was everywhere renamed to `AArch64`. And `SYSZ` to `SYSTEMZ`. This is a necessity to ensure that the update scripts stay reasonably simple.
 Capstone was very inconsistent with the naming before (sometimes `AArch64` sometimes `ARM64`. Sometimes `SYSZ` sometimes `SYSTEMZ`).
@@ -369,9 +384,12 @@ _Compatibility header_
 
 If you want to use the compatibility header and stick with the `ARM64`/`SYSZ` naming, you can define `CAPSTONE_AARCH64_COMPAT_HEADER` and `CAPSTONE_SYSTEMZ_COMPAT_HEADER` before including `capstone.h`.
 
+**Note**: The `CAPSTONE_ARM_COMPAT_HEADER` will only define macros for the `ARM_CC -> ARMCC` and `arm_cc -> ARMCC_CondCodes` renaming.
+
 ```c
 #define CAPSTONE_SYSTEMZ_COMPAT_HEADER
 #define CAPSTONE_AARCH64_COMPAT_HEADER
+#define CAPSTONE_ARM_COMPAT_HEADER
 #include <capstone/capstone.h>
 
 // Your code...
@@ -437,6 +455,42 @@ sed -i "s|detail->sysz|detail->systemz|g" $1
 ```
 
 Write it into `rename.sh` and run it on files with `sh rename.sh <src-file>`
+
+#### Python binding compatibility
+
+The Python bindings were changed to match the renamed architectures. Thus the `capstone.arm64` module was moved to `capstone.aarch64` and the `capstone.sysz_const` module was moved to `capstone.systemz_const`. The constants and class names were renamed from `ARM64_*` to `AARCH64_*` and `SYSZ_*` to `SYSTEMZ_*` similarly (see above).
+
+To allow using the old `ARM64_*` and `SYSZ_*` constants in scripts running against Capstone v6+, compatibility modules can be imported. They monkey-patch Capstone to export the same constants with the old name as well during runtime. The compatibility module has to be imported **before** anything else from Capstone.
+
+To load the ARM64 constants import the old `capstone.arm64` module first:
+
+```python
+# First import legacy compatibility module using old `arm64` name instead of `aarch64`.
+import capstone.arm64
+# Then import anything else from capstone
+import capstone # from capstone import *
+
+# capstone.CS_ARCH_ARM64
+# capstone.arm64.ARM64_INS_FDIV
+```
+
+To use the old `SYSZ_*` constants import the `capstone.sysz_const` module first:
+
+```python
+# First import legacy compatibility module using old `sysz_const` name instead of `systemz_const`.
+import capstone.sysz_const
+# Then import anything else from capstone.
+import capstone # from capstone import *
+
+# capstone.CS_ARCH_SYSZ
+# capstone.systemz.SYSZ_REG_V3
+```
+
+To update your code to use the new constant names, use the `sed` replacement guide to replace the enum names from the C API above.
+
+**Compatibility for detail**
+
+There is no compatibility layer for type identifiers and detail names at the moment.
 
 ### Refactoring of cstool
 

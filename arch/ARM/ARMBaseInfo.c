@@ -3,8 +3,8 @@
 /*    Rot127 <unisono@quyllur.org> 2022-2023 */
 /* Automatically translated source file from LLVM. */
 
-/* LLVM-commit: 464bda7750a3ba9e23823fc707d7e7b6fc38438d */
-/* LLVM-tag: llvmorg-16.0.2-5-g464bda7750a3 */
+/* LLVM-commit: <commit> */
+/* LLVM-tag: <tag> */
 
 /* Only small edits allowed. */
 /* For multiple similar edits, please create a Patch for the translator. */
@@ -23,22 +23,24 @@
 // This file provides basic encoding and assembly information for ARM.
 //
 //===----------------------------------------------------------------------===//
+
 #include <capstone/platform.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include "ARMBaseInfo.h"
-#include "ARMMapping.h"
+#include "../../utils.h"
 
 #define CONCAT(a, b) CONCAT_(a, b)
 #define CONCAT_(a, b) a##_##b
 
+// CS namespace begin: ARMSysReg
+
+// lookup system register using 12-bit SYSm value.
+// Note: the search is uniqued using M1 mask
 const char *get_pred_mask(ARM_PredBlockMask pred_mask)
 {
 	switch (pred_mask) {
 	default:
-		assert(0 && "pred_mask not handled.");
+		CS_ASSERT_RET_VAL(0 && "pred_mask not handled.", NULL);
 	case ARM_T:
 		return "T";
 	case ARM_TT:
@@ -75,8 +77,6 @@ const char *get_pred_mask(ARM_PredBlockMask pred_mask)
 #define GET_MCLASSSYSREG_IMPL
 #include "ARMGenSystemRegister.inc"
 
-// lookup system register using 12-bit SYSm value.
-// Note: the search is uniqued using M1 mask
 const ARMSysReg_MClassSysReg *
 ARMSysReg_lookupMClassSysRegBy12bitSYSmValue(unsigned SYSm)
 {

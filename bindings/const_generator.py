@@ -6,7 +6,9 @@ import re
 
 INCL_DIR = '../include/capstone/'
 
-include = [ 'arm.h', 'aarch64.h', 'm68k.h', 'mips.h', 'x86.h', 'ppc.h', 'sparc.h', 'systemz.h', 'xcore.h', 'tms320c64x.h', 'm680x.h', 'evm.h', 'mos65xx.h', 'wasm.h', 'bpf.h' ,'riscv.h', 'sh.h', 'tricore.h', 'alpha.h', 'hppa.h', 'loongarch.h' ]
+include = ['arm.h', 'aarch64.h', 'm68k.h', 'mips.h', 'x86.h', 'ppc.h', 'sparc.h', 'systemz.h', 'xcore.h',
+           'tms320c64x.h', 'm680x.h', 'evm.h', 'mos65xx.h', 'wasm.h', 'bpf.h', 'riscv.h', 'sh.h', 'tricore.h',
+           'alpha.h', 'hppa.h', 'loongarch.h', 'xtensa.h']
 
 template = {
     'java': {
@@ -60,6 +62,7 @@ template = {
             'alpha.h': ['ALPHA', 'Alpha'],
             'hppa.h': 'hppa',
             'loongarch.h': 'loongarch',
+            'xtensa.h': 'xtensa',
             'comment_open': '#',
             'comment_close': '',
         },
@@ -177,7 +180,7 @@ def gen(lang):
 
             if line.startswith('#define '):
                 line = line[8:]     #cut off define
-                xline = re.split(r'\s+', line, 1)     #split to at most 2 express
+                xline = re.split(r'\s+', line, maxsplit=1)     #split to at most 2 express
                 if len(xline) != 2:
                     continue
                 if '(' in xline[0] or ')' in xline[0]:      #does it look like a function

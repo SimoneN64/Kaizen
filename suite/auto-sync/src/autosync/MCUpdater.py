@@ -11,7 +11,7 @@ import subprocess as sp
 
 from pathlib import Path
 
-from autosync.Targets import TARGETS_LLVM_NAMING
+from autosync.Targets import TARGETS_LLVM_NAMING, TARGET_TO_DIR_NAME
 from autosync.Helper import convert_loglevel, get_path
 
 
@@ -212,7 +212,8 @@ class TestFile:
     def get_multi_mode_filename(self) -> Path:
         filename = self.file_path.stem
         parent = self.file_path.parent
-        detailed_name = f"{filename}_{'_'.join(self.opts)}.txt"
+        prefix_less_opts = [re.sub(r"CS_(OPT|MODE)_", "", o).lower() for o in self.opts]
+        detailed_name = f"{filename}_{'_'.join(prefix_less_opts)}.txt"
         detailed_name = re.sub(r"[+-]", "_", detailed_name)
         out_path = parent.joinpath(detailed_name)
         return Path(out_path)
@@ -222,6 +223,10 @@ class TestFile:
 
     def __lt__(self, other) -> bool:
         return str(self.file_path) < str(other.file_path)
+
+
+def exists_and_is_dir(x):
+    return x.exists() and x.is_dir()
 
 
 class MCUpdater:
@@ -252,6 +257,7 @@ class MCUpdater:
     ):
         self.symbolic_links = list()
         self.arch = arch
+        self.arch_dir_name = TARGET_TO_DIR_NAME[self.arch]
         self.test_dir_link_prefix = f"test_dir_{arch}_"
         self.mc_dir = mc_dir
         self.excluded = excluded if excluded else list()
@@ -272,6 +278,11 @@ class MCUpdater:
             if self.arch in self.conf["mandatory_options"]
             else list()
         )
+        self.default_endianess: str = (
+            self.conf["default_endianess"][self.arch]
+            if self.arch in self.conf["default_endianess"]
+            else ""
+        )
         self.remove_options: str = (
             self.conf["remove_options"][self.arch]
             if self.arch in self.conf["remove_options"]
@@ -291,11 +302,10 @@ class MCUpdater:
         self.multi_mode = multi_mode
 
     def check_prerequisites(self, paths):
-        for path in paths:
-            if not path.exists() or not path.is_dir():
-                raise ValueError(
-                    f"'{path}' does not exits or is not a directory. Cannot generate tests from there."
-                )
+        if all(not exists_and_is_dir(path) for path in paths):
+            raise ValueError(
+                f"'{paths}' does not exits or is not a directory. Cannot generate tests from there."
+            )
         llvm_lit_cfg = get_path("{LLVM_LIT_TEST_DIR}")
         if not llvm_lit_cfg.exists():
             raise ValueError(
@@ -336,10 +346,10 @@ class MCUpdater:
                 write_mode = "w+"
             filename.parent.mkdir(parents=True, exist_ok=True)
             if self.multi_mode and filename.exists():
-                raise ValueError(
-                    f"The following file exists already: {filename}\n"
-                    "This is not allowed in multi-mode."
+                log.warning(
+                    f"The following file exists already: {filename}. This is might indicate a blind spot in testing."
                 )
+                overwritten += 1
             elif not self.multi_mode and filename.exists():
                 log.debug(f"Overwrite: {filename}")
                 overwritten += 1
@@ -347,6 +357,7 @@ class MCUpdater:
                 f.write(test.get_cs_testfile_content(only_test=(write_mode == "a")))
                 log.debug(f"Write {filename}")
             files_written.add(filename)
+        print()
         log.info(
             f"Got {len(self.test_files)} test files.\n"
             f"\t\tProcessed {file_cnt} files with {test_cnt} test cases.\n"
@@ -360,6 +371,7 @@ class MCUpdater:
                 f"You have to use multi-mode to write them into distinct files.\n"
                 f"The current setting will only keep the last one written.\n"
                 f"See also: https://github.com/capstone-engine/capstone/issues/1992"
+                "If you already used multi-mode, there possibly is a blind spot for testing."
             )
 
     def build_test_options(self, options):
@@ -369,9 +381,20 @@ class MCUpdater:
             if opt in self.remove_options:
                 continue
             elif opt in self.replace_option_map:
-                new_options.append(self.replace_option_map[opt])
+                new_options.extend(self.replace_option_map[opt])
             else:
                 new_options.append(opt)
+        if (
+            not any(
+                [
+                    True
+                    for x in new_options
+                    if x in ["CS_MODE_BIG_ENDIAN", "CS_MODE_LITTLE_ENDIAN"]
+                ]
+            )
+            and self.default_endianess
+        ):
+            new_options.append(self.default_endianess)
         return new_options
 
     def build_test_files(self, mc_cmds: list[LLVM_MC_Command]) -> list[TestFile]:
@@ -476,11 +499,19 @@ class MCUpdater:
 
     def gen_all(self):
         log.info("Check prerequisites")
-        disas_tests = self.mc_dir.joinpath(f"Disassembler/{self.arch}")
+        disas_tests = self.mc_dir.joinpath(f"Disassembler/{self.arch_dir_name}")
         test_paths = [disas_tests]
+        # Xtensa only defines assembly tests.
+        if self.arch == "Xtensa":
+            test_paths.append(self.mc_dir.joinpath(self.arch))
+        # TriCore defines nothing.
+        elif self.arch == "TriCore":
+            return
         self.check_prerequisites(test_paths)
         log.info("Generate MC regression tests")
-        llvm_mc_cmds = self.run_llvm_lit(test_paths)
+        llvm_mc_cmds = self.run_llvm_lit(
+            [path for path in test_paths if exists_and_is_dir(path)]
+        )
         log.info(f"Got {len(llvm_mc_cmds)} llvm-mc commands to run")
         self.test_files = self.build_test_files(llvm_mc_cmds)
         for slink in self.symbolic_links:

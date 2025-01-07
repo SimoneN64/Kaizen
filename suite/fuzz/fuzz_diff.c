@@ -172,6 +172,24 @@ struct platform platforms[] = {
         (cs_mode)0,
         "EVM"
     },
+    {
+        //item 26
+        CS_ARCH_XTENSA,
+        (cs_mode)CS_MODE_XTENSA_ESP32,
+        "Xtensa ESP32"
+    },
+    {
+        //item 27
+        CS_ARCH_XTENSA,
+        (cs_mode)CS_MODE_XTENSA_ESP32S2,
+        "Xtensa ESP32S2"
+    },
+    {
+        //item 28
+        CS_ARCH_XTENSA,
+        (cs_mode)CS_MODE_XTENSA_ESP8266,
+        "Xtensa ESP8266"
+    },
 };
 
 void LLVMFuzzerInit();

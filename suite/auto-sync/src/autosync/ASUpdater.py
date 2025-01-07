@@ -22,7 +22,7 @@ from autosync.Helper import convert_loglevel, fail_exit, get_path
 from autosync.IncGenerator import IncGenerator
 
 from autosync.MCUpdater import MCUpdater
-from autosync.Targets import ARCH_LLVM_NAMING
+from autosync.Targets import ARCH_LLVM_NAMING, TARGET_TO_DIR_NAME
 
 
 class USteps(StrEnum):
@@ -51,6 +51,7 @@ class ASUpdater:
         wait_for_user: bool = True,
     ) -> None:
         self.arch = arch
+        self.arch_dir_name = TARGET_TO_DIR_NAME[self.arch]
         self.write = write
         self.no_clean_build = no_clean
         self.inc_list = inc_list
@@ -67,7 +68,9 @@ class ASUpdater:
             self.steps = steps
         self.copy_translated = copy_translated
         self.differ_no_auto_apply = differ_no_auto_apply
-        self.arch_dir = get_path("{CS_ARCH_MODULE_DIR}").joinpath(self.arch)
+        self.arch_dir = get_path("{CS_ARCH_MODULE_DIR}").joinpath(
+            TARGET_TO_DIR_NAME[self.arch]
+        )
         if not self.no_clean_build:
             self.clean_build_dir()
         self.inc_generator = IncGenerator(
@@ -112,10 +115,17 @@ class ASUpdater:
                 # Save the path. This file should not be moved.
                 patched.append(file)
         if self.arch == "AArch64":
-            # Update the compatibility header
             builder = CompatHeaderBuilder(
                 v6=main_header,
                 v5=get_path("{CS_INCLUDE_DIR}").joinpath(f"arm64.h"),
+                arch="aarch64",
+            )
+            builder.generate_v5_compat_header()
+        elif self.arch == "AArch64":
+            builder = CompatHeaderBuilder(
+                v6=main_header,
+                v5=get_path("{CS_INCLUDE_DIR}").joinpath(f"systemz_compatibility.h"),
+                arch="systemz",
             )
             builder.generate_v5_compat_header()
         return patched
@@ -180,6 +190,10 @@ class ASUpdater:
         if USteps.MC in self.steps:
             self.mc_updater.gen_all()
         if not self.write:
+            if self.inc_generator.has_inc_patches():
+                log.warning(
+                    f"Patches to inc files are only applied with the -w flag. This wasn't done. Find them in {get_path('{INC_PATCH_DIR}')}"
+                )
             # Done
             exit(0)
 
@@ -192,6 +206,7 @@ class ASUpdater:
                 continue
             self.copy_files(file, self.arch_dir)
             i += 1
+        self.inc_generator.apply_patches()
         log.info(f"Copied {i} files")
 
         i = 0
@@ -211,7 +226,7 @@ class ASUpdater:
 
         # MC tests
         i = 0
-        mc_dir = get_path("{MC_DIR}").joinpath(self.arch)
+        mc_dir = get_path("{MC_DIR}").joinpath(self.arch_dir_name)
         log.info(f"Copy MC test files to {mc_dir}")
         for file in get_path("{MCUPDATER_OUT_DIR}").iterdir():
             self.copy_files(file, mc_dir)

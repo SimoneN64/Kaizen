@@ -12,6 +12,16 @@ typedef enum {
 #include "AArch64GenCSOpGroup.inc"
 } aarch64_op_group;
 
+/// Components of an SME matrix.
+/// Used when an sme operand is set to signal which part should be set.
+typedef enum {
+	AARCH64_SME_MATRIX_TILE,
+	AARCH64_SME_MATRIX_TILE_LIST,
+	AARCH64_SME_MATRIX_SLICE_REG,
+	AARCH64_SME_MATRIX_SLICE_OFF,
+	AARCH64_SME_MATRIX_SLICE_OFF_RANGE,
+} aarch64_sme_op_part;
+
 // return name of register in friendly string
 const char *AArch64_reg_name(csh handle, unsigned int reg);
 
@@ -26,19 +36,17 @@ void AArch64_reg_access(const cs_insn *insn, cs_regs regs_read,
 			uint8_t *regs_read_count, cs_regs regs_write,
 			uint8_t *regs_write_count);
 
-void AArch64_add_cs_detail(MCInst *MI, int /* aarch64_op_group */ op_group,
-			   va_list args);
-
-static inline void add_cs_detail(MCInst *MI,
-				 int /* aarch64_op_group */ op_group, ...)
-{
-	if (!MI->flat_insn->detail)
-		return;
-	va_list args;
-	va_start(args, op_group);
-	AArch64_add_cs_detail(MI, op_group, args);
-	va_end(args);
-}
+void AArch64_add_cs_detail_0(MCInst *MI, aarch64_op_group op_group,
+				  unsigned OpNum);
+void AArch64_add_cs_detail_1(MCInst *MI, aarch64_op_group op_group,
+				     unsigned OpNum, uint64_t temp_arg_0);
+void AArch64_add_cs_detail_2(MCInst *MI, aarch64_op_group op_group,
+				     unsigned OpNum, uint64_t temp_arg_0,
+				     uint64_t temp_arg_1);
+void AArch64_add_cs_detail_4(MCInst *MI, aarch64_op_group op_group,
+				     unsigned OpNum, uint64_t temp_arg_0,
+				     uint64_t temp_arg_1, uint64_t temp_arg_2,
+				     uint64_t temp_arg_3);
 
 void AArch64_init_mri(MCRegisterInfo *MRI);
 

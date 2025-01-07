@@ -18,6 +18,7 @@
 
 void MCInst_Init(MCInst *inst, cs_arch arch)
 {
+	memset(inst, 0, sizeof(MCInst));
 	// unnecessary to initialize in loop . its expensive and inst->size should be honored
 	inst->Operands[0].Kind = kInvalid;
 	inst->Operands[0].ImmVal = 0;
@@ -56,7 +57,7 @@ void MCInst_clear(MCInst *inst)
 // does not free @Op
 void MCInst_insert0(MCInst *inst, int index, MCOperand *Op)
 {
-	assert(index < MAX_MC_OPS);
+	CS_ASSERT_RET(index < MAX_MC_OPS);
 	int i;
 
 	for(i = inst->size; i > index; i--)
@@ -101,7 +102,7 @@ unsigned MCInst_getNumOperands(const MCInst *inst)
 // This addOperand2 function doesn't free Op
 void MCInst_addOperand2(MCInst *inst, MCOperand *Op)
 {
-	assert(inst->size < MAX_MC_OPS);
+	CS_ASSERT_RET(inst->size < MAX_MC_OPS);
 	inst->Operands[inst->size] = *Op;
 
 	inst->size++;
@@ -243,16 +244,9 @@ void MCInst_handleWriteback(MCInst *MI, const MCInstrDesc *InstDescTable, unsign
 	const MCInstrDesc *InstDesc = NULL;
 	const MCOperandInfo *OpInfo = NULL;
 	unsigned short NumOps = 0;
-	if (MI->csh->arch == CS_ARCH_ARM) {
-		// Uses old (pre LLVM 18) indexing method.
-		InstDesc = &InstDescTable[MCInst_getOpcode(MI)];
-		OpInfo = InstDescTable[MCInst_getOpcode(MI)].OpInfo;
-		NumOps = InstDescTable[MCInst_getOpcode(MI)].NumOperands;
-	} else {
-		InstDesc = MCInstrDesc_get(MCInst_getOpcode(MI), InstDescTable, tbl_size);
-		OpInfo = MCInstrDesc_get(MCInst_getOpcode(MI), InstDescTable, tbl_size)->OpInfo;
-		NumOps = MCInstrDesc_get(MCInst_getOpcode(MI), InstDescTable, tbl_size)->NumOperands;
-	}
+	InstDesc = MCInstrDesc_get(MCInst_getOpcode(MI), InstDescTable, tbl_size);
+	OpInfo = InstDesc->OpInfo;
+	NumOps = InstDesc->NumOperands;
 
 	for (unsigned i = 0; i < NumOps; ++i) {
 		if (MCOperandInfo_isTiedToOp(&OpInfo[i])) {

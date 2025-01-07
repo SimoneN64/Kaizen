@@ -21,8 +21,7 @@ test_cases:
                 sub_type: AARCH64_OP_REG_MRS
                 sys_raw_val: 0xc000
             cc: AArch64CC_Invalid
-            update_flags: 1
-          regs_write: [ nzcv, x9 ]
+          regs_write: [ x9 ]
 
       -
         asm_text: "msr SPSel, #0"
@@ -362,10 +361,7 @@ test_cases:
             -
               type: AARCH64_OP_MEM
               mem_base: sp
-              access: CS_AC_READ
-            -
-              type: AARCH64_OP_IMM
-              imm: 0x3c
+              mem_disp: 0x3c
               access: CS_AC_READ
             post_indexed: 1
             cc: AArch64CC_Invalid

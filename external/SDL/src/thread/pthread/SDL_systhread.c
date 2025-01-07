@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -26,7 +26,9 @@
 #include <pthread_np.h>
 #endif
 
+#ifdef HAVE_SIGNAL_H
 #include <signal.h>
+#endif
 #include <errno.h>
 
 #ifdef SDL_PLATFORM_LINUX
@@ -38,7 +40,7 @@
 #include "../../core/linux/SDL_dbus.h"
 #endif // SDL_PLATFORM_LINUX
 
-#if (defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_MACOS) || defined(SDL_PLATFORM_IOS)) && defined(HAVE_DLOPEN)
+#if (defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_ANDROID) || defined(SDL_PLATFORM_MACOS) || defined(SDL_PLATFORM_IOS)) && defined(HAVE_DLOPEN)
 #include <dlfcn.h>
 #ifndef RTLD_DEFAULT
 #define RTLD_DEFAULT NULL
@@ -55,11 +57,13 @@
 #include <kernel/OS.h>
 #endif
 
+#ifdef HAVE_SIGNAL_H
 // List of signals to mask in the subthreads
 static const int sig_list[] = {
     SIGHUP, SIGINT, SIGQUIT, SIGPIPE, SIGALRM, SIGTERM, SIGCHLD, SIGWINCH,
     SIGVTALRM, SIGPROF, 0
 };
+#endif
 
 static void *RunThread(void *data)
 {
@@ -73,7 +77,7 @@ static void *RunThread(void *data)
 #if (defined(SDL_PLATFORM_MACOS) || defined(SDL_PLATFORM_IOS)) && defined(HAVE_DLOPEN)
 static bool checked_setname = false;
 static int (*ppthread_setname_np)(const char *) = NULL;
-#elif defined(SDL_PLATFORM_LINUX) && defined(HAVE_DLOPEN)
+#elif (defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_ANDROID)) && defined(HAVE_DLOPEN)
 static bool checked_setname = false;
 static int (*ppthread_setname_np)(pthread_t, const char *) = NULL;
 #endif
@@ -84,17 +88,17 @@ bool SDL_SYS_CreateThread(SDL_Thread *thread,
     pthread_attr_t type;
 
 // do this here before any threads exist, so there's no race condition.
-#if (defined(SDL_PLATFORM_MACOS) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_LINUX)) && defined(HAVE_DLOPEN)
+#if (defined(SDL_PLATFORM_MACOS) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_ANDROID)) && defined(HAVE_DLOPEN)
     if (!checked_setname) {
         void *fn = dlsym(RTLD_DEFAULT, "pthread_setname_np");
 #if defined(SDL_PLATFORM_MACOS) || defined(SDL_PLATFORM_IOS)
         ppthread_setname_np = (int (*)(const char *))fn;
-#elif defined(SDL_PLATFORM_LINUX)
+#elif defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_ANDROID)
         ppthread_setname_np = (int (*)(pthread_t, const char *))fn;
 #endif
         checked_setname = true;
     }
-#endif
+    #endif
 
     // Set the thread attributes
     if (pthread_attr_init(&type) != 0) {
@@ -117,16 +121,18 @@ bool SDL_SYS_CreateThread(SDL_Thread *thread,
 
 void SDL_SYS_SetupThread(const char *name)
 {
+#ifdef HAVE_SIGNAL_H
     int i;
     sigset_t mask;
+#endif
 
     if (name) {
-#if (defined(SDL_PLATFORM_MACOS) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_LINUX)) && defined(HAVE_DLOPEN)
+#if (defined(SDL_PLATFORM_MACOS) || defined(SDL_PLATFORM_IOS) || defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_ANDROID)) && defined(HAVE_DLOPEN)
         SDL_assert(checked_setname);
         if (ppthread_setname_np) {
 #if defined(SDL_PLATFORM_MACOS) || defined(SDL_PLATFORM_IOS)
             ppthread_setname_np(name);
-#elif defined(SDL_PLATFORM_LINUX)
+#elif defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_ANDROID)
             if (ppthread_setname_np(pthread_self(), name) == ERANGE) {
                 char namebuf[16]; // Limited to 16 char
                 SDL_strlcpy(namebuf, name, sizeof(namebuf));
@@ -154,12 +160,14 @@ void SDL_SYS_SetupThread(const char *name)
 #endif
     }
 
+#ifdef HAVE_SIGNAL_H
     // Mask asynchronous signals for this thread
     sigemptyset(&mask);
     for (i = 0; sig_list[i]; ++i) {
         sigaddset(&mask, sig_list[i]);
     }
     pthread_sigmask(SIG_BLOCK, &mask, 0);
+#endif
 
 #ifdef PTHREAD_CANCEL_ASYNCHRONOUS
     // Allow ourselves to be asynchronously cancelled

@@ -335,7 +335,7 @@ typedef enum
 			continue;
 
 		NSLog( @"connected peripheral: %@", peripheral );
-		if ( [peripheral.name isEqualToString:@"SteamController"] )
+		if ( [peripheral.name hasPrefix:@"Steam"] )
 		{
 			self.nPendingPairs += 1;
 			HIDBLEDevice *steamController = [[HIDBLEDevice alloc] initWithPeripheral:peripheral];
@@ -459,7 +459,7 @@ typedef enum
 	NSString *localName = [advertisementData objectForKey:CBAdvertisementDataLocalNameKey];
 	NSString *log = [NSString stringWithFormat:@"Found '%@'", localName];
 
-	if ( [localName isEqualToString:@"SteamController"] )
+	if ( [localName hasPrefix:@"Steam"] )
 	{
 		NSLog( @"%@ : %@ - %@", log, peripheral, advertisementData );
 		self.nPendingPairs += 1;
@@ -853,6 +853,7 @@ static struct hid_device_info *create_device_info_for_hid_device(HIDBLEDevice *d
     device_info->product_id = D0G_BLE2_PID;
     device_info->product_string = wcsdup( L"Steam Controller" );
     device_info->manufacturer_string = wcsdup( L"Valve Corporation" );
+    device_info->bus_type = HID_API_BUS_BLUETOOTH;
     return device_info;
 }
 

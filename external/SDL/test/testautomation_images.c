@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -2374,7 +2374,7 @@ SDL_Surface *SDLTest_ImageBlendingBackground(void)
     SDL_Surface *surface = SDL_CreateSurfaceFrom(
             SDLTest_imageRainbowBackground.width,
             SDLTest_imageRainbowBackground.height,
-            SDL_PIXELFORMAT_ARGB8888,
+            SDL_PIXELFORMAT_BGRA32,
             (void *)SDLTest_imageRainbowBackground.pixel_data,
             SDLTest_imageRainbowBackground.width * SDLTest_imageRainbowBackground.bytes_per_pixel);
     return surface;
@@ -2548,7 +2548,7 @@ SDL_Surface *SDLTest_ImageBlendingSprite(void)
     SDL_Surface *surface = SDL_CreateSurfaceFrom(
             SDLTest_imageTransparentSprite.width,
             SDLTest_imageTransparentSprite.height,
-            SDL_PIXELFORMAT_ARGB8888,
+            SDL_PIXELFORMAT_BGRA32,
             (void *)SDLTest_imageTransparentSprite.pixel_data,
             SDLTest_imageTransparentSprite.width * SDLTest_imageTransparentSprite.bytes_per_pixel);
     return surface;

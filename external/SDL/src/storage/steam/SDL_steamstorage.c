@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -32,7 +32,7 @@
 
 typedef struct STEAM_RemoteStorage
 {
-    void *libsteam_api;
+    SDL_SharedObject *libsteam_api;
     #define STEAM_PROC(ret, func, parms) \
         steamfntype_##func func;
     #include "SDL_steamstorage_proc.h"
@@ -95,7 +95,7 @@ static bool STEAM_ReadStorageFile(void *userdata, const char *path, void *destin
 
 static bool STEAM_WriteStorageFile(void *userdata, const char *path, const void *source, Uint64 length)
 {
-    int result = false;
+    bool result = false;
     STEAM_RemoteStorage *steam = (STEAM_RemoteStorage*) userdata;
     void *steamremotestorage = steam->SteamAPI_SteamRemoteStorage_v016();
     if (steamremotestorage == NULL) {

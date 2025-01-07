@@ -90,7 +90,8 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
         if: ${{ matrix.platform.platform == 'msvc' }}
         with:
-          arch: ${{ matrix.platform.msvc-vcvars }}
+          arch: ${{ matrix.platform.msvc-vcvars-arch }}
+          sdk: ${{ matrix.platform.msvc-vcvars-sdk }}
       - name: 'Set up Windows GDK Desktop'
         uses: ./.github/actions/setup-gdk-desktop
         if: ${{ matrix.platform.setup-gdk-folder != '' }}
@@ -191,9 +192,9 @@ jobs:
         run: |
           echo "This should show us the SDL_REVISION"
           echo "Shared library:"
-          ${{ (matrix.platform.shared-lib && format('strings build/{0} | grep SDL-', matrix.platform.shared-lib)) || 'echo "<Shared library not supported by platform>"' }}
+          ${{ (matrix.platform.shared-lib && format('strings build/{0} | grep "Github Workflow"', matrix.platform.shared-lib)) || 'echo "<Shared library not supported by platform>"' }}
           echo "Static library:"
-          ${{ (matrix.platform.static-lib && format('strings build/{0} | grep SDL-', matrix.platform.static-lib)) || 'echo "<Static library not supported by platform>"' }}
+          ${{ (matrix.platform.static-lib && format('strings build/{0} | grep "Github Workflow"', matrix.platform.static-lib)) || 'echo "<Static library not supported by platform>"' }}
       - name: 'Run build-time tests (CMake)'
         id: tests
         if: ${{ !matrix.platform.no-cmake && matrix.platform.run-tests }}
@@ -206,7 +207,7 @@ jobs:
           ctest -VV --test-dir build/ -j2
       - name: "Build test apk's (CMake)"
         id: apks
-        if: ${{ steps.build.outcome == 'success' && matrix.platform.android-apks != '' }}
+        if: ${{ always() && steps.build.outcome == 'success' && matrix.platform.android-apks != '' }}
 #        shell: ${{ matrix.platform.shell }}
         run: |
           ${{ matrix.platform.source-cmd }}
@@ -217,7 +218,7 @@ jobs:
             -- ${{ matrix.platform.cmake-build-arguments }}
       - name: 'Install (CMake)'
         id: install
-        if: ${{ steps.build.outcome == 'success' }}
+        if: ${{ always() && steps.build.outcome == 'success' }}
 #        shell: ${{ matrix.platform.shell }}
         run: |
           ${{ matrix.platform.source-cmd }}
@@ -226,7 +227,7 @@ jobs:
           ( cd prefix; find . ) | LC_ALL=C sort -u
       - name: 'Package (CPack)'
         id: package
-        if: ${{ steps.build.outcome == 'success' }}
+        if: ${{ always() && steps.build.outcome == 'success' }}
 #        shell: ${{ matrix.platform.shell }}
         run: |
           # DMG creation on macOS occasionally fails, so try multiple times
@@ -280,11 +281,11 @@ jobs:
       - name: 'Build (cross-platform-actions, BSD)'
         id: cpactions
         if: ${{ matrix.platform.cpactions }}
-        uses: cross-platform-actions/action@v0.25.0
+        uses: cross-platform-actions/action@v0.26.0
         with:
-          operating_system: ${{ matrix.platform.cpactions-os }}
-          architecture: ${{ matrix.platform.cpactions-arch }}
-          version: ${{ matrix.platform.cpactions-version }}
+          operating_system: '${{ matrix.platform.cpactions-os }}'
+          architecture: '${{ matrix.platform.cpactions-arch }}'
+          version: '${{ matrix.platform.cpactions-version }}'
           run: |
             ${{ matrix.platform.cpactions-setup-cmd }}
             ${{ matrix.platform.cpactions-install-cmd }}
@@ -347,13 +348,27 @@ jobs:
         if: ${{ matrix.platform.xcode-sdk != '' }}
         run: |
           xcodebuild -project Xcode/SDL/SDL.xcodeproj -target SDL3 -configuration Release -sdk ${{ matrix.platform.xcode-sdk }} clean build
+      - name: 'Setup Python'
+        uses: 'actions/setup-python@main'
+        if: ${{ matrix.platform.check-sources }}
+        with:
+          python-version: '3.x'
+      - name: 'Check Sources'
+        if: ${{ matrix.platform.check-sources }}
+        run: |
+          set -e
+          build-scripts/test-versioning.sh
+          python build-scripts/check_android_jni.py
+          python build-scripts/check_stdlib_usage.py
       - name: 'Upload binary package'
         uses: actions/upload-artifact@v4
         if: ${{ always() && matrix.platform.artifact != '' && (steps.package.outcome == 'success' || steps.cpactions.outcome == 'success') && (matrix.platform.enable-artifacts || steps.tests.outcome == 'failure') }}
         with:
           if-no-files-found: error
           name: '${{ matrix.platform.artifact }}'
-          path: build/dist/SDL3*
+          path: |
+            build/dist/SDL3*
+            build/include*
       - name: 'Upload minidumps'
         uses: actions/upload-artifact@v4
         if: ${{ always() && steps.tests.outcome == 'failure' && (matrix.platform.platform == 'msvc' || matrix.platform.platform == 'msys2') }}

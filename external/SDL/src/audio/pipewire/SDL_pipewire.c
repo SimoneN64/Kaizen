@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -92,7 +92,7 @@ static int (*PIPEWIRE_pw_properties_setf)(struct pw_properties *, const char *, 
 #ifdef SDL_AUDIO_DRIVER_PIPEWIRE_DYNAMIC
 
 static const char *pipewire_library = SDL_AUDIO_DRIVER_PIPEWIRE_DYNAMIC;
-static void *pipewire_handle = NULL;
+static SDL_SharedObject *pipewire_handle = NULL;
 
 static bool pipewire_dlsym(const char *fn, void **addr)
 {
@@ -939,7 +939,21 @@ static bool PIPEWIRE_PlayDevice(SDL_AudioDevice *device, const Uint8 *buffer, in
 
 static void output_callback(void *data)
 {
-    SDL_PlaybackAudioThreadIterate((SDL_AudioDevice *)data);
+    SDL_AudioDevice *device = (SDL_AudioDevice *) data;
+
+    // this callback can fire in a background thread during OpenDevice, while we're still blocking
+    // _with the device lock_ until the stream is ready, causing a deadlock. Write silence in this case.
+    if (device->hidden->stream_init_status != PW_READY_FLAG_ALL_BITS) {
+        int bufsize = 0;
+        Uint8 *buf = PIPEWIRE_GetDeviceBuf(device, &bufsize);
+        if (buf && bufsize) {
+            SDL_memset(buf, device->silence_value, bufsize);
+        }
+        PIPEWIRE_PlayDevice(device, buf, bufsize);
+        return;
+    }
+
+    SDL_PlaybackAudioThreadIterate(device);
 }
 
 static void PIPEWIRE_FlushRecording(SDL_AudioDevice *device)
@@ -980,7 +994,16 @@ static int PIPEWIRE_RecordDevice(SDL_AudioDevice *device, void *buffer, int bufl
 
 static void input_callback(void *data)
 {
-    SDL_RecordingAudioThreadIterate((SDL_AudioDevice *)data);
+    SDL_AudioDevice *device = (SDL_AudioDevice *) data;
+
+    // this callback can fire in a background thread during OpenDevice, while we're still blocking
+    // _with the device lock_ until the stream is ready, causing a deadlock. Drop data in this case.
+    if (device->hidden->stream_init_status != PW_READY_FLAG_ALL_BITS) {
+        PIPEWIRE_FlushRecording(device);
+        return;
+    }
+
+    SDL_RecordingAudioThreadIterate(device);
 }
 
 static void stream_add_buffer_callback(void *data, struct pw_buffer *buffer)

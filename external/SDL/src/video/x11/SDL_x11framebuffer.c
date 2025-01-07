@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -24,6 +24,7 @@
 
 #include "SDL_x11video.h"
 #include "SDL_x11framebuffer.h"
+#include "SDL_x11xsync.h"
 
 #ifndef NO_SHARED_MEMORY
 
@@ -215,6 +216,10 @@ bool X11_UpdateWindowFramebuffer(SDL_VideoDevice *_this, SDL_Window *window, con
                           x, y, x, y, w, h);
         }
     }
+
+#ifdef SDL_VIDEO_DRIVER_X11_XSYNC
+    X11_HandlePresent(data->window);
+#endif /* SDL_VIDEO_DRIVER_X11_XSYNC */
 
     X11_XSync(display, False);
 

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -62,6 +62,8 @@ SDL_KMSDRM_SYM_OPT(int,drmModeAddFB2WithModifiers,(int fd, uint32_t width,
                          uint32_t height, uint32_t pixel_format, const uint32_t bo_handles[4],
                          const uint32_t pitches[4], const uint32_t offsets[4],
                          const uint64_t modifier[4], uint32_t *buf_id, uint32_t flags))
+
+SDL_KMSDRM_SYM_OPT(const char *,drmModeGetConnectorTypeName,(uint32_t connector_type))
 
 SDL_KMSDRM_SYM(int,drmModeRmFB,(int fd, uint32_t bufferId))
 SDL_KMSDRM_SYM(drmModeFBPtr,drmModeGetFB,(int fd, uint32_t buf))

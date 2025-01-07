@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -36,15 +36,16 @@
 static void android_egl_context_restore(SDL_Window *window)
 {
     if (window) {
-        SDL_Event event;
         SDL_WindowData *data = window->internal;
         SDL_GL_MakeCurrent(window, NULL);
         if (!SDL_GL_MakeCurrent(window, (SDL_GLContext)data->egl_context)) {
             // The context is no longer valid, create a new one
             data->egl_context = (EGLContext)SDL_GL_CreateContext(window);
             SDL_GL_MakeCurrent(window, (SDL_GLContext)data->egl_context);
+            SDL_Event event;
+            SDL_zero(event);
             event.type = SDL_EVENT_RENDER_DEVICE_RESET;
-            event.common.timestamp = 0;
+            event.render.windowID = SDL_GetWindowID(window);
             SDL_PushEvent(&event);
         }
         data->backup_done = false;

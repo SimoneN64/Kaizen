@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -322,6 +322,7 @@ bool SDL_SetKeyboardFocus(SDL_Window *window)
 {
     SDL_VideoDevice *video = SDL_GetVideoDevice();
     SDL_Keyboard *keyboard = &SDL_keyboard;
+    SDL_Mouse *mouse = SDL_GetMouse();
 
     if (window) {
         if (!SDL_ObjectValid(window, SDL_OBJECT_TYPE_WINDOW) || window->is_destroying) {
@@ -332,6 +333,19 @@ bool SDL_SetKeyboardFocus(SDL_Window *window)
     if (keyboard->focus && !window) {
         // We won't get anymore keyboard messages, so reset keyboard state
         SDL_ResetKeyboard();
+
+        // Also leave mouse relative mode
+        if (mouse->relative_mode) {
+            SDL_SetRelativeMouseMode(false);
+
+            SDL_Window *focus = keyboard->focus;
+            if ((focus->flags & SDL_WINDOW_MINIMIZED) != 0) {
+                // We can't warp the mouse within minimized windows, so manually restore the position
+                float x = focus->x + mouse->x;
+                float y = focus->y + mouse->y;
+                SDL_WarpMouseGlobal(x, y);
+            }
+        }
     }
 
     // See if the current window has lost focus
@@ -637,7 +651,12 @@ void SDL_SendKeyboardUnicodeKey(Uint64 timestamp, Uint32 ch)
 {
     SDL_Keyboard *keyboard = &SDL_keyboard;
     SDL_Keymod modstate = SDL_KMOD_NONE;
-    SDL_Scancode scancode = SDL_GetKeymapScancode(keyboard->keymap, ch, &modstate);
+    SDL_Scancode scancode;
+
+    if (ch == '\n') {
+        ch = SDLK_RETURN;
+    }
+    scancode = SDL_GetKeymapScancode(keyboard->keymap, ch, &modstate);
 
     // Make sure we have this keycode in our keymap
     if (scancode == SDL_SCANCODE_UNKNOWN && ch < SDLK_SCANCODE_MASK) {
@@ -682,7 +701,7 @@ bool SDL_SendKeyboardKeyIgnoreModifiers(Uint64 timestamp, SDL_KeyboardID keyboar
 
 bool SDL_SendKeyboardKeyAutoRelease(Uint64 timestamp, SDL_Scancode scancode)
 {
-    return SDL_SendKeyboardKeyInternal(timestamp, KEYBOARD_AUTORELEASE, SDL_GLOBAL_KEYBOARD_ID, 0, scancode, false);
+    return SDL_SendKeyboardKeyInternal(timestamp, KEYBOARD_AUTORELEASE, SDL_GLOBAL_KEYBOARD_ID, 0, scancode, true);
 }
 
 void SDL_ReleaseAutoReleaseKeys(void)
@@ -888,7 +907,7 @@ void SDL_SetModState(SDL_Keymod modstate)
 }
 
 // Note that SDL_ToggleModState() is not a public API. SDL_SetModState() is.
-void SDL_ToggleModState(const SDL_Keymod modstate, const bool toggle)
+void SDL_ToggleModState(SDL_Keymod modstate, bool toggle)
 {
     SDL_Keyboard *keyboard = &SDL_keyboard;
     if (toggle) {

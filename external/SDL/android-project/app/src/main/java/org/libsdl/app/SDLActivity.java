@@ -60,7 +60,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
     private static final String TAG = "SDL";
     private static final int SDL_MAJOR_VERSION = 3;
     private static final int SDL_MINOR_VERSION = 1;
-    private static final int SDL_MICRO_VERSION = 2;
+    private static final int SDL_MICRO_VERSION = 7;
 /*
     // Display InputType.SOURCE/CLASS of events and devices
     //
@@ -223,7 +223,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
     protected static SDLClipboardHandler mClipboardHandler;
     protected static Hashtable<Integer, PointerIcon> mCursors;
     protected static int mLastCursorID;
-    protected static SDLGenericMotionListener_API12 mMotionListener;
+    protected static SDLGenericMotionListener_API14 mMotionListener;
     protected static HIDDeviceManager mHIDDeviceManager;
 
     // This is what SDL runs in. It invokes SDL_main(), eventually
@@ -232,14 +232,14 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
     protected static boolean mActivityCreated = false;
     private static SDLFileDialogState mFileDialogState = null;
 
-    protected static SDLGenericMotionListener_API12 getMotionListener() {
+    protected static SDLGenericMotionListener_API14 getMotionListener() {
         if (mMotionListener == null) {
             if (Build.VERSION.SDK_INT >= 26 /* Android 8.0 (O) */) {
                 mMotionListener = new SDLGenericMotionListener_API26();
             } else if (Build.VERSION.SDK_INT >= 24 /* Android 7.0 (N) */) {
                 mMotionListener = new SDLGenericMotionListener_API24();
             } else {
-                mMotionListener = new SDLGenericMotionListener_API12();
+                mMotionListener = new SDLGenericMotionListener_API14();
             }
         }
 
@@ -928,6 +928,10 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
                             if (Build.VERSION.SDK_INT >= 28 /* Android 9 (Pie) */) {
                                 window.getAttributes().layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
                             }
+                            if (Build.VERSION.SDK_INT >= 30 /* Android 11 (R) */ &&
+                                Build.VERSION.SDK_INT < 35 /* Android 15 */) {
+                                SDLActivity.onNativeInsetsChanged(0, 0, 0, 0);
+                            }
                         }
                     } else {
                         Log.e(TAG, "error handling message, getContext() returned no Activity");
@@ -1059,6 +1063,7 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
     public static native void onNativeTouch(int touchDevId, int pointerFingerId,
                                             int action, float x,
                                             float y, float p);
+    public static native void onNativePen(int penId, int button, int action, float x, float y, float p);
     public static native void onNativeAccel(float x, float y, float z);
     public static native void onNativeClipboardChanged();
     public static native void onNativeSurfaceCreated();

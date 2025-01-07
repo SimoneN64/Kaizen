@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -82,6 +82,6 @@ extern void SDL_SendEditingTextCandidates(char **candidates, int num_candidates,
 extern void SDL_QuitKeyboard(void);
 
 // Toggle on or off pieces of the keyboard mod state.
-extern void SDL_ToggleModState(const SDL_Keymod modstate, const bool toggle);
+extern void SDL_ToggleModState(SDL_Keymod modstate, bool toggle);
 
 #endif // SDL_keyboard_c_h_

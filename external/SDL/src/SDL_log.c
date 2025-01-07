@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -696,6 +696,9 @@ static void SDLCALL SDL_LogOutput(void *userdata, int category, SDL_LogPriority 
 #endif // !defined(SDL_PLATFORM_GDK)
         length = SDL_strlen(GetLogPriorityPrefix(priority)) + SDL_strlen(message) + 1 + 1 + 1;
         output = SDL_small_alloc(char, length, &isstack);
+        if (!output) {
+            return;
+        }
         (void)SDL_snprintf(output, length, "%s%s\r\n", GetLogPriorityPrefix(priority), message);
         tstr = WIN_UTF8ToString(output);
 
@@ -770,6 +773,11 @@ static void SDLCALL SDL_LogOutput(void *userdata, int category, SDL_LogPriority 
     !(defined(SDL_PLATFORM_WIN32))
     (void)fprintf(stderr, "%s%s\n", GetLogPriorityPrefix(priority), message);
 #endif
+}
+
+SDL_LogOutputFunction SDL_GetDefaultLogOutputFunction(void)
+{
+    return SDL_LogOutput;
 }
 
 void SDL_GetLogOutputFunction(SDL_LogOutputFunction *callback, void **userdata)

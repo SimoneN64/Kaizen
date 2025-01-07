@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,9 +23,11 @@
 
 #ifdef SDL_VIDEO_DRIVER_KMSDRM
 
-/* include this here before SDL_sysvideo.h to avoid vulkan type
- * redefinition errors.  it already includes SDL_sysvideo.h.  */
-#include "SDL_kmsdrmvulkan.h"
+/* Include this first, as some system headers may pull in EGL headers that
+ * define EGL types as native types for other enabled platforms, which can
+ * result in type-mismatch warnings when building with LTO.
+ */
+#include "../SDL_egl_c.h"
 
 // SDL internals
 #include "../../events/SDL_events_c.h"
@@ -44,6 +46,7 @@
 #include "SDL_kmsdrmmouse.h"
 #include "SDL_kmsdrmvideo.h"
 #include "SDL_kmsdrmopengles.h"
+#include "SDL_kmsdrmvulkan.h"
 #include <dirent.h>
 #include <errno.h>
 #include <poll.h>
@@ -95,7 +98,7 @@ static int get_driindex(void)
     }
 
     SDL_strlcpy(device + kmsdrm_dri_pathsize, kmsdrm_dri_devname,
-                sizeof(device) - kmsdrm_dri_devnamesize);
+                sizeof(device) - kmsdrm_dri_pathsize);
     while((res = readdir(folder)) != NULL && available < 0) {
         if (SDL_memcmp(res->d_name, kmsdrm_dri_devname,
                        kmsdrm_dri_devnamesize) == 0) {
@@ -534,9 +537,23 @@ static drmModeModeInfo *KMSDRM_GetClosestDisplayMode(SDL_VideoDisplay *display, 
 /* _this is a SDL_VideoDevice *                                              */
 /*****************************************************************************/
 
+static bool KMSDRM_DropMaster(SDL_VideoDevice *_this)
+{
+    SDL_VideoData *viddata = _this->internal;
+
+    /* Check if we have DRM master to begin with */
+    if (KMSDRM_drmAuthMagic(viddata->drm_fd, 0) == -EACCES) {
+        /* Nope, nothing to do then */
+        return true;
+    }
+
+    return KMSDRM_drmDropMaster(viddata->drm_fd) == 0;
+}
+
 // Deinitializes the internal of the SDL Displays in the SDL display list.
 static void KMSDRM_DeinitDisplays(SDL_VideoDevice *_this)
 {
+    SDL_VideoData *viddata = _this->internal;
     SDL_DisplayID *displays;
     SDL_DisplayData *dispdata;
     int i;
@@ -562,6 +579,11 @@ static void KMSDRM_DeinitDisplays(SDL_VideoDevice *_this)
             }
         }
         SDL_free(displays);
+    }
+
+    if (viddata->drm_fd >= 0) {
+        close(viddata->drm_fd);
+        viddata->drm_fd = -1;
     }
 }
 
@@ -780,8 +802,10 @@ static void KMSDRM_AddDisplay(SDL_VideoDevice *_this, drmModeConnector *connecto
     SDL_DisplayModeData *modedata = NULL;
     drmModeEncoder *encoder = NULL;
     drmModeCrtc *crtc = NULL;
+    const char *connector_type = NULL;
     SDL_DisplayID display_id;
     SDL_PropertiesID display_properties;
+    char name_fmt[64];
     int orientation;
     int mode_index;
     int i, j;
@@ -944,6 +968,15 @@ static void KMSDRM_AddDisplay(SDL_VideoDevice *_this, drmModeConnector *connecto
         KMSDRM_CrtcSetVrr(viddata->drm_fd, crtc->crtc_id, true);
     }
 
+    // Set the name by the connector type, if possible
+    if (KMSDRM_drmModeGetConnectorTypeName) {
+        connector_type = KMSDRM_drmModeGetConnectorTypeName(connector->connector_type);
+        if (connector_type == NULL) {
+            connector_type = "Unknown";
+        }
+        SDL_snprintf(name_fmt, sizeof(name_fmt), "%s-%u", connector_type, connector->connector_type_id);
+    }
+
     /*****************************************/
     // Part 2: setup the SDL_Display itself.
     /*****************************************/
@@ -965,6 +998,9 @@ static void KMSDRM_AddDisplay(SDL_VideoDevice *_this, drmModeConnector *connecto
     CalculateRefreshRate(&dispdata->mode, &display.desktop_mode.refresh_rate_numerator, &display.desktop_mode.refresh_rate_denominator);
     display.desktop_mode.format = SDL_PIXELFORMAT_ARGB8888;
     display.desktop_mode.internal = modedata;
+    if (connector_type) {
+        display.name = name_fmt;
+    }
 
     // Add the display to the list of SDL displays.
     display_id = SDL_AddVideoDisplay(&display, false);
@@ -997,10 +1033,51 @@ cleanup:
     }
 } // NOLINT(clang-analyzer-unix.Malloc): If no error `dispdata` is saved in the display
 
+static void KMSDRM_SortDisplays(SDL_VideoDevice *_this)
+{
+    const char *name_hint = SDL_GetHint(SDL_HINT_VIDEO_DISPLAY_PRIORITY);
+
+    if (name_hint) {
+        char *saveptr;
+        char *str = SDL_strdup(name_hint);
+        SDL_VideoDisplay **sorted_list = SDL_malloc(sizeof(SDL_VideoDisplay *) * _this->num_displays);
+
+        if (str && sorted_list) {
+            int sorted_index = 0;
+
+            // Sort the requested displays to the front of the list.
+            const char *token = SDL_strtok_r(str, ",", &saveptr);
+            while (token) {
+                for (int i = 0; i < _this->num_displays; ++i) {
+                    SDL_VideoDisplay *d = _this->displays[i];
+                    if (d && SDL_strcmp(token, d->name) == 0) {
+                        sorted_list[sorted_index++] = d;
+                        _this->displays[i] = NULL;
+                        break;
+                    }
+                }
+
+                token = SDL_strtok_r(NULL, ",", &saveptr);
+            }
+
+            // Append the remaining displays to the end of the list.
+            for (int i = 0; i < _this->num_displays; ++i) {
+                if (_this->displays[i]) {
+                    sorted_list[sorted_index++] = _this->displays[i];
+                }
+            }
+
+            // Copy the sorted list back to the display list.
+            SDL_memcpy(_this->displays, sorted_list, sizeof(SDL_VideoDisplay *) * _this->num_displays);
+        }
+
+        SDL_free(str);
+        SDL_free(sorted_list);
+    }
+}
+
 /* Initializes the list of SDL displays: we build a new display for each
    connecter connector we find.
-   Inoffeensive for VK compatibility, except we must leave the drm_fd
-   closed when we get to the end of this function.
    This is to be called early, in VideoInit(), because it gets us
    the videomode information, which SDL needs immediately after VideoInit(). */
 static bool KMSDRM_InitDisplays(SDL_VideoDevice *_this)
@@ -1061,6 +1138,9 @@ static bool KMSDRM_InitDisplays(SDL_VideoDevice *_this)
         goto cleanup;
     }
 
+    // Sort the displays, if necessary
+    KMSDRM_SortDisplays(_this);
+
     // Determine if video hardware supports async pageflips.
     if (KMSDRM_drmGetCap(viddata->drm_fd, DRM_CAP_ASYNC_PAGE_FLIP, &async_pageflip) != 0) {
         SDL_LogError(SDL_LOG_CATEGORY_VIDEO, "Could not determine async page flip capability.");
@@ -1071,10 +1151,13 @@ static bool KMSDRM_InitDisplays(SDL_VideoDevice *_this)
     // Block for Vulkan compatibility.
     /***********************************/
 
-    /* THIS IS FOR VULKAN! Leave the FD closed, so VK can work.
-       Will reopen this in CreateWindow, but only if requested a non-VK window. */
-    close(viddata->drm_fd);
-    viddata->drm_fd = -1;
+    /* Vulkan requires DRM master on its own FD to work, so try to drop master
+       on our FD. This will only work without root on kernels v5.8 and later.
+       If it doesn't work, just close the FD and we'll reopen it later. */
+    if (!KMSDRM_DropMaster(_this)) {
+        close(viddata->drm_fd);
+        viddata->drm_fd = -1;
+    }
 
 cleanup:
     if (resources) {
@@ -1102,10 +1185,15 @@ static bool KMSDRM_GBMInit(SDL_VideoDevice *_this, SDL_DisplayData *dispdata)
     SDL_VideoData *viddata = _this->internal;
     bool result = true;
 
-    // Reopen the FD!
-    viddata->drm_fd = open(viddata->devpath, O_RDWR | O_CLOEXEC);
+    // Reopen the FD if we weren't able to drop master on the original one
+    if (viddata->drm_fd < 0) {
+        viddata->drm_fd = open(viddata->devpath, O_RDWR | O_CLOEXEC);
+        if (viddata->drm_fd < 0) {
+            return SDL_SetError("Could not reopen %s", viddata->devpath);
+        }
+    }
 
-    // Set the FD we just opened as current DRM master.
+    // Set the FD as current DRM master.
     KMSDRM_drmSetMaster(viddata->drm_fd);
 
     // Create the GBM device.
@@ -1131,8 +1219,9 @@ static void KMSDRM_GBMDeinit(SDL_VideoDevice *_this, SDL_DisplayData *dispdata)
         viddata->gbm_dev = NULL;
     }
 
-    // Finally close DRM FD. May be reopen on next non-vulkan window creation.
-    if (viddata->drm_fd >= 0) {
+    /* Finally drop DRM master if possible, otherwise close DRM FD.
+       May be reopened on next non-vulkan window creation. */
+    if (viddata->drm_fd >= 0 && !KMSDRM_DropMaster(_this)) {
         close(viddata->drm_fd);
         viddata->drm_fd = -1;
     }
@@ -1562,11 +1651,6 @@ bool KMSDRM_CreateWindow(SDL_VideoDevice *_this, SDL_Window *window, SDL_Propert
     windata->viddata = viddata;
     window->internal = windata;
 
-    SDL_PropertiesID props = SDL_GetWindowProperties(window);
-    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_KMSDRM_DEVICE_INDEX_NUMBER, viddata->devindex);
-    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_KMSDRM_DRM_FD_NUMBER, viddata->drm_fd);
-    SDL_SetPointerProperty(props, SDL_PROP_WINDOW_KMSDRM_GBM_DEVICE_POINTER, viddata->gbm_dev);
-
     // Do we want a double buffering scheme to get low video lag?
     windata->double_buffer = false;
     if (SDL_GetHintBoolean(SDL_HINT_VIDEO_DOUBLE_BUFFER, false)) {
@@ -1669,6 +1753,11 @@ bool KMSDRM_CreateWindow(SDL_VideoDevice *_this, SDL_Window *window, SDL_Propert
 
     // If we have just created a Vulkan window, establish that we are in Vulkan mode now.
     viddata->vulkan_mode = is_vulkan;
+
+    SDL_PropertiesID props = SDL_GetWindowProperties(window);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_KMSDRM_DEVICE_INDEX_NUMBER, viddata->devindex);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_KMSDRM_DRM_FD_NUMBER, viddata->drm_fd);
+    SDL_SetPointerProperty(props, SDL_PROP_WINDOW_KMSDRM_GBM_DEVICE_POINTER, viddata->gbm_dev);
 
     /* Focus on the newly created window.
        SDL_SetMouseFocus() also takes care of calling KMSDRM_ShowCursor() if necessary. */

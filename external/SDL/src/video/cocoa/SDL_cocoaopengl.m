@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -286,7 +286,7 @@ SDL_GLContext Cocoa_GL_CreateContext(SDL_VideoDevice *_this, SDL_Window *window)
             _this->GL_SwapWindow = Cocoa_GLES_SwapWindow;
             _this->GL_DestroyContext = Cocoa_GLES_DestroyContext;
 
-            if (Cocoa_GLES_LoadLibrary(_this, NULL) != 0) {
+            if (!Cocoa_GLES_LoadLibrary(_this, NULL)) {
                 return NULL;
             }
             return Cocoa_GLES_CreateContext(_this, window);
@@ -523,13 +523,31 @@ bool Cocoa_GL_SwapWindow(SDL_VideoDevice *_this, SDL_Window *window)
     }
 }
 
-bool Cocoa_GL_DestroyContext(SDL_VideoDevice *_this, SDL_GLContext context)
+static void DispatchedDestroyContext(SDL_GLContext context)
 {
     @autoreleasepool {
         SDL3OpenGLContext *nscontext = (__bridge SDL3OpenGLContext *)context;
         [nscontext cleanup];
         CFRelease(context);
     }
+}
+
+bool Cocoa_GL_DestroyContext(SDL_VideoDevice *_this, SDL_GLContext context)
+{
+    if ([NSThread isMainThread]) {
+        DispatchedDestroyContext(context);
+    } else {
+        if (SDL_opengl_async_dispatch) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+              DispatchedDestroyContext(context);
+            });
+        } else {
+            dispatch_sync(dispatch_get_main_queue(), ^{
+              DispatchedDestroyContext(context);
+            });
+        }
+    }
+
     return true;
 }
 

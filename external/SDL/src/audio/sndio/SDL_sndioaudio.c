@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -66,7 +66,7 @@ static void (*SNDIO_sio_initpar)(struct sio_par *);
 
 #ifdef SDL_AUDIO_DRIVER_SNDIO_DYNAMIC
 static const char *sndio_library = SDL_AUDIO_DRIVER_SNDIO_DYNAMIC;
-static void *sndio_handle = NULL;
+static SDL_SharedObject *sndio_handle = NULL;
 
 static bool load_sndio_sym(const char *fn, void **addr)
 {

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,8 +25,11 @@
 
 #if defined(SDL_PLATFORM_WINDOWS)
 SDL_IOStream *SDL_IOFromHandle(HANDLE handle, const char *mode, bool autoclose);
-#elif defined(HAVE_STDIO_H)
+#else
+#if defined(HAVE_STDIO_H)
 extern SDL_IOStream *SDL_IOFromFP(FILE *fp, bool autoclose);
+#endif
+extern SDL_IOStream *SDL_IOFromFD(int fd, bool autoclose);
 #endif
 
 #endif // SDL_iostream_c_h_

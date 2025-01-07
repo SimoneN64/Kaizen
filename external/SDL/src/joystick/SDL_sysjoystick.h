@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -240,6 +240,7 @@ typedef struct SDL_JoystickDriver
 #define SDL_LED_MIN_REPEAT_MS 5000
 
 // The available joystick drivers
+extern SDL_JoystickDriver SDL_PRIVATE_JoystickDriver;
 extern SDL_JoystickDriver SDL_ANDROID_JoystickDriver;
 extern SDL_JoystickDriver SDL_BSD_JoystickDriver;
 extern SDL_JoystickDriver SDL_DARWIN_JoystickDriver;

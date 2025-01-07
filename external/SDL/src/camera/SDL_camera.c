@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,6 +23,7 @@
 #include "SDL_syscamera.h"
 #include "SDL_camera_c.h"
 #include "../video/SDL_pixels_c.h"
+#include "../video/SDL_surface_c.h"
 #include "../thread/SDL_systhread.h"
 
 
@@ -31,11 +32,11 @@
 
 // Available camera drivers
 static const CameraBootStrap *const bootstrap[] = {
-#ifdef SDL_CAMERA_DRIVER_PIPEWIRE
-    &PIPEWIRECAMERA_bootstrap,
-#endif
 #ifdef SDL_CAMERA_DRIVER_V4L2
     &V4L2_bootstrap,
+#endif
+#ifdef SDL_CAMERA_DRIVER_PIPEWIRE
+    &PIPEWIRECAMERA_bootstrap,
 #endif
 #ifdef SDL_CAMERA_DRIVER_COREMEDIA
     &COREMEDIA_bootstrap,
@@ -48,6 +49,9 @@ static const CameraBootStrap *const bootstrap[] = {
 #endif
 #ifdef SDL_CAMERA_DRIVER_MEDIAFOUNDATION
     &MEDIAFOUNDATION_bootstrap,
+#endif
+#ifdef SDL_CAMERA_DRIVER_VITA
+    &VITACAMERA_bootstrap,
 #endif
 #ifdef SDL_CAMERA_DRIVER_DUMMY
     &DUMMYCAMERA_bootstrap,
@@ -784,7 +788,7 @@ void SDL_CameraThreadSetup(SDL_Camera *device)
     }*/
 #else
     // The camera capture is always a high priority thread
-    SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
+    SDL_SetCurrentThreadPriority(SDL_THREAD_PRIORITY_HIGH);
 #endif
 }
 
@@ -1418,7 +1422,7 @@ bool SDL_CameraInit(const char *driver_name)
         return false;
     }
 
-    SDL_HashTable *device_hash = SDL_CreateHashTable(NULL, 8, HashCameraID, MatchCameraID, NukeCameraHashItem, false);
+    SDL_HashTable *device_hash = SDL_CreateHashTable(NULL, 8, HashCameraID, MatchCameraID, NukeCameraHashItem, false, false);
     if (!device_hash) {
         SDL_DestroyRWLock(device_hash_lock);
         return false;

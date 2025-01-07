@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -119,7 +119,7 @@ extern "C" {
 // Sets an error message based on a given HRESULT
 extern bool WIN_SetErrorFromHRESULT(const char *prefix, HRESULT hr);
 
-// Sets an error message based on GetLastError(). Always return -1.
+// Sets an error message based on GetLastError(). Always returns false.
 extern bool WIN_SetError(const char *prefix);
 
 // Load a function from combase.dll

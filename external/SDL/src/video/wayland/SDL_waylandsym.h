@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -226,6 +226,10 @@ SDL_WAYLAND_SYM_OPT(void, libdecor_frame_get_min_content_size, (const struct lib
 SDL_WAYLAND_SYM_OPT(void, libdecor_frame_get_max_content_size, (const struct libdecor_frame *,\
                                                             int *,\
                                                             int *))
+#endif
+
+#if defined(SDL_VIDEO_DRIVER_WAYLAND_DYNAMIC_LIBDECOR) || SDL_LIBDECOR_CHECK_VERSION(0, 3, 0)
+SDL_WAYLAND_SYM_OPT(enum libdecor_wm_capabilities, libdecor_frame_get_wm_capabilities, (struct libdecor_frame *))
 #endif
 
 #endif

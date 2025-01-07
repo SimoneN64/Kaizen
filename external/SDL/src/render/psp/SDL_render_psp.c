@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -1375,11 +1375,7 @@ static bool PSP_CreateRenderer(SDL_Renderer *renderer, SDL_Window *window, SDL_P
     sceGuEnable(GU_SCISSOR_TEST);
 
     // Backface culling
-    /*
-    FIXME: Culling probably un-needed ? It can conflict with SDL_RENDERCMD_GEOMETRY
-    sceGuFrontFace(GU_CCW);
-    sceGuEnable(GU_CULL_FACE);
-    */
+    sceGuDisable(GU_CULL_FACE);
 
     // Setup initial blend state
     ResetBlendState(&data->blendState);

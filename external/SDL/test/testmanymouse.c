@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -286,9 +286,9 @@ static void HandleMouseButton(SDL_MouseButtonEvent *event)
         }
         if (event->which == mouse_state->instance_id) {
             if (event->down) {
-                mouse_state->button_state |= SDL_BUTTON(event->button);
+                mouse_state->button_state |= SDL_BUTTON_MASK(event->button);
             } else {
-                mouse_state->button_state &= ~SDL_BUTTON(event->button);
+                mouse_state->button_state &= ~SDL_BUTTON_MASK(event->button);
             }
         }
     }

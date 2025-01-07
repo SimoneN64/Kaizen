@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -171,6 +171,15 @@ SDL_X11_SYM(void, XFixesDestroyPointerBarrier, (Display* a, PointerBarrier b), (
 SDL_X11_SYM(int, XIBarrierReleasePointer,(Display* a,  int b, PointerBarrier c, BarrierEventID d), (a,b,c,d), return) // this is actually Xinput2
 SDL_X11_SYM(Status, XFixesQueryVersion,(Display* a, int* b, int* c), (a,b,c), return)
 SDL_X11_SYM(Status, XFixesSelectSelectionInput, (Display* a, Window b, Atom c, unsigned long d), (a,b,c,d), return)
+#endif
+
+#ifdef SDL_VIDEO_DRIVER_X11_XSYNC
+SDL_X11_MODULE(XSYNC)
+SDL_X11_SYM(Status, XSyncQueryExtension, (Display* a, int* b, int* c), (a, b, c), return)
+SDL_X11_SYM(Status, XSyncInitialize, (Display* a, int* b, int* c), (a, b, c), return)
+SDL_X11_SYM(XSyncCounter, XSyncCreateCounter, (Display* a, XSyncValue b), (a, b), return)
+SDL_X11_SYM(Status, XSyncDestroyCounter, (Display* a, XSyncCounter b), (a, b), return)
+SDL_X11_SYM(Status, XSyncSetCounter, (Display* a, XSyncCounter b, XSyncValue c), (a, b, c), return)
 #endif
 
 #ifdef SDL_VIDEO_DRIVER_X11_SUPPORTS_GENERIC_EVENTS

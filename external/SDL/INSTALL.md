@@ -6,9 +6,13 @@ Read ./docs/README-visualc.md
 
 ## Windows building with mingw-w64 for x86:
 
+Read [README-windows.md](docs/README-windows.md) for more information on building with MinGW64.
+
 Run: `cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=build-scripts/cmake-toolchain-mingw64-i686.cmake && cmake --build build && cmake --install build`
 
 ## Windows building with mingw-w64 for x64:
+
+Read [README-windows.md](docs/README-windows.md).
 
 Run: `cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=build-scripts/cmake-toolchain-mingw64-x86_64.cmake && cmake --build build && cmake --install build`
 
@@ -26,7 +30,7 @@ Run: `cmake -S . -B build -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" && cmake --bu
 
 ## Linux and other UNIX systems:
 
-Run: `cmake -S . -B build && cmake --build build && cmake --install build`
+Run: `cmake -S . -B build && cmake --build build --parallel $(nproc) && cmake --install build`
 
 ## Android:
 

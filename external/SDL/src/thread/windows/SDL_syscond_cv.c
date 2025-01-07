@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -119,7 +119,7 @@ static bool SDL_WaitConditionTimeoutNS_cv(SDL_Condition *_cond, SDL_Mutex *_mute
         mutex->count = 0;
         mutex->owner = 0;
 
-        result = pSleepConditionVariableSRW(&cond->cond, &mutex->srw, timeout, 0);
+        result = (pSleepConditionVariableSRW(&cond->cond, &mutex->srw, timeout, 0) == TRUE);
 
         // The mutex is owned by us again, regardless of status of the wait
         SDL_assert(mutex->count == 0 && mutex->owner == 0);
@@ -130,7 +130,7 @@ static bool SDL_WaitConditionTimeoutNS_cv(SDL_Condition *_cond, SDL_Mutex *_mute
 
         SDL_assert(SDL_mutex_impl_active.Type == SDL_MUTEX_CS);
 
-        result = pSleepConditionVariableCS(&cond->cond, &mutex->cs, timeout);
+        result = (pSleepConditionVariableCS(&cond->cond, &mutex->cs, timeout) == TRUE);
     }
 
     return result;

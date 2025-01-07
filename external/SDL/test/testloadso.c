@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
     int hello = 0;
     const char *libname = NULL;
     const char *symname = NULL;
-    void *lib = NULL;
+    SDL_SharedObject *lib = NULL;
     fntype fn = NULL;
     SDLTest_CommonState *state;
 

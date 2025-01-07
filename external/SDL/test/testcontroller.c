@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -910,8 +910,10 @@ static void AddController(SDL_JoystickID id, bool verbose)
     new_controller->id = id;
 
     new_controller->joystick = SDL_OpenJoystick(id);
-    new_controller->num_axes = SDL_GetNumJoystickAxes(new_controller->joystick);
-    new_controller->axis_state = (AxisState *)SDL_calloc(new_controller->num_axes, sizeof(*new_controller->axis_state));
+    if (new_controller->joystick) {
+        new_controller->num_axes = SDL_GetNumJoystickAxes(new_controller->joystick);
+        new_controller->axis_state = (AxisState *)SDL_calloc(new_controller->num_axes, sizeof(*new_controller->axis_state));
+    }
 
     joystick = new_controller->joystick;
     if (joystick) {
@@ -1027,7 +1029,10 @@ static void HandleGamepadAdded(SDL_JoystickID id, bool verbose)
             SDL_PropertiesID props = SDL_GetGamepadProperties(gamepad);
             const char *name = SDL_GetGamepadName(gamepad);
             const char *path = SDL_GetGamepadPath(gamepad);
-            SDL_Log("Opened gamepad %s%s%s\n", name, path ? ", " : "", path ? path : "");
+            SDL_GUID guid = SDL_GetGamepadGUIDForID(id);
+            char guid_string[33];
+            SDL_GUIDToString(guid, guid_string, sizeof(guid_string));
+            SDL_Log("Opened gamepad %s, guid %s%s%s\n", name, guid_string, path ? ", " : "", path ? path : "");
 
             firmware_version = SDL_GetGamepadFirmwareVersion(gamepad);
             if (firmware_version) {
@@ -1074,6 +1079,7 @@ static void HandleGamepadAdded(SDL_JoystickID id, bool verbose)
     }
 
     HandleGamepadRemapped(id);
+    SetController(id);
 }
 
 static void HandleGamepadRemoved(SDL_JoystickID id)
@@ -1998,8 +2004,7 @@ int main(int argc, char *argv[])
     }
 
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI, "1");
-    SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS4_RUMBLE, "1");
-    SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1");
+    SDL_SetHint(SDL_HINT_JOYSTICK_ENHANCED_REPORTS, "auto");
     SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_STEAM, "1");
     SDL_SetHint(SDL_HINT_JOYSTICK_ROG_CHAKRAM, "1");
     SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
@@ -2086,8 +2091,7 @@ int main(int argc, char *argv[])
 
     /* scale for platforms that don't give you the window size you asked for. */
     SDL_SetRenderLogicalPresentation(screen, (int)SCREEN_WIDTH, (int)SCREEN_HEIGHT,
-                                     SDL_LOGICAL_PRESENTATION_LETTERBOX,
-                                     SDL_SCALEMODE_LINEAR);
+                                     SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
 
     title_area.w = GAMEPAD_WIDTH;

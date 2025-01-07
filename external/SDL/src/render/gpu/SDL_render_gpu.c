@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -41,7 +41,6 @@ typedef struct GPU_RenderData
     SDL_GPUDevice *device;
     GPU_Shaders shaders;
     GPU_PipelineCache pipeline_cache;
-    SDL_GPUFence *present_fence;
 
     struct
     {
@@ -270,14 +269,14 @@ static bool GPU_UpdateTexture(SDL_Renderer *renderer, SDL_Texture *texture,
     Uint8 *output = SDL_MapGPUTransferBuffer(renderdata->device, tbuf, false);
 
     if ((size_t)pitch == row_size) {
-        memcpy(output, pixels, data_size);
+        SDL_memcpy(output, pixels, data_size);
     } else {
         // FIXME is negative pitch supposed to work?
         // If not, maybe use SDL_GPUTextureTransferInfo::pixels_per_row instead of this
         const Uint8 *input = pixels;
 
         for (int i = 0; i < rect->h; ++i) {
-            memcpy(output, input, row_size);
+            SDL_memcpy(output, input, row_size);
             output += row_size;
             input += pitch;
         }
@@ -303,7 +302,7 @@ static bool GPU_UpdateTexture(SDL_Renderer *renderer, SDL_Texture *texture,
     tex_dst.h = rect->h;
     tex_dst.d = 1;
 
-    SDL_UploadToGPUTexture(cpass, &tex_src, &tex_dst, true);
+    SDL_UploadToGPUTexture(cpass, &tex_src, &tex_dst, false);
     SDL_EndGPUCopyPass(cpass);
     SDL_ReleaseGPUTransferBuffer(renderdata->device, tbuf);
 
@@ -432,6 +431,7 @@ static bool GPU_QueueGeometry(SDL_Renderer *renderer, SDL_RenderCommand *cmd, SD
         }
 
         // FIXME: The Vulkan backend doesn't multiply by color_scale. GL does. I'm not sure which one is wrong.
+        // ANSWER: The color scale should be applied in linear space when using the scRGB colorspace. This is done in shaders in the Vulkan backend.
         *(verts++) = col_.r * color_scale;
         *(verts++) = col_.g * color_scale;
         *(verts++) = col_.b * color_scale;
@@ -644,7 +644,7 @@ static bool UploadVertices(GPU_RenderData *data, void *vertices, size_t vertsize
     }
 
     void *staging_buf = SDL_MapGPUTransferBuffer(data->device, data->vertices.transfer_buf, true);
-    memcpy(staging_buf, vertices, vertsize);
+    SDL_memcpy(staging_buf, vertices, vertsize);
     SDL_UnmapGPUTransferBuffer(data->device, data->vertices.transfer_buf);
 
     SDL_GPUCopyPass *pass = SDL_BeginGPUCopyPass(data->state.command_buffer);
@@ -910,13 +910,13 @@ static SDL_Surface *GPU_RenderReadPixels(SDL_Renderer *renderer, const SDL_Rect 
     void *mapped_tbuf = SDL_MapGPUTransferBuffer(data->device, tbuf, false);
 
     if ((size_t)surface->pitch == row_size) {
-        memcpy(surface->pixels, mapped_tbuf, image_size);
+        SDL_memcpy(surface->pixels, mapped_tbuf, image_size);
     } else {
         Uint8 *input = mapped_tbuf;
         Uint8 *output = surface->pixels;
 
         for (int row = 0; row < rect->h; ++row) {
-            memcpy(output, input, row_size);
+            SDL_memcpy(output, input, row_size);
             output += surface->pitch;
             input += row_size;
         }
@@ -956,52 +956,38 @@ static bool GPU_RenderPresent(SDL_Renderer *renderer)
 {
     GPU_RenderData *data = (GPU_RenderData *)renderer->internal;
 
-    Uint32 swapchain_w, swapchain_h;
+    SDL_GPUTexture *swapchain;
+    Uint32 swapchain_texture_width, swapchain_texture_height;
+    bool result = SDL_WaitAndAcquireGPUSwapchainTexture(data->state.command_buffer, renderer->window, &swapchain, &swapchain_texture_width, &swapchain_texture_height);
 
-    SDL_GPUTexture *swapchain = SDL_AcquireGPUSwapchainTexture(data->state.command_buffer, renderer->window, &swapchain_w, &swapchain_h);
-
-    if (swapchain == NULL) {
-        goto submit;
+    if (!result) {
+        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Failed to acquire swapchain texture: %s", SDL_GetError());
     }
 
-    SDL_GPUTextureFormat swapchain_fmt = SDL_GetGPUSwapchainTextureFormat(data->device, renderer->window);
+    if (swapchain != NULL) {
+        SDL_GPUBlitInfo blit_info;
+        SDL_zero(blit_info);
 
-    SDL_GPUBlitInfo blit_info;
-    SDL_zero(blit_info);
+        blit_info.source.texture = data->backbuffer.texture;
+        blit_info.source.w = data->backbuffer.width;
+        blit_info.source.h = data->backbuffer.height;
+        blit_info.destination.texture = swapchain;
+        blit_info.destination.w = swapchain_texture_width;
+        blit_info.destination.h = swapchain_texture_height;
+        blit_info.load_op = SDL_GPU_LOADOP_DONT_CARE;
+        blit_info.filter = SDL_GPU_FILTER_LINEAR;
 
-    blit_info.source.texture = data->backbuffer.texture;
-    blit_info.source.w = data->backbuffer.width;
-    blit_info.source.h = data->backbuffer.height;
-    blit_info.destination.texture = swapchain;
-    blit_info.destination.w = swapchain_w;
-    blit_info.destination.h = swapchain_h;
-    blit_info.load_op = SDL_GPU_LOADOP_DONT_CARE;
-    blit_info.filter = SDL_GPU_FILTER_LINEAR;
+        SDL_BlitGPUTexture(data->state.command_buffer, &blit_info);
 
-    SDL_BlitGPUTexture(data->state.command_buffer, &blit_info);
+        SDL_SubmitGPUCommandBuffer(data->state.command_buffer);
 
-    if (swapchain_w != data->backbuffer.width || swapchain_h != data->backbuffer.height || swapchain_fmt != data->backbuffer.format) {
-        SDL_ReleaseGPUTexture(data->device, data->backbuffer.texture);
-        CreateBackbuffer(data, swapchain_w, swapchain_h, swapchain_fmt);
+        if (swapchain_texture_width != data->backbuffer.width || swapchain_texture_height != data->backbuffer.height) {
+            SDL_ReleaseGPUTexture(data->device, data->backbuffer.texture);
+            CreateBackbuffer(data, swapchain_texture_width, swapchain_texture_height, SDL_GetGPUSwapchainTextureFormat(data->device, renderer->window));
+        }
+    } else {
+        SDL_SubmitGPUCommandBuffer(data->state.command_buffer);
     }
-
-// *** FIXME ***
-// This is going to block if there is ever a frame in flight.
-// We should do something similar to FNA3D
-// where we keep track of MAX_FRAMES_IN_FLIGHT number of fences
-// and only block if we have maxed out the backpressure.
-// -cosmonaut
-submit:
-#if 1
-    if (data->present_fence) {
-        SDL_WaitForGPUFences(data->device, true, &data->present_fence, 1);
-        SDL_ReleaseGPUFence(data->device, data->present_fence);
-    }
-
-    data->present_fence = SDL_SubmitGPUCommandBufferAndAcquireFence(data->state.command_buffer);
-#else
-    SDL_SubmitGPUCommandBuffer(data->state.command_buffer);
-#endif
 
     data->state.command_buffer = SDL_AcquireGPUCommandBuffer(data->device);
 
@@ -1033,11 +1019,6 @@ static void GPU_DestroyRenderer(SDL_Renderer *renderer)
 
     if (!data) {
         return;
-    }
-
-    if (data->present_fence) {
-        SDL_WaitForGPUFences(data->device, true, &data->present_fence, 1);
-        SDL_ReleaseGPUFence(data->device, data->present_fence);
     }
 
     if (data->state.command_buffer) {
@@ -1213,15 +1194,15 @@ static bool GPU_CreateRenderer(SDL_Renderer *renderer, SDL_Window *window, SDL_P
     renderer->window = window;
     renderer->name = GPU_RenderDriver.name;
 
-    bool debug = SDL_GetBooleanProperty(create_props, SDL_PROP_GPU_DEVICE_CREATE_DEBUGMODE_BOOL, false);
-    bool lowpower = SDL_GetBooleanProperty(create_props, SDL_PROP_GPU_DEVICE_CREATE_PREFERLOWPOWER_BOOL, false);
+    bool debug = SDL_GetBooleanProperty(create_props, SDL_PROP_GPU_DEVICE_CREATE_DEBUGMODE_BOOLEAN, false);
+    bool lowpower = SDL_GetBooleanProperty(create_props, SDL_PROP_GPU_DEVICE_CREATE_PREFERLOWPOWER_BOOLEAN, false);
 
     // Prefer environment variables/hints if they exist, otherwise defer to properties
     debug = SDL_GetHintBoolean(SDL_HINT_RENDER_GPU_DEBUG, debug);
     lowpower = SDL_GetHintBoolean(SDL_HINT_RENDER_GPU_LOW_POWER, lowpower);
 
-    SDL_SetBooleanProperty(create_props, SDL_PROP_GPU_DEVICE_CREATE_DEBUGMODE_BOOL, debug);
-    SDL_SetBooleanProperty(create_props, SDL_PROP_GPU_DEVICE_CREATE_PREFERLOWPOWER_BOOL, lowpower);
+    SDL_SetBooleanProperty(create_props, SDL_PROP_GPU_DEVICE_CREATE_DEBUGMODE_BOOLEAN, debug);
+    SDL_SetBooleanProperty(create_props, SDL_PROP_GPU_DEVICE_CREATE_PREFERLOWPOWER_BOOLEAN, lowpower);
 
     GPU_FillSupportedShaderFormats(create_props);
     data->device = SDL_CreateGPUDeviceWithProperties(create_props);
@@ -1259,17 +1240,14 @@ static bool GPU_CreateRenderer(SDL_Renderer *renderer, SDL_Window *window, SDL_P
 
     SDL_SetGPUSwapchainParameters(data->device, window, data->swapchain.composition, data->swapchain.present_mode);
 
+    SDL_SetGPUAllowedFramesInFlight(data->device, 1);
+
     SDL_AddSupportedTextureFormat(renderer, SDL_PIXELFORMAT_RGBA32);
     SDL_AddSupportedTextureFormat(renderer, SDL_PIXELFORMAT_BGRA32);
     SDL_AddSupportedTextureFormat(renderer, SDL_PIXELFORMAT_RGBX32);
     SDL_AddSupportedTextureFormat(renderer, SDL_PIXELFORMAT_BGRX32);
 
-    renderer->rect_index_order[0] = 0;
-    renderer->rect_index_order[1] = 1;
-    renderer->rect_index_order[2] = 3;
-    renderer->rect_index_order[3] = 1;
-    renderer->rect_index_order[4] = 3;
-    renderer->rect_index_order[5] = 2;
+    SDL_SetNumberProperty(SDL_GetRendererProperties(renderer), SDL_PROP_RENDERER_MAX_TEXTURE_SIZE_NUMBER, 16384);
 
     data->state.draw_color.r = 1.0f;
     data->state.draw_color.g = 1.0f;
@@ -1285,6 +1263,8 @@ static bool GPU_CreateRenderer(SDL_Renderer *renderer, SDL_Window *window, SDL_P
     if (!CreateBackbuffer(data, w, h, SDL_GetGPUSwapchainTextureFormat(data->device, window))) {
         return false;
     }
+
+    SDL_SetPointerProperty(SDL_GetRendererProperties(renderer), SDL_PROP_RENDERER_GPU_DEVICE_POINTER, data->device);
 
     return true;
 }

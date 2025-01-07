@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -24,6 +24,8 @@
 #define SDL_sysvideo_h_
 
 #include <SDL3/SDL_vulkan.h>
+
+#include "SDL_surface_c.h"
 
 // The SDL video driver
 
@@ -76,6 +78,9 @@ struct SDL_Window
      */
     SDL_Rect floating;
 
+    // The last client requested size and position for the window.
+    SDL_Rect pending;
+
     /* Toggle for drivers to indicate that the current window state is tiled,
      * and sizes set non-programmatically shouldn't be cached.
      */
@@ -94,9 +99,10 @@ struct SDL_Window
     SDL_Surface *surface;
     bool surface_valid;
 
-    bool is_repositioning; // Set during an SDL_SetWindowPosition() call.
     bool is_hiding;
     bool restore_on_show; // Child was hidden recursively by the parent, restore when shown.
+    bool last_position_pending; // This should NOT be cleared by the backend, as it is used for fullscreen positioning.
+    bool last_size_pending; // This should be cleared by the backend if the new size cannot be applied.
     bool is_destroying;
     bool is_dropping; // drag/drop in progress, expecting SDL_SendDropComplete().
 
@@ -262,6 +268,7 @@ struct SDL_VideoDevice
     void (*SetWindowMaximumSize)(SDL_VideoDevice *_this, SDL_Window *window);
     void (*SetWindowAspectRatio)(SDL_VideoDevice *_this, SDL_Window *window);
     bool (*GetWindowBordersSize)(SDL_VideoDevice *_this, SDL_Window *window, int *top, int *left, int *bottom, int *right);
+    float (*GetWindowContentScale)(SDL_VideoDevice *_this, SDL_Window *window);
     void (*GetWindowSizeInPixels)(SDL_VideoDevice *_this, SDL_Window *window, int *w, int *h);
     bool (*SetWindowOpacity)(SDL_VideoDevice *_this, SDL_Window *window, float opacity);
     bool (*SetWindowParent)(SDL_VideoDevice *_this, SDL_Window *window, SDL_Window *parent);
@@ -349,6 +356,7 @@ struct SDL_VideoDevice
     bool (*HasScreenKeyboardSupport)(SDL_VideoDevice *_this);
     void (*ShowScreenKeyboard)(SDL_VideoDevice *_this, SDL_Window *window, SDL_PropertiesID props);
     void (*HideScreenKeyboard)(SDL_VideoDevice *_this, SDL_Window *window);
+    void (*SetTextInputProperties)(SDL_VideoDevice *_this, SDL_Window *window, SDL_PropertiesID props);
     bool (*IsScreenKeyboardShown)(SDL_VideoDevice *_this, SDL_Window *window);
 
     // Clipboard
@@ -435,12 +443,13 @@ struct SDL_VideoDevice
         int egl_platform;
         int driver_loaded;
         char driver_path[256];
-        void *dll_handle;
+        SDL_SharedObject *dll_handle;
     } gl_config;
 
     SDL_EGLAttribArrayCallback egl_platformattrib_callback;
     SDL_EGLIntArrayCallback egl_surfaceattrib_callback;
     SDL_EGLIntArrayCallback egl_contextattrib_callback;
+    void *egl_attrib_callback_userdata;
 
     /* * * */
     // Cache current GL context; don't call the OS when it hasn't changed.
@@ -465,7 +474,7 @@ struct SDL_VideoDevice
         SDL_FunctionPointer vkEnumerateInstanceExtensionProperties;
         int loader_loaded;
         char loader_path[256];
-        void *loader_handle;
+        SDL_SharedObject *loader_handle;
     } vulkan_config;
 
     /* * * */
@@ -495,6 +504,7 @@ typedef struct VideoBootStrap
 } VideoBootStrap;
 
 // Not all of these are available in a given build. Use #ifdefs, etc.
+extern VideoBootStrap PRIVATE_bootstrap;
 extern VideoBootStrap COCOA_bootstrap;
 extern VideoBootStrap X11_bootstrap;
 extern VideoBootStrap WINDOWS_bootstrap;
@@ -515,9 +525,10 @@ extern VideoBootStrap Wayland_bootstrap;
 extern VideoBootStrap VIVANTE_bootstrap;
 extern VideoBootStrap Emscripten_bootstrap;
 extern VideoBootStrap OFFSCREEN_bootstrap;
-extern VideoBootStrap NGAGE_bootstrap;
 extern VideoBootStrap QNX_bootstrap;
+extern VideoBootStrap OPENVR_bootstrap;
 
+extern bool SDL_UninitializedVideo(void);
 // Use SDL_OnVideoThread() sparingly, to avoid regressions in use cases that currently happen to work
 extern bool SDL_OnVideoThread(void);
 extern SDL_VideoDevice *SDL_GetVideoDevice(void);
@@ -558,6 +569,7 @@ extern void SDL_OnWindowMoved(SDL_Window *window);
 extern void SDL_OnWindowResized(SDL_Window *window);
 extern void SDL_CheckWindowPixelSizeChanged(SDL_Window *window);
 extern void SDL_OnWindowPixelSizeChanged(SDL_Window *window);
+extern void SDL_OnWindowLiveResizeUpdate(SDL_Window *window);
 extern void SDL_OnWindowMinimized(SDL_Window *window);
 extern void SDL_OnWindowMaximized(SDL_Window *window);
 extern void SDL_OnWindowRestored(SDL_Window *window);

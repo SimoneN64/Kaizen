@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -58,6 +58,9 @@
 #endif
 #ifdef SDL_VIDEO_DRIVER_X11_XFIXES
 #include <X11/extensions/Xfixes.h>
+#endif
+#ifdef SDL_VIDEO_DRIVER_X11_XSYNC
+#include <X11/extensions/sync.h>
 #endif
 #ifdef SDL_VIDEO_DRIVER_X11_XRANDR
 #include <X11/extensions/Xrandr.h>

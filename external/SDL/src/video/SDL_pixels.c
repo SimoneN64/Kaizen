@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,11 +23,8 @@
 // General (mostly internal) pixel/color manipulation routines for SDL
 
 #include "SDL_sysvideo.h"
-#include "SDL_blit.h"
 #include "SDL_pixels_c.h"
 #include "SDL_RLEaccel_c.h"
-#include "../SDL_hashtable.h"
-#include "../SDL_list.h"
 
 // Lookup tables to expand partial bytes to the full 0..255 range
 
@@ -169,7 +166,7 @@ bool SDL_GetMasksForPixelFormat(SDL_PixelFormat format, int *bpp, Uint32 *Rmask,
 {
     Uint32 masks[4];
 
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
     // Partial support for SDL_Surface with FOURCC
     if (SDL_ISPIXELFORMAT_FOURCC(format)) {
         // Not a format that uses masks
@@ -575,8 +572,8 @@ SDL_PixelFormat SDL_GetPixelFormatForMasks(int bpp, Uint32 Rmask, Uint32 Gmask, 
     return SDL_PIXELFORMAT_UNKNOWN;
 }
 
+static SDL_InitState SDL_format_details_init;
 static SDL_HashTable *SDL_format_details;
-static SDL_Mutex *SDL_format_details_lock;
 
 static bool SDL_InitPixelFormatDetails(SDL_PixelFormatDetails *details, SDL_PixelFormat format)
 {
@@ -649,53 +646,44 @@ const SDL_PixelFormatDetails *SDL_GetPixelFormatDetails(SDL_PixelFormat format)
 {
     SDL_PixelFormatDetails *details;
 
-    if (!SDL_format_details_lock) {
-        SDL_format_details_lock = SDL_CreateMutex();
-    }
-
-    SDL_LockMutex(SDL_format_details_lock);
-
-    if (!SDL_format_details) {
-        SDL_format_details = SDL_CreateHashTable(NULL, 8, SDL_HashID, SDL_KeyMatchID, SDL_NukeFreeValue, false);
+    if (SDL_ShouldInit(&SDL_format_details_init)) {
+        SDL_format_details = SDL_CreateHashTable(NULL, 8, SDL_HashID, SDL_KeyMatchID, SDL_NukeFreeValue, true, false);
+        if (!SDL_format_details) {
+            SDL_SetInitialized(&SDL_format_details_init, false);
+            return NULL;
+        }
+        SDL_SetInitialized(&SDL_format_details_init, true);
     }
 
     if (SDL_FindInHashTable(SDL_format_details, (const void *)(uintptr_t)format, (const void **)&details)) {
-        goto done;
+        return details;
     }
 
     // Allocate an empty pixel format structure, and initialize it
     details = (SDL_PixelFormatDetails *)SDL_malloc(sizeof(*details));
     if (!details) {
-        goto done;
+        return NULL;
     }
 
     if (!SDL_InitPixelFormatDetails(details, format)) {
         SDL_free(details);
-        details = NULL;
-        goto done;
+        return NULL;
     }
 
     if (!SDL_InsertIntoHashTable(SDL_format_details, (const void *)(uintptr_t)format, (void *)details)) {
         SDL_free(details);
-        details = NULL;
-        goto done;
+        return NULL;
     }
-
-done:
-    SDL_UnlockMutex(SDL_format_details_lock);
 
     return details;
 }
 
 void SDL_QuitPixelFormatDetails(void)
 {
-    if (SDL_format_details) {
+    if (SDL_ShouldQuit(&SDL_format_details_init)) {
         SDL_DestroyHashTable(SDL_format_details);
         SDL_format_details = NULL;
-    }
-    if (SDL_format_details_lock) {
-        SDL_DestroyMutex(SDL_format_details_lock);
-        SDL_format_details_lock = NULL;
+        SDL_SetInitialized(&SDL_format_details_init, false);
     }
 }
 
@@ -775,9 +763,9 @@ static const float mat_BT601_Limited_8bit[] = {
 
 static const float mat_BT601_Full_8bit[] = {
     0.0f, -0.501960814f, -0.501960814f, 0.0f,           // offset
-    1.0000f, 0.0000f, 1.4020f, 0.0f,                    // Rcoeff
-    1.0000f, -0.3441f, -0.7141f, 0.0f,                  // Gcoeff
-    1.0000f, 1.7720f, 0.0000f, 0.0f,                    // Bcoeff
+    1.0000f, 0.0000f, 1.4075f, 0.0f,                    // Rcoeff
+    1.0000f, -0.3455f, -0.7169f, 0.0f,                  // Gcoeff
+    1.0000f, 1.7790f, 0.0000f, 0.0f,                    // Bcoeff
 };
 
 static const float mat_BT709_Limited_8bit[] = {
@@ -789,9 +777,9 @@ static const float mat_BT709_Limited_8bit[] = {
 
 static const float mat_BT709_Full_8bit[] = {
     0.0f, -0.501960814f, -0.501960814f, 0.0f,           // offset
-    1.0000f, 0.0000f, 1.5748f, 0.0f,                    // Rcoeff
-    1.0000f, -0.1873f, -0.4681f, 0.0f,                  // Gcoeff
-    1.0000f, 1.8556f, 0.0000f, 0.0f,                    // Bcoeff
+    1.0000f, 0.0000f, 1.5810f, 0.0f,                    // Rcoeff
+    1.0000f, -0.1881f, -0.4700f, 0.0f,                  // Gcoeff
+    1.0000f, 1.8629f, 0.0000f, 0.0f,                    // Bcoeff
 };
 
 static const float mat_BT2020_Limited_10bit[] = {
@@ -1419,22 +1407,22 @@ static Uint8 *Map1toN(const SDL_Palette *pal, Uint8 Rmod, Uint8 Gmod, Uint8 Bmod
 
 bool SDL_ValidateMap(SDL_Surface *src, SDL_Surface *dst)
 {
-    SDL_BlitMap *map = &src->internal->map;
+    SDL_BlitMap *map = &src->map;
 
-    if (map->info.dst_fmt != dst->internal->format ||
-        map->info.dst_pal != dst->internal->palette ||
-        (dst->internal->palette &&
-         map->dst_palette_version != dst->internal->palette->version) ||
-        (src->internal->palette &&
-         map->src_palette_version != src->internal->palette->version)) {
+    if (map->info.dst_fmt != dst->fmt ||
+        map->info.dst_pal != dst->palette ||
+        (dst->palette &&
+         map->dst_palette_version != dst->palette->version) ||
+        (src->palette &&
+         map->src_palette_version != src->palette->version)) {
         if (!SDL_MapSurface(src, dst)) {
             return false;
         }
         // just here for debugging
         // printf
-        // ("src = 0x%08X src->flags = %08X map->info.flags = %08x\ndst = 0x%08X dst->flags = %08X dst->internal->map.info.flags = %08X\nmap->blit = 0x%08x\n",
+        // ("src = 0x%08X src->flags = %08X map->info.flags = %08x\ndst = 0x%08X dst->flags = %08X dst->map.info.flags = %08X\nmap->blit = 0x%08x\n",
         // src, dst->flags, map->info.flags, dst, dst->flags,
-        // dst->internal->map.info.flags, map->blit);
+        // dst->map.info.flags, map->blit);
     } else {
         map->info.dst_surface = dst;
     }
@@ -1466,9 +1454,9 @@ bool SDL_MapSurface(SDL_Surface *src, SDL_Surface *dst)
     SDL_BlitMap *map;
 
     // Clear out any previous mapping
-    map = &src->internal->map;
-#if SDL_HAVE_RLE
-    if (src->internal->flags & SDL_INTERNAL_SURFACE_RLEACCEL) {
+    map = &src->map;
+#ifdef SDL_HAVE_RLE
+    if (src->internal_flags & SDL_INTERNAL_SURFACE_RLEACCEL) {
         SDL_UnRLESurface(src, true);
     }
 #endif
@@ -1476,10 +1464,10 @@ bool SDL_MapSurface(SDL_Surface *src, SDL_Surface *dst)
 
     // Figure out what kind of mapping we're doing
     map->identity = 0;
-    srcfmt = src->internal->format;
-    srcpal = src->internal->palette;
-    dstfmt = dst->internal->format;
-    dstpal = dst->internal->palette;
+    srcfmt = src->fmt;
+    srcpal = src->palette;
+    dstfmt = dst->fmt;
+    dstpal = dst->palette;
     if (SDL_ISPIXELFORMAT_INDEXED(srcfmt->format)) {
         if (SDL_ISPIXELFORMAT_INDEXED(dstfmt->format)) {
             // Palette --> Palette
@@ -1499,8 +1487,8 @@ bool SDL_MapSurface(SDL_Surface *src, SDL_Surface *dst)
         } else {
             // Palette --> BitField
             map->info.table =
-                Map1toN(srcpal, src->internal->map.info.r, src->internal->map.info.g,
-                        src->internal->map.info.b, src->internal->map.info.a, dstfmt);
+                Map1toN(srcpal, src->map.info.r, src->map.info.g,
+                        src->map.info.b, src->map.info.a, dstfmt);
             if (!map->info.table) {
                 return false;
             }
@@ -1508,7 +1496,7 @@ bool SDL_MapSurface(SDL_Surface *src, SDL_Surface *dst)
     } else {
         if (SDL_ISPIXELFORMAT_INDEXED(dstfmt->format)) {
             // BitField --> Palette
-            map->info.palette_map = SDL_CreateHashTable(NULL, 32, SDL_HashID, SDL_KeyMatchID, NULL, false);
+            map->info.palette_map = SDL_CreateHashTable(NULL, 32, SDL_HashID, SDL_KeyMatchID, NULL, false, false);
         } else {
             // BitField --> BitField
             if (srcfmt == dstfmt) {

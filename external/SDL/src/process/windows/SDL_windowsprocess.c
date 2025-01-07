@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -73,15 +73,35 @@ static bool SetupRedirect(SDL_PropertiesID props, const char *property, HANDLE *
         WIN_SetError("DuplicateHandle()");
         return false;
     }
+
+    if (GetFileType(*result) == FILE_TYPE_PIPE) {
+        DWORD wait_mode = PIPE_WAIT;
+        if (!SetNamedPipeHandleState(*result, &wait_mode, NULL, NULL)) {
+            WIN_SetError("SetNamedPipeHandleState()");
+            return false;
+        }
+    }
     return true;
+}
+
+static bool is_batch_file_path(const char *path) {
+    size_t len_path = SDL_strlen(path);
+    if (len_path < 4) {
+        return false;
+    }
+    if (SDL_strcasecmp(path + len_path - 4, ".bat") == 0 || SDL_strcasecmp(path + len_path - 4, ".cmd") == 0) {
+        return true;
+    }
+    return false;
 }
 
 static bool join_arguments(const char * const *args, LPWSTR *args_out)
 {
     size_t len;
     int i;
-    int i_out;
+    size_t i_out;
     char *result;
+    bool batch_file = is_batch_file_path(args[0]);
 
     len = 0;
     for (i = 0; args[i]; i++) {
@@ -98,6 +118,18 @@ static bool join_arguments(const char * const *args, LPWSTR *args_out)
             case '\\':
                 /* only escape backslashes that precede a double quote */
                 len += (a[1] == '"' || a[1] == '\0') ? 2 : 1;
+                break;
+            case ' ':
+            case '^':
+            case '&':
+            case '|':
+            case '<':
+            case '>':
+                if (batch_file) {
+                    len += 2;
+                } else {
+                    len += 1;
+                }
                 break;
             default:
                 len += 1;
@@ -122,7 +154,11 @@ static bool join_arguments(const char * const *args, LPWSTR *args_out)
         for (; *a; a++) {
             switch (*a) {
             case '"':
-                result[i_out++] = '\\';
+                if (batch_file) {
+                    result[i_out++] = '"';
+                } else {
+                    result[i_out++] = '\\';
+                }
                 result[i_out++] = *a;
                 break;
             case '\\':
@@ -130,6 +166,22 @@ static bool join_arguments(const char * const *args, LPWSTR *args_out)
                 if (a[1] == '"' || a[1] == '\0') {
                     result[i_out++] = *a;
                 }
+                break;
+            case ' ':
+                if (batch_file) {
+                    result[i_out++] = '^';
+                }
+                result[i_out++] = *a;
+                break;
+            case '^':
+            case '&':
+            case '|':
+            case '<':
+            case '>':
+                if (batch_file) {
+                    result[i_out++] = '^';
+                }
+                result[i_out++] = *a;
                 break;
             default:
                 result[i_out++] = *a;
@@ -215,6 +267,8 @@ bool SDL_SYS_CreateProcessWithProperties(SDL_Process *process, SDL_PropertiesID 
         return false;
     }
     process->internal = data;
+    data->process_information.hProcess = INVALID_HANDLE_VALUE;
+    data->process_information.hThread = INVALID_HANDLE_VALUE;
 
     creation_flags = CREATE_UNICODE_ENVIRONMENT;
 
@@ -489,8 +543,14 @@ void SDL_SYS_DestroyProcess(SDL_Process *process)
     if (io) {
         SDL_CloseIO(io);
     }
-    CloseHandle(data->process_information.hThread);
-    CloseHandle(data->process_information.hProcess);
+    if (data) {
+        if (data->process_information.hThread != INVALID_HANDLE_VALUE) {
+            CloseHandle(data->process_information.hThread);
+        }
+        if (data->process_information.hProcess != INVALID_HANDLE_VALUE) {
+            CloseHandle(data->process_information.hProcess);
+        }
+    }
     SDL_free(data);
 }
 

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -55,7 +55,7 @@ extern "C" {
  * consistent as long as SDL can recognize a tool to be the same pen; but if a
  * pen physically leaves the area and returns, it might get a new ID.
  *
- * \since This datatype is available since SDL 3.0.0.
+ * \since This datatype is available since SDL 3.1.3.
  */
 typedef Uint32 SDL_PenID;
 
@@ -63,7 +63,7 @@ typedef Uint32 SDL_PenID;
 /**
  * Pen input flags, as reported by various pen events' `pen_state` field.
  *
- * \since This datatype is available since SDL 3.0.0.
+ * \since This datatype is available since SDL 3.1.3.
  */
 typedef Uint32 SDL_PenInputFlags;
 
@@ -88,15 +88,13 @@ typedef Uint32 SDL_PenInputFlags;
  *
  * `SDL_sinf(xtilt * SDL_PI_F / 180.0)`.
  *
- * \since This enum is available since SDL 3.0.0
+ * \since This enum is available since SDL 3.1.3
  */
 typedef enum SDL_PenAxis
 {
     SDL_PEN_AXIS_PRESSURE,  /**< Pen pressure.  Unidirectional: 0 to 1.0 */
-    SDL_PEN_AXIS_XTILT,     /**< Pen horizontal tilt angle.  Bidirectional: -90.0 to 90.0 (left-to-right).
-                                 The physical max/min tilt may be smaller than -90.0 / 90.0, check SDL_PenCapabilityInfo */
-    SDL_PEN_AXIS_YTILT,     /**< Pen vertical tilt angle.  Bidirectional: -90.0 to 90.0 (top-to-down).
-                                 The physical max/min tilt may be smaller than -90.0 / 90.0 check SDL_PenCapabilityInfo */
+    SDL_PEN_AXIS_XTILT,     /**< Pen horizontal tilt angle.  Bidirectional: -90.0 to 90.0 (left-to-right). */
+    SDL_PEN_AXIS_YTILT,     /**< Pen vertical tilt angle.  Bidirectional: -90.0 to 90.0 (top-to-down). */
     SDL_PEN_AXIS_DISTANCE,  /**< Pen distance to drawing surface.  Unidirectional: 0.0 to 1.0 */
     SDL_PEN_AXIS_ROTATION,  /**< Pen barrel rotation.  Bidirectional: -180 to 179.9 (clockwise, 0 is facing up, -180.0 is facing down). */
     SDL_PEN_AXIS_SLIDER,    /**< Pen finger wheel or slider (e.g., Airbrush Pen).  Unidirectional: 0 to 1.0 */

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,6 +21,7 @@
 #define MAX_SPEED   1
 
 static SDLTest_CommonState *state;
+static const char *icon = "icon.bmp";
 static int num_sprites;
 static SDL_Texture **sprites;
 static bool cycle_color;
@@ -42,7 +43,7 @@ static bool suspend_when_occluded;
 /* -1: infinite random moves (default); >=0: enables N deterministic moves */
 static int iterations = -1;
 
-void SDL_AppQuit(void *appstate)
+void SDL_AppQuit(void *appstate, SDL_AppResult result)
 {
     SDL_free(sprites);
     SDL_free(positions);
@@ -56,6 +57,9 @@ static int LoadSprite(const char *file)
 
     for (i = 0; i < state->num_windows; ++i) {
         /* This does the SDL_LoadBMP step repeatedly, but that's OK for test code. */
+        if (sprites[i]) {
+            SDL_DestroyTexture(sprites[i]);
+        }
         sprites[i] = LoadTexture(state->renderers[i], file, true, &w, &h);
         sprite_w = (float)w;
         sprite_h = (float)h;
@@ -390,7 +394,6 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     SDL_Rect safe_area;
     int i;
     Uint64 seed;
-    const char *icon = "icon.bmp";
 
     /* Initialize parameters */
     num_sprites = NUM_SPRITES;
@@ -553,6 +556,9 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
 {
+    if (event->type == SDL_EVENT_RENDER_DEVICE_RESET) {
+        LoadSprite(icon);
+    }
     return SDLTest_CommonEventMainCallbacks(state, event);
 }
 

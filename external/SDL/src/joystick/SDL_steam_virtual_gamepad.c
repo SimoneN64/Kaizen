@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -126,6 +126,11 @@ void SDL_InitSteamVirtualGamepadInfo(void)
     const char *file;
 
     SDL_AssertJoysticksLocked();
+
+    // The file isn't available inside the macOS sandbox
+    if (SDL_GetSandbox() == SDL_SANDBOX_MACOS) {
+        return;
+    }
 
     file = SDL_GetHint(SDL_HINT_STEAM_VIRTUAL_GAMEPAD_INFO_FILE);
     if (file && *file) {

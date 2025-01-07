@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -731,7 +731,7 @@ static Texture *CreateTexture(const char *fname)
     return tex;
 }
 
-static Thing *CreateLogicalDeviceThing(Thing *parent, const SDL_AudioDeviceID which, const float x, const float y);
+static Thing *CreateLogicalDeviceThing(Thing *parent, SDL_AudioDeviceID which, float x, float y);
 
 static void DeviceThing_ondrag(Thing *thing, int button, float x, float y)
 {
@@ -903,7 +903,7 @@ static void LogicalDeviceThing_onmousewheel(Thing *thing, float y)
     SDL_SetAudioDeviceGain(thing->data.logdev.devid, thing->meter);
 }
 
-static Thing *CreateLogicalDeviceThing(Thing *parent, const SDL_AudioDeviceID which, const float x, const float y)
+static Thing *CreateLogicalDeviceThing(Thing *parent, SDL_AudioDeviceID which, float x, float y)
 {
     static const ThingType can_be_dropped_onto[] = { THING_TRASHCAN, THING_NULL };
     Thing *physthing = ((parent->what == THING_LOGDEV) || (parent->what == THING_LOGDEV_RECORDING)) ? parent->data.logdev.physdev : parent;
@@ -1256,7 +1256,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     return SDL_APP_CONTINUE;
 }
 
-void SDL_AppQuit(void *appstate)
+void SDL_AppQuit(void *appstate, SDL_AppResult result)
 {
     while (things) {
         DestroyThing(things);  /* make sure all the audio devices are closed, etc. */

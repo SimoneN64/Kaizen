@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -107,7 +107,7 @@ DEFINE_GUID(IID___x_ABI_CWindows_CGaming_CInput_CIRawGameControllerStatics, 0xeb
 extern bool SDL_XINPUT_Enabled(void);
 
 
-static bool SDL_IsXInputDevice(Uint16 vendor, Uint16 product)
+static bool SDL_IsXInputDevice(Uint16 vendor, Uint16 product, const char *name)
 {
 #if defined(SDL_JOYSTICK_XINPUT) || defined(SDL_JOYSTICK_RAWINPUT)
     PRAWINPUTDEVICELIST raw_devices = NULL;
@@ -121,6 +121,13 @@ static bool SDL_IsXInputDevice(Uint16 vendor, Uint16 product)
 #endif
     ) {
         return false;
+    }
+
+    // Sometimes we'll get a Windows.Gaming.Input callback before the raw input device is even in the list,
+    // so try to do some checks up front to catch these cases.
+    if (SDL_IsJoystickXboxOne(vendor, product) ||
+        (name && SDL_strncmp(name, "Xbox ", 5) == 0)) {
+        return true;
     }
 
     // Go through RAWINPUT (WinXP and later) to find HID devices.
@@ -399,7 +406,6 @@ static HRESULT STDMETHODCALLTYPE IEventHandler_CRawGameControllerVtbl_InvokeAdde
     hr = __x_ABI_CWindows_CGaming_CInput_CIRawGameController_QueryInterface(e, &IID___x_ABI_CWindows_CGaming_CInput_CIRawGameController, (void **)&controller);
     if (SUCCEEDED(hr)) {
         char *name = NULL;
-        SDL_GUID guid = { 0 };
         Uint16 bus = SDL_HARDWARE_BUS_USB;
         Uint16 vendor = 0;
         Uint16 product = 0;
@@ -446,25 +452,17 @@ static HRESULT STDMETHODCALLTYPE IEventHandler_CRawGameControllerVtbl_InvokeAdde
             name = SDL_strdup("");
         }
 
+        if (!ignore_joystick && SDL_ShouldIgnoreJoystick(vendor, product, version, name)) {
+            ignore_joystick = true;
+        }
+
         if (!ignore_joystick && SDL_JoystickHandledByAnotherDriver(&SDL_WGI_JoystickDriver, vendor, product, version, name)) {
             ignore_joystick = true;
         }
 
-        if (!ignore_joystick && SDL_IsXInputDevice(vendor, product)) {
+        if (!ignore_joystick && SDL_IsXInputDevice(vendor, product, name)) {
             // This hasn't been detected by the RAWINPUT driver yet, but it will be picked up later.
             ignore_joystick = true;
-        }
-
-        if (!ignore_joystick) {
-            if (game_controller) {
-                type = GetGameControllerType(game_controller);
-            }
-
-            guid = SDL_CreateJoystickGUID(bus, vendor, product, version, NULL, name, 'w', (Uint8)type);
-
-            if (SDL_ShouldIgnoreJoystick(name, guid)) {
-                ignore_joystick = true;
-            }
         }
 
         if (!ignore_joystick) {
@@ -474,11 +472,15 @@ static HRESULT STDMETHODCALLTYPE IEventHandler_CRawGameControllerVtbl_InvokeAdde
                 WindowsGamingInputControllerState *state = &controllers[wgi.controller_count];
                 SDL_JoystickID joystickID = SDL_GetNextObjectID();
 
+                if (game_controller) {
+                    type = GetGameControllerType(game_controller);
+                }
+
                 SDL_zerop(state);
                 state->instance_id = joystickID;
                 state->controller = controller;
                 state->name = name;
-                state->guid = guid;
+                state->guid = SDL_CreateJoystickGUID(bus, vendor, product, version, NULL, name, 'w', (Uint8)type);
                 state->type = type;
                 state->steam_virtual_gamepad_slot = GetSteamVirtualGamepadSlot(controller, vendor, product);
 

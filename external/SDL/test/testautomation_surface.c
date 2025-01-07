@@ -822,6 +822,27 @@ static int SDLCALL surface_testLoadFailure(void *arg)
 }
 
 /**
+ * Tests blitting from a zero sized source rectangle
+ */
+static int SDLCALL surface_testBlitZeroSource(void *arg)
+{
+    SDL_Surface *src = SDL_CreateSurface(1, 1, SDL_PIXELFORMAT_RGBA8888);
+    SDL_Surface *dst = SDL_CreateSurface(1, 1, SDL_PIXELFORMAT_RGBA8888);
+    SDL_Rect srcrect = { 0, 0, 0, 0 };
+    int ret;
+
+    SDLTest_AssertPass("Call to SDL_BlitSurfaceScaled() with zero sized source rectangle");
+    SDL_FillSurfaceRect(src, NULL, SDL_MapSurfaceRGB(src, 255, 255, 255));
+    SDL_BlitSurfaceScaled(src, &srcrect, dst, NULL, SDL_SCALEMODE_NEAREST);
+    ret = SDLTest_CompareSurfaces(dst, src, 0);
+    SDLTest_AssertCheck(ret == 0, "Validate result from SDLTest_CompareSurfaces, expected: 0, got: %i", ret);
+    SDL_DestroySurface(src);
+    SDL_DestroySurface(dst);
+
+    return TEST_COMPLETED;
+}
+
+/**
  * Tests some blitting routines.
  */
 static int SDLCALL surface_testBlit(void *arg)
@@ -1458,11 +1479,73 @@ static int SDLCALL surface_testPremultiplyAlpha(void *arg)
 }
 
 
+static int SDLCALL surface_testScale(void *arg)
+{
+    SDL_PixelFormat formats[] = {
+        SDL_PIXELFORMAT_ARGB8888, SDL_PIXELFORMAT_RGBA8888,
+        SDL_PIXELFORMAT_ARGB2101010, SDL_PIXELFORMAT_ABGR2101010,
+        SDL_PIXELFORMAT_ARGB64, SDL_PIXELFORMAT_RGBA64,
+        SDL_PIXELFORMAT_ARGB128_FLOAT, SDL_PIXELFORMAT_RGBA128_FLOAT,
+    };
+    SDL_ScaleMode modes[] = {
+        SDL_SCALEMODE_NEAREST, SDL_SCALEMODE_LINEAR
+    };
+    SDL_Surface *surface, *result;
+    SDL_PixelFormat format;
+    SDL_ScaleMode mode;
+    const float MAXIMUM_ERROR = 0.0001f;
+    float srcR = 10 / 255.0f, srcG = 128 / 255.0f, srcB = 240 / 255.0f, srcA = 170 / 255.0f;
+    float actualR, actualG, actualB, actualA;
+    float deltaR, deltaG, deltaB, deltaA;
+    int i, j, ret;
+
+    for (i = 0; i < SDL_arraysize(formats); ++i) {
+        for (j = 0; j < SDL_arraysize(modes); ++j) {
+            format = formats[i];
+            mode = modes[j];
+
+            surface = SDL_CreateSurface(1, 1, format);
+            SDLTest_AssertCheck(surface != NULL, "SDL_CreateSurface()");
+            ret = SDL_SetSurfaceColorspace(surface, SDL_COLORSPACE_SRGB);
+            SDLTest_AssertCheck(ret == true, "SDL_SetSurfaceColorspace()");
+            ret = SDL_ClearSurface(surface, srcR, srcG, srcB, srcA);
+            SDLTest_AssertCheck(ret == true, "SDL_ClearSurface()");
+            result = SDL_ScaleSurface(surface, 2, 2, mode);
+            SDLTest_AssertCheck(ret == true, "SDL_PremultiplySurfaceAlpha()");
+            ret = SDL_ReadSurfacePixelFloat(result, 1, 1, &actualR, &actualG, &actualB, &actualA);
+            SDLTest_AssertCheck(ret == true, "SDL_ReadSurfacePixelFloat()");
+            deltaR = SDL_fabsf(actualR - srcR);
+            deltaG = SDL_fabsf(actualG - srcG);
+            deltaB = SDL_fabsf(actualB - srcB);
+            deltaA = SDL_fabsf(actualA - srcA);
+            SDLTest_AssertCheck(
+                deltaR <= MAXIMUM_ERROR &&
+                deltaG <= MAXIMUM_ERROR &&
+                deltaB <= MAXIMUM_ERROR &&
+                deltaA <= MAXIMUM_ERROR,
+                "Checking %s %s scaling results, expected %.4f,%.4f,%.4f,%.4f got %.4f,%.4f,%.4f,%.4f",
+                SDL_GetPixelFormatName(format),
+                mode == SDL_SCALEMODE_NEAREST ? "nearest" : "linear",
+                srcR, srcG, srcB, srcA, actualR, actualG, actualB, actualA);
+
+            SDL_DestroySurface(surface);
+            SDL_DestroySurface(result);
+        }
+    }
+
+    return TEST_COMPLETED;
+}
+
+
 /* ================= Test References ================== */
 
 /* Surface test cases */
 static const SDLTest_TestCaseReference surfaceTestSaveLoadBitmap = {
     surface_testSaveLoadBitmap, "surface_testSaveLoadBitmap", "Tests sprite saving and loading.", TEST_ENABLED
+};
+
+static const SDLTest_TestCaseReference surfaceTestBlitZeroSource = {
+    surface_testBlitZeroSource, "surface_testBlitZeroSource", "Tests blitting from a zero sized source rectangle", TEST_ENABLED
 };
 
 static const SDLTest_TestCaseReference surfaceTestBlit = {
@@ -1549,9 +1632,14 @@ static const SDLTest_TestCaseReference surfaceTestPremultiplyAlpha = {
     surface_testPremultiplyAlpha, "surface_testPremultiplyAlpha", "Test alpha premultiply operations.", TEST_ENABLED
 };
 
+static const SDLTest_TestCaseReference surfaceTestScale = {
+    surface_testScale, "surface_testScale", "Test scaling operations.", TEST_ENABLED
+};
+
 /* Sequence of Surface test cases */
 static const SDLTest_TestCaseReference *surfaceTests[] = {
     &surfaceTestSaveLoadBitmap,
+    &surfaceTestBlitZeroSource,
     &surfaceTestBlit,
     &surfaceTestBlitTiled,
     &surfaceTestBlit9Grid,
@@ -1573,6 +1661,7 @@ static const SDLTest_TestCaseReference *surfaceTests[] = {
     &surfaceTestPalettization,
     &surfaceTestClearSurface,
     &surfaceTestPremultiplyAlpha,
+    &surfaceTestScale,
     NULL
 };
 

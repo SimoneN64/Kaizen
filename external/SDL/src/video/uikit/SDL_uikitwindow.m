@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -257,11 +257,13 @@ void UIKit_HideWindow(SDL_VideoDevice *_this, SDL_Window *window)
 
 void UIKit_RaiseWindow(SDL_VideoDevice *_this, SDL_Window *window)
 {
+#if defined(SDL_VIDEO_OPENGL_ES) || defined(SDL_VIDEO_OPENGL_ES2)
     /* We don't currently offer a concept of "raising" the SDL window, since
      * we only allow one per display, in the iOS fashion.
      * However, we use this entry point to rebind the context to the view
      * during OnWindowRestored processing. */
     _this->GL_MakeCurrent(_this, _this->current_glwin, _this->current_glctx);
+#endif
 }
 
 static void UIKit_UpdateWindowBorder(SDL_VideoDevice *_this, SDL_Window *window)

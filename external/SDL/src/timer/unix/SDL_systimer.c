@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -73,7 +73,7 @@ static void CheckMonotonicTime(void)
     struct timespec value;
     if (clock_gettime(SDL_MONOTONIC_CLOCK, &value) == 0) {
         has_monotonic_time = true;
-    } else
+    }
 #elif defined(SDL_PLATFORM_APPLE)
     if (mach_timebase_info(&mach_base_info) == 0) {
         has_monotonic_time = true;

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,9 +25,15 @@
 #include "../SDL_sysjoystick.h"
 #include "../usb_ids.h"
 
-#include <stdbool.h>
 #define COBJMACROS
 #include <gameinput.h>
+
+// Default value for SDL_HINT_JOYSTICK_GAMEINPUT
+#if defined(SDL_PLATFORM_GDK)
+#define SDL_GAMEINPUT_DEFAULT true
+#else
+#define SDL_GAMEINPUT_DEFAULT false
+#endif
 
 enum
 {
@@ -61,7 +67,7 @@ typedef struct joystick_hwdata
 } GAMEINPUT_InternalJoystickHwdata;
 
 static GAMEINPUT_InternalList g_GameInputList = { NULL };
-static void *g_hGameInputDLL = NULL;
+static SDL_SharedObject *g_hGameInputDLL = NULL;
 static IGameInput *g_pGameInput = NULL;
 static GameInputCallbackToken g_GameInputCallbackToken = GAMEINPUT_INVALID_CALLBACK_TOKEN_VALUE;
 static Uint64 g_GameInputTimestampOffset;
@@ -235,7 +241,7 @@ static bool GAMEINPUT_JoystickInit(void)
 {
     HRESULT hR;
 
-    if (!SDL_GetHintBoolean(SDL_HINT_JOYSTICK_GAMEINPUT, false)) {
+    if (!SDL_GetHintBoolean(SDL_HINT_JOYSTICK_GAMEINPUT, SDL_GAMEINPUT_DEFAULT)) {
         return true;
     }
 
@@ -255,7 +261,7 @@ static bool GAMEINPUT_JoystickInit(void)
 
         hR = GameInputCreateFunc(&g_pGameInput);
         if (FAILED(hR)) {
-            return SDL_SetError("GameInputCreate failure with HRESULT of %08X", hR);
+            return SDL_SetError("GameInputCreate failure with HRESULT of %08lX", hR);
         }
     }
 
@@ -268,7 +274,7 @@ static bool GAMEINPUT_JoystickInit(void)
                                            GAMEINPUT_InternalJoystickDeviceCallback,
                                            &g_GameInputCallbackToken);
     if (FAILED(hR)) {
-        return SDL_SetError("IGameInput::RegisterDeviceCallback failure with HRESULT of %08X", hR);
+        return SDL_SetError("IGameInput::RegisterDeviceCallback failure with HRESULT of %08lX", hR);
     }
 
     // Calculate the relative offset between SDL timestamps and GameInput timestamps

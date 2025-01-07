@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -389,7 +389,7 @@ struct SDL_VideoData
 
 #if !defined(SDL_PLATFORM_XBOXONE) && !defined(SDL_PLATFORM_XBOXSERIES) // Xbox doesn't support user32/shcore
     // Touch input functions
-    void *userDLL;
+    SDL_SharedObject *userDLL;
     /* *INDENT-OFF* */ // clang-format off
     BOOL (WINAPI *CloseTouchInputHandle)( HTOUCHINPUT );
     BOOL (WINAPI *GetTouchInputInfo)( HTOUCHINPUT, UINT, PTOUCHINPUT, int );
@@ -410,18 +410,21 @@ struct SDL_VideoData
     LONG (WINAPI *DisplayConfigGetDeviceInfo)( DISPLAYCONFIG_DEVICE_INFO_HEADER*);
     /* *INDENT-ON* */ // clang-format on
 
-    void *shcoreDLL;
+    SDL_SharedObject *shcoreDLL;
     /* *INDENT-OFF* */ // clang-format off
     HRESULT (WINAPI *GetDpiForMonitor)( HMONITOR         hmonitor,
                                         MONITOR_DPI_TYPE dpiType,
                                         UINT             *dpiX,
                                         UINT             *dpiY );
     HRESULT (WINAPI *SetProcessDpiAwareness)(PROCESS_DPI_AWARENESS dpiAwareness);
+    BOOL (WINAPI *GetPointerType)(UINT32 pointerId, POINTER_INPUT_TYPE *pointerType);
+    BOOL (WINAPI *GetPointerPenInfo)(UINT32 pointerId, POINTER_PEN_INFO *penInfo);
+
     /* *INDENT-ON* */ // clang-format on
 #endif                // !defined(SDL_PLATFORM_XBOXONE) && !defined(SDL_PLATFORM_XBOXSERIES)
 
 #ifdef HAVE_DXGI_H
-    void *dxgiDLL;
+    SDL_SharedObject *dxgiDLL;
     IDXGIFactory *pDXGIFactory;
 #endif
 
@@ -475,7 +478,7 @@ struct SDL_VideoData
 
 #ifndef SDL_DISABLE_WINDOWS_IME
     HKL ime_hkl;
-    void *ime_himm32;
+    SDL_SharedObject *ime_himm32;
     /* *INDENT-OFF* */ // clang-format off
     UINT (WINAPI *GetReadingString)(HIMC himc, UINT uReadingBufLen, LPWSTR lpwReadingBuf, PINT pnErrorIndex, BOOL *pfIsVertical, PUINT puMaxReadingLen);
     BOOL (WINAPI *ShowReadingWindow)(HIMC himc, BOOL bShow);

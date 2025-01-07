@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -22,6 +22,8 @@
 
 #ifndef SDL_sysrender_h_
 #define SDL_sysrender_h_
+
+#include "../video/SDL_surface_c.h"
 
 #include "SDL_yuv_sw_c.h"
 
@@ -63,23 +65,30 @@ typedef struct SDL_RenderViewState
     SDL_Rect pixel_clip_rect;
     bool clipping_enabled;
     SDL_FPoint scale;
-
+    SDL_FPoint logical_scale;
+    SDL_FPoint logical_offset;
+    SDL_FPoint current_scale;  // this is just `scale * logical_scale`, precalculated, since we use it a lot.
 } SDL_RenderViewState;
 
 // Define the SDL texture structure
 struct SDL_Texture
 {
-    SDL_Colorspace colorspace;  /**< The colorspace of the texture */
-    float SDR_white_point;      /**< The SDR white point for this content */
-    float HDR_headroom;         /**< The HDR headroom needed by this content */
-    SDL_PixelFormat format;     /**< The pixel format of the texture */
-    SDL_TextureAccess access;   /**< The texture access mode */
-    int w;                      /**< The width of the texture */
-    int h;                      /**< The height of the texture */
-    SDL_BlendMode blendMode;    /**< The texture blend mode */
-    SDL_ScaleMode scaleMode;    /**< The texture scale mode */
-    SDL_FColor color;           /**< Texture modulation values */
-    SDL_RenderViewState view;   /**< Target texture view state */
+    // Public API definition
+    SDL_PixelFormat format;     /**< The format of the texture, read-only */
+    int w;                      /**< The width of the texture, read-only. */
+    int h;                      /**< The height of the texture, read-only. */
+
+    int refcount;               /**< Application reference count, used when freeing texture */
+
+    // Private API definition
+    SDL_Colorspace colorspace;  // The colorspace of the texture
+    float SDR_white_point;      // The SDR white point for this content
+    float HDR_headroom;         // The HDR headroom needed by this content
+    SDL_TextureAccess access;   // The texture access mode
+    SDL_BlendMode blendMode;    // The texture blend mode
+    SDL_ScaleMode scaleMode;    // The texture scale mode
+    SDL_FColor color;           // Texture modulation values
+    SDL_RenderViewState view;   // Target texture view state
 
     SDL_Renderer *renderer;
 
@@ -89,13 +98,13 @@ struct SDL_Texture
     void *pixels;
     int pitch;
     SDL_Rect locked_rect;
-    SDL_Surface *locked_surface; /**< Locked region exposed as a SDL surface */
+    SDL_Surface *locked_surface; // Locked region exposed as a SDL surface
 
     Uint32 last_command_generation; // last command queue generation this texture was in.
 
     SDL_PropertiesID props;
 
-    void *internal; /**< Driver specific texture representation */
+    void *internal;             // Driver specific texture representation
 
     SDL_Texture *prev;
     SDL_Texture *next;
@@ -194,7 +203,7 @@ struct SDL_Renderer
     bool (*UpdateTexture)(SDL_Renderer *renderer, SDL_Texture *texture,
                          const SDL_Rect *rect, const void *pixels,
                          int pitch);
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
     bool (*UpdateTextureYUV)(SDL_Renderer *renderer, SDL_Texture *texture,
                             const SDL_Rect *rect,
                             const Uint8 *Yplane, int Ypitch,
@@ -240,23 +249,22 @@ struct SDL_Renderer
     Uint64 last_present;
 
     // Support for logical output coordinates
-    SDL_Texture *logical_target;
     SDL_RendererLogicalPresentation logical_presentation_mode;
-    SDL_ScaleMode logical_scale_mode;
+    int logical_w, logical_h;
     SDL_FRect logical_src_rect;
     SDL_FRect logical_dst_rect;
 
     SDL_RenderViewState *view;
     SDL_RenderViewState main_view;
 
+    // Cache the output size in pixels
+    int output_pixel_w, output_pixel_h;
+
     // The window pixel to point coordinate scale
     SDL_FPoint dpi_scale;
 
     // The method of drawing lines
     SDL_RenderLineMethod line_method;
-
-    // List of triangle indices to draw rects
-    int rect_index_order[6];
 
     // The list of textures
     SDL_Texture *textures;
@@ -296,6 +304,8 @@ struct SDL_Renderer
     SDL_Texture *shape_texture;
 
     SDL_PropertiesID props;
+
+    SDL_Texture *debug_char_texture_atlas;
 
     bool destroyed;   // already destroyed by SDL_DestroyWindow; just free this struct in SDL_DestroyRenderer.
 
@@ -351,7 +361,7 @@ extern SDL_BlendOperation SDL_GetBlendModeAlphaOperation(SDL_BlendMode blendMode
 /* drivers call this during their Queue*() methods to make space in a array that are used
    for a vertex buffer during RunCommandQueue(). Pointers returned here are only valid until
    the next call, because it might be in an array that gets realloc()'d. */
-extern void *SDL_AllocateRenderVertices(SDL_Renderer *renderer, const size_t numbytes, const size_t alignment, size_t *offset);
+extern void *SDL_AllocateRenderVertices(SDL_Renderer *renderer, size_t numbytes, size_t alignment, size_t *offset);
 
 // Let the video subsystem destroy a renderer without making its pointer invalid.
 extern void SDL_DestroyRendererWithoutFreeing(SDL_Renderer *renderer);

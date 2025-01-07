@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -22,7 +22,6 @@
 
 #include "SDL_keymap_c.h"
 #include "SDL_keyboard_c.h"
-#include "../SDL_hashtable.h"
 
 struct SDL_Keymap
 {
@@ -40,8 +39,8 @@ SDL_Keymap *SDL_CreateKeymap(void)
         return NULL;
     }
 
-    keymap->scancode_to_keycode = SDL_CreateHashTable(NULL, 64, SDL_HashID, SDL_KeyMatchID, NULL, false);
-    keymap->keycode_to_scancode = SDL_CreateHashTable(NULL, 64, SDL_HashID, SDL_KeyMatchID, NULL, false);
+    keymap->scancode_to_keycode = SDL_CreateHashTable(NULL, 64, SDL_HashID, SDL_KeyMatchID, NULL, false, false);
+    keymap->keycode_to_scancode = SDL_CreateHashTable(NULL, 64, SDL_HashID, SDL_KeyMatchID, NULL, false, false);
     if (!keymap->scancode_to_keycode || !keymap->keycode_to_scancode) {
         SDL_DestroyKeymap(keymap);
         return NULL;
@@ -1081,7 +1080,7 @@ SDL_Keycode SDL_GetKeyFromName(const char *name)
             SDL_Keymap *keymap = SDL_GetCurrentKeymap();
             SDL_Keymod modstate;
             SDL_Scancode scancode = SDL_GetKeymapScancode(keymap, key, &modstate);
-            if (scancode != SDL_SCANCODE_UNKNOWN && (modstate & SDL_KMOD_SHIFT)) {
+            if (scancode != SDL_SCANCODE_UNKNOWN && (modstate & (SDL_KMOD_SHIFT | SDL_KMOD_CAPS))) {
                 key = SDL_GetKeymapKeycode(keymap, scancode, SDL_KMOD_NONE);
             }
         }

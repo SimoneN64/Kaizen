@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -20,7 +20,7 @@
 */
 #include "SDL_internal.h"
 
-#include "SDL_blit.h"
+#include "SDL_surface_c.h"
 
 #ifdef SDL_SSE_INTRINSICS
 /* *INDENT-OFF* */ // clang-format off
@@ -59,6 +59,13 @@ static void SDL_TARGETING("sse") SDL_FillSurfaceRect##bpp##SSE(Uint8 *pixels, in
 { \
     int i, n; \
     Uint8 *p = NULL; \
+  \
+    /* If the number of bytes per row is equal to the pitch, treat */ \
+    /* all rows as one long continuous row (for better performance) */ \
+    if ((w) * (bpp) == pitch) { \
+        w = w * h; \
+        h = 1; \
+    } \
  \
     SSE_BEGIN; \
  \
@@ -237,7 +244,7 @@ bool SDL_FillSurfaceRect(SDL_Surface *dst, const SDL_Rect *rect, Uint32 color)
 
     // If 'rect' == NULL, then fill the whole surface
     if (!rect) {
-        rect = &dst->internal->clip_rect;
+        rect = &dst->clip_rect;
         // Don't attempt to fill if the surface's clip_rect is empty
         if (SDL_RectEmpty(rect)) {
             return true;
@@ -346,7 +353,7 @@ bool SDL_FillSurfaceRects(SDL_Surface *dst, const SDL_Rect *rects, int count, Ui
     for (i = 0; i < count; ++i) {
         rect = &rects[i];
         // Perform clipping
-        if (!SDL_GetRectIntersection(rect, &dst->internal->clip_rect, &clipped)) {
+        if (!SDL_GetRectIntersection(rect, &dst->clip_rect, &clipped)) {
             continue;
         }
         rect = &clipped;

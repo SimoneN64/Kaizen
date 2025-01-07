@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -487,9 +487,13 @@ static void device_event(SDL_UDEV_deviceevent type, struct udev_device *dev)
         return;
     }
 
-    devclass = device_class(dev);
-    if (!devclass) {
-         return;
+    if (type == SDL_UDEV_DEVICEADDED) {
+        devclass = device_class(dev);
+        if (!devclass) {
+            return;
+        }
+    } else {
+        // The device has been removed, the class isn't available
     }
 
     // Process callbacks

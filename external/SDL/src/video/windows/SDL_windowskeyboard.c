@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -606,7 +606,7 @@ static DWORD IME_GetId(SDL_VideoData *videodata, UINT uIndex)
 static void IME_SetupAPI(SDL_VideoData *videodata)
 {
     char ime_file[MAX_PATH + 1];
-    void *hime = 0;
+    SDL_SharedObject *hime = 0;
     HKL hkl = 0;
     videodata->GetReadingString = NULL;
     videodata->ShowReadingWindow = NULL;

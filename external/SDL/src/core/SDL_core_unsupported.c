@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -186,13 +186,6 @@ SDL_DECLSPEC int SDLCALL SDL_GetAndroidSDKVersion(void);
 int SDL_GetAndroidSDKVersion(void)
 {
     return SDL_Unsupported();
-}
-
-SDL_DECLSPEC bool SDLCALL SDL_IsAndroidTV(void);
-bool SDL_IsAndroidTV(void)
-{
-    SDL_Unsupported();
-    return false;
 }
 
 SDL_DECLSPEC bool SDLCALL SDL_IsChromebook(void);

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -25,7 +25,6 @@
 #include "../../video/SDL_sysvideo.h" // For SDL_RecreateWindow
 #include <SDL3/SDL_opengles2.h>
 #include "../SDL_sysrender.h"
-#include "../../video/SDL_blit.h"
 #include "../../video/SDL_pixels_c.h"
 #include "SDL_shaders_gles2.h"
 
@@ -68,7 +67,7 @@ typedef struct GLES2_TextureData
     GLenum pixel_type;
     void *pixel_data;
     int pitch;
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
     // YUV texture support
     bool yuv;
     bool nv12;
@@ -626,7 +625,7 @@ static bool GLES2_SelectProgram(GLES2_RenderData *data, GLES2_ImageSource source
     case GLES2_IMAGESOURCE_TEXTURE_BGR:
         ftype = GLES2_SHADER_FRAGMENT_TEXTURE_BGR;
         break;
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
     case GLES2_IMAGESOURCE_TEXTURE_YUV:
         ftype = GLES2_SHADER_FRAGMENT_TEXTURE_YUV;
         shader_params = SDL_GetYCbCRtoRGBConversionMatrix(colorspace, 0, 0, 8);
@@ -1115,7 +1114,7 @@ static bool SetCopyState(SDL_Renderer *renderer, const SDL_RenderCommand *cmd, v
                     break;
                 }
                 break;
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
             case SDL_PIXELFORMAT_IYUV:
             case SDL_PIXELFORMAT_YV12:
                 sourceType = GLES2_IMAGESOURCE_TEXTURE_YUV;
@@ -1150,7 +1149,7 @@ static bool SetCopyState(SDL_Renderer *renderer, const SDL_RenderCommand *cmd, v
         case SDL_PIXELFORMAT_RGBX32:
             sourceType = GLES2_IMAGESOURCE_TEXTURE_BGR;
             break;
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
         case SDL_PIXELFORMAT_IYUV:
         case SDL_PIXELFORMAT_YV12:
             sourceType = GLES2_IMAGESOURCE_TEXTURE_YUV;
@@ -1174,7 +1173,7 @@ static bool SetCopyState(SDL_Renderer *renderer, const SDL_RenderCommand *cmd, v
 
     if (texture != data->drawstate.texture) {
         GLES2_TextureData *tdata = (GLES2_TextureData *)texture->internal;
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
         if (tdata->yuv) {
             data->glActiveTexture(GL_TEXTURE2);
             data->glBindTexture(tdata->texture_type, tdata->texture_v);
@@ -1502,7 +1501,7 @@ static bool GLES2_CreateTexture(SDL_Renderer *renderer, SDL_Texture *texture, SD
         format = GL_RGBA;
         type = GL_UNSIGNED_BYTE;
         break;
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
     case SDL_PIXELFORMAT_IYUV:
     case SDL_PIXELFORMAT_YV12:
     case SDL_PIXELFORMAT_NV12:
@@ -1539,7 +1538,7 @@ static bool GLES2_CreateTexture(SDL_Renderer *renderer, SDL_Texture *texture, SD
 #endif
     data->pixel_format = format;
     data->pixel_type = type;
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
     data->yuv = ((texture->format == SDL_PIXELFORMAT_IYUV) || (texture->format == SDL_PIXELFORMAT_YV12));
     data->nv12 = ((texture->format == SDL_PIXELFORMAT_NV12) || (texture->format == SDL_PIXELFORMAT_NV21));
     data->texture_u = 0;
@@ -1552,7 +1551,7 @@ static bool GLES2_CreateTexture(SDL_Renderer *renderer, SDL_Texture *texture, SD
         size_t size;
         data->pitch = texture->w * SDL_BYTESPERPIXEL(texture->format);
         size = (size_t)texture->h * data->pitch;
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
         if (data->yuv) {
             // Need to add size for the U and V planes
             size += 2 * ((texture->h + 1) / 2) * ((data->pitch + 1) / 2);
@@ -1571,7 +1570,7 @@ static bool GLES2_CreateTexture(SDL_Renderer *renderer, SDL_Texture *texture, SD
     // Allocate the texture
     GL_CheckError("", renderer);
 
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
     if (data->yuv) {
         data->texture_v = (GLuint)SDL_GetNumberProperty(create_props, SDL_PROP_TEXTURE_CREATE_OPENGLES2_TEXTURE_V_NUMBER, 0);
         if (data->texture_v) {
@@ -1730,7 +1729,7 @@ static bool GLES2_UpdateTexture(SDL_Renderer *renderer, SDL_Texture *texture, co
                         tdata->pixel_type,
                         pixels, pitch, SDL_BYTESPERPIXEL(texture->format));
 
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
     if (tdata->yuv) {
         // Skip to the correct offset into the next texture
         pixels = (const void *)((const Uint8 *)pixels + rect->h * pitch);
@@ -1781,7 +1780,7 @@ static bool GLES2_UpdateTexture(SDL_Renderer *renderer, SDL_Texture *texture, co
     return GL_CheckError("glTexSubImage2D()", renderer);
 }
 
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
 static bool GLES2_UpdateTextureYUV(SDL_Renderer *renderer, SDL_Texture *texture,
                                   const SDL_Rect *rect,
                                   const Uint8 *Yplane, int Ypitch,
@@ -1907,7 +1906,7 @@ static void GLES2_SetTextureScaleMode(SDL_Renderer *renderer, SDL_Texture *textu
     GLES2_TextureData *data = (GLES2_TextureData *)texture->internal;
     GLenum glScaleMode = (scaleMode == SDL_SCALEMODE_NEAREST) ? GL_NEAREST : GL_LINEAR;
 
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
     if (data->yuv) {
         renderdata->glActiveTexture(GL_TEXTURE2);
         renderdata->glBindTexture(data->texture_type, data->texture_v);
@@ -1975,7 +1974,7 @@ static void GLES2_DestroyTexture(SDL_Renderer *renderer, SDL_Texture *texture)
         if (tdata->texture && !tdata->texture_external) {
             data->glDeleteTextures(1, &tdata->texture);
         }
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
         if (tdata->texture_v && !tdata->texture_v_external) {
             data->glDeleteTextures(1, &tdata->texture_v);
         }
@@ -1993,7 +1992,6 @@ static SDL_Surface *GLES2_RenderReadPixels(SDL_Renderer *renderer, const SDL_Rec
 {
     GLES2_RenderData *data = (GLES2_RenderData *)renderer->internal;
     SDL_PixelFormat format = renderer->target ? renderer->target->format : SDL_PIXELFORMAT_RGBA32;
-    int w, h;
     SDL_Surface *surface;
 
     surface = SDL_CreateSurface(rect->w, rect->h, format);
@@ -2001,10 +1999,14 @@ static SDL_Surface *GLES2_RenderReadPixels(SDL_Renderer *renderer, const SDL_Rec
         return NULL;
     }
 
-    SDL_GetCurrentRenderOutputSize(renderer, &w, &h);
+    int y = rect->y;
+    if (!renderer->target) {
+        int w, h;
+        SDL_GetRenderOutputSize(renderer, &w, &h);
+        y = (h - y) - rect->h;
+    }
 
-    data->glReadPixels(rect->x, renderer->target ? rect->y : (h - rect->y) - rect->h,
-                       rect->w, rect->h, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
+    data->glReadPixels(rect->x, y, rect->w, rect->h, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
     if (!GL_CheckError("glReadPixels()", renderer)) {
         SDL_DestroySurface(surface);
         return NULL;
@@ -2012,20 +2014,7 @@ static SDL_Surface *GLES2_RenderReadPixels(SDL_Renderer *renderer, const SDL_Rec
 
     // Flip the rows to be top-down if necessary
     if (!renderer->target) {
-        bool isstack;
-        int length = rect->w * SDL_BYTESPERPIXEL(format);
-        Uint8 *src = (Uint8 *)surface->pixels + (rect->h - 1) * surface->pitch;
-        Uint8 *dst = (Uint8 *)surface->pixels;
-        Uint8 *tmp = SDL_small_alloc(Uint8, length, &isstack);
-        int rows = rect->h / 2;
-        while (rows--) {
-            SDL_memcpy(tmp, dst, length);
-            SDL_memcpy(dst, src, length);
-            SDL_memcpy(src, tmp, length);
-            dst += surface->pitch;
-            src -= surface->pitch;
-        }
-        SDL_small_free(tmp, isstack);
+        SDL_FlipSurface(surface, SDL_FLIP_VERTICAL);
     }
     return surface;
 }
@@ -2156,7 +2145,7 @@ static bool GLES2_CreateRenderer(SDL_Renderer *renderer, SDL_Window *window, SDL
     renderer->SupportsBlendMode = GLES2_SupportsBlendMode;
     renderer->CreateTexture = GLES2_CreateTexture;
     renderer->UpdateTexture = GLES2_UpdateTexture;
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
     renderer->UpdateTextureYUV = GLES2_UpdateTextureYUV;
     renderer->UpdateTextureNV = GLES2_UpdateTextureNV;
 #endif
@@ -2176,7 +2165,7 @@ static bool GLES2_CreateRenderer(SDL_Renderer *renderer, SDL_Window *window, SDL
     renderer->DestroyTexture = GLES2_DestroyTexture;
     renderer->DestroyRenderer = GLES2_DestroyRenderer;
     renderer->SetVSync = GLES2_SetVSync;
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
     SDL_AddSupportedTextureFormat(renderer, SDL_PIXELFORMAT_YV12);
     SDL_AddSupportedTextureFormat(renderer, SDL_PIXELFORMAT_IYUV);
     SDL_AddSupportedTextureFormat(renderer, SDL_PIXELFORMAT_NV12);
@@ -2188,18 +2177,13 @@ static bool GLES2_CreateRenderer(SDL_Renderer *renderer, SDL_Window *window, SDL
     }
 #endif
 
-    renderer->rect_index_order[0] = 0;
-    renderer->rect_index_order[1] = 1;
-    renderer->rect_index_order[2] = 3;
-    renderer->rect_index_order[3] = 1;
-    renderer->rect_index_order[4] = 3;
-    renderer->rect_index_order[5] = 2;
-
     if (SDL_GL_ExtensionSupported("GL_EXT_blend_minmax")) {
         data->GL_EXT_blend_minmax_supported = true;
     }
 
     // Set up parameters for rendering
+    data->glDisable(GL_DEPTH_TEST);
+    data->glDisable(GL_CULL_FACE);
     data->glActiveTexture(GL_TEXTURE0);
     data->glPixelStorei(GL_PACK_ALIGNMENT, 1);
     data->glPixelStorei(GL_UNPACK_ALIGNMENT, 1);

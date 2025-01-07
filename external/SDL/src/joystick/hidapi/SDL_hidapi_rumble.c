@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -59,7 +59,7 @@ static int SDLCALL SDL_HIDAPI_RumbleThread(void *data)
 {
     SDL_HIDAPI_RumbleContext *ctx = (SDL_HIDAPI_RumbleContext *)data;
 
-    SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
+    SDL_SetCurrentThreadPriority(SDL_THREAD_PRIORITY_HIGH);
 
     while (SDL_GetAtomicInt(&ctx->running)) {
         SDL_HIDAPI_RumbleRequest *request = NULL;

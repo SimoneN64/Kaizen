@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -66,7 +66,7 @@ ThreadFunc(void *data)
         SDL_Log("Thread '%s' is alive!\n", (char *)data);
 
         if (testprio) {
-            SDL_Log("SDL_SetThreadPriority(%s):%d\n", getprioritystr(prio), SDL_SetThreadPriority(prio));
+            SDL_Log("SDL_SetCurrentThreadPriority(%s):%d\n", getprioritystr(prio), SDL_SetCurrentThreadPriority(prio));
             if (++prio > SDL_THREAD_PRIORITY_TIME_CRITICAL) {
                 prio = SDL_THREAD_PRIORITY_LOW;
             }

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -62,7 +62,7 @@ static int SDLCALL SDL_ANDROID_SensorThread(void *data)
     ASensorEvent event;
     struct android_poll_source *source;
 
-    SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
+    SDL_SetCurrentThreadPriority(SDL_THREAD_PRIORITY_HIGH);
 
     SDL_sensor_looper = ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS);
     SDL_SignalSemaphore(ctx->sem);

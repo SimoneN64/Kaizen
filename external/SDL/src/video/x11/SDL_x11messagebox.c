@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -459,9 +459,10 @@ static bool X11_MessageBoxCreateWindow(SDL_MessageBoxDataX11 *data)
                         (unsigned char *)&_NET_WM_WINDOW_TYPE_DIALOG, 1);
 
     // Allow the window to be deleted by the window manager
-    data->wm_protocols = X11_XInternAtom(display, "WM_PROTOCOLS", False);
     data->wm_delete_message = X11_XInternAtom(display, "WM_DELETE_WINDOW", False);
     X11_XSetWMProtocols(display, data->window, &data->wm_delete_message, 1);
+
+    data->wm_protocols = X11_XInternAtom(display, "WM_PROTOCOLS", False);
 
     if (windowdata) {
         XWindowAttributes attrib;

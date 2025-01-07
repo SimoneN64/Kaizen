@@ -1,6 +1,6 @@
 /*
  *  Simple DirectMedia Layer
- *  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+ *  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
  *
  *  This software is provided 'as-is', without any express or implied
  *  warranty.  In no event will the authors be held liable for any damages
@@ -299,7 +299,10 @@ void SDL_EGL_UnloadLibrary(SDL_VideoDevice *_this)
 
 static bool SDL_EGL_LoadLibraryInternal(SDL_VideoDevice *_this, const char *egl_path)
 {
-    void *egl_dll_handle = NULL, *opengl_dll_handle = NULL;
+    SDL_SharedObject *egl_dll_handle = NULL;
+#if !defined(SDL_VIDEO_STATIC_ANGLE) && !defined(SDL_VIDEO_DRIVER_VITA)
+    SDL_SharedObject *opengl_dll_handle = NULL;
+#endif
     const char *path = NULL;
 #if defined(SDL_VIDEO_DRIVER_WINDOWS)
     const char *d3dcompiler;
@@ -341,7 +344,7 @@ static bool SDL_EGL_LoadLibraryInternal(SDL_VideoDevice *_this, const char *egl_
 
 #if !defined(SDL_VIDEO_STATIC_ANGLE) && !defined(SDL_VIDEO_DRIVER_VITA)
     /* A funny thing, loading EGL.so first does not work on the Raspberry, so we load libGL* first */
-    path = SDL_getenv("SDL_VIDEO_GL_DRIVER");
+    path = SDL_GetHint(SDL_HINT_OPENGL_LIBRARY);
     if (path) {
         opengl_dll_handle = SDL_LoadObject(path);
     }
@@ -401,7 +404,7 @@ static bool SDL_EGL_LoadLibraryInternal(SDL_VideoDevice *_this, const char *egl_
         if (egl_dll_handle) {
             SDL_UnloadObject(egl_dll_handle);
         }
-        path = SDL_getenv("SDL_VIDEO_EGL_DRIVER");
+        path = SDL_GetHint(SDL_HINT_EGL_LIBRARY);
         if (!path) {
             path = DEFAULT_EGL;
         }
@@ -425,9 +428,6 @@ static bool SDL_EGL_LoadLibraryInternal(SDL_VideoDevice *_this, const char *egl_
 #endif
 
     _this->egl_data->egl_dll_handle = egl_dll_handle;
-#ifdef SDL_VIDEO_DRIVER_VITA
-    _this->egl_data->opengl_dll_handle = opengl_dll_handle;
-#endif
 
     // Load new function pointers
     LOAD_FUNC(PFNEGLGETDISPLAYPROC, eglGetDisplay);
@@ -528,7 +528,7 @@ bool SDL_EGL_LoadLibrary(SDL_VideoDevice *_this, const char *egl_path, NativeDis
         if (_this->egl_data->eglGetPlatformDisplay) {
             EGLAttrib *attribs = NULL;
             if (_this->egl_platformattrib_callback) {
-                attribs = _this->egl_platformattrib_callback();
+                attribs = _this->egl_platformattrib_callback(_this->egl_attrib_callback_userdata);
                 if (!attribs) {
                     _this->gl_config.driver_loaded = 0;
                     *_this->gl_config.driver_path = '\0';
@@ -536,6 +536,7 @@ bool SDL_EGL_LoadLibrary(SDL_VideoDevice *_this, const char *egl_path, NativeDis
                 }
             }
             _this->egl_data->egl_display = _this->egl_data->eglGetPlatformDisplay(platform, (void *)(uintptr_t)native_display, attribs);
+            SDL_free(attribs);
         } else {
             if (SDL_EGL_HasExtension(_this, SDL_EGL_CLIENT_EXTENSION, "EGL_EXT_platform_base")) {
                 _this->egl_data->eglGetPlatformDisplayEXT = (PFNEGLGETPLATFORMDISPLAYEXTPROC)SDL_EGL_GetProcAddressInternal(_this, "eglGetPlatformDisplayEXT");
@@ -1037,7 +1038,7 @@ SDL_GLContext SDL_EGL_CreateContext(SDL_VideoDevice *_this, EGLSurface egl_surfa
     if (_this->egl_contextattrib_callback) {
         const int maxAttribs = sizeof(attribs) / sizeof(attribs[0]);
         EGLint *userAttribs, *userAttribP;
-        userAttribs = _this->egl_contextattrib_callback();
+        userAttribs = _this->egl_contextattrib_callback(_this->egl_attrib_callback_userdata, _this->egl_data->egl_display, _this->egl_data->egl_config);
         if (!userAttribs) {
             _this->gl_config.driver_loaded = 0;
             *_this->gl_config.driver_path = '\0';
@@ -1055,6 +1056,7 @@ SDL_GLContext SDL_EGL_CreateContext(SDL_VideoDevice *_this, EGLSurface egl_surfa
             attribs[attr++] = *userAttribP++;
             attribs[attr++] = *userAttribP++;
         }
+        SDL_free(userAttribs);
     }
 
     attribs[attr++] = EGL_NONE;
@@ -1263,7 +1265,7 @@ EGLSurface SDL_EGL_CreateSurface(SDL_VideoDevice *_this, SDL_Window *window, Nat
     if (_this->egl_surfaceattrib_callback) {
         const int maxAttribs = sizeof(attribs) / sizeof(attribs[0]);
         EGLint *userAttribs, *userAttribP;
-        userAttribs = _this->egl_surfaceattrib_callback();
+        userAttribs = _this->egl_surfaceattrib_callback(_this->egl_attrib_callback_userdata, _this->egl_data->egl_display, _this->egl_data->egl_config);
         if (!userAttribs) {
             _this->gl_config.driver_loaded = 0;
             *_this->gl_config.driver_path = '\0';
@@ -1281,6 +1283,7 @@ EGLSurface SDL_EGL_CreateSurface(SDL_VideoDevice *_this, SDL_Window *window, Nat
             attribs[attr++] = *userAttribP++;
             attribs[attr++] = *userAttribP++;
         }
+        SDL_free(userAttribs);
     }
 
     attribs[attr++] = EGL_NONE;

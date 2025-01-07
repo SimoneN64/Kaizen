@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -341,10 +341,11 @@ static void loop(void)
         SDL_FRect rect;
         int x, y, row;
         int window_w = 0, window_h = 0;
+        const float scale = SDL_GetWindowPixelDensity(state->windows[i]);
 
-        SDL_GetWindowSize(state->windows[i], &window_w, &window_h);
-        rect.w = 128.0f;
-        rect.h = 128.0f;
+        SDL_GetWindowSizeInPixels(state->windows[i], &window_w, &window_h);
+        rect.w = 128.0f * scale;
+        rect.h = 128.0f * scale;
         for (y = 0, row = 0; y < window_h; y += (int)rect.h, ++row) {
             bool black = ((row % 2) == 0) ? true : false;
             for (x = 0; x < window_w; x += (int)rect.w) {

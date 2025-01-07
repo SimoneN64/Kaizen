@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -245,7 +245,9 @@ static SDL_AssertState SDLCALL SDL_PromptAssertion(const SDL_AssertData *data, v
             state = (SDL_AssertState)selected;
         }
     } else {
-#ifdef SDL_PLATFORM_EMSCRIPTEN
+#ifdef SDL_PLATFORM_PRIVATE_ASSERT
+        SDL_PRIVATE_PROMPTASSERTION();
+#elif defined(SDL_PLATFORM_EMSCRIPTEN)
         // This is nasty, but we can't block on a custom UI.
         for (;;) {
             bool okay = true;
@@ -283,7 +285,7 @@ static SDL_AssertState SDLCALL SDL_PromptAssertion(const SDL_AssertData *data, v
                 break;
             }
         }
-#elif defined(HAVE_STDIO_H)
+#elif defined(HAVE_STDIO_H) && !defined(SDL_PLATFORM_3DS)
         // this is a little hacky.
         for (;;) {
             char buf[32];
@@ -310,6 +312,8 @@ static SDL_AssertState SDLCALL SDL_PromptAssertion(const SDL_AssertData *data, v
                 break;
             }
         }
+#else
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Assertion Failed", message, window);
 #endif // HAVE_STDIO_H
     }
 

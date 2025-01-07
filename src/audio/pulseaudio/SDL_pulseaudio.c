@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -134,7 +134,7 @@ static bool load_pulseaudio_syms(void);
 #ifdef SDL_AUDIO_DRIVER_PULSEAUDIO_DYNAMIC
 
 static const char *pulseaudio_library = SDL_AUDIO_DRIVER_PULSEAUDIO_DYNAMIC;
-static void *pulseaudio_handle = NULL;
+static SDL_SharedObject *pulseaudio_handle = NULL;
 
 static bool load_pulseaudio_sym(const char *fn, void **addr)
 {
@@ -892,7 +892,7 @@ static int SDLCALL HotplugThread(void *data)
 {
     pa_operation *op;
 
-    SDL_SetThreadPriority(SDL_THREAD_PRIORITY_LOW);
+    SDL_SetCurrentThreadPriority(SDL_THREAD_PRIORITY_LOW);
     PULSEAUDIO_pa_threaded_mainloop_lock(pulseaudio_threaded_mainloop);
     PULSEAUDIO_pa_context_set_subscribe_callback(pulseaudio_context, HotplugCallback, NULL);
 

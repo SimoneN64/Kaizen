@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -501,9 +501,15 @@ void SDL_OnApplicationDidChangeStatusBarOrientation(void)
          * fullscreen desktop keeps the window dimensions in the
          * correct orientation. */
         if (isLandscape != (mode->w > mode->h)) {
-            int height = mode->w;
-            mode->w = mode->h;
-            mode->h = height;
+            SDL_DisplayMode new_mode;
+            SDL_copyp(&new_mode, mode);
+            new_mode.w = mode->h;
+            new_mode.h = mode->w;
+
+            // Make sure we don't free the current display mode data
+            mode->internal = NULL;
+
+            SDL_SetDesktopDisplayMode(display, &new_mode);
         }
 
         // Same deal with the fullscreen modes

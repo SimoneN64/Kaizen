@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -55,11 +55,63 @@ bool SDL_CopyFile(const char *oldpath, const char *newpath)
 
 bool SDL_CreateDirectory(const char *path)
 {
-    // TODO: Recursively create subdirectories
     if (!path) {
         return SDL_InvalidParamError("path");
     }
-    return SDL_SYS_CreateDirectory(path);
+
+    bool retval = SDL_SYS_CreateDirectory(path);
+    if (!retval && *path) {  // maybe we're missing parent directories?
+        char *parents = SDL_strdup(path);
+        if (!parents) {
+            return false;  // oh well.
+        }
+
+        // in case there was a separator at the end of the path and it was
+        // upsetting something, chop it off.
+        const size_t slen = SDL_strlen(parents);
+        #ifdef SDL_PLATFORM_WINDOWS
+        if ((parents[slen - 1] == '/') || (parents[slen - 1] == '\\'))
+        #else
+        if (parents[slen - 1] == '/')
+        #endif
+        {
+            parents[slen - 1] = '\0';
+            retval = SDL_SYS_CreateDirectory(parents);
+        }
+
+        if (!retval) {
+            for (char *ptr = parents; *ptr; ptr++) {
+                const char ch = *ptr;
+                #ifdef SDL_PLATFORM_WINDOWS
+                const bool issep = (ch == '/') || (ch == '\\');
+                if (issep && ((ptr - parents) == 2) && (parents[1] == ':')) {
+                    continue;  // it's just the drive letter, skip it.
+                }
+                #else
+                const bool issep = (ch == '/');
+                if (issep && ((ptr - parents) == 0)) {
+                    continue; // it's just the root directory, skip it.
+                }
+                #endif
+
+                if (issep) {
+                    *ptr = '\0';
+                    // (this does not fail if the path already exists as a directory.)
+                    retval = SDL_SYS_CreateDirectory(parents);
+                    if (!retval) {  // still failing when making parents? Give up.
+                        break;
+                    }
+                    *ptr = ch;
+                }
+            }
+
+            // last chance: did it work this time?
+            retval = SDL_SYS_CreateDirectory(parents);
+        }
+
+        SDL_free(parents);
+    }
+    return retval;
 }
 
 bool SDL_EnumerateDirectory(const char *path, SDL_EnumerateDirectoryCallback callback, void *userdata)
@@ -69,10 +121,7 @@ bool SDL_EnumerateDirectory(const char *path, SDL_EnumerateDirectoryCallback cal
     } else if (!callback) {
         return SDL_InvalidParamError("callback");
     }
-    if (SDL_SYS_EnumerateDirectory(path, path, callback, userdata) < 0) {
-        return false;
-    }
-    return true;
+    return SDL_SYS_EnumerateDirectory(path, path, callback, userdata);
 }
 
 bool SDL_GetPathInfo(const char *path, SDL_PathInfo *info)
@@ -244,7 +293,7 @@ typedef struct GlobDirCallbackData
     SDL_IOStream *string_stream;
 } GlobDirCallbackData;
 
-static int SDLCALL GlobDirectoryCallback(void *userdata, const char *dirname, const char *fname)
+static SDL_EnumerationResult SDLCALL GlobDirectoryCallback(void *userdata, const char *dirname, const char *fname)
 {
     SDL_assert(userdata != NULL);
     SDL_assert(dirname != NULL);
@@ -259,14 +308,14 @@ static int SDLCALL GlobDirectoryCallback(void *userdata, const char *dirname, co
 
     char *fullpath = NULL;
     if (SDL_asprintf(&fullpath, "%s/%s", dirname, fname) < 0) {
-        return -1;
+        return SDL_ENUM_FAILURE;
     }
 
     char *folded = NULL;
     if (data->flags & SDL_GLOB_CASEINSENSITIVE) {
         folded = CaseFoldUtf8String(fullpath);
         if (!folded) {
-            return -1;
+            return SDL_ENUM_FAILURE;
         }
     }
 
@@ -280,18 +329,18 @@ static int SDLCALL GlobDirectoryCallback(void *userdata, const char *dirname, co
         const size_t slen = SDL_strlen(subpath) + 1;
         if (SDL_WriteIO(data->string_stream, subpath, slen) != slen) {
             SDL_free(fullpath);
-            return -1;  // stop enumerating, return failure to the app.
+            return SDL_ENUM_FAILURE;  // stop enumerating, return failure to the app.
         }
         data->num_entries++;
     }
 
-    int result = 1;  // keep enumerating by default.
+    SDL_EnumerationResult result = SDL_ENUM_CONTINUE;  // keep enumerating by default.
     if (matched_to_dir) {
         SDL_PathInfo info;
         if (data->getpathinfo(fullpath, &info, data->fsuserdata) && (info.type == SDL_PATHTYPE_DIRECTORY)) {
             //SDL_Log("GlobDirectoryCallback: Descending into subdir '%s'", fname);
             if (!data->enumerator(fullpath, GlobDirectoryCallback, data, data->fsuserdata)) {
-                result = -1;
+                result = SDL_ENUM_FAILURE;
             }
         }
     }
@@ -317,7 +366,7 @@ char **SDL_InternalGlobDirectory(const char *path, const char *pattern, SDL_Glob
     // if path ends with any '/', chop them off, so we don't confuse the pattern matcher later.
     char *pathcpy = NULL;
     size_t pathlen = SDL_strlen(path);
-    if (pathlen && (path[pathlen-1] == '/')) {
+    if ((pathlen > 1) && (path[pathlen-1] == '/')) {
         pathcpy = SDL_strdup(path);
         if (!pathcpy) {
             return NULL;
@@ -446,10 +495,13 @@ const char *SDL_GetUserFolder(SDL_Folder folder)
 
 char *SDL_GetPrefPath(const char *org, const char *app)
 {
-    char *path = SDL_SYS_GetPrefPath(org, app);
-    return path;
+    return SDL_SYS_GetPrefPath(org, app);
 }
 
+char *SDL_GetCurrentDirectory(void)
+{
+    return SDL_SYS_GetCurrentDirectory();
+}
 
 void SDL_InitFilesystem(void)
 {

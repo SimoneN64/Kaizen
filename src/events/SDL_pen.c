@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -158,6 +158,16 @@ bool SDL_GetPenInfo(SDL_PenID instance_id, SDL_PenInfo *info)
     return result;
 }
 
+bool SDL_PenConnected(SDL_PenID instance_id)
+{
+    SDL_LockRWLockForReading(pen_device_rwlock);
+    const SDL_Pen *pen = FindPenByInstanceId(instance_id);
+    const bool result = (pen != NULL);
+    SDL_UnlockRWLock(pen_device_rwlock);
+    return result;
+}
+#endif
+
 SDL_PenInputFlags SDL_GetPenStatus(SDL_PenID instance_id, float *axes, int num_axes)
 {
     if (num_axes < 0) {
@@ -180,16 +190,6 @@ SDL_PenInputFlags SDL_GetPenStatus(SDL_PenID instance_id, float *axes, int num_a
     SDL_UnlockRWLock(pen_device_rwlock);
     return result;
 }
-
-bool SDL_PenConnected(SDL_PenID instance_id)
-{
-    SDL_LockRWLockForReading(pen_device_rwlock);
-    const SDL_Pen *pen = FindPenByInstanceId(instance_id);
-    const bool result = (pen != NULL);
-    SDL_UnlockRWLock(pen_device_rwlock);
-    return result;
-}
-#endif
 
 SDL_PenCapabilityFlags SDL_GetPenCapabilityFromAxis(SDL_PenAxis axis)
 {
@@ -349,7 +349,7 @@ void SDL_SendPenTouch(Uint64 timestamp, SDL_PenID instance_id, const SDL_Window 
 
     if (send_event) {
         const SDL_EventType evtype = down ? SDL_EVENT_PEN_DOWN : SDL_EVENT_PEN_UP;
-        if (send_event && SDL_EventEnabled(evtype)) {
+        if (SDL_EventEnabled(evtype)) {
             SDL_Event event;
             SDL_zero(event);
             event.ptouch.type = evtype;

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -18,7 +18,8 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
-#include "SDL_internal.h"
+// This is included in SDL_internal.h
+//#include "SDL_internal.h"
 
 #ifndef SDL_utils_h_
 #define SDL_utils_h_
@@ -47,24 +48,6 @@ extern bool SDL_endswith(const char *string, const char *suffix);
  */
 extern int SDL_URIToLocal(const char *src, char *dst);
 
-typedef enum SDL_InitStatus
-{
-    SDL_INIT_STATUS_UNINITIALIZED,
-    SDL_INIT_STATUS_INITIALIZING,
-    SDL_INIT_STATUS_INITIALIZED,
-    SDL_INIT_STATUS_UNINITIALIZING
-} SDL_InitStatus;
-
-typedef struct SDL_InitState
-{
-    SDL_AtomicInt status;
-    SDL_ThreadID thread;
-} SDL_InitState;
-
-extern bool SDL_ShouldInit(SDL_InitState *state);
-extern bool SDL_ShouldQuit(SDL_InitState *state);
-extern void SDL_SetInitialized(SDL_InitState *state, bool initialized);
-
 typedef enum
 {
     SDL_OBJECT_TYPE_UNKNOWN,
@@ -77,6 +60,7 @@ typedef enum
     SDL_OBJECT_TYPE_SENSOR,
     SDL_OBJECT_TYPE_HIDAPI_DEVICE,
     SDL_OBJECT_TYPE_HIDAPI_JOYSTICK,
+    SDL_OBJECT_TYPE_THREAD,
 
 } SDL_ObjectType;
 

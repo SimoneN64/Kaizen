@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -115,8 +115,8 @@ bool Wayland_GLES_SwapWindow(SDL_VideoDevice *_this, SDL_Window *window)
      * FIXME: Request EGL_WAYLAND_swap_buffers_with_timeout.
      * -flibit
      */
-    if (data->surface_status != WAYLAND_SURFACE_STATUS_SHOWN &&
-        data->surface_status != WAYLAND_SURFACE_STATUS_WAITING_FOR_FRAME) {
+    if (data->shell_surface_status != WAYLAND_SHELL_SURFACE_STATUS_SHOWN &&
+        data->shell_surface_status != WAYLAND_SHELL_SURFACE_STATUS_WAITING_FOR_FRAME) {
         return true;
     }
 
@@ -134,7 +134,7 @@ bool Wayland_GLES_SwapWindow(SDL_VideoDevice *_this, SDL_Window *window)
     }
 
     // Control swap interval ourselves. See comments on Wayland_GLES_SetSwapInterval
-    if (swap_interval != 0 && data->surface_status == WAYLAND_SURFACE_STATUS_SHOWN) {
+    if (swap_interval != 0 && data->shell_surface_status == WAYLAND_SHELL_SURFACE_STATUS_SHOWN) {
         SDL_VideoData *videodata = _this->internal;
         struct wl_display *display = videodata->display;
         // 20hz, so we'll progress even if throttled to zero.

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -33,6 +33,7 @@
 */
 
 #include "SDL_pixels_c.h"
+#include "SDL_surface_c.h"
 
 #define SAVE_32BIT_BMP
 
@@ -518,7 +519,7 @@ SDL_Surface *SDL_LoadBMP_IO(SDL_IOStream *src, bool closeio)
         if (SDL_ReadIO(src, bits, surface->pitch) != (size_t)surface->pitch) {
             goto done;
         }
-        if (biBitCount == 8 && surface->internal->palette && biClrUsed < (1u << biBitCount)) {
+        if (biBitCount == 8 && surface->palette && biClrUsed < (1u << biBitCount)) {
             for (i = 0; i < surface->w; ++i) {
                 if (bits[i] >= biClrUsed) {
                     SDL_SetError("A BMP image contains a pixel with a color out of the palette");
@@ -588,7 +589,11 @@ done:
 
 SDL_Surface *SDL_LoadBMP(const char *file)
 {
-    return SDL_LoadBMP_IO(SDL_IOFromFile(file, "rb"), 1);
+    SDL_IOStream *stream = SDL_IOFromFile(file, "rb");
+    if (!stream) {
+        return NULL;
+    }
+    return SDL_LoadBMP_IO(stream, true);
 }
 
 bool SDL_SaveBMP_IO(SDL_Surface *surface, SDL_IOStream *dst, bool closeio)
@@ -596,7 +601,7 @@ bool SDL_SaveBMP_IO(SDL_Surface *surface, SDL_IOStream *dst, bool closeio)
     bool was_error = true;
     Sint64 fp_offset, new_offset;
     int i, pad;
-    SDL_Surface *intermediate_surface;
+    SDL_Surface *intermediate_surface = NULL;
     Uint8 *bits;
     bool save32bit = false;
     bool saveLegacyBMP = false;
@@ -633,63 +638,51 @@ bool SDL_SaveBMP_IO(SDL_Surface *surface, SDL_IOStream *dst, bool closeio)
     Uint32 bV4GammaBlue = 0;
 
     // Make sure we have somewhere to save
-    intermediate_surface = NULL;
-    if (dst) {
-        if (!SDL_SurfaceValid(surface)) {
-            SDL_InvalidParamError("surface");
-            goto done;
-        }
+    if (!SDL_SurfaceValid(surface)) {
+        SDL_InvalidParamError("surface");
+        goto done;
+    }
+    if (!dst) {
+        SDL_InvalidParamError("dst");
+        goto done;
+    }
 
 #ifdef SAVE_32BIT_BMP
-        // We can save alpha information in a 32-bit BMP
-        if (SDL_BITSPERPIXEL(surface->format) >= 8 &&
-            (SDL_ISPIXELFORMAT_ALPHA(surface->format) ||
-             surface->internal->map.info.flags & SDL_COPY_COLORKEY)) {
-            save32bit = true;
-        }
+    // We can save alpha information in a 32-bit BMP
+    if (SDL_BITSPERPIXEL(surface->format) >= 8 &&
+        (SDL_ISPIXELFORMAT_ALPHA(surface->format) ||
+         surface->map.info.flags & SDL_COPY_COLORKEY)) {
+        save32bit = true;
+    }
 #endif // SAVE_32BIT_BMP
 
-        if (surface->internal->palette && !save32bit) {
-            if (SDL_BITSPERPIXEL(surface->format) == 8) {
-                intermediate_surface = surface;
-            } else {
-                SDL_SetError("%u bpp BMP files not supported",
-                             SDL_BITSPERPIXEL(surface->format));
-                goto done;
-            }
-        } else if ((SDL_BITSPERPIXEL(surface->format) == 24) && !save32bit &&
-#if SDL_BYTEORDER == SDL_LIL_ENDIAN
-                   (surface->internal->format->Rmask == 0x00FF0000) &&
-                   (surface->internal->format->Gmask == 0x0000FF00) &&
-                   (surface->internal->format->Bmask == 0x000000FF)
-#else
-                   (surface->internal->format->Rmask == 0x000000FF) &&
-                   (surface->internal->format->Gmask == 0x0000FF00) &&
-                   (surface->internal->format->Bmask == 0x00FF0000)
-#endif
-        ) {
+    if (surface->palette && !save32bit) {
+        if (SDL_BITSPERPIXEL(surface->format) == 8) {
             intermediate_surface = surface;
         } else {
-            SDL_PixelFormat pixel_format;
-
-            /* If the surface has a colorkey or alpha channel we'll save a
-               32-bit BMP with alpha channel, otherwise save a 24-bit BMP. */
-            if (save32bit) {
-                pixel_format = SDL_PIXELFORMAT_BGRA32;
-            } else {
-                pixel_format = SDL_PIXELFORMAT_BGR24;
-            }
-            intermediate_surface = SDL_ConvertSurface(surface, pixel_format);
-            if (!intermediate_surface) {
-                SDL_SetError("Couldn't convert image to %d bpp",
-                             (int)SDL_BITSPERPIXEL(pixel_format));
-                goto done;
-            }
+            SDL_SetError("%u bpp BMP files not supported",
+                         SDL_BITSPERPIXEL(surface->format));
+            goto done;
         }
+    } else if ((surface->format == SDL_PIXELFORMAT_BGR24 && !save32bit) ||
+               (surface->format == SDL_PIXELFORMAT_BGRA32 && save32bit)) {
+        intermediate_surface = surface;
     } else {
-        /* Set no error here because it may overwrite a more useful message from
-           SDL_IOFromFile() if SDL_SaveBMP_IO() is called from SDL_SaveBMP(). */
-        goto done;
+        SDL_PixelFormat pixel_format;
+
+        /* If the surface has a colorkey or alpha channel we'll save a
+           32-bit BMP with alpha channel, otherwise save a 24-bit BMP. */
+        if (save32bit) {
+            pixel_format = SDL_PIXELFORMAT_BGRA32;
+        } else {
+            pixel_format = SDL_PIXELFORMAT_BGR24;
+        }
+        intermediate_surface = SDL_ConvertSurface(surface, pixel_format);
+        if (!intermediate_surface) {
+            SDL_SetError("Couldn't convert image to %d bpp",
+                         (int)SDL_BITSPERPIXEL(pixel_format));
+            goto done;
+        }
     }
 
     if (save32bit) {
@@ -697,7 +690,7 @@ bool SDL_SaveBMP_IO(SDL_Surface *surface, SDL_IOStream *dst, bool closeio)
     }
 
     if (SDL_LockSurface(intermediate_surface)) {
-        const size_t bw = intermediate_surface->w * intermediate_surface->internal->format->bytes_per_pixel;
+        const size_t bw = intermediate_surface->w * intermediate_surface->fmt->bytes_per_pixel;
 
         // Set the BMP file header values
         bfSize = 0; // We'll write this when we're done
@@ -723,13 +716,13 @@ bool SDL_SaveBMP_IO(SDL_Surface *surface, SDL_IOStream *dst, bool closeio)
         biWidth = intermediate_surface->w;
         biHeight = intermediate_surface->h;
         biPlanes = 1;
-        biBitCount = intermediate_surface->internal->format->bits_per_pixel;
+        biBitCount = intermediate_surface->fmt->bits_per_pixel;
         biCompression = BI_RGB;
         biSizeImage = intermediate_surface->h * intermediate_surface->pitch;
         biXPelsPerMeter = 0;
         biYPelsPerMeter = 0;
-        if (intermediate_surface->internal->palette) {
-            biClrUsed = intermediate_surface->internal->palette->ncolors;
+        if (intermediate_surface->palette) {
+            biClrUsed = intermediate_surface->palette->ncolors;
         } else {
             biClrUsed = 0;
         }
@@ -787,12 +780,12 @@ bool SDL_SaveBMP_IO(SDL_Surface *surface, SDL_IOStream *dst, bool closeio)
         }
 
         // Write the palette (in BGR color order)
-        if (intermediate_surface->internal->palette) {
+        if (intermediate_surface->palette) {
             SDL_Color *colors;
             int ncolors;
 
-            colors = intermediate_surface->internal->palette->colors;
-            ncolors = intermediate_surface->internal->palette->ncolors;
+            colors = intermediate_surface->palette->colors;
+            ncolors = intermediate_surface->palette->ncolors;
             for (i = 0; i < ncolors; ++i) {
                 if (!SDL_WriteU8(dst, colors[i].b) ||
                     !SDL_WriteU8(dst, colors[i].g) ||
@@ -872,5 +865,9 @@ done:
 
 bool SDL_SaveBMP(SDL_Surface *surface, const char *file)
 {
-    return SDL_SaveBMP_IO(surface, SDL_IOFromFile(file, "wb"), true);
+    SDL_IOStream *stream = SDL_IOFromFile(file, "wb");
+    if (!stream) {
+        return false;
+    }
+    return SDL_SaveBMP_IO(surface, stream, true);
 }

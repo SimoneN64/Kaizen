@@ -110,6 +110,7 @@ macro(add_sdl_example_executable TARGET)
         target_link_libraries(${TARGET} PRIVATE GL)
     elseif(EMSCRIPTEN)
         set_property(TARGET ${TARGET} PROPERTY SUFFIX ".html")
+        target_link_options(${TARGET} PRIVATE -sALLOW_MEMORY_GROWTH=1)
     endif()
 
     if(OPENGL_FOUND)
@@ -130,13 +131,35 @@ add_sdl_example_executable(renderer-streaming-textures SOURCES renderer/07-strea
 add_sdl_example_executable(renderer-rotating-textures SOURCES renderer/08-rotating-textures/rotating-textures.c DATAFILES ${CMAKE_CURRENT_SOURCE_DIR}/../test/sample.bmp)
 add_sdl_example_executable(renderer-scaling-textures SOURCES renderer/09-scaling-textures/scaling-textures.c DATAFILES ${CMAKE_CURRENT_SOURCE_DIR}/../test/sample.bmp)
 add_sdl_example_executable(renderer-geometry SOURCES renderer/10-geometry/geometry.c DATAFILES ${CMAKE_CURRENT_SOURCE_DIR}/../test/sample.bmp)
+add_sdl_example_executable(renderer-color-mods SOURCES renderer/11-color-mods/color-mods.c DATAFILES ${CMAKE_CURRENT_SOURCE_DIR}/../test/sample.bmp)
+add_sdl_example_executable(renderer-viewport SOURCES renderer/14-viewport/viewport.c DATAFILES ${CMAKE_CURRENT_SOURCE_DIR}/../test/sample.bmp)
+add_sdl_example_executable(renderer-cliprect SOURCES renderer/15-cliprect/cliprect.c DATAFILES ${CMAKE_CURRENT_SOURCE_DIR}/../test/sample.bmp)
+add_sdl_example_executable(renderer-read-pixels SOURCES renderer/17-read-pixels/read-pixels.c DATAFILES ${CMAKE_CURRENT_SOURCE_DIR}/../test/sample.bmp)
+add_sdl_example_executable(renderer-debug-text SOURCES renderer/18-debug-text/debug-text.c)
 add_sdl_example_executable(audio-simple-playback SOURCES audio/01-simple-playback/simple-playback.c)
 add_sdl_example_executable(audio-simple-playback-callback SOURCES audio/02-simple-playback-callback/simple-playback-callback.c)
 add_sdl_example_executable(audio-load-wav SOURCES audio/03-load-wav/load-wav.c DATAFILES ${CMAKE_CURRENT_SOURCE_DIR}/../test/sample.wav)
+add_sdl_example_executable(audio-multiple-streams SOURCES audio/04-multiple-streams/multiple-streams.c DATAFILES ${CMAKE_CURRENT_SOURCE_DIR}/../test/sample.wav ${CMAKE_CURRENT_SOURCE_DIR}/../test/sword.wav)
+add_sdl_example_executable(input-joystick-polling SOURCES input/01-joystick-polling/joystick-polling.c)
+add_sdl_example_executable(input-joystick-events SOURCES input/02-joystick-events/joystick-events.c)
 add_sdl_example_executable(camera-read-and-draw SOURCES camera/01-read-and-draw/read-and-draw.c)
 add_sdl_example_executable(pen-drawing-lines SOURCES pen/01-drawing-lines/drawing-lines.c)
-add_sdl_example_executable(game-snake SOURCES game/01-snake/snake.c)
+add_sdl_example_executable(asyncio-load-bitmaps SOURCES asyncio/01-load-bitmaps/load-bitmaps.c DATAFILES ${CMAKE_CURRENT_SOURCE_DIR}/../test/sample.bmp ${CMAKE_CURRENT_SOURCE_DIR}/../test/gamepad_front.bmp ${CMAKE_CURRENT_SOURCE_DIR}/../test/speaker.bmp ${CMAKE_CURRENT_SOURCE_DIR}/../test/icon2x.bmp)
+add_sdl_example_executable(demo-snake SOURCES demo/01-snake/snake.c)
+add_sdl_example_executable(demo-woodeneye-008 SOURCES demo/02-woodeneye-008/woodeneye-008.c)
+add_sdl_example_executable(demo-infinite-monkeys SOURCES demo/03-infinite-monkeys/infinite-monkeys.c)
+add_sdl_example_executable(demo-bytepusher SOURCES demo/04-bytepusher/bytepusher.c)
 
+# When you add an example, remember to add the Visual Studio project as well:
+# - Add a new example in examples/
+# - Run python VisualC/examples/generate.py
+# - Take note of the newly generated .vcxproj files
+# - Modify the .vcxproj files if necessary (adding content such as BMP or WAV files)
+# - Open VisualC/SDL.sln in Visual Studio or JetBrains Rider
+# - Locate the appropriate folder in the Solution Explorer
+# - Add the newly generated projects: Right click -> Add -> Existing project...
+# - Test if they work
+# - Save the SDL.sln solution
 
 if(PSP)
     # Build EBOOT files if building for PSP
@@ -147,36 +170,7 @@ if(PSP)
             ICON_PATH       NULL
             BACKGROUND_PATH NULL
             PREVIEW_PATH    NULL
-        )
-        add_custom_command(
-            TARGET ${APP} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E make_directory
-            $<TARGET_FILE_DIR:${ARG_TARGET}>/sdl-${APP}
-        )
-        add_custom_command(
-            TARGET ${APP} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E rename
-            $<TARGET_FILE_DIR:${ARG_TARGET}>/EBOOT.PBP
-            $<TARGET_FILE_DIR:${ARG_TARGET}>/sdl-${APP}/EBOOT.PBP
-        )
-        if(BUILD_PRX)
-            add_custom_command(
-                TARGET ${APP} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy
-                $<TARGET_FILE_DIR:${ARG_TARGET}>/${APP}
-                $<TARGET_FILE_DIR:${ARG_TARGET}>/sdl-${APP}/${APP}
-            )
-            add_custom_command(
-                TARGET ${APP} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E rename
-                $<TARGET_FILE_DIR:${ARG_TARGET}>/${APP}.prx
-                $<TARGET_FILE_DIR:${ARG_TARGET}>/sdl-${APP}/${APP}.prx
-            )
-        endif()
-        add_custom_command(
-            TARGET ${APP} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E remove
-            $<TARGET_FILE_DIR:${ARG_TARGET}>/PARAM.SFO
+            OUTPUT_DIR      $<TARGET_FILE_DIR:${APP}>/sdl-${APP}
         )
     endforeach()
 endif()

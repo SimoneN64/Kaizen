@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -22,10 +22,10 @@
 
 // This is the software implementation of the YUV texture support
 
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
 
 #include "SDL_yuv_sw_c.h"
-#include "../video/SDL_blit.h"
+#include "../video/SDL_surface_c.h"
 #include "../video/SDL_yuv_c.h"
 
 SDL_SW_YUVTexture *SDL_SW_CreateYUVTexture(SDL_PixelFormat format, SDL_Colorspace colorspace, int w, int h)

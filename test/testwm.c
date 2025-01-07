@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -47,7 +47,7 @@ SDL_COMPILE_TIME_ASSERT(cursorNames, SDL_arraysize(cursorNames) == SDL_SYSTEM_CU
 
 static int system_cursor = -1;
 static SDL_Cursor *cursor = NULL;
-static const SDL_DisplayMode *highlighted_mode = NULL;
+static SDL_DisplayMode highlighted_mode;
 
 /* Draws the modes menu, and stores the mode index under the mouse in highlighted_mode */
 static void
@@ -95,7 +95,7 @@ draw_modes_menu(SDL_Window *window, SDL_Renderer *renderer, SDL_FRect viewport)
 
     /* Clear the cached mode under the mouse */
     if (window == SDL_GetMouseFocus()) {
-        highlighted_mode = NULL;
+        SDL_zero(highlighted_mode);
     }
 
     displays = SDL_GetDisplays(NULL);
@@ -126,7 +126,7 @@ draw_modes_menu(SDL_Window *window, SDL_Renderer *renderer, SDL_FRect viewport)
 
                     /* Update cached mode under the mouse */
                     if (window == SDL_GetMouseFocus()) {
-                        highlighted_mode = mode;
+                        SDL_copyp(&highlighted_mode, mode);
                     }
                 } else {
                     SDL_SetRenderDrawColor(renderer, 170, 170, 170, 255);
@@ -213,9 +213,9 @@ static void loop(void)
         }
         if (event.type == SDL_EVENT_MOUSE_BUTTON_UP) {
             SDL_Window *window = SDL_GetMouseFocus();
-            if (highlighted_mode && window) {
-                SDL_memcpy(&state->fullscreen_mode, highlighted_mode, sizeof(state->fullscreen_mode));
-                SDL_SetWindowFullscreenMode(window, highlighted_mode);
+            if (highlighted_mode.w && window) {
+                SDL_copyp(&state->fullscreen_mode, &highlighted_mode);
+                SDL_SetWindowFullscreenMode(window, &highlighted_mode);
             }
         }
     }
@@ -277,6 +277,8 @@ int main(int argc, char *argv[])
         SDL_RenderClear(renderer);
     }
 
+SDL_StopTextInput(state->windows[0]);
+SDL_StopTextInput(state->windows[0]);
     /* Main render loop */
     done = 0;
 #ifdef SDL_PLATFORM_EMSCRIPTEN

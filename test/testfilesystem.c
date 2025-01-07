@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -15,7 +15,7 @@
 #include <SDL3/SDL_main.h>
 #include <SDL3/SDL_test.h>
 
-static int SDLCALL enum_callback(void *userdata, const char *origdir, const char *fname)
+static SDL_EnumerationResult SDLCALL enum_callback(void *userdata, const char *origdir, const char *fname)
 {
     SDL_PathInfo info;
     char *fullpath = NULL;
@@ -29,7 +29,7 @@ static int SDLCALL enum_callback(void *userdata, const char *origdir, const char
 
     if (SDL_asprintf(&fullpath, "%s%s%s", origdir, *origdir ? pathsep : "", fname) < 0) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Out of memory!");
-        return -1;
+        return SDL_ENUM_FAILURE;
     }
 
     if (!SDL_GetPathInfo(fullpath, &info)) {
@@ -54,7 +54,7 @@ static int SDLCALL enum_callback(void *userdata, const char *origdir, const char
     }
 
     SDL_free(fullpath);
-    return 1;  /* keep going */
+    return SDL_ENUM_CONTINUE;  /* keep going */
 }
 
 
@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
 {
     SDLTest_CommonState *state;
     char *pref_path;
+    char *curdir;
     const char *base_path;
 
     /* Initialize test framework */
@@ -106,6 +107,15 @@ int main(int argc, char *argv[])
     }
     SDL_free(pref_path);
 
+    curdir = SDL_GetCurrentDirectory();
+    if (!curdir) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't find current directory: %s\n",
+                     SDL_GetError());
+    } else {
+        SDL_Log("current directory: '%s'\n", curdir);
+    }
+    SDL_free(curdir);
+
     if (base_path) {
         char **globlist;
         SDL_IOStream *stream;
@@ -133,6 +143,16 @@ int main(int argc, char *argv[])
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_CreateDirectory('testfilesystem-test/1') failed: %s", SDL_GetError());
         } else if (!SDL_CreateDirectory("testfilesystem-test/1")) {  /* THIS SHOULD NOT FAIL! Making a directory that already exists should succeed here. */
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_CreateDirectory('testfilesystem-test/1') failed: %s", SDL_GetError());
+        } else if (!SDL_CreateDirectory("testfilesystem-test/3/4/5/6")) {  /* THIS SHOULD NOT FAIL! Making a directory with missing parents succeed here. */
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_CreateDirectory('testfilesystem-test/3/4/5/6') failed: %s", SDL_GetError());
+        } else if (!SDL_RemovePath("testfilesystem-test/3/4/5/6")) {  /* THIS SHOULD NOT FAIL! Making a directory with missing parents succeed here. */
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_RemovePath('testfilesystem-test/3/4/5/6') failed: %s", SDL_GetError());
+        } else if (!SDL_RemovePath("testfilesystem-test/3/4/5")) {  /* THIS SHOULD NOT FAIL! Making a directory with missing parents succeed here. */
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_RemovePath('testfilesystem-test/3/4/5') failed: %s", SDL_GetError());
+        } else if (!SDL_RemovePath("testfilesystem-test/3/4")) {  /* THIS SHOULD NOT FAIL! Making a directory with missing parents succeed here. */
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_RemovePath('testfilesystem-test/3/4') failed: %s", SDL_GetError());
+        } else if (!SDL_RemovePath("testfilesystem-test/3")) {  /* THIS SHOULD NOT FAIL! Making a directory with missing parents succeed here. */
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_RemovePath('testfilesystem-test/3') failed: %s", SDL_GetError());
         } else if (!SDL_RenamePath("testfilesystem-test/1", "testfilesystem-test/2")) {
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_RenamePath('testfilesystem-test/1', 'testfilesystem-test/2') failed: %s", SDL_GetError());
         } else if (!SDL_RemovePath("testfilesystem-test/2")) {

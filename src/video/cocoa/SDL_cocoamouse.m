@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -62,25 +62,6 @@
     return invisibleCursor;
 }
 @end
-
-static SDL_Cursor *Cocoa_CreateDefaultCursor(void)
-{
-    @autoreleasepool {
-        NSCursor *nscursor;
-        SDL_Cursor *cursor = NULL;
-
-        nscursor = [NSCursor arrowCursor];
-
-        if (nscursor) {
-            cursor = SDL_calloc(1, sizeof(*cursor));
-            if (cursor) {
-                cursor->internal = (void *)CFBridgingRetain(nscursor);
-            }
-        }
-
-        return cursor;
-    }
-}
 
 static SDL_Cursor *Cocoa_CreateCursor(SDL_Surface *surface, int hot_x, int hot_y)
 {
@@ -227,6 +208,12 @@ static SDL_Cursor *Cocoa_CreateSystemCursor(SDL_SystemCursor id)
 
         return cursor;
     }
+}
+
+static SDL_Cursor *Cocoa_CreateDefaultCursor(void)
+{
+    SDL_SystemCursor id = SDL_GetDefaultSystemCursor();
+    return Cocoa_CreateSystemCursor(id);
 }
 
 static void Cocoa_FreeCursor(SDL_Cursor *cursor)

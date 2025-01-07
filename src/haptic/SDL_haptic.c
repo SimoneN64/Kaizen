@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -518,7 +518,7 @@ bool SDL_GetHapticEffectStatus(SDL_Haptic *haptic, int effect)
 
     SDL_ClearError();
 
-    return SDL_SYS_HapticGetEffectStatus(haptic, &haptic->effects[effect]);
+    return (SDL_SYS_HapticGetEffectStatus(haptic, &haptic->effects[effect]) > 0);
 }
 
 bool SDL_SetHapticGain(SDL_Haptic *haptic, int gain)

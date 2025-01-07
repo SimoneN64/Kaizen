@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -56,7 +56,7 @@ bool HAIKU_GL_LoadLibrary(SDL_VideoDevice *_this, const char *path)
         if ( get_image_symbol(info.id, "glBegin", B_SYMBOL_TYPE_ANY,
                 &location) == B_OK) {
 
-            _this->gl_config.dll_handle = (void *) (addr_t) info.id;
+            _this->gl_config.dll_handle = (SDL_SharedObject *) (addr_t) info.id;
             _this->gl_config.driver_loaded = 1;
             SDL_strlcpy(_this->gl_config.driver_path, "libGL.so",
                     SDL_arraysize(_this->gl_config.driver_path));

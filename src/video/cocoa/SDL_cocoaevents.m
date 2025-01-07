@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -106,9 +106,11 @@ static void Cocoa_DispatchEvent(NSEvent *theEvent)
 
 + (void)registerUserDefaults
 {
+    BOOL momentumScrollSupported = (BOOL)SDL_GetHintBoolean(SDL_HINT_MAC_SCROLL_MOMENTUM, false);
+
     NSDictionary *appDefaults = [[NSDictionary alloc] initWithObjectsAndKeys:
-                                                          [NSNumber numberWithBool:NO], @"AppleMomentumScrollSupported",
-                                                          [NSNumber numberWithBool:NO], @"ApplePressAndHoldEnabled",
+                                                          [NSNumber numberWithBool:momentumScrollSupported], @"AppleMomentumScrollSupported",
+                                                          [NSNumber numberWithBool:YES], @"ApplePressAndHoldEnabled",
                                                           [NSNumber numberWithBool:YES], @"ApplePersistenceIgnoreState",
                                                           nil];
     [[NSUserDefaults standardUserDefaults] registerDefaults:appDefaults];

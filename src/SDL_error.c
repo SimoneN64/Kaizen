@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -26,17 +26,28 @@
 
 bool SDL_SetError(SDL_PRINTF_FORMAT_STRING const char *fmt, ...)
 {
+    va_list ap;
+    bool result;
+
+    va_start(ap, fmt);
+    result = SDL_SetErrorV(fmt, ap);
+    va_end(ap);
+    return result;
+}
+
+bool SDL_SetErrorV(SDL_PRINTF_FORMAT_STRING const char *fmt, va_list ap)
+{
     // Ignore call if invalid format pointer was passed
     if (fmt) {
-        va_list ap;
         int result;
         SDL_error *error = SDL_GetErrBuf(true);
+        va_list ap2;
 
         error->error = SDL_ErrorCodeGeneric;
 
-        va_start(ap, fmt);
-        result = SDL_vsnprintf(error->str, error->len, fmt, ap);
-        va_end(ap);
+        va_copy(ap2, ap);
+        result = SDL_vsnprintf(error->str, error->len, fmt, ap2);
+        va_end(ap2);
 
         if (result >= 0 && (size_t)result >= error->len && error->realloc_func) {
             size_t len = (size_t)result + 1;
@@ -44,16 +55,18 @@ bool SDL_SetError(SDL_PRINTF_FORMAT_STRING const char *fmt, ...)
             if (str) {
                 error->str = str;
                 error->len = len;
-                va_start(ap, fmt);
-                (void)SDL_vsnprintf(error->str, error->len, fmt, ap);
-                va_end(ap);
+                va_copy(ap2, ap);
+                (void)SDL_vsnprintf(error->str, error->len, fmt, ap2);
+                va_end(ap2);
             }
         }
 
-        if (SDL_GetLogPriority(SDL_LOG_CATEGORY_ERROR) <= SDL_LOG_PRIORITY_DEBUG) {
-            // If we are in debug mode, print out the error message
-            SDL_LogDebug(SDL_LOG_CATEGORY_ERROR, "%s", error->str);
-        }
+// Enable this if you want to see all errors printed as they occur.
+// Note that there are many recoverable errors that may happen internally and
+// can be safely ignored if the public API doesn't return an error code.
+#if 0
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "%s", error->str);
+#endif
     }
 
     return false;

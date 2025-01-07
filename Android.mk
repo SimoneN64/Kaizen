@@ -30,11 +30,13 @@ LOCAL_SRC_FILES := \
 	$(wildcard $(LOCAL_PATH)/src/core/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/core/android/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/cpuinfo/*.c) \
+	$(LOCAL_PATH)/src/dialog/SDL_dialog.c \
 	$(LOCAL_PATH)/src/dialog/SDL_dialog_utils.c \
 	$(LOCAL_PATH)/src/dialog/android/SDL_androiddialog.c \
 	$(wildcard $(LOCAL_PATH)/src/dynapi/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/events/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/file/*.c) \
+	$(wildcard $(LOCAL_PATH)/src/file/generic/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/gpu/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/gpu/vulkan/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/haptic/*.c) \
@@ -76,6 +78,8 @@ LOCAL_SRC_FILES := \
 	$(wildcard $(LOCAL_PATH)/src/time/unix/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/timer/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/timer/unix/*.c) \
+	$(wildcard $(LOCAL_PATH)/src/tray/dummy/*.c) \
+	$(wildcard $(LOCAL_PATH)/src/tray/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/video/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/video/android/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/video/yuv2rgb/*.c))

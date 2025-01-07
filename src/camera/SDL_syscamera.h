@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,11 +23,9 @@
 #ifndef SDL_syscamera_h_
 #define SDL_syscamera_h_
 
-#include "../SDL_hashtable.h"
+#include "../video/SDL_surface_c.h"
 
 #define DEBUG_CAMERA 0
-
-typedef struct SDL_Camera SDL_Camera;
 
 /* Backends should call this as devices are added to the system (such as
    a USB camera being plugged in), and should also be called for
@@ -217,5 +215,6 @@ extern CameraBootStrap COREMEDIA_bootstrap;
 extern CameraBootStrap ANDROIDCAMERA_bootstrap;
 extern CameraBootStrap EMSCRIPTENCAMERA_bootstrap;
 extern CameraBootStrap MEDIAFOUNDATION_bootstrap;
+extern CameraBootStrap VITACAMERA_bootstrap;
 
 #endif // SDL_syscamera_h_

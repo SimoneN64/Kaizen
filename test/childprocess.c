@@ -5,66 +5,87 @@
 #include <stdio.h>
 #include <errno.h>
 
-
 int main(int argc, char *argv[]) {
     SDLTest_CommonState *state;
     int i;
-    const char *expect_environment = NULL;
-    bool expect_environment_match = false;
     bool print_arguments = false;
     bool print_environment = false;
     bool stdin_to_stdout = false;
+    bool read_stdin = false;
     bool stdin_to_stderr = false;
+    SDL_IOStream *log_stdin = NULL;
     int exit_code = 0;
 
     state = SDLTest_CommonCreateState(argv, 0);
 
     for (i = 1; i < argc;) {
         int consumed = SDLTest_CommonArg(state, i);
-        if (SDL_strcmp(argv[i], "--print-arguments") == 0) {
-            print_arguments = true;
-            consumed = 1;
-        } else if (SDL_strcmp(argv[i], "--print-environment") == 0) {
-            print_environment = true;
-            consumed = 1;
-        } else if (SDL_strcmp(argv[i], "--expect-env") == 0) {
-            if (i + 1 < argc) {
-                expect_environment = argv[i + 1];
-                consumed = 2;
-            }
-        } else if (SDL_strcmp(argv[i], "--stdin-to-stdout") == 0) {
-            stdin_to_stdout = true;
-            consumed = 1;
-        } else if (SDL_strcmp(argv[i], "--stdin-to-stderr") == 0) {
-            stdin_to_stderr = true;
-            consumed = 1;
-        } else if (SDL_strcmp(argv[i], "--stdout") == 0) {
-            if (i + 1 < argc) {
-                fprintf(stdout, "%s", argv[i + 1]);
-                consumed = 2;
-            }
-        } else if (SDL_strcmp(argv[i], "--stderr") == 0) {
-            if (i + 1 < argc) {
-                fprintf(stderr, "%s", argv[i + 1]);
-                consumed = 2;
-            }
-        } else if (SDL_strcmp(argv[i], "--exit-code") == 0) {
-            if (i + 1 < argc) {
-                char *endptr = NULL;
-                exit_code = SDL_strtol(argv[i + 1], &endptr, 0);
-                if (endptr && *endptr == '\0') {
+        if (!consumed) {
+            if (SDL_strcmp(argv[i], "--print-arguments") == 0) {
+                print_arguments = true;
+                consumed = 1;
+            } else if (SDL_strcmp(argv[i], "--print-environment") == 0) {
+                print_environment = true;
+                consumed = 1;
+            } else if (SDL_strcmp(argv[i], "--stdin-to-stdout") == 0) {
+                stdin_to_stdout = true;
+                consumed = 1;
+            } else if (SDL_strcmp(argv[i], "--stdin-to-stderr") == 0) {
+                stdin_to_stderr = true;
+                consumed = 1;
+            } else if (SDL_strcmp(argv[i], "--stdin") == 0) {
+                read_stdin = true;
+                consumed = 1;
+            } else if (SDL_strcmp(argv[i], "--stdout") == 0) {
+                if (i + 1 < argc) {
+                    fprintf(stdout, "%s", argv[i + 1]);
                     consumed = 2;
                 }
+            } else if (SDL_strcmp(argv[i], "--stderr") == 0) {
+                if (i + 1 < argc) {
+                    fprintf(stderr, "%s", argv[i + 1]);
+                    consumed = 2;
+                }
+            } else if (SDL_strcmp(argv[i], "--log-stdin") == 0) {
+                if (i + 1 < argc) {
+                    log_stdin = SDL_IOFromFile(argv[i + 1], "w");
+                    if (!log_stdin) {
+                        fprintf(stderr, "Couldn't open %s\n", argv[i + 1]);
+                        return 2;
+                    }
+                    consumed = 2;
+                }
+            } else if (SDL_strcmp(argv[i], "--exit-code") == 0) {
+                if (i + 1 < argc) {
+                    char *endptr = NULL;
+                    exit_code = SDL_strtol(argv[i + 1], &endptr, 0);
+                    if (endptr && *endptr == '\0') {
+                        consumed = 2;
+                    }
+                }
+            } else if (SDL_strcmp(argv[i], "--version") == 0) {
+                int version = SDL_GetVersion();
+                fprintf(stdout, "SDL version %d.%d.%d",
+                    SDL_VERSIONNUM_MAJOR(version),
+                    SDL_VERSIONNUM_MINOR(version),
+                    SDL_VERSIONNUM_MICRO(version));
+                fprintf(stderr, "SDL version %d.%d.%d",
+                    SDL_VERSIONNUM_MAJOR(version),
+                    SDL_VERSIONNUM_MINOR(version),
+                    SDL_VERSIONNUM_MICRO(version));
+                consumed = 1;
+                break;
+            } else if (SDL_strcmp(argv[i], "--") == 0) {
+                i++;
+                break;
             }
-        } else if (SDL_strcmp(argv[i], "--") == 0) {
-            i++;
-            break;
         }
         if (consumed <= 0) {
             const char *args[] = {
                 "[--print-arguments]",
                 "[--print-environment]",
-                "[--expect-env KEY=VAL]",
+                "[--stdin]",
+                "[--log-stdin FILE]",
                 "[--stdin-to-stdout]",
                 "[--stdout TEXT]",
                 "[--stdin-to-stderr]",
@@ -84,50 +105,66 @@ int main(int argc, char *argv[]) {
         for (print_i = 0; i + print_i < argc; print_i++) {
             fprintf(stdout, "|%d=%s|\r\n", print_i, argv[i + print_i]);
         }
+        fflush(stdout);
     }
 
-    if (print_environment || expect_environment) {
+    if (print_environment) {
         char **env = SDL_GetEnvironmentVariables(SDL_GetEnvironment());
         if (env) {
             for (i = 0; env[i]; ++i) {
-                if (print_environment) {
-                    fprintf(stdout, "%s\n", env[i]);
-                }
-                if (expect_environment) {
-                    expect_environment_match |= SDL_strcmp(env[i], expect_environment) == 0;
-                }
+                fprintf(stdout, "%s\n", env[i]);
             }
             SDL_free(env);
         }
+        fflush(stdout);
     }
 
-    if (stdin_to_stdout || stdin_to_stderr) {
-
+    if (stdin_to_stdout || stdin_to_stderr || read_stdin) {
         for (;;) {
-            int c;
-            c = fgetc(stdin);
-            if (c == EOF) {
-                if (errno == EAGAIN) {
-                    clearerr(stdin);
-                    SDL_Delay(10);
-                    continue;
+            char buffer[4 * 4096];
+            size_t result;
+
+            result = fread(buffer, 1, sizeof(buffer), stdin);
+            if (result == 0) {
+                if (!feof(stdin)) {
+                    char error[128];
+
+                    if (errno == EAGAIN) {
+                        clearerr(stdin);
+                        SDL_Delay(20);
+                        continue;
+                    }
+
+#ifdef SDL_PLATFORM_WINDOWS
+                    if (strerror_s(error, sizeof(error), errno) != 0) {
+                        SDL_strlcpy(error, "Unknown error", sizeof(error));
+                    }
+#else
+                    SDL_strlcpy(error, strerror(errno), sizeof(error));
+#endif
+                    SDL_Log("Error reading from stdin: %s\n", error);
                 }
                 break;
             }
+            if (log_stdin) {
+                SDL_WriteIO(log_stdin, buffer, result);
+                SDL_FlushIO(log_stdin);
+            }
             if (stdin_to_stdout) {
-                fputc(c, stdout);
+                fwrite(buffer, 1, result, stdout);
                 fflush(stdout);
             }
             if (stdin_to_stderr) {
-                fputc(c, stderr);
+                fwrite(buffer, 1, result, stderr);
             }
         }
+    }
+
+    if (log_stdin) {
+        SDL_CloseIO(log_stdin);
     }
 
     SDLTest_CommonDestroyState(state);
 
-    if (expect_environment && !expect_environment_match) {
-        exit_code |= 0x1;
-    }
     return exit_code;
 }

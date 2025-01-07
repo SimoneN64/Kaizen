@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2023 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
   Copyright (C) 2024 Wim Taymans <wtaymans@redhat.com>
 
   This software is provided 'as-is', without any express or implied
@@ -79,7 +79,7 @@ static struct pw_context *(*PIPEWIRE_pw_context_new)(struct pw_loop *, struct pw
 static void (*PIPEWIRE_pw_context_destroy)(struct pw_context *);
 static struct pw_core *(*PIPEWIRE_pw_context_connect)(struct pw_context *, struct pw_properties *, size_t);
 static void (*PIPEWIRE_pw_proxy_add_object_listener)(struct pw_proxy *, struct spa_hook *, const void *, void *);
-static void (*PIPEWIRE_pw_proxy_add_listener)(struct pw_proxy *, struct spa_hook *, const void *, void *);
+static void (*PIPEWIRE_pw_proxy_add_listener)(struct pw_proxy *, struct spa_hook *, const struct pw_proxy_events *, void *);
 static void *(*PIPEWIRE_pw_proxy_get_user_data)(struct pw_proxy *);
 static void (*PIPEWIRE_pw_proxy_destroy)(struct pw_proxy *);
 static int (*PIPEWIRE_pw_core_disconnect)(struct pw_core *);
@@ -98,10 +98,10 @@ static struct pw_properties *(*PIPEWIRE_pw_properties_new_dict)(const struct spa
 static int (*PIPEWIRE_pw_properties_set)(struct pw_properties *, const char *, const char *);
 static int (*PIPEWIRE_pw_properties_setf)(struct pw_properties *, const char *, const char *, ...) SPA_PRINTF_FUNC(3, 4);
 
-#ifdef SDL_AUDIO_DRIVER_PIPEWIRE_DYNAMIC
+#ifdef SDL_CAMERA_DRIVER_PIPEWIRE_DYNAMIC
 
-static const char *pipewire_library = SDL_AUDIO_DRIVER_PIPEWIRE_DYNAMIC;
-static void *pipewire_handle = NULL;
+static const char *pipewire_library = SDL_CAMERA_DRIVER_PIPEWIRE_DYNAMIC;
+static SDL_SharedObject *pipewire_handle = NULL;
 
 static bool pipewire_dlsym(const char *fn, void **addr)
 {
@@ -146,7 +146,7 @@ static void unload_pipewire_library(void)
     // Nothing to do
 }
 
-#endif // SDL_AUDIO_DRIVER_PIPEWIRE_DYNAMIC
+#endif // SDL_CAMERA_DRIVER_PIPEWIRE_DYNAMIC
 
 static bool load_pipewire_syms(void)
 {
@@ -283,7 +283,7 @@ static uint32_t param_clear(struct spa_list *param_list, uint32_t id)
     spa_list_for_each_safe(p, t, param_list, link) {
         if (id == SPA_ID_INVALID || p->id == id) {
             spa_list_remove(&p->link);
-            free(p);
+            free(p); // This should NOT be SDL_free()
             count++;
         }
     }
@@ -317,7 +317,7 @@ static struct param *param_add(struct spa_list *params,
     p->seq = seq;
     if (param != NULL) {
         p->param = SPA_PTROFF(p, sizeof(*p), struct spa_pod);
-        memcpy(p->param, param, SPA_POD_SIZE(param));
+        SDL_memcpy(p->param, param, SPA_POD_SIZE(param));
     } else {
         param_clear(params, id);
         p->param = NULL;
@@ -339,7 +339,7 @@ static void param_update(struct spa_list *param_list, struct spa_list *pending_l
                 p->seq != SPA_PARAMS_INFO_SEQ(params[i]) &&
                 p->param != NULL) {
                     spa_list_remove(&p->link);
-                    free(p);
+                    free(p); // This should NOT be SDL_free()
             }
         }
     }
@@ -347,7 +347,7 @@ static void param_update(struct spa_list *param_list, struct spa_list *pending_l
         spa_list_remove(&p->link);
         if (p->param == NULL) {
             param_clear(param_list, p->id);
-            free(p);
+            free(p); // This should NOT be SDL_free()
         } else {
             spa_list_append(param_list, &p->link);
         }
@@ -840,7 +840,7 @@ static void proxy_destroy(void *data)
     }
     param_clear(&g->param_list, SPA_ID_INVALID);
     param_clear(&g->pending_list, SPA_ID_INVALID);
-    free(g->name);
+    free(g->name); // This should NOT be SDL_free()
 }
 
 static const struct pw_proxy_events proxy_events = {

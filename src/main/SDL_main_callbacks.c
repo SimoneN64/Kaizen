@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -75,6 +75,11 @@ static bool SDLCALL SDL_MainCallbackEventWatcher(void *userdata, SDL_Event *even
         // Make sure any currently queued events are processed then dispatch this before continuing
         SDL_DispatchMainCallbackEvents();
         SDL_DispatchMainCallbackEvent(event);
+
+        // Make sure that we quit if we get a terminating event
+        if (event->type == SDL_EVENT_TERMINATING) {
+            SDL_CompareAndSwapAtomicInt(&apprc, SDL_APP_CONTINUE, SDL_APP_SUCCESS);
+        }
     } else {
         // We'll process this event later from the main event queue
     }
@@ -130,10 +135,10 @@ SDL_AppResult SDL_IterateMainCallbacks(bool pump_events)
     return rc;
 }
 
-void SDL_QuitMainCallbacks(void)
+void SDL_QuitMainCallbacks(SDL_AppResult result)
 {
     SDL_RemoveEventWatch(SDL_MainCallbackEventWatcher, NULL);
-    SDL_main_quit_callback(SDL_main_appstate);
+    SDL_main_quit_callback(SDL_main_appstate, result);
     SDL_main_appstate = NULL;  // just in case.
 
     // for symmetry, you should explicitly Quit what you Init, but we might come through here uninitialized and SDL_Quit() will clear everything anyhow.

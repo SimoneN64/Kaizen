@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -33,19 +33,19 @@
 #include <errno.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
-int SDL_SYS_EnumerateDirectory(const char *path, const char *dirname, SDL_EnumerateDirectoryCallback cb, void *userdata)
+bool SDL_SYS_EnumerateDirectory(const char *path, const char *dirname, SDL_EnumerateDirectoryCallback cb, void *userdata)
 {
-    int result = 1;
+    SDL_EnumerationResult result = SDL_ENUM_CONTINUE;
 
     DIR *dir = opendir(path);
     if (!dir) {
-        SDL_SetError("Can't open directory: %s", strerror(errno));
-        return -1;
+        return SDL_SetError("Can't open directory: %s", strerror(errno));
     }
 
     struct dirent *ent;
-    while ((result == 1) && ((ent = readdir(dir)) != NULL))
+    while ((result == SDL_ENUM_CONTINUE) && ((ent = readdir(dir)) != NULL))
     {
         const char *name = ent->d_name;
         if ((SDL_strcmp(name, ".") == 0) || (SDL_strcmp(name, "..") == 0)) {
@@ -56,7 +56,7 @@ int SDL_SYS_EnumerateDirectory(const char *path, const char *dirname, SDL_Enumer
 
     closedir(dir);
 
-    return result;
+    return (result != SDL_ENUM_FAILURE);
 }
 
 bool SDL_SYS_RemovePath(const char *path)
@@ -75,7 +75,7 @@ bool SDL_SYS_RemovePath(const char *path)
 bool SDL_SYS_RenamePath(const char *oldpath, const char *newpath)
 {
     if (rename(oldpath, newpath) < 0) {
-        return SDL_SetError("Can't remove path: %s", strerror(errno));
+        return SDL_SetError("Can't rename path: %s", strerror(errno));
     }
     return true;
 }
@@ -83,23 +83,18 @@ bool SDL_SYS_RenamePath(const char *oldpath, const char *newpath)
 bool SDL_SYS_CopyFile(const char *oldpath, const char *newpath)
 {
     char *buffer = NULL;
-    char *tmppath = NULL;
     SDL_IOStream *input = NULL;
     SDL_IOStream *output = NULL;
     const size_t maxlen = 4096;
     size_t len;
     bool result = false;
 
-    if (SDL_asprintf(&tmppath, "%s.tmp", newpath) < 0) {
-        goto done;
-    }
-
     input = SDL_IOFromFile(oldpath, "rb");
     if (!input) {
         goto done;
     }
 
-    output = SDL_IOFromFile(tmppath, "wb");
+    output = SDL_IOFromFile(newpath, "wb");
     if (!output) {
         goto done;
     }
@@ -121,27 +116,20 @@ bool SDL_SYS_CopyFile(const char *oldpath, const char *newpath)
     SDL_CloseIO(input);
     input = NULL;
 
-    if (!SDL_CloseIO(output)) {
-        goto done;
-    }
-    output = NULL;
-
-    if (!SDL_RenamePath(tmppath, newpath)) {
-        SDL_RemovePath(tmppath);
+    if (!SDL_FlushIO(output)) {
         goto done;
     }
 
-    result = true;
+    result = SDL_CloseIO(output);
+    output = NULL;  // it's gone, even if it failed.
 
 done:
     if (output) {
         SDL_CloseIO(output);
-        SDL_RemovePath(tmppath);
     }
     if (input) {
         SDL_CloseIO(input);
     }
-    SDL_free(tmppath);
     SDL_free(buffer);
 
     return result;
@@ -196,6 +184,37 @@ bool SDL_SYS_GetPathInfo(const char *path, SDL_PathInfo *info)
     info->access_time = (SDL_Time)SDL_SECONDS_TO_NS(statbuf.st_atime);
 #endif
     return true;
+}
+
+// Note that this isn't actually part of filesystem, not fsops, but everything that uses posix fsops uses this implementation, even with separate filesystem code.
+char *SDL_SYS_GetCurrentDirectory(void)
+{
+    size_t buflen = 64;
+    char *buf = NULL;
+
+    while (true) {
+        void *ptr = SDL_realloc(buf, buflen);
+        if (!ptr) {
+            SDL_free(buf);
+            return NULL;
+        }
+        buf = (char *) ptr;
+
+        if (getcwd(buf, buflen) != NULL) {
+            break;  // we got it!
+        }
+
+        if (errno == ERANGE) {
+            buflen *= 2;  // try again with a bigger buffer.
+            continue;
+        }
+
+        SDL_free(buf);
+        SDL_SetError("getcwd failed: %s", strerror(errno));
+        return NULL;
+    }
+
+    return buf;
 }
 
 #endif // SDL_FSOPS_POSIX

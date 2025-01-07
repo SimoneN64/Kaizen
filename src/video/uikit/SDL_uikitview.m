@@ -1,6 +1,6 @@
 /*
  Simple DirectMedia Layer
- Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+ Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
  This software is provided 'as-is', without any express or implied
  warranty.  In no event will the authors be held liable for any damages
@@ -31,6 +31,7 @@
 #include "SDL_uikitappdelegate.h"
 #include "SDL_uikitevents.h"
 #include "SDL_uikitmodes.h"
+#include "SDL_uikitpen.h"
 #include "SDL_uikitwindow.h"
 
 // The maximum number of mouse buttons we support
@@ -47,6 +48,10 @@ extern int SDL_AppleTVRemoteOpenedAsJoystick;
 
     SDL_TouchID directTouchId;
     SDL_TouchID indirectTouchId;
+
+#if !defined(SDL_PLATFORM_TVOS) && defined(__IPHONE_13_4)
+    UIPointerInteraction *indirectPointerInteraction API_AVAILABLE(ios(13.4));
+#endif
 }
 
 - (instancetype)initWithFrame:(CGRect)frame
@@ -80,13 +85,26 @@ extern int SDL_AppleTVRemoteOpenedAsJoystick;
 #ifndef SDL_PLATFORM_TVOS
         self.multipleTouchEnabled = YES;
         SDL_AddTouch(directTouchId, SDL_TOUCH_DEVICE_DIRECT, "");
-#endif
 
-#if !defined(SDL_PLATFORM_TVOS) && defined(__IPHONE_13_4)
-        if (@available(iOS 13.4, *)) {
-            [self addInteraction:[[UIPointerInteraction alloc] initWithDelegate:self]];
+#if defined(__IPHONE_13_0)
+        if (@available(iOS 13.0, *)) {
+            UIHoverGestureRecognizer *pencilRecognizer = [[UIHoverGestureRecognizer alloc] initWithTarget:self action:@selector(pencilHovering:)];
+            pencilRecognizer.allowedTouchTypes = @[@(UITouchTypePencil)];
+            [self addGestureRecognizer:pencilRecognizer];
         }
 #endif
+
+#if defined(__IPHONE_13_4)
+        if (@available(iOS 13.4, *)) {
+            indirectPointerInteraction = [[UIPointerInteraction alloc] initWithDelegate:self];
+            [self addInteraction:indirectPointerInteraction];
+
+            UIHoverGestureRecognizer *indirectPointerRecognizer = [[UIHoverGestureRecognizer alloc] initWithTarget:self action:@selector(indirectPointerHovering:)];
+            indirectPointerRecognizer.allowedTouchTypes = @[@(UITouchTypeIndirectPointer)];
+            [self addGestureRecognizer:indirectPointerRecognizer];
+        }
+#endif
+#endif // !defined(SDL_PLATFORM_TVOS)
     }
 
     return self;
@@ -153,18 +171,11 @@ extern int SDL_AppleTVRemoteOpenedAsJoystick;
     return sdlwindow;
 }
 
-#if !defined(SDL_PLATFORM_TVOS) && defined(__IPHONE_13_4)
+#if !defined(SDL_PLATFORM_TVOS)
+
+#if defined(__IPHONE_13_4)
 - (UIPointerRegion *)pointerInteraction:(UIPointerInteraction *)interaction regionForRequest:(UIPointerRegionRequest *)request defaultRegion:(UIPointerRegion *)defaultRegion API_AVAILABLE(ios(13.4))
 {
-    if (request != nil && !SDL_GCMouseRelativeMode()) {
-        CGPoint origin = self.bounds.origin;
-        CGPoint point = request.location;
-
-        point.x -= origin.x;
-        point.y -= origin.y;
-
-        SDL_SendMouseMotion(0, sdlwindow, SDL_GLOBAL_MOUSE_ID, false, point.x, point.y);
-    }
     return [UIPointerRegion regionWithRect:self.bounds identifier:nil];
 }
 
@@ -176,7 +187,111 @@ extern int SDL_AppleTVRemoteOpenedAsJoystick;
         return [UIPointerStyle hiddenPointerStyle];
     }
 }
-#endif // !defined(SDL_PLATFORM_TVOS) && __IPHONE_13_4
+
+- (void)indirectPointerHovering:(UIHoverGestureRecognizer *)recognizer API_AVAILABLE(ios(13.4))
+{
+    switch (recognizer.state) {
+        case UIGestureRecognizerStateBegan:
+        case UIGestureRecognizerStateChanged:
+        {
+            CGPoint point = [recognizer locationInView:self];
+            SDL_SendMouseMotion(0, sdlwindow, SDL_GLOBAL_MOUSE_ID, false, point.x, point.y);
+            break;
+        }
+
+        default:
+            break;
+    }
+}
+
+- (void)indirectPointerMoving:(UITouch *)touch API_AVAILABLE(ios(13.4))
+{
+    CGPoint locationInView = [self touchLocation:touch shouldNormalize:NO];
+    SDL_SendMouseMotion(0, sdlwindow, SDL_GLOBAL_MOUSE_ID, false, locationInView.x, locationInView.y);
+}
+
+- (void)indirectPointerPressed:(UITouch *)touch fromEvent:(UIEvent *)event API_AVAILABLE(ios(13.4))
+{
+    if (!SDL_HasMouse()) {
+        int i;
+
+        for (i = 1; i <= MAX_MOUSE_BUTTONS; ++i) {
+            if (event.buttonMask & SDL_BUTTON_MASK(i)) {
+                Uint8 button;
+
+                switch (i) {
+                case 1:
+                    button = SDL_BUTTON_LEFT;
+                    break;
+                case 2:
+                    button = SDL_BUTTON_RIGHT;
+                    break;
+                case 3:
+                    button = SDL_BUTTON_MIDDLE;
+                    break;
+                default:
+                    button = (Uint8)i;
+                    break;
+                }
+                SDL_SendMouseButton(UIKit_GetEventTimestamp([touch timestamp]), sdlwindow, SDL_GLOBAL_MOUSE_ID, button, true);
+            }
+        }
+    }
+}
+
+- (void)indirectPointerReleased:(UITouch *)touch fromEvent:(UIEvent *)event API_AVAILABLE(ios(13.4))
+{
+    if (!SDL_HasMouse()) {
+        int i;
+        SDL_MouseButtonFlags buttons = SDL_GetMouseState(NULL, NULL);
+
+        for (i = 0; i < MAX_MOUSE_BUTTONS; ++i) {
+            if (buttons & SDL_BUTTON_MASK(i)) {
+                SDL_SendMouseButton(UIKit_GetEventTimestamp([touch timestamp]), sdlwindow, SDL_GLOBAL_MOUSE_ID, (Uint8)i, false);
+            }
+        }
+    }
+}
+
+#endif // __IPHONE_13_4
+
+#if defined(__IPHONE_13_0)
+
+- (void)pencilHovering:(UIHoverGestureRecognizer *)recognizer API_AVAILABLE(ios(13.0))
+{
+    switch (recognizer.state) {
+        case UIGestureRecognizerStateBegan:
+        case UIGestureRecognizerStateChanged:
+            UIKit_HandlePenHover(self, recognizer);
+            break;
+
+        case UIGestureRecognizerStateEnded:
+        case UIGestureRecognizerStateCancelled:
+            // we track touches elsewhere, so if a hover "ends" we'll deal with that there.
+            break;
+
+        default:
+            break;
+    }
+}
+
+- (void)pencilMoving:(UITouch *)touch
+{
+    UIKit_HandlePenMotion(self, touch);
+}
+
+- (void)pencilPressed:(UITouch *)touch
+{
+    UIKit_HandlePenPress(self, touch);
+}
+
+- (void)pencilReleased:(UITouch *)touch
+{
+    UIKit_HandlePenRelease(self, touch);
+}
+
+#endif // defined(__IPHONE_13_0)
+#endif // !defined(SDL_PLATFORM_TVOS)
 
 - (SDL_TouchDeviceType)touchTypeForTouch:(UITouch *)touch
 {
@@ -229,147 +344,156 @@ extern int SDL_AppleTVRemoteOpenedAsJoystick;
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
     for (UITouch *touch in touches) {
-        BOOL handled = NO;
-
-#if !defined(SDL_PLATFORM_TVOS) && defined(__IPHONE_13_4)
-        if (@available(iOS 13.4, *)) {
-            if (touch.type == UITouchTypeIndirectPointer) {
-                if (!SDL_HasMouse()) {
-                    int i;
-
-                    for (i = 1; i <= MAX_MOUSE_BUTTONS; ++i) {
-                        if (event.buttonMask & SDL_BUTTON(i)) {
-                            Uint8 button;
-
-                            switch (i) {
-                            case 1:
-                                button = SDL_BUTTON_LEFT;
-                                break;
-                            case 2:
-                                button = SDL_BUTTON_RIGHT;
-                                break;
-                            case 3:
-                                button = SDL_BUTTON_MIDDLE;
-                                break;
-                            default:
-                                button = (Uint8)i;
-                                break;
-                            }
-                            SDL_SendMouseButton(UIKit_GetEventTimestamp([event timestamp]), sdlwindow, SDL_GLOBAL_MOUSE_ID, button, true);
-                        }
-                    }
-                }
-                handled = YES;
+#if !defined(SDL_PLATFORM_TVOS)
+#if defined(__IPHONE_13_0)
+        if (@available(iOS 13.0, *)) {
+            if (touch.type == UITouchTypePencil) {
+                [self pencilPressed:touch];
+                continue;
             }
         }
 #endif
-        if (!handled) {
-            SDL_TouchDeviceType touchType = [self touchTypeForTouch:touch];
-            SDL_TouchID touchId = [self touchIdForType:touchType];
-            float pressure = [self pressureForTouch:touch];
 
-            if (SDL_AddTouch(touchId, touchType, "") < 0) {
+#if defined(__IPHONE_13_4)
+        if (@available(iOS 13.4, *)) {
+            if (touch.type == UITouchTypeIndirectPointer) {
+                [self indirectPointerPressed:touch fromEvent:event];
                 continue;
             }
-
-            // FIXME, need to send: int clicks = (int) touch.tapCount; ?
-
-            CGPoint locationInView = [self touchLocation:touch shouldNormalize:YES];
-            SDL_SendTouch(UIKit_GetEventTimestamp([event timestamp]),
-                          touchId, (SDL_FingerID)(uintptr_t)touch, sdlwindow,
-                          true, locationInView.x, locationInView.y, pressure);
         }
+#endif
+#endif // !defined(SDL_PLATFORM_TVOS)
+
+        SDL_TouchDeviceType touchType = [self touchTypeForTouch:touch];
+        SDL_TouchID touchId = [self touchIdForType:touchType];
+        float pressure = [self pressureForTouch:touch];
+
+        if (SDL_AddTouch(touchId, touchType, "") < 0) {
+            continue;
+        }
+
+        // FIXME, need to send: int clicks = (int) touch.tapCount; ?
+
+        CGPoint locationInView = [self touchLocation:touch shouldNormalize:YES];
+        SDL_SendTouch(UIKit_GetEventTimestamp([event timestamp]),
+                      touchId, (SDL_FingerID)(uintptr_t)touch, sdlwindow,
+                      SDL_EVENT_FINGER_DOWN, locationInView.x, locationInView.y, pressure);
     }
 }
 
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
 {
     for (UITouch *touch in touches) {
-        BOOL handled = NO;
-
-#if !defined(SDL_PLATFORM_TVOS) && defined(__IPHONE_13_4)
-        if (@available(iOS 13.4, *)) {
-            if (touch.type == UITouchTypeIndirectPointer) {
-                if (!SDL_HasMouse()) {
-                    int i;
-
-                    for (i = 1; i <= MAX_MOUSE_BUTTONS; ++i) {
-                        if (event.buttonMask & SDL_BUTTON(i)) {
-                            Uint8 button;
-
-                            switch (i) {
-                            case 1:
-                                button = SDL_BUTTON_LEFT;
-                                break;
-                            case 2:
-                                button = SDL_BUTTON_RIGHT;
-                                break;
-                            case 3:
-                                button = SDL_BUTTON_MIDDLE;
-                                break;
-                            default:
-                                button = (Uint8)i;
-                                break;
-                            }
-                            SDL_SendMouseButton(UIKit_GetEventTimestamp([event timestamp]), sdlwindow, SDL_GLOBAL_MOUSE_ID, button, false);
-                        }
-                    }
-                }
-                handled = YES;
+#if !defined(SDL_PLATFORM_TVOS)
+#if defined(__IPHONE_13_0)
+        if (@available(iOS 13.0, *)) {
+            if (touch.type == UITouchTypePencil) {
+                [self pencilReleased:touch];
+                continue;
             }
         }
 #endif
-        if (!handled) {
-            SDL_TouchDeviceType touchType = [self touchTypeForTouch:touch];
-            SDL_TouchID touchId = [self touchIdForType:touchType];
-            float pressure = [self pressureForTouch:touch];
 
-            if (SDL_AddTouch(touchId, touchType, "") < 0) {
+#if defined(__IPHONE_13_4)
+        if (@available(iOS 13.4, *)) {
+            if (touch.type == UITouchTypeIndirectPointer) {
+                [self indirectPointerReleased:touch fromEvent:event];
                 continue;
             }
-
-            // FIXME, need to send: int clicks = (int) touch.tapCount; ?
-
-            CGPoint locationInView = [self touchLocation:touch shouldNormalize:YES];
-            SDL_SendTouch(UIKit_GetEventTimestamp([event timestamp]),
-                          touchId, (SDL_FingerID)(uintptr_t)touch, sdlwindow,
-                          false, locationInView.x, locationInView.y, pressure);
         }
+#endif
+#endif // !defined(SDL_PLATFORM_TVOS)
+
+        SDL_TouchDeviceType touchType = [self touchTypeForTouch:touch];
+        SDL_TouchID touchId = [self touchIdForType:touchType];
+        float pressure = [self pressureForTouch:touch];
+
+        if (SDL_AddTouch(touchId, touchType, "") < 0) {
+            continue;
+        }
+
+        // FIXME, need to send: int clicks = (int) touch.tapCount; ?
+
+        CGPoint locationInView = [self touchLocation:touch shouldNormalize:YES];
+        SDL_SendTouch(UIKit_GetEventTimestamp([event timestamp]),
+                      touchId, (SDL_FingerID)(uintptr_t)touch, sdlwindow,
+                      SDL_EVENT_FINGER_UP, locationInView.x, locationInView.y, pressure);
     }
 }
 
 - (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event
 {
-    [self touchesEnded:touches withEvent:event];
+    for (UITouch *touch in touches) {
+#if !defined(SDL_PLATFORM_TVOS)
+#if defined(__IPHONE_13_0)
+        if (@available(iOS 13.0, *)) {
+            if (touch.type == UITouchTypePencil) {
+                [self pencilReleased:touch];
+                continue;
+            }
+        }
+#endif
+
+#if defined(__IPHONE_13_4)
+        if (@available(iOS 13.4, *)) {
+            if (touch.type == UITouchTypeIndirectPointer) {
+                [self indirectPointerReleased:touch fromEvent:event];
+                continue;
+            }
+        }
+#endif
+#endif // !defined(SDL_PLATFORM_TVOS)
+
+        SDL_TouchDeviceType touchType = [self touchTypeForTouch:touch];
+        SDL_TouchID touchId = [self touchIdForType:touchType];
+        float pressure = [self pressureForTouch:touch];
+
+        if (SDL_AddTouch(touchId, touchType, "") < 0) {
+            continue;
+        }
+
+        CGPoint locationInView = [self touchLocation:touch shouldNormalize:YES];
+        SDL_SendTouch(UIKit_GetEventTimestamp([event timestamp]),
+                      touchId, (SDL_FingerID)(uintptr_t)touch, sdlwindow,
+                      SDL_EVENT_FINGER_CANCELED, locationInView.x, locationInView.y, pressure);
+    }
 }
 
 - (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
 {
     for (UITouch *touch in touches) {
-        BOOL handled = NO;
-
-#if !defined(SDL_PLATFORM_TVOS) && defined(__IPHONE_13_4)
-        if (@available(iOS 13.4, *)) {
-            if (touch.type == UITouchTypeIndirectPointer) {
-                // Already handled in pointerInteraction callback
-                handled = YES;
+#if !defined(SDL_PLATFORM_TVOS)
+#if defined(__IPHONE_13_0)
+        if (@available(iOS 13.0, *)) {
+            if (touch.type == UITouchTypePencil) {
+                [self pencilMoving:touch];
+                continue;
             }
         }
 #endif
-        if (!handled) {
-            SDL_TouchDeviceType touchType = [self touchTypeForTouch:touch];
-            SDL_TouchID touchId = [self touchIdForType:touchType];
-            float pressure = [self pressureForTouch:touch];
 
-            if (SDL_AddTouch(touchId, touchType, "") < 0) {
+#if defined(__IPHONE_13_4)
+        if (@available(iOS 13.4, *)) {
+            if (touch.type == UITouchTypeIndirectPointer) {
+                [self indirectPointerMoving:touch];
                 continue;
             }
-
-            CGPoint locationInView = [self touchLocation:touch shouldNormalize:YES];
-            SDL_SendTouchMotion(UIKit_GetEventTimestamp([event timestamp]),
-                                touchId, (SDL_FingerID)(uintptr_t)touch, sdlwindow,
-                                locationInView.x, locationInView.y, pressure);
         }
+#endif
+#endif  // !defined(SDL_PLATFORM_TVOS)
+
+        SDL_TouchDeviceType touchType = [self touchTypeForTouch:touch];
+        SDL_TouchID touchId = [self touchIdForType:touchType];
+        float pressure = [self pressureForTouch:touch];
+
+        if (SDL_AddTouch(touchId, touchType, "") < 0) {
+            continue;
+        }
+
+        CGPoint locationInView = [self touchLocation:touch shouldNormalize:YES];
+        SDL_SendTouchMotion(UIKit_GetEventTimestamp([event timestamp]),
+                            touchId, (SDL_FingerID)(uintptr_t)touch, sdlwindow,
+                            locationInView.x, locationInView.y, pressure);
     }
 }
 

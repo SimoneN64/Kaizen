@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -22,7 +22,6 @@
 
 /* Regenerate the shaders with testgpu/build-shaders.sh */
 #include "testgpu/testgpu_spirv.h"
-#include "testgpu/testgpu_dxbc.h"
 #include "testgpu/testgpu_dxil.h"
 #include "testgpu/testgpu_metallib.h"
 
@@ -325,30 +324,37 @@ static void
 Render(SDL_Window *window, const int windownum)
 {
     WindowState *winstate = &window_states[windownum];
-    SDL_GPUTexture *swapchain;
+    SDL_GPUTexture *swapchainTexture;
     SDL_GPUColorTargetInfo color_target;
     SDL_GPUDepthStencilTargetInfo depth_target;
     float matrix_rotate[16], matrix_modelview[16], matrix_perspective[16], matrix_final[16];
-    Uint32 drawablew, drawableh;
     SDL_GPUCommandBuffer *cmd;
     SDL_GPURenderPass *pass;
     SDL_GPUBufferBinding vertex_binding;
     SDL_GPUBlitInfo blit_info;
+    Uint32 drawablew, drawableh;
 
     /* Acquire the swapchain texture */
 
     cmd = SDL_AcquireGPUCommandBuffer(gpu_device);
-    swapchain = SDL_AcquireGPUSwapchainTexture(cmd, state->windows[windownum], &drawablew, &drawableh);
+    if (!cmd) {
+        SDL_Log("Failed to acquire command buffer :%s", SDL_GetError());
+        quit(2);
+    }
+    if (!SDL_WaitAndAcquireGPUSwapchainTexture(cmd, state->windows[windownum], &swapchainTexture, &drawablew, &drawableh)) {
+        SDL_Log("Failed to acquire swapchain texture: %s", SDL_GetError());
+        quit(2);
+    }
 
-    if (!swapchain) {
-        /* No swapchain was acquired, probably too many frames in flight */
-        SDL_SubmitGPUCommandBuffer(cmd);
+    if (swapchainTexture == NULL) {
+        /* Swapchain is unavailable, cancel work */
+        SDL_CancelGPUCommandBuffer(cmd);
         return;
     }
 
     /*
     * Do some rotation with Euler angles. It is not a fixed axis as
-    * quaterions would be, but the effect is cool.
+    * quaternions would be, but the effect is cool.
     */
     rotate_matrix((float)winstate->angle_x, 1.0f, 0.0f, 0.0f, matrix_modelview);
     rotate_matrix((float)winstate->angle_y, 0.0f, 1.0f, 0.0f, matrix_rotate);
@@ -403,7 +409,7 @@ Render(SDL_Window *window, const int windownum)
     } else {
         color_target.load_op = SDL_GPU_LOADOP_CLEAR;
         color_target.store_op = SDL_GPU_STOREOP_STORE;
-        color_target.texture = swapchain;
+        color_target.texture = swapchainTexture;
     }
 
     SDL_zero(depth_target);
@@ -437,7 +443,7 @@ Render(SDL_Window *window, const int windownum)
         blit_info.source.w = drawablew;
         blit_info.source.h = drawableh;
 
-        blit_info.destination.texture = swapchain;
+        blit_info.destination.texture = swapchainTexture;
         blit_info.destination.w = drawablew;
         blit_info.destination.h = drawableh;
 
@@ -464,12 +470,7 @@ load_shader(bool is_vertex)
     createinfo.props = 0;
 
     SDL_GPUShaderFormat format = SDL_GetGPUShaderFormats(gpu_device);
-    if (format & SDL_GPU_SHADERFORMAT_DXBC) {
-        createinfo.format = SDL_GPU_SHADERFORMAT_DXBC;
-        createinfo.code = is_vertex ? D3D11_CubeVert : D3D11_CubeFrag;
-        createinfo.code_size = is_vertex ? SDL_arraysize(D3D11_CubeVert) : SDL_arraysize(D3D11_CubeFrag);
-        createinfo.entrypoint = is_vertex ? "VSMain" : "PSMain";
-    } else if (format & SDL_GPU_SHADERFORMAT_DXIL) {
+    if (format & SDL_GPU_SHADERFORMAT_DXIL) {
         createinfo.format = SDL_GPU_SHADERFORMAT_DXIL;
         createinfo.code = is_vertex ? D3D12_CubeVert : D3D12_CubeFrag;
         createinfo.code_size = is_vertex ? SDL_arraysize(D3D12_CubeVert) : SDL_arraysize(D3D12_CubeFrag);

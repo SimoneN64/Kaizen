@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -297,12 +297,12 @@ static int COMPUTEOUTCODE(const RECTTYPE *rect, SCALARTYPE x, SCALARTYPE y)
     int code = 0;
     if (y < rect->y) {
         code |= CODE_TOP;
-    } else if (y >= rect->y + rect->h) {
+    } else if (y > (rect->y + rect->h - ENCLOSEPOINTS_EPSILON)) {
         code |= CODE_BOTTOM;
     }
     if (x < rect->x) {
         code |= CODE_LEFT;
-    } else if (x >= rect->x + rect->w) {
+    } else if (x > (rect->x + rect->w - ENCLOSEPOINTS_EPSILON)) {
         code |= CODE_RIGHT;
     }
     return code;

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -192,7 +192,7 @@ bool KMSDRM_Vulkan_CreateSurface(SDL_VideoDevice *_this,
     VkDisplayPlaneAlphaFlagBitsKHR alpha_mode = VK_DISPLAY_PLANE_ALPHA_OPAQUE_BIT_KHR;
 
     VkResult result;
-    bool ret = -1;
+    bool ret = false;
     bool valid_gpu = false;
     bool mode_found = false;
     bool plane_supports_display = false;
@@ -485,7 +485,7 @@ bool KMSDRM_Vulkan_CreateSurface(SDL_VideoDevice *_this,
         goto clean;
     }
 
-    ret = 0;  // success!
+    ret = true;  // success!
 
 clean:
     if (physical_devices) {

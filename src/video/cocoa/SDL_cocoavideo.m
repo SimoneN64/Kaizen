@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -62,6 +62,10 @@ static SDL_VideoDevice *Cocoa_CreateDevice(void)
     @autoreleasepool {
         SDL_VideoDevice *device;
         SDL_CocoaVideoData *data;
+
+        if (![NSThread isMainThread]) {
+            return NULL;  // this doesn't SDL_SetError() because SDL_VideoInit is just going to overwrite it.
+        }
 
         Cocoa_RegisterApp();
 

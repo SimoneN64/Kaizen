@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -210,7 +210,7 @@ static bool VITA_GXM_CreateRenderer(SDL_Renderer *renderer, SDL_Window *window, 
     renderer->SupportsBlendMode = VITA_GXM_SupportsBlendMode;
     renderer->CreateTexture = VITA_GXM_CreateTexture;
     renderer->UpdateTexture = VITA_GXM_UpdateTexture;
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
     renderer->UpdateTextureYUV = VITA_GXM_UpdateTextureYUV;
     renderer->UpdateTextureNV = VITA_GXM_UpdateTextureNV;
 #endif
@@ -299,7 +299,7 @@ static bool VITA_GXM_CreateTexture(SDL_Renderer *renderer, SDL_Texture *texture,
 
     VITA_GXM_SetTextureScaleMode(renderer, texture, texture->scaleMode);
 
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
     vita_texture->yuv = ((texture->format == SDL_PIXELFORMAT_IYUV) || (texture->format == SDL_PIXELFORMAT_YV12));
     vita_texture->nv12 = ((texture->format == SDL_PIXELFORMAT_NV12) || (texture->format == SDL_PIXELFORMAT_NV21));
 #endif
@@ -339,7 +339,7 @@ static bool VITA_GXM_UpdateTexture(SDL_Renderer *renderer, SDL_Texture *texture,
     Uint8 *dst;
     int row, length, dpitch;
 
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
     if (vita_texture->yuv || vita_texture->nv12) {
         VITA_GXM_SetYUVProfile(renderer, texture);
     }
@@ -349,6 +349,7 @@ static bool VITA_GXM_UpdateTexture(SDL_Renderer *renderer, SDL_Texture *texture,
     length = rect->w * SDL_BYTESPERPIXEL(texture->format);
     if (length == pitch && length == dpitch) {
         SDL_memcpy(dst, pixels, length * rect->h);
+        pixels += pitch * rect->h;
     } else {
         for (row = 0; row < rect->h; ++row) {
             SDL_memcpy(dst, pixels, length);
@@ -357,7 +358,7 @@ static bool VITA_GXM_UpdateTexture(SDL_Renderer *renderer, SDL_Texture *texture,
         }
     }
 
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
     if (vita_texture->yuv) {
         void *Udst;
         void *Vdst;
@@ -376,6 +377,7 @@ static bool VITA_GXM_UpdateTexture(SDL_Renderer *renderer, SDL_Texture *texture,
         // U plane
         if (length == uv_src_pitch && length == uv_pitch) {
             SDL_memcpy(Udst, pixels, length * UVrect.h);
+            pixels += uv_src_pitch * UVrect.h;
         } else {
             for (row = 0; row < UVrect.h; ++row) {
                 SDL_memcpy(Udst, pixels, length);
@@ -423,7 +425,7 @@ static bool VITA_GXM_UpdateTexture(SDL_Renderer *renderer, SDL_Texture *texture,
     return true;
 }
 
-#if SDL_HAVE_YUV
+#ifdef SDL_HAVE_YUV
 static bool VITA_GXM_UpdateTextureYUV(SDL_Renderer *renderer, SDL_Texture *texture,
                                      const SDL_Rect *rect,
                                      const Uint8 *Yplane, int Ypitch,
@@ -1080,7 +1082,6 @@ void read_pixels(int x, int y, size_t width, size_t height, void *data)
 static SDL_Surface *VITA_GXM_RenderReadPixels(SDL_Renderer *renderer, const SDL_Rect *rect)
 {
     Uint32 format = renderer->target ? renderer->target->format : SDL_PIXELFORMAT_ABGR8888;
-    int w, h;
     SDL_Surface *surface;
 
     // TODO: read from texture rendertarget.
@@ -1094,28 +1095,18 @@ static SDL_Surface *VITA_GXM_RenderReadPixels(SDL_Renderer *renderer, const SDL_
         return NULL;
     }
 
-    SDL_GetCurrentRenderOutputSize(renderer, &w, &h);
+    int y = rect->y;
+    if (!renderer->target) {
+        int w, h;
+        SDL_GetRenderOutputSize(renderer, &w, &h);
+        y = (h - y) - rect->h;
+    }
 
-    read_pixels(rect->x, renderer->target ? rect->y : (h - rect->y) - rect->h,
-                rect->w, rect->h, surface->pixels);
+    read_pixels(rect->x, y, rect->w, rect->h, surface->pixels);
 
     // Flip the rows to be top-down if necessary
-
     if (!renderer->target) {
-        bool isstack;
-        int length = rect->w * SDL_BYTESPERPIXEL(format);
-        Uint8 *src = (Uint8 *)surface->pixels + (rect->h - 1) * surface->pitch;
-        Uint8 *dst = (Uint8 *)surface->pixels;
-        Uint8 *tmp = SDL_small_alloc(Uint8, length, &isstack);
-        int rows = rect->h / 2;
-        while (rows--) {
-            SDL_memcpy(tmp, dst, length);
-            SDL_memcpy(dst, src, length);
-            SDL_memcpy(src, tmp, length);
-            dst += surface->pitch;
-            src -= surface->pitch;
-        }
-        SDL_small_free(tmp, isstack);
+        SDL_FlipSurface(surface, SDL_FLIP_VERTICAL);
     }
     return surface;
 }

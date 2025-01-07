@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -175,8 +175,10 @@ static bool HIDAPI_DriverXbox360W_OpenJoystick(SDL_HIDAPI_Device *device, SDL_Jo
                         SDL_PlayerLEDHintChanged, ctx);
 
     // Initialize the joystick capabilities
-    joystick->nbuttons = 15;
+    joystick->nbuttons = 11;
     joystick->naxes = SDL_GAMEPAD_AXIS_COUNT;
+    joystick->nhats = 1;
+    joystick->connection_state = SDL_JOYSTICK_CONNECTION_WIRELESS;
 
     return true;
 }

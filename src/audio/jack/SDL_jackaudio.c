@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -51,7 +51,7 @@ static bool load_jack_syms(void);
 #ifdef SDL_AUDIO_DRIVER_JACK_DYNAMIC
 
 static const char *jack_library = SDL_AUDIO_DRIVER_JACK_DYNAMIC;
-static void *jack_handle = NULL;
+static SDL_SharedObject *jack_handle = NULL;
 
 // !!! FIXME: this is copy/pasted in several places now
 static bool load_jack_sym(const char *fn, void **addr)

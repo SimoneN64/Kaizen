@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -20,10 +20,9 @@
 */
 #include "SDL_internal.h"
 
-#include "../SDL_hashtable.h"
 #include "SDL_getenv_c.h"
 
-#if defined(SDL_PLATFORM_WIN32) || defined(SDL_PLATFORM_WINGDK)
+#if defined(SDL_PLATFORM_WINDOWS)
 #include "../core/windows/SDL_windows.h"
 #endif
 
@@ -31,7 +30,7 @@
 #include "../core/android/SDL_android.h"
 #endif
 
-#if defined(SDL_PLATFORM_WIN32) || defined(SDL_PLATFORM_WINGDK)
+#if defined(SDL_PLATFORM_WINDOWS)
 #define HAVE_WIN32_ENVIRONMENT
 #elif defined(HAVE_GETENV) && \
       (defined(HAVE_SETENV) || defined(HAVE_PUTENV)) && \
@@ -89,7 +88,7 @@ SDL_Environment *SDL_CreateEnvironment(bool populated)
         return NULL;
     }
 
-    env->strings = SDL_CreateHashTable(NULL, 16, SDL_HashString, SDL_KeyMatchString, SDL_NukeFreeKey, false);
+    env->strings = SDL_CreateHashTable(NULL, 16, SDL_HashString, SDL_KeyMatchString, SDL_NukeFreeKey, false, false);
     if (!env->strings) {
         SDL_free(env);
         return NULL;

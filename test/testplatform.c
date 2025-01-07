@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -180,8 +180,8 @@ static int TestEndian(bool verbose)
 
 static int TST_allmul(void *a, void *b, int arg, void *result, void *expected)
 {
-    (*(long long *)result) = ((*(long long *)a) * (*(long long *)b));
-    return (*(long long *)result) == (*(long long *)expected);
+    (*(unsigned long long *)result) = ((*(unsigned long long *)a) * (*(unsigned long long *)b));
+    return (*(unsigned long long *)result) == (*(unsigned long long *)expected);
 }
 
 static int TST_alldiv(void *a, void *b, int arg, void *result, void *expected)

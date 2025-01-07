@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -146,6 +146,7 @@ bool Android_JNI_OpenURL(const char *url);
 int SDL_GetAndroidSDKVersion(void);
 
 bool SDL_IsAndroidTablet(void);
+bool SDL_IsAndroidTV(void);
 
 // File Dialogs
 bool Android_JNI_OpenFileDialog(SDL_DialogFileCallback callback, void* userdata,

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -28,6 +28,7 @@
 #include "../../video/android/SDL_androidkeyboard.h"
 #include "../../video/android/SDL_androidmouse.h"
 #include "../../video/android/SDL_androidtouch.h"
+#include "../../video/android/SDL_androidpen.h"
 #include "../../video/android/SDL_androidvideo.h"
 #include "../../video/android/SDL_androidwindow.h"
 #include "../../joystick/android/SDL_sysjoystick_c.h"
@@ -117,6 +118,10 @@ JNIEXPORT void JNICALL SDL_JAVA_INTERFACE(onNativeTouch)(
 JNIEXPORT void JNICALL SDL_JAVA_INTERFACE(onNativeMouse)(
     JNIEnv *env, jclass jcls,
     jint button, jint action, jfloat x, jfloat y, jboolean relative);
+
+JNIEXPORT void JNICALL SDL_JAVA_INTERFACE(onNativePen)(
+    JNIEnv *env, jclass jcls,
+    jint pen_id_in, jint button, jint action, jfloat x, jfloat y, jfloat p);
 
 JNIEXPORT void JNICALL SDL_JAVA_INTERFACE(onNativeAccel)(
     JNIEnv *env, jclass jcls,
@@ -209,6 +214,7 @@ static JNINativeMethod SDLActivity_tab[] = {
     { "onNativeKeyboardFocusLost", "()V", SDL_JAVA_INTERFACE(onNativeKeyboardFocusLost) },
     { "onNativeTouch", "(IIIFFF)V", SDL_JAVA_INTERFACE(onNativeTouch) },
     { "onNativeMouse", "(IIFFZ)V", SDL_JAVA_INTERFACE(onNativeMouse) },
+    { "onNativePen", "(IIIFFF)V", SDL_JAVA_INTERFACE(onNativePen) },
     { "onNativeAccel", "(FFF)V", SDL_JAVA_INTERFACE(onNativeAccel) },
     { "onNativeClipboardChanged", "()V", SDL_JAVA_INTERFACE(onNativeClipboardChanged) },
     { "nativeLowMemory", "()V", SDL_JAVA_INTERFACE(nativeLowMemory) },
@@ -1057,10 +1063,7 @@ JNIEXPORT void JNICALL SDL_JAVA_INTERFACE(onNativeRotationChanged)(
         break;
     }
 
-    if (Android_Window) {
-        SDL_VideoDisplay *display = SDL_GetVideoDisplay(SDL_GetPrimaryDisplay());
-        SDL_SendDisplayEvent(display, SDL_EVENT_DISPLAY_ORIENTATION, displayCurrentOrientation, 0);
-    }
+    Android_SetOrientation(displayCurrentOrientation);
 
     SDL_UnlockMutex(Android_ActivityMutex);
 }
@@ -1071,9 +1074,7 @@ JNIEXPORT void JNICALL SDL_JAVA_INTERFACE(onNativeInsetsChanged)(
 {
     SDL_LockMutex(Android_ActivityMutex);
 
-    if (Android_Window) {
-        SDL_SetWindowSafeAreaInsets(Android_Window, left, right, top, bottom);
-    }
+    Android_SetWindowSafeAreaInsets(left, right, top, bottom);
 
     SDL_UnlockMutex(Android_ActivityMutex);
 }
@@ -1362,6 +1363,18 @@ JNIEXPORT void JNICALL SDL_JAVA_INTERFACE(onNativeMouse)(
     SDL_UnlockMutex(Android_ActivityMutex);
 }
 
+// Pen
+JNIEXPORT void JNICALL SDL_JAVA_INTERFACE(onNativePen)(
+    JNIEnv *env, jclass jcls,
+    jint pen_id_in, jint button, jint action, jfloat x, jfloat y, jfloat p)
+{
+    SDL_LockMutex(Android_ActivityMutex);
+
+    Android_OnPen(Android_Window, pen_id_in, button, action, x, y, p);
+
+    SDL_UnlockMutex(Android_ActivityMutex);
+}
+
 // Accelerometer
 JNIEXPORT void JNICALL SDL_JAVA_INTERFACE(onNativeAccel)(
     JNIEnv *env, jclass jcls,
@@ -1377,7 +1390,8 @@ JNIEXPORT void JNICALL SDL_JAVA_INTERFACE(onNativeAccel)(
 JNIEXPORT void JNICALL SDL_JAVA_INTERFACE(onNativeClipboardChanged)(
     JNIEnv *env, jclass jcls)
 {
-    SDL_SendClipboardUpdate();
+    // TODO: compute new mime types
+    SDL_SendClipboardUpdate(false, NULL, 0);
 }
 
 // Low memory
@@ -1526,7 +1540,7 @@ JNIEXPORT void JNICALL SDL_JAVA_INTERFACE(nativeSetenv)(
 
     // This is only called at startup, to initialize the environment
     // Note that we call setenv() directly to avoid affecting SDL environments
-    setenv(utfname, utfvalue, 1);
+    setenv(utfname, utfvalue, 1); // This should NOT be SDL_setenv()
 
     (*env)->ReleaseStringUTFChars(env, name, utfname);
     (*env)->ReleaseStringUTFChars(env, value, utfvalue);
@@ -2399,7 +2413,7 @@ const char *SDL_GetAndroidCachePath(void)
 
         // fileObj = context.getExternalFilesDir();
         mid = (*env)->GetMethodID(env, (*env)->GetObjectClass(env, context),
-                                  "getCacheDir", "(Ljava/lang/String;)Ljava/io/File;");
+                                  "getCacheDir", "()Ljava/io/File;");
         fileObject = (*env)->CallObjectMethod(env, context, mid, NULL);
         if (!fileObject) {
             SDL_SetError("Couldn't get cache directory");
@@ -2564,7 +2578,7 @@ bool Android_JNI_ShowToast(const char *message, int duration, int gravity, int x
     bool result;
     JNIEnv *env = Android_JNI_GetEnv();
     jstring jmessage = (*env)->NewStringUTF(env, message);
-    result = (*env)->CallStaticIntMethod(env, mActivityClass, midShowToast, jmessage, duration, gravity, xOffset, yOffset);
+    result = (*env)->CallStaticBooleanMethod(env, mActivityClass, midShowToast, jmessage, duration, gravity, xOffset, yOffset);
     (*env)->DeleteLocalRef(env, jmessage);
     return result;
 }
@@ -2600,6 +2614,11 @@ bool Android_JNI_GetLocale(char *buf, size_t buflen)
         AConfiguration_getLanguage(cfg, language);
         AConfiguration_getCountry(cfg, country);
 
+        // Indonesian is "id" according to ISO 639.2, but on Android is "in" because of Java backwards compatibility
+        if (language[0] == 'i' && language[1] == 'n') {
+            language[1] = 'd';
+        }
+
         // copy language (not null terminated)
         if (language[0]) {
             buf[id++] = language[0];
@@ -2632,7 +2651,7 @@ bool Android_JNI_OpenURL(const char *url)
     bool result;
     JNIEnv *env = Android_JNI_GetEnv();
     jstring jurl = (*env)->NewStringUTF(env, url);
-    result = (*env)->CallStaticIntMethod(env, mActivityClass, midOpenURL, jurl);
+    result = (*env)->CallStaticBooleanMethod(env, mActivityClass, midOpenURL, jurl);
     (*env)->DeleteLocalRef(env, jurl);
     return result;
 }

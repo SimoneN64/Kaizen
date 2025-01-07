@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -20,13 +20,12 @@
 */
 #include "SDL_internal.h"
 #include "SDL_dbus.h"
-#include "SDL_sandbox.h"
 #include "../../stdlib/SDL_vacopy.h"
 
 #ifdef SDL_USE_LIBDBUS
 // we never link directly to libdbus.
 static const char *dbus_library = "libdbus-1.so.3";
-static void *dbus_handle = NULL;
+static SDL_SharedObject *dbus_handle = NULL;
 static char *inhibit_handle = NULL;
 static unsigned int screensaver_cookie = 0;
 static SDL_DBusContext dbus;
@@ -341,7 +340,7 @@ bool SDL_DBus_CallVoidMethod(const char *node, const char *path, const char *int
     return result;
 }
 
-bool SDL_DBus_QueryPropertyOnConnection(DBusConnection *conn, const char *node, const char *path, const char *interface, const char *property, const int expectedtype, void *result)
+bool SDL_DBus_QueryPropertyOnConnection(DBusConnection *conn, const char *node, const char *path, const char *interface, const char *property, int expectedtype, void *result)
 {
     bool retval = false;
 
@@ -358,7 +357,7 @@ bool SDL_DBus_QueryPropertyOnConnection(DBusConnection *conn, const char *node, 
     return retval;
 }
 
-bool SDL_DBus_QueryProperty(const char *node, const char *path, const char *interface, const char *property, const int expectedtype, void *result)
+bool SDL_DBus_QueryProperty(const char *node, const char *path, const char *interface, const char *property, int expectedtype, void *result)
 {
     return SDL_DBus_QueryPropertyOnConnection(dbus.session_conn, node, path, interface, property, expectedtype, result);
 }
@@ -443,7 +442,7 @@ bool SDL_DBus_ScreensaverInhibit(bool inhibit)
         return false;
     }
 
-    if (SDL_DetectSandbox() != SDL_SANDBOX_NONE) {
+    if (SDL_GetSandbox() != SDL_SANDBOX_NONE) {
         const char *bus_name = "org.freedesktop.portal.Desktop";
         const char *path = "/org/freedesktop/portal/desktop";
         const char *interface = "org.freedesktop.portal.Inhibit";

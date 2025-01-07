@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -86,7 +86,7 @@ typedef struct SDL_UDEV_Symbols
 typedef struct SDL_UDEV_PrivateData
 {
     const char *udev_library;
-    void *udev_handle;
+    SDL_SharedObject *udev_handle;
     struct udev *udev;
     struct udev_monitor *udev_mon;
     int ref_count;

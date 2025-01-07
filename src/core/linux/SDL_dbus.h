@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -94,12 +94,12 @@ extern SDL_DBusContext *SDL_DBus_GetContext(void);
 // These use the built-in Session connection.
 extern bool SDL_DBus_CallMethod(const char *node, const char *path, const char *interface, const char *method, ...);
 extern bool SDL_DBus_CallVoidMethod(const char *node, const char *path, const char *interface, const char *method, ...);
-extern bool SDL_DBus_QueryProperty(const char *node, const char *path, const char *interface, const char *property, const int expectedtype, void *result);
+extern bool SDL_DBus_QueryProperty(const char *node, const char *path, const char *interface, const char *property, int expectedtype, void *result);
 
 // These use whatever connection you like.
 extern bool SDL_DBus_CallMethodOnConnection(DBusConnection *conn, const char *node, const char *path, const char *interface, const char *method, ...);
 extern bool SDL_DBus_CallVoidMethodOnConnection(DBusConnection *conn, const char *node, const char *path, const char *interface, const char *method, ...);
-extern bool SDL_DBus_QueryPropertyOnConnection(DBusConnection *conn, const char *node, const char *path, const char *interface, const char *property, const int expectedtype, void *result);
+extern bool SDL_DBus_QueryPropertyOnConnection(DBusConnection *conn, const char *node, const char *path, const char *interface, const char *property, int expectedtype, void *result);
 
 extern void SDL_DBus_ScreensaverTickle(void);
 extern bool SDL_DBus_ScreensaverInhibit(bool inhibit);

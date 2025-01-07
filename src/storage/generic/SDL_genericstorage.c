@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -85,6 +85,8 @@ static bool GENERIC_ReadStorageFile(void *userdata, const char *path, void *dest
             // FIXME: Should SDL_ReadIO use u64 now...?
             if (SDL_ReadIO(stream, destination, (size_t)length) == length) {
                 result = true;
+            } else {
+                SDL_SetError("File length did not exactly match the destination length");
             }
             SDL_CloseIO(stream);
         }
@@ -110,6 +112,8 @@ static bool GENERIC_WriteStorageFile(void *userdata, const char *path, const voi
             // FIXME: Should SDL_WriteIO use u64 now...?
             if (SDL_WriteIO(stream, source, (size_t)length) == length) {
                 result = true;
+            } else {
+                SDL_SetError("Resulting file length did not exactly match the source length");
             }
             SDL_CloseIO(stream);
         }

@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -60,7 +60,12 @@ int main(int argc, char *argv[])
             goto quit;
         }
     } else {
-        shape = SDL_LoadBMP_IO(SDL_IOFromConstMem(glass_bmp, sizeof(glass_bmp)), true);
+        SDL_IOStream *stream = SDL_IOFromConstMem(glass_bmp, sizeof(glass_bmp));
+        if (!stream) {
+            SDL_Log("Couldn't create iostream for glass.bmp: %s\n", SDL_GetError());
+            goto quit;
+        }
+        shape = SDL_LoadBMP_IO(stream, true);
         if (!shape) {
             SDL_Log("Couldn't load glass.bmp: %s\n", SDL_GetError());
             goto quit;

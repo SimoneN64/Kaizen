@@ -17,8 +17,16 @@ on:
       - "TODO"
   pull_request:
 
+# Stop previous runs on the same branch on new push
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CI: true
+  UBSAN_OPTIONS: "halt_on_error=1:abort_on_error=1:print_summary=1:print_stacktrace=1"
+  ASAN_OPTIONS: "halt_on_error=1:abort_on_error=1:print_summary=1:print_stacktrace=1"
+  LSAN_OPTIONS: "halt_on_error=1:abort_on_error=1:print_summary=1:print_stacktrace=1"
 
 jobs:
   Linux:
@@ -54,10 +62,10 @@ jobs:
             }
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.config.python-version }}
 
@@ -81,10 +89,10 @@ jobs:
         mkdir build && cd build
         # build static library
         cmake -DCAPSTONE_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/usr -DENABLE_ASAN=${asan} -DCAPSTONE_BUILD_DIET=${diet_build} ..
-        cmake --build . --config Release
+        cmake --build . --config Debug
         # build shared library
-        cmake -DCAPSTONE_INSTALL=1 -DBUILD_SHARED_LIBS=1 -DCMAKE_INSTALL_PREFIX=/usr -DCAPSTONE_BUILD_CSTEST=ON -DENABLE_ASAN=${asan} ..
-        sudo cmake --build . --config Release --target install
+        cmake -DCAPSTONE_INSTALL=1 -DCAPSTONE_BUILD_SHARED_LIBS=1 -DCMAKE_INSTALL_PREFIX=/usr -DCAPSTONE_BUILD_CSTEST=ON -DENABLE_ASAN=${asan} ..
+        sudo cmake --build . --config Debug --target install
 
     - name: Lower number of KASL randomized address bits
       run: |
@@ -130,6 +138,22 @@ jobs:
       run: |
         ctest --test-dir build --output-on-failure -R legacy*
 
+    - name: Valgrind cstest
+      if: startsWith(matrix.config.build-system, 'cmake') && startsWith(matrix.config.enable-asan, 'OFF')
+      run: |
+        sudo apt-get install valgrind
+        valgrind cstest tests
+
+    - name: Comaptibility header generation
+      if: startsWith(matrix.config.build-system, 'cmake')
+      run: |
+        cp ./include/capstone/arm64.h arm64_compat_current.h
+        cp ./include/capstone/systemz_compatibility.h systemz_compat_current.h
+        ./suite/auto-sync/src/autosync/HeaderPatcher.py -c --v6 ./include/capstone/aarch64.h --v5 ./include/capstone/arm64.h
+        ./suite/auto-sync/src/autosync/HeaderPatcher.py -c --v6 ./include/capstone/systemz.h --v5 ./include/capstone/systemz_compatibility.h
+        diff ./include/capstone/arm64.h arm64_compat_current.h &&
+        diff ./include/capstone/systemz_compatibility.h systemz_compat_current.h
+
   Windows:
     runs-on: ${{ matrix.config.os }}
     name: ${{ matrix.config.name }}
@@ -145,7 +169,7 @@ jobs:
             python-version: '3.9'
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: lukka/get-cmake@latest
       name: Get CMake

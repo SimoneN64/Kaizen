@@ -1972,13 +1972,13 @@ typedef union {
 	aarch64_sysreg sysreg;
 	aarch64_tlbi tlbi;
 	aarch64_ic ic;
-	uint64_t raw_val;
+	int raw_val;
 } aarch64_sysop_reg;
 
 typedef union {
 	aarch64_dbnxs dbnxs;
 	aarch64_exactfpimm exactfpimm;
-	uint64_t raw_val;
+	int raw_val;
 } aarch64_sysop_imm;
 
 typedef union {
@@ -1997,7 +1997,7 @@ typedef union {
 	aarch64_bti bti;
 	aarch64_svepredpat svepredpat;
 	aarch64_sveveclenspecifier sveveclenspecifier;
-	uint64_t raw_val;
+	int raw_val;
 } aarch64_sysop_alias;
 
 /// Operand type for instruction's operands
@@ -2772,16 +2772,6 @@ typedef struct aarch64_op_mem {
   int32_t disp;	   ///< displacement/offset value
 } aarch64_op_mem;
 
-/// Components of an SME matrix.
-/// Used when an sme operand is set to signal which part should be set.
-typedef enum {
-	AARCH64_SME_MATRIX_TILE,
-	AARCH64_SME_MATRIX_TILE_LIST,
-	AARCH64_SME_MATRIX_SLICE_REG,
-	AARCH64_SME_MATRIX_SLICE_OFF,
-	AARCH64_SME_MATRIX_SLICE_OFF_RANGE,
-} aarch64_sme_op_part;
-
 typedef enum {
 	AARCH64_SME_OP_INVALID,
 	AARCH64_SME_OP_TILE, ///< SME operand is a single tile.
@@ -2836,10 +2826,10 @@ typedef struct cs_aarch64_op {
 		aarch64_imm_range imm_range; ///< An immediate range
     double fp;		 ///< floating point value for FP operand
     aarch64_op_mem mem;	 ///< base/index/scale/disp value for MEM operand
-		aarch64_sysop sysop; ///< System operand
     aarch64_op_sme sme; ///< SME matrix operand
     aarch64_op_pred pred; ///< Predicate register
   };
+  aarch64_sysop sysop; ///< System operand
 
   /// How is this operand accessed? (READ, WRITE or READ|WRITE)
   /// This field is combined of cs_ac_type.

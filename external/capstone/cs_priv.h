@@ -68,7 +68,7 @@ struct cs_struct {
 	cs_err errnum;
 	ARM_ITBlock ITBlock;	// for Arm only
 	ARM_VPTBlock VPTBlock;  // for ARM only
-	bool PrintBranchImmNotAsAddress;
+	bool PrintBranchImmAsAddress;
 	bool ShowVSRNumsAsVR;
 	cs_opt_value detail_opt, imm_unsigned;
 	int syntax;	// asm syntax for simple printer such as ARM, Mips & PPC
@@ -81,6 +81,7 @@ struct cs_struct {
 	const uint8_t *regsize_map;	// map to register size (x86-only for now)
 	GetRegisterAccess_t reg_access;
 	struct insn_mnem *mnem_list;	// linked list of customized instruction mnemonic
+	uint32_t LITBASE; ///< The LITBASE register content. Bit 0 (LSB) indicatess if it is set. Bit[23:8] are the literal base address.
 };
 
 #define MAX_ARCH CS_ARCH_MAX
@@ -101,12 +102,40 @@ extern cs_realloc_t cs_mem_realloc;
 extern cs_free_t cs_mem_free;
 extern cs_vsnprintf_t cs_vsnprintf;
 
-// By defining CAPSTONE_DEBUG assertions can be used.
-// For any release build CAPSTONE_DEBUG has to be undefined.
+/// By defining CAPSTONE_DEBUG assertions can be used.
+/// For the release build the @expr is not included.
 #ifdef CAPSTONE_DEBUG
 #define CS_ASSERT(expr) assert(expr)
 #else
 #define CS_ASSERT(expr)
+#endif
+
+/// If compiled in debug mode it will assert(@expr).
+/// In the release build it will check the @expr and return @val if false.
+#ifdef CAPSTONE_DEBUG
+#define CS_ASSERT_RET_VAL(expr, val) assert(expr)
+#else
+#define CS_ASSERT_RET_VAL(expr, val) \
+do { \
+	if (!(expr)) { \
+		fprintf(stderr, "Hit assert: " #expr "\n"); \
+		return val; \
+	} \
+} while(0)
+#endif
+
+/// If compiled in debug mode it will assert(@expr).
+/// In the release build it will check the @expr and return if false.
+#ifdef CAPSTONE_DEBUG
+#define CS_ASSERT_RET(expr) assert(expr)
+#else
+#define CS_ASSERT_RET(expr) \
+do { \
+	if (!(expr)) { \
+		fprintf(stderr, "Hit assert: " #expr "\n"); \
+		return; \
+	} \
+} while(0)
 #endif
 
 #endif

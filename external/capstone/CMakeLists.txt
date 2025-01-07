@@ -5,6 +5,8 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
     message(FATAL_ERROR "In-tree builds are not supported. Run CMake from a separate directory: cmake -B build")
 endif()
 
+set(BUILD_RPATH_USE_ORIGIN true)
+
 # Detect whether capstone is compiled as top-level or a subdirectory
 set(PROJECT_IS_TOP_LEVEL OFF)
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
@@ -17,9 +19,16 @@ endif()
 # https://cmake.org/cmake/help/latest/policy/CMP0042.html
 cmake_policy(SET CMP0042 NEW)
 
-project(capstone
-    VERSION 5.0
-)
+# Check if VERSION is provided externally, otherwise default to 6.0.0
+if(NOT DEFINED PROJECT_VERSION)
+    set(PROJECT_VERSION "6.0.0")
+endif()
+
+# Extract the major, minor, and patch versions
+string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" PROJECT_VERSION_BASE ${PROJECT_VERSION})
+
+# Set the project version without the pre-release identifier
+project(capstone VERSION ${PROJECT_VERSION_BASE})
 
 set(UNIX_COMPILER_OPTIONS -Werror -Wall -Warray-bounds -Wshift-negative-value -Wreturn-type -Wformat -Wmissing-braces -Wunused-function -Warray-bounds -Wunused-variable -Wparentheses -Wint-in-bool-context -Wmisleading-indentation)
 
@@ -52,8 +61,9 @@ endif()
 
 # to configure the options specify them in the command line or change them in the cmake UI.
 # Don't edit the makefile!
-option(BUILD_SHARED_LIBS "Build shared library" OFF)
-option(CAPSTONE_BUILD_STATIC_RUNTIME "Embed static runtime" ${BUILD_SHARED_LIBS})
+option(CAPSTONE_BUILD_SHARED_LIBS "Build shared library" OFF)
+option(CAPSTONE_BUILD_STATIC_LIBS "Build static library" ON)
+option(CAPSTONE_BUILD_STATIC_MSVC_RUNTIME "Embed static MSVC runtime (Windows only). Always set if CAPSTONE_BUILD_SHARED_LIBS=ON" ${CAPSTONE_BUILD_SHARED_LIBS})
 option(CAPSTONE_BUILD_MACOS_THIN "Disable universal2 builds on macOS" OFF)
 option(CAPSTONE_BUILD_DIET "Build diet library" OFF)
 option(CAPSTONE_BUILD_LEGACY_TESTS "Build legacy tests" ${PROJECT_IS_TOP_LEVEL})
@@ -62,16 +72,20 @@ option(CAPSTONE_BUILD_CSTEST "Build cstest" OFF)
 option(CAPSTONE_USE_DEFAULT_ALLOC "Use default memory allocation functions" ON)
 option(CAPSTONE_USE_ARCH_REGISTRATION "Use explicit architecture registration" OFF)
 option(CAPSTONE_ARCHITECTURE_DEFAULT "Whether architectures are enabled by default" ON)
-option(CAPSTONE_DEBUG "Whether to enable extra debug assertions" OFF)
+option(CAPSTONE_DEBUG "Whether to enable extra debug assertions (enabled with CMAKE_BUILD_TYPE=Debug)" OFF)
 option(CAPSTONE_INSTALL "Generate install target" ${PROJECT_IS_TOP_LEVEL})
 option(ENABLE_ASAN "Enable address sanitizer" OFF)
 option(ENABLE_COVERAGE "Enable test coverage" OFF)
 
+if (NOT CAPSTONE_BUILD_SHARED_LIBS AND NOT CAPSTONE_BUILD_STATIC_LIBS)
+    FATAL_ERROR("CAPSTONE_BUILD_SHARED_LIBS and CAPSTONE_BUILD_STATIC_LIBS are both unset. Nothing to build.")
+endif()
+
 if (ENABLE_ASAN)
     message("Enabling ASAN")
     add_definitions(-DASAN_ENABLED)
-    add_compile_options(-fsanitize=address)
-    add_link_options(-fsanitize=address)
+    add_compile_options(-fsanitize=address,undefined)
+    add_link_options(-fsanitize=address,undefined)
 endif()
 
 if (ENABLE_COVERAGE)
@@ -85,8 +99,8 @@ if(APPLE AND NOT CAPSTONE_BUILD_MACOS_THIN)
     set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
 endif()
 
-set(SUPPORTED_ARCHITECTURES ARM AARCH64 M68K MIPS PPC SPARC SYSTEMZ XCORE X86 TMS320C64X M680X EVM MOS65XX WASM BPF RISCV SH TRICORE ALPHA HPPA LOONGARCH)
-set(SUPPORTED_ARCHITECTURE_LABELS ARM AARCH64 M68K MIPS PowerPC Sparc SystemZ XCore x86 TMS320C64x M680x EVM MOS65XX WASM BPF RISCV SH TriCore Alpha HPPA LoongArch)
+set(SUPPORTED_ARCHITECTURES ARM AARCH64 M68K MIPS PPC SPARC SYSTEMZ XCORE X86 TMS320C64X M680X EVM MOS65XX WASM BPF RISCV SH TRICORE ALPHA HPPA LOONGARCH XTENSA)
+set(SUPPORTED_ARCHITECTURE_LABELS ARM AARCH64 M68K MIPS PowerPC Sparc SystemZ XCore x86 TMS320C64x M680x EVM MOS65XX WASM BPF RISCV SH TriCore Alpha HPPA LoongArch Xtensa)
 
 # If building for OSX it's best to allow CMake to handle building both architectures
 if(APPLE AND NOT CAPSTONE_BUILD_MACOS_THIN)
@@ -147,12 +161,12 @@ if(CAPSTONE_X86_ATT_DISABLE)
     add_definitions(-DCAPSTONE_X86_ATT_DISABLE)
 endif()
 
-if(CAPSTONE_DEBUG)
+if(CAPSTONE_DEBUG OR CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DCAPSTONE_DEBUG)
 endif()
 
 # Force static runtime libraries
-if(CAPSTONE_BUILD_STATIC_RUNTIME)
+if(CAPSTONE_BUILD_STATIC_MSVC_RUNTIME)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
@@ -211,6 +225,7 @@ set(HEADERS_COMMON
     include/capstone/alpha.h
     include/capstone/hppa.h
     include/capstone/loongarch.h
+    include/capstone/xtensa.h
 )
 
 ## architecture support
@@ -315,7 +330,6 @@ if(CAPSTONE_PPC_SUPPORT)
     )
     set(HEADERS_PPC
         arch/PowerPC/PPCInstrInfo.h
-        arch/PowerPC/PPCInstPrinter.h
         arch/PowerPC/PPCLinkage.h
         arch/PowerPC/PPCMapping.h
         arch/PowerPC/PPCMCTargetDesc.h
@@ -680,6 +694,22 @@ if (CAPSTONE_LOONGARCH_SUPPORT)
             )
 endif ()
 
+if(CAPSTONE_XTENSA_SUPPORT)
+    add_definitions(-DCAPSTONE_HAS_XTENSA)
+    set(SOURCES_XTENSA
+        arch/Xtensa/XtensaDisassembler.c
+        arch/Xtensa/XtensaInstPrinter.c
+        arch/Xtensa/XtensaMapping.c
+        arch/Xtensa/XtensaModule.c
+    )
+    set(HEADERS_XTENSA
+        arch/Xtensa/XtensaDisassembler.h
+        arch/Xtensa/XtensaInstPrinter.h
+        arch/Xtensa/XtensaMapping.h
+        arch/Xtensa/XtensaModule.h
+    )
+endif()
+
 if (CAPSTONE_OSXKERNEL_SUPPORT)
     add_definitions(-DCAPSTONE_HAS_OSXKERNEL)
 endif()
@@ -707,6 +737,7 @@ set(ALL_SOURCES
     ${SOURCES_ALPHA}
     ${SOURCES_HPPA}
     ${SOURCES_LOONGARCH}
+    ${SOURCES_XTENSA}
 )
 
 set(ALL_HEADERS
@@ -733,6 +764,7 @@ set(ALL_HEADERS
     ${HEADERS_ALPHA}
     ${HEADERS_HPPA}
     ${HEADERS_LOONGARCH}
+    ${HEADERS_XTENSA}
 )
 
 ## properties
@@ -740,19 +772,34 @@ set(ALL_HEADERS
 set_property(GLOBAL PROPERTY VERSION ${PROJECT_VERSION})
 
 ## targets
-add_library(capstone ${ALL_SOURCES} ${ALL_HEADERS})
-add_library(capstone::capstone ALIAS capstone)
+add_library(capstone OBJECT ${ALL_SOURCES} ${ALL_HEADERS})
+set_property(TARGET capstone PROPERTY C_STANDARD 99)
 target_include_directories(capstone PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
 )
-set_property(TARGET capstone PROPERTY C_STANDARD 99)
 
-if(BUILD_SHARED_LIBS)
-    target_compile_definitions(capstone PUBLIC CAPSTONE_SHARED)
-    set_target_properties(capstone PROPERTIES
+if(CAPSTONE_BUILD_STATIC_LIBS)
+    add_library(capstone_static STATIC $<TARGET_OBJECTS:capstone>)
+    # Use normal capstone name. Otherwise we get libcapstone_static.a
+    set_target_properties(capstone_static PROPERTIES OUTPUT_NAME "capstone")
+    target_include_directories(capstone_static PUBLIC
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+    )
+endif()
+
+if(CAPSTONE_BUILD_SHARED_LIBS)
+    set_property(TARGET capstone PROPERTY POSITION_INDEPENDENT_CODE 1)
+    add_library(capstone_shared SHARED $<TARGET_OBJECTS:capstone>)
+    # Use normal capstone name. Otherwise we get libcapstone_shared.so
+    set_target_properties(capstone_shared PROPERTIES OUTPUT_NAME "capstone")
+    set_target_properties(capstone_shared PROPERTIES
         VERSION ${PROJECT_VERSION}
         SOVERSION ${PROJECT_VERSION_MAJOR}
     )
+    target_include_directories(capstone_shared PUBLIC
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+    )
+    target_compile_definitions(capstone PUBLIC CAPSTONE_SHARED)
 endif()
 
 # Fuzzer if this is moved to it's own CMakeLists.txt (as it should be)
@@ -785,6 +832,7 @@ source_group("Source\\TriCore" FILES ${SOURCES_TRICORE})
 source_group("Source\\Alpha" FILES ${SOURCES_ALPHA})
 source_group("Source\\HPPA" FILES ${SOURCES_HPPA})
 source_group("Source\\LoongArch" FILES ${SOURCES_LOONGARCH})
+source_group("Source\\Xtensa" FILES ${SOURCES_XTENSA})
 
 source_group("Include\\Common" FILES ${HEADERS_COMMON})
 source_group("Include\\Engine" FILES ${HEADERS_ENGINE})
@@ -809,11 +857,11 @@ source_group("Include\\TriCore" FILES ${HEADERS_TRICORE})
 source_group("Include\\Alpha" FILES ${HEADERS_ALPHA})
 source_group("Include\\HPPA" FILES ${HEADERS_HPPA})
 source_group("Include\\LoongArch" FILES ${HEADERS_LOONGARCH})
+source_group("Include\\Xtensa" FILES ${HEADERS_XTENSA})
 
 ## installation
 if(CAPSTONE_INSTALL)
     include(GNUInstallDirs)
-
     install(FILES ${HEADERS_COMMON} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/capstone)
     install(FILES ${HEADERS_INC} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/capstone/inc)
 
@@ -855,12 +903,20 @@ if(CAPSTONE_INSTALL)
         DESTINATION ${CAPSTONE_CMAKE_CONFIG_INSTALL_DIR}
     )
 
-    install(TARGETS capstone
-            EXPORT capstone-targets
-            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    if(CAPSTONE_BUILD_SHARED_LIBS)
+        set(LIB_INSTALL_TARGETS capstone_shared)
+    endif()
+
+    if (CAPSTONE_BUILD_STATIC_LIBS)
+        set(LIB_INSTALL_TARGETS ${LIB_INSTALL_TARGETS} capstone_static)
+    endif()
+
+    install(TARGETS ${LIB_INSTALL_TARGETS}
+        EXPORT capstone-targets
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 
     install(EXPORT capstone-targets

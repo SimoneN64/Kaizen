@@ -74,6 +74,7 @@ TestDetailAArch64Op *test_detail_aarch64_op_clone(TestDetailAArch64Op *op)
 	clone->imm_range_first = op->imm_range_first;
 	clone->imm_range_offset = op->imm_range_offset;
 	clone->fp = op->fp;
+	clone->fp_set = op->fp_set;
 	clone->sys_raw_val = op->sys_raw_val;
 	clone->shift_value = op->shift_value;
 	clone->is_vreg = op->is_vreg;
@@ -179,19 +180,22 @@ bool test_expected_aarch64(csh *handle, cs_aarch64 *actual,
 		case AARCH64_OP_SYSREG:
 			compare_enum_ret(op->sysop.sub_type, eop->sub_type,
 					 false);
-			compare_uint64_ret(op->sysop.reg.raw_val,
+			compare_int_ret(op->sysop.reg.raw_val,
 					   eop->sys_raw_val, false);
 			break;
 		case AARCH64_OP_SYSIMM:
 			compare_enum_ret(op->sysop.sub_type, eop->sub_type,
 					 false);
-			compare_uint64_ret(op->sysop.imm.raw_val,
+			compare_int_ret(op->sysop.imm.raw_val,
 					   eop->sys_raw_val, false);
+			if (eop->fp_set) {
+				compare_fp_ret(op->fp, eop->fp, false);
+			}
 			break;
 		case AARCH64_OP_SYSALIAS:
 			compare_enum_ret(op->sysop.sub_type, eop->sub_type,
 					 false);
-			compare_uint64_ret(op->sysop.alias.raw_val,
+			compare_int_ret(op->sysop.alias.raw_val,
 					   eop->sys_raw_val, false);
 			break;
 		case AARCH64_OP_MEM:

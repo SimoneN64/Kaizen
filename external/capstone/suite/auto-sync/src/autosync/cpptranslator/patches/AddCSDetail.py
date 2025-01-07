@@ -16,17 +16,17 @@ from autosync.cpptranslator.patches.Patch import Patch
 
 class AddCSDetail(Patch):
     """
-    Adds calls to `add_cs_detail()` for printOperand functions in <ARCH>InstPrinter.c
+    Adds calls to `<ARCH>_add_cs_detail_<n>()` for printOperand functions in <ARCH>InstPrinter.c
 
     Patch   void printThumbLdrLabelOperand(MCInst *MI, unsigned OpNo, SStream *O) {...}
     to      void printThumbLdrLabelOperand(MCInst *MI, unsigned OpNo, SStream *O) {
-                add_cs_detail(MI, ARM_OP_GROUP_ThumbLdrLabelOperand, ...);
+                <ARCH>_add_cs_detail_<n>(MI, ARM_OP_GROUP_ThumbLdrLabelOperand, ...);
                 ...
             }
     """
 
     # TODO Simply checking for the passed types would be so much nicer.
-    # Parameter lists of printOperand() functions we need to add `add_cs_detail()` to.
+    # Parameter lists of printOperand() functions we need to add `<ARCH>_add_cs_detail_<n>()` to.
     # Spaces are removed, so we only need to check the letters.
     valid_param_lists = [
         b"(MCInst*MI,unsignedOpNum,SStream*O)",  # Default printOperand parameters.
@@ -36,6 +36,8 @@ class AddCSDetail(Patch):
         b"(MCInst*MI,unsignedOpNo,SStream*O,constchar*Modifier)",  # PPC - printPredicateOperand
         b"(MCInst*MI,uint64_tAddress,unsignedOpNo,SStream*O)",  # PPC - printBranchOperand
         b"(MCInst*MI,intOpNum,SStream*O)",  # SystemZ
+        b"(MCInst*MI,intOpNum,SStream*O)",  # Xtensa printOperand parameters.
+        b"(MCInst*MI,intOpNum,SStream*OS)",  # Xtensa printOperand parameters.
     ]
 
     def __init__(self, priority: int, arch: str):
@@ -57,7 +59,9 @@ class AddCSDetail(Patch):
     def get_main_capture_name(self) -> str:
         return "print_op"
 
-    def get_patch(self, captures: [(Node, str)], src: bytes, **kwargs) -> bytes:
+    def get_patch(
+        self, captures: list[tuple[Node, str]], src: bytes, **kwargs
+    ) -> bytes:
         fcn_def: Node = captures[0][0]
         params = captures[2][0]
         params = get_text(src, params.start_byte, params.end_byte)
@@ -71,7 +75,14 @@ class AddCSDetail(Patch):
 
         comp = captures[3][0]
         comp = get_text(src, comp.start_byte, comp.end_byte)
-        return b"void " + fcn_id + params + b"{ " + add_cs_detail + comp.strip(b"{")
+        return (
+            b"static inline void "
+            + fcn_id
+            + params
+            + b"{ "
+            + add_cs_detail
+            + comp.strip(b"{")
+        )
 
     def get_add_cs_detail(
         self, src: bytes, fcn_def: Node, fcn_id: bytes, params: bytes
@@ -94,7 +105,7 @@ class AddCSDetail(Patch):
             # Standard printOperand() parameters
             mcinst_var = get_MCInst_var_name(src, fcn_def)
             return (
-                b"add_cs_detail("
+                f"{self.arch}_add_cs_detail_0(".encode()
                 + mcinst_var
                 + b", "
                 + op_group_enum
@@ -103,7 +114,11 @@ class AddCSDetail(Patch):
                 + b");"
             )
         elif op_group_enum == b"ARM_OP_GROUP_RegImmShift":
-            return b"add_cs_detail(MI, " + op_group_enum + b", ShOpc, ShImm);"
+            return (
+                f"{self.arch}_add_cs_detail_1(MI, ".encode()
+                + op_group_enum
+                + b", ShOpc, ShImm);"
+            )
         elif is_template and op_num_var_name in params:
             mcinst_var = get_MCInst_var_name(src, fcn_def)
             templ_p = template_param_list_to_dict(fcn_def.prev_sibling)
@@ -114,7 +129,7 @@ class AddCSDetail(Patch):
                 )
                 cs_args += b", " + tp["identifier"]
             return (
-                b"add_cs_detail("
+                f"{self.arch}_add_cs_detail_{len(templ_p)}(".encode()
                 + mcinst_var
                 + b", "
                 + op_group_enum

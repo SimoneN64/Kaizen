@@ -19,7 +19,7 @@ jobs:
         working-directory: suite/auto-sync/
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -79,6 +79,8 @@ jobs:
           ./src/autosync/ASUpdater.py -d -a LoongArch -s IncGen
           ./src/autosync/ASUpdater.py -d -a Mips -s IncGen
           ./src/autosync/ASUpdater.py -d -a SystemZ -s IncGen
+          ./src/autosync/ASUpdater.py -d -a Xtensa -s IncGen
+          ./src/autosync/ASUpdater.py -d -a TriCore -s IncGen
 
       - name: CppTranslator - Patch tests
         run: |
@@ -96,3 +98,5 @@ jobs:
           ./src/autosync/ASUpdater.py --ci -d -a LoongArch -s Translate
           ./src/autosync/ASUpdater.py --ci -d -a Mips -s Translate
           ./src/autosync/ASUpdater.py --ci -d -a SystemZ -s Translate
+          ./src/autosync/ASUpdater.py --ci -d -a Xtensa -s Translate
+          ./src/autosync/ASUpdater.py --ci -d -a TriCore -s Translate

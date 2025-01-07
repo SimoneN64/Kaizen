@@ -56,9 +56,27 @@ static const char *const insn_name_maps[] = {
 #include "LoongArchGenCSMappingInsnName.inc"
 };
 
+#ifndef CAPSTONE_DIET
+static const name_map insn_alias_mnem_map[] = {
+#include "LoongArchGenCSAliasMnemMap.inc"
+	{ LOONGARCH_INS_ALIAS_END, NULL },
+};
+#endif
+
 const char *LoongArch_insn_name(csh handle, unsigned int id)
 {
 #ifndef CAPSTONE_DIET
+	if (id < LOONGARCH_INS_ALIAS_END && id > LOONGARCH_INS_ALIAS_BEGIN) {
+		if (id - LOONGARCH_INS_ALIAS_BEGIN >=
+		    ARR_SIZE(insn_alias_mnem_map))
+			return NULL;
+
+		return insn_alias_mnem_map[id - LOONGARCH_INS_ALIAS_BEGIN - 1]
+			.name;
+	}
+	if (id >= LOONGARCH_INS_ENDING)
+		return NULL;
+
 	if (id < ARR_SIZE(insn_name_maps))
 		return insn_name_maps[id];
 	// not found
@@ -180,6 +198,9 @@ void LoongArch_rewrite_memory_operand(MCInst *MI)
 
 	const loongarch_suppl_info *suppl_info =
 		map_get_suppl_info(MI, loongarch_insns);
+	if (!suppl_info)
+		return;
+
 	if (suppl_info->memory_access == CS_AC_INVALID) {
 		// not memory instruction
 		return;
@@ -298,7 +319,7 @@ void LoongArch_rewrite_memory_operand(MCInst *MI)
 		break;
 
 	default:
-		assert(0 && "Unknown LoongArch memory instruction");
+		CS_ASSERT_RET(0 && "Unknown LoongArch memory instruction");
 		break;
 	}
 }
@@ -404,11 +425,15 @@ void LoongArch_printer(MCInst *MI, SStream *O,
 {
 	MCRegisterInfo *MRI = (MCRegisterInfo *)info;
 	MI->MRI = MRI;
-
+	MI->flat_insn->usesAliasDetails = map_use_alias_details(MI);
 	LoongArch_LLVM_printInst(MI, MI->address, "", O);
 
 	LoongArch_rewrite_memory_operand(MI);
 	LoongArch_add_cs_groups(MI);
+#ifndef CAPSTONE_DIET
+	map_set_alias_id(MI, O, insn_alias_mnem_map,
+			 ARR_SIZE(insn_alias_mnem_map));
+#endif
 }
 
 void LoongArch_setup_op(cs_loongarch_op *op)
@@ -441,8 +466,8 @@ void LoongArch_set_detail_op_imm(MCInst *MI, unsigned OpNum,
 {
 	if (!detail_is_set(MI))
 		return;
-	assert((map_get_op_type(MI, OpNum) & ~CS_OP_MEM) == CS_OP_IMM);
-	assert(ImmType == LOONGARCH_OP_IMM);
+	CS_ASSERT_RET((map_get_op_type(MI, OpNum) & ~CS_OP_MEM) == CS_OP_IMM);
+	CS_ASSERT_RET(ImmType == LOONGARCH_OP_IMM);
 
 	LoongArch_get_detail_op(MI, 0)->type = ImmType;
 	LoongArch_get_detail_op(MI, 0)->imm = Imm;
@@ -454,7 +479,7 @@ void LoongArch_set_detail_op_reg(MCInst *MI, unsigned OpNum, loongarch_reg Reg)
 {
 	if (!detail_is_set(MI))
 		return;
-	assert((map_get_op_type(MI, OpNum) & ~CS_OP_MEM) == CS_OP_REG);
+	CS_ASSERT_RET((map_get_op_type(MI, OpNum) & ~CS_OP_MEM) == CS_OP_REG);
 
 	LoongArch_get_detail_op(MI, 0)->type = LOONGARCH_OP_REG;
 	LoongArch_get_detail_op(MI, 0)->reg = Reg;
@@ -476,7 +501,7 @@ void LoongArch_add_cs_detail(MCInst *MI, int /* loongarch_op_group */ op_group,
 	switch (op_group) {
 	default:
 		printf("ERROR: Operand group %d not handled!\n", op_group);
-		assert(0);
+		CS_ASSERT_RET(0);
 	case LOONGARCH_OP_GROUP_OPERAND:
 		if (op_type == CS_OP_IMM) {
 			LoongArch_set_detail_op_imm(MI, OpNum, LOONGARCH_OP_IMM,
@@ -485,10 +510,10 @@ void LoongArch_add_cs_detail(MCInst *MI, int /* loongarch_op_group */ op_group,
 			LoongArch_set_detail_op_reg(MI, OpNum,
 						    MCInst_getOpVal(MI, OpNum));
 		} else
-			assert(0 && "Op type not handled.");
+			CS_ASSERT_RET(0 && "Op type not handled.");
 		break;
 	case LOONGARCH_OP_GROUP_ATOMICMEMOP:
-		assert(op_type == CS_OP_REG);
+		CS_ASSERT_RET(op_type == CS_OP_REG);
 		// converted to MEM operand later in LoongArch_rewrite_memory_operand
 		LoongArch_set_detail_op_reg(MI, OpNum,
 					    MCInst_getOpVal(MI, OpNum));

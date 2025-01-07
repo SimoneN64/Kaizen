@@ -4,6 +4,7 @@
 
 #include "Mapping.h"
 #include "capstone/capstone.h"
+#include "cs_priv.h"
 #include "utils.h"
 
 // create a cache for fast id lookup
@@ -40,9 +41,13 @@ unsigned short insn_find(const insn_map *insns, unsigned int max,
 // Returns the id or -1 if not found.
 int name2id(const name_map *map, int max, const char *name)
 {
+	CS_ASSERT_RET_VAL(map && name, -1);
 	int i;
 
 	for (i = 0; i < max; i++) {
+		if (!map[i].name) {
+			return -1;
+		}
 		if (!strcmp(map[i].name, name)) {
 			return map[i].id;
 		}
@@ -124,7 +129,7 @@ void map_remove_implicit_write(MCInst *MI, uint32_t Reg)
 		if (regs_write[i] == Reg) {
 			MI->flat_insn->detail->regs_write_count--;
 			// The register should exist only once in the list.
-			assert(!shorten_list);
+			CS_ASSERT_RET(!shorten_list);
 			shorten_list = true;
 		}
 	}
@@ -347,6 +352,8 @@ DEFINE_get_detail_op(loongarch, LoongArch);
 DEFINE_get_detail_op(mips, Mips);
 DEFINE_get_detail_op(riscv, RISCV);
 DEFINE_get_detail_op(systemz, SystemZ);
+DEFINE_get_detail_op(xtensa, Xtensa);
+DEFINE_get_detail_op(bpf, BPF);
 
 /// Returns true if for this architecture the
 /// alias operands should be filled.
@@ -360,7 +367,7 @@ bool map_use_alias_details(const MCInst *MI) {
 /// Sets the setDetailOps flag to @p Val.
 /// If detail == NULLit refuses to set the flag to true.
 void map_set_fill_detail_ops(MCInst *MI, bool Val) {
-	assert(MI);
+	CS_ASSERT_RET(MI);
 	if (!detail_is_set(MI)) {
 		MI->fillDetailOps = false;
 		return;
@@ -371,7 +378,7 @@ void map_set_fill_detail_ops(MCInst *MI, bool Val) {
 
 /// Sets the instruction alias flags and the given alias id.
 void map_set_is_alias_insn(MCInst *MI, bool Val, uint64_t Alias) {
-	assert(MI);
+	CS_ASSERT_RET(MI);
 	MI->isAliasInstr = Val;
 	MI->flat_insn->is_alias = Val;
 	MI->flat_insn->alias_id = Alias;

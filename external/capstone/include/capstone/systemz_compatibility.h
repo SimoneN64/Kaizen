@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#include <capstone/systemz.h>
+#include "systemz.h"
 #include "platform.h"
 #include "cs_operand.h"
 
@@ -340,7 +340,7 @@ typedef systemz_op_mem sysz_op_mem;
 
 typedef cs_systemz_op cs_sysz_op;
 
-#define MAX_SYSZ_OPS 6
+#define NUM_SYSZ_OPS 6
 
 typedef cs_systemz cs_sysz;
 

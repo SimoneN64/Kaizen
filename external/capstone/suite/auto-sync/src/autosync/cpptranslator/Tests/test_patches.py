@@ -46,6 +46,7 @@ from autosync.cpptranslator.patches.IsOptionalDef import IsOptionalDef
 from autosync.cpptranslator.patches.IsPredicate import IsPredicate
 from autosync.cpptranslator.patches.IsRegImm import IsOperandRegImm
 from autosync.cpptranslator.patches.LLVMFallThrough import LLVMFallThrough
+from autosync.cpptranslator.patches.LLVM_DEBUG import LLVM_DEBUG
 from autosync.cpptranslator.patches.LLVMunreachable import LLVMUnreachable
 from autosync.cpptranslator.patches.Override import Override
 from autosync.cpptranslator.patches.MethodToFunctions import MethodToFunction
@@ -107,7 +108,8 @@ class TestPatches(unittest.TestCase):
 
         self.assertGreater(len(captures_bundle), 0)
         for cb in captures_bundle:
-            self.assertEqual(patch.get_patch(cb, syntax, **kwargs), expected)
+            actual = patch.get_patch(cb, syntax, **kwargs)
+            self.assertEqual(actual, expected)
 
     def test_addcsdetail(self):
         patch = AddCSDetail(0, "ARCH")
@@ -115,8 +117,8 @@ class TestPatches(unittest.TestCase):
         self.check_patching_result(
             patch,
             syntax,
-            b"void printThumbLdrLabelOperand(MCInst *MI, unsigned OpNo, SStream *O){ "
-            b"add_cs_detail(MI, ARCH_OP_GROUP_ThumbLdrLabelOperand, OpNo); "
+            b"static inline void printThumbLdrLabelOperand(MCInst *MI, unsigned OpNo, SStream *O){ "
+            b"ARCH_add_cs_detail_0(MI, ARCH_OP_GROUP_ThumbLdrLabelOperand, OpNo); "
             b"int i = OpNo; "
             b"}",
         )
@@ -132,8 +134,8 @@ class TestPatches(unittest.TestCase):
 
     def test_assert(self):
         patch = Assert(0)
-        syntax = b"assert(0 == 0)"
-        self.check_patching_result(patch, syntax, b"CS_ASSERT((0 == 0));")
+        syntax = b"assert(0 == 0);"
+        self.check_patching_result(patch, syntax, b"CS_ASSERT(0 == 0);")
 
     def test_bitcaststdarray(self):
         patch = BitCastStdArray(0)
@@ -412,7 +414,12 @@ public:
     def test_llvmunreachable(self):
         patch = LLVMUnreachable(0)
         syntax = b'llvm_unreachable("Error msg")'
-        self.check_patching_result(patch, syntax, b'assert(0 && "Error msg")')
+        self.check_patching_result(patch, syntax, b'CS_ASSERT(0 && "Error msg")')
+
+    def test_llvmdebug(self):
+        patch = LLVM_DEBUG(0)
+        syntax = b'LLVM_DEBUG(dbgs() << "Error msg")'
+        self.check_patching_result(patch, syntax, b"")
 
     def test_methodtofunctions(self):
         patch = MethodToFunction(0)

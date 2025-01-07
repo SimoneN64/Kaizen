@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-#include <capstone/aarch64.h>
+#include "aarch64.h"
 #include "cs_operand.h"
 #include "platform.h"
 
@@ -2627,18 +2627,13 @@ typedef enum {
 typedef aarch64_op_mem arm64_op_mem;
 
 typedef enum {
-	ARM64_SME_MATRIX_TILE = AARCH64_SME_MATRIX_TILE,
-	ARM64_SME_MATRIX_TILE_LIST = AARCH64_SME_MATRIX_TILE_LIST,
-	ARM64_SME_MATRIX_SLICE_REG = AARCH64_SME_MATRIX_SLICE_REG,
-	ARM64_SME_MATRIX_SLICE_OFF = AARCH64_SME_MATRIX_SLICE_OFF,
-	ARM64_SME_MATRIX_SLICE_OFF_RANGE = AARCH64_SME_MATRIX_SLICE_OFF_RANGE,
-} arm64_sme_op_part;
-
-typedef enum {
 	ARM64_SME_OP_INVALID = AARCH64_SME_OP_INVALID,
 	ARM64_SME_OP_TILE = AARCH64_SME_OP_TILE,
 	ARM64_SME_OP_TILE_VEC = AARCH64_SME_OP_TILE_VEC,
 } arm64_sme_op_type;
+
+#define ARM64_SLICE_IMM_INVALID UINT16_MAX
+#define ARM64_SLICE_IMM_RANGE_INVALID UINT8_MAX
 
 typedef aarch64_imm_range arm64_imm_range;
 
@@ -2650,7 +2645,7 @@ typedef cs_aarch64_op cs_arm64_op;
 
 typedef aarch64_suppl_info arm64_suppl_info;
 
-#define MAX_ARM64_OPS 8
+#define NUM_ARM64_OPS 16
 
 typedef cs_aarch64 cs_arm64;
 
@@ -4581,3 +4576,38 @@ typedef enum {
 #endif
 
 #endif
+
+#define arm64_cc AArch64CC_CondCode
+#define ARM64_CC_EQ AArch64CC_EQ
+#define ARM64_CC_NE AArch64CC_NE
+#define ARM64_CC_HS AArch64CC_HS
+#define ARM64_CC_LO AArch64CC_LO
+#define ARM64_CC_MI AArch64CC_MI
+#define ARM64_CC_PL AArch64CC_PL
+#define ARM64_CC_VS AArch64CC_VS
+#define ARM64_CC_VC AArch64CC_VC
+#define ARM64_CC_HI AArch64CC_HI
+#define ARM64_CC_LS AArch64CC_LS
+#define ARM64_CC_GE AArch64CC_GE
+#define ARM64_CC_LT AArch64CC_LT
+#define ARM64_CC_GT AArch64CC_GT
+#define ARM64_CC_LE AArch64CC_LE
+#define ARM64_CC_AL AArch64CC_AL
+#define ARM64_CC_NV AArch64CC_NV
+#define ARM64_CC_INVALID AArch64CC_Invalid
+#define ARM64_VAS_INVALID AARCH64LAYOUT_INVALID
+#define ARM64_VAS_16B AARCH64LAYOUT_VL_16B
+#define ARM64_VAS_8B AARCH64LAYOUT_VL_8B
+#define ARM64_VAS_4B AARCH64LAYOUT_VL_4B
+#define ARM64_VAS_1B AARCH64LAYOUT_VL_1B
+#define ARM64_VAS_8H AARCH64LAYOUT_VL_8H
+#define ARM64_VAS_4H AARCH64LAYOUT_VL_4H
+#define ARM64_VAS_2H AARCH64LAYOUT_VL_2H
+#define ARM64_VAS_1H AARCH64LAYOUT_VL_1H
+#define ARM64_VAS_4S AARCH64LAYOUT_VL_4S
+#define ARM64_VAS_2S AARCH64LAYOUT_VL_2S
+#define ARM64_VAS_1S AARCH64LAYOUT_VL_1S
+#define ARM64_VAS_2D AARCH64LAYOUT_VL_2D
+#define ARM64_VAS_1D AARCH64LAYOUT_VL_1D
+#define ARM64_VAS_1Q AARCH64LAYOUT_VL_1Q
+#define arm64_vas AArch64Layout_VectorLayout

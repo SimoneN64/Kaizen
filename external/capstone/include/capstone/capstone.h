@@ -48,13 +48,13 @@ extern "C" {
 #endif
 
 // Capstone API version
-#define CS_API_MAJOR 5
+#define CS_API_MAJOR 6
 #define CS_API_MINOR 0
 
 // Version for bleeding edge code of the Github's "next" branch.
 // Use this if you want the absolutely latest development code.
 // This version number will be bumped up whenever we have a new major change.
-#define CS_NEXT_VERSION 6
+#define CS_NEXT_VERSION 7
 
 // Capstone package version
 #define CS_VERSION_MAJOR CS_API_MAJOR
@@ -102,6 +102,7 @@ typedef enum cs_arch {
 	CS_ARCH_ALPHA, 		///< Alpha architecture
 	CS_ARCH_HPPA, 		///< HPPA architecture
 	CS_ARCH_LOONGARCH, 	///< LoongArch architecture
+	CS_ARCH_XTENSA, 	///< Xtensa architecture
 	CS_ARCH_MAX,
 	CS_ARCH_ALL = 0xFFFF, // All architectures - for cs_support()
 } cs_arch;
@@ -131,6 +132,14 @@ typedef enum cs_mode {
 	CS_MODE_SPE = 1 << 5, ///< Signal Processing Engine mode (PPC)
 	CS_MODE_BOOKE = 1 << 6, ///< Book-E mode (PPC)
 	CS_MODE_PS = 1 << 7, ///< Paired-singles mode (PPC)
+	CS_MODE_AIX_OS = 1 << 8, ///< PowerPC AIX-OS
+	CS_MODE_PWR7 = 1 << 9, ///< Power 7
+	CS_MODE_PWR8 = 1 << 10, ///< Power 8
+	CS_MODE_PWR9 = 1 << 11, ///< Power 9
+	CS_MODE_PWR10 = 1 << 12, ///< Power 10
+	CS_MODE_PPC_ISA_FUTURE = 1 << 13, ///< Power ISA Future
+	CS_MODE_MODERN_AIX_AS = 1 << 14, ///< PowerPC AIX-OS with modern assembly
+	CS_MODE_MSYNC = 1 << 15, ///< PowerPC Has only the msync instruction instead of sync. Implies BOOKE
 	CS_MODE_M68K_000 = 1 << 1, ///< M68K 68000 mode
 	CS_MODE_M68K_010 = 1 << 2, ///< M68K 68010 mode
 	CS_MODE_M68K_020 = 1 << 3, ///< M68K 68020 mode
@@ -221,6 +230,9 @@ typedef enum cs_mode {
 	CS_MODE_SYSTEMZ_Z15 = 1 << 13, ///< Enables features of the Z15 processor
 	CS_MODE_SYSTEMZ_Z16 = 1 << 14, ///< Enables features of the Z16 processor
 	CS_MODE_SYSTEMZ_GENERIC = 1 << 15, ///< Enables features of the generic processor
+	CS_MODE_XTENSA_ESP32 = 1 << 1,	 ///< Xtensa ESP32
+	CS_MODE_XTENSA_ESP32S2 = 1 << 2, ///< Xtensa ESP32S2
+	CS_MODE_XTENSA_ESP8266 = 1 << 3, ///< Xtensa ESP328266
 } cs_mode;
 
 typedef void* (CAPSTONE_API *cs_malloc_t)(size_t size);
@@ -262,7 +274,8 @@ typedef enum cs_opt_type {
 	CS_OPT_SKIPDATA_SETUP, ///< Setup user-defined function for SKIPDATA option
 	CS_OPT_MNEMONIC,       ///< Customize instruction mnemonic
 	CS_OPT_UNSIGNED,       ///< print immediate operands in unsigned form
-	CS_OPT_NO_BRANCH_OFFSET, ///< ARM, PPC, AArch64, prints branch immediates without offset.
+	CS_OPT_ONLY_OFFSET_BRANCH, ///< ARM, PPC, AArch64: Don't add the branch immediate value to the PC.
+	CS_OPT_LITBASE, ///< Xtensa, set the LITBASE value. LITBASE is set to 0 by default.
 } cs_opt_type;
 
 /// Runtime option value (associated with option type above)
@@ -277,7 +290,7 @@ typedef enum cs_opt_value {
 	CS_OPT_SYNTAX_MOTOROLA = 1 << 6, ///< MOS65XX use $ as hex prefix
 	CS_OPT_SYNTAX_CS_REG_ALIAS = 1 << 7, ///< Prints common register alias which are not defined in LLVM (ARM: r9 = sb etc.)
 	CS_OPT_SYNTAX_PERCENT = 1 << 8, ///< Prints the % in front of PPC registers.
-	CS_OPT_SYNTAX_NO_DOLLAR = 1 << 9, ///< Does not print the $ in front of Mips registers.
+	CS_OPT_SYNTAX_NO_DOLLAR = 1 << 9, ///< Does not print the $ in front of Mips, LoongArch registers.
 	CS_OPT_DETAIL_REAL = 1 << 1, ///< If enabled, always sets the real instruction detail. Even if the instruction is an alias.
 } cs_opt_value;
 
@@ -377,6 +390,7 @@ typedef struct cs_opt_skipdata {
 #include "alpha.h"
 #include "hppa.h"
 #include "loongarch.h"
+#include "xtensa.h"
 
 #define MAX_IMPL_W_REGS 47
 #define MAX_IMPL_R_REGS 20
@@ -433,6 +447,7 @@ typedef struct cs_detail {
 		cs_alpha alpha; ///< Alpha architecture
 		cs_hppa hppa; ///< HPPA architecture
 		cs_loongarch loongarch; ///< LoongArch architecture
+		cs_xtensa xtensa; ///< Xtensa architecture
 	};
 } cs_detail;
 

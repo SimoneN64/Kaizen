@@ -9,13 +9,15 @@ struct Registers {
   void SetPC64(s64);
   void SetPC32(s32);
 
-  bool IsRegConstant(u32 index) {
+  [[nodiscard]] bool IsRegConstant(const u32 index) const {
     if (index == 0)
       return true;
     return gprIsConstant[index];
   }
 
-  bool IsRegConstant(u32 first, u32 second) { return IsRegConstant(first) && IsRegConstant(second); }
+  [[nodiscard]] bool IsRegConstant(const u32 first, const u32 second) const {
+    return IsRegConstant(first) && IsRegConstant(second);
+  }
 
   std::array<bool, 32> gprIsConstant{};
   bool loIsConstant = false, hiIsConstant = false;
@@ -39,8 +41,6 @@ struct Registers {
   T Read(size_t);
   template <typename T>
   void Write(size_t, T);
-
-private:
   std::array<s64, 32> gpr{};
 };
 } // namespace n64

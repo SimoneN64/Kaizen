@@ -40,4 +40,8 @@ static bool InstrEndsBlock(const u32 instr) {
     return false;
   }
 }
+
+#define REG(acc, x) code.acc[offsetof(JIT, regs) + offsetof(Registers, x)]
+#define GPR(x) code.qword[offsetof(JIT, regs) + offsetof(Registers, gpr) + 8 * x]
+#define GPR_constant_marker(x) code.byte[offsetof(JIT, regs) + offsetof(Registers, gprIsConstant) + x]
 } // namespace n64

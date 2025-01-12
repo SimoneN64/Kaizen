@@ -172,16 +172,16 @@ void JIT::regimm(const u32 instr) {
   // 000r_rccc
   switch (const u8 mask = instr >> 16 & 0x1F) {
   case BLTZ:
-    b(instr, LT, RS(instr));
+    bltz(instr);
     break;
   case BGEZ:
-    b(instr, GE, RS(instr));
+    bgez(instr);
     break;
   case BLTZL:
-    bl(instr, LT, RS(instr));
+    bltzl(instr);
     break;
   case BGEZL:
-    bl(instr, GE, RS(instr));
+    bgezl(instr);
     break;
   case TGEI:
     trap(regs.Read<s64>(RS(instr)) >= static_cast<s64>(static_cast<s16>(instr)));
@@ -202,16 +202,16 @@ void JIT::regimm(const u32 instr) {
     trap(regs.Read<s64>(RS(instr)) != static_cast<s64>(static_cast<s16>(instr)));
     break;
   case BLTZAL:
-    blink(instr, LT, RS(instr));
+    bltzal(instr);
     break;
   case BGEZAL:
-    blink(instr, GE, RS(instr));
+    bgezal(instr);
     break;
   case BLTZALL:
-    bllink(instr, LT, RS(instr));
+    bltzall(instr);
     break;
   case BGEZALL:
-    bllink(instr, GE, RS(instr));
+    bgezall(instr);
     break;
   default:
     Util::panic("Unimplemented regimm {} {} ({:08X}) (pc: {:016X})", (mask >> 3) & 3, mask & 7, instr,
@@ -234,16 +234,16 @@ void JIT::Emit(const u32 instr) {
     jal(instr);
     break;
   case BEQ:
-    b(instr, EQ, RS(instr), RT(instr));
+    beq(instr);
     break;
   case BNE:
-    b(instr, NE, RS(instr), RT(instr));
+    bne(instr);
     break;
   case BLEZ:
-    b(instr, LE, RS(instr));
+    blez(instr);
     break;
   case BGTZ:
-    b(instr, GT, RS(instr));
+    bgtz(instr);
     break;
   case ADDI:
     addi(instr);
@@ -273,21 +273,52 @@ void JIT::Emit(const u32 instr) {
     regs.cop0.decode(*this, instr);
     break;
   case COP1:
-    regs.cop1.decode(*this, instr);
+    {
+      const u8 mask_sub = (instr >> 21) & 0x1F;
+      const u8 mask_branch = (instr >> 16) & 0x1F;
+      if (mask_sub == 0x08) {
+        switch (mask_branch) {
+        case 0:
+          // if (!regs.cop1.CheckFPUUsable())
+          //   return;
+          bfc0(instr);
+          break;
+        case 1:
+          // if (!regs.cop1.CheckFPUUsable())
+          //   return;
+          bfc1(instr);
+          break;
+        case 2:
+          // if (!regs.cop1.CheckFPUUsable())
+          //   return;
+          blfc0(instr);
+          break;
+        case 3:
+          // if (!regs.cop1.CheckFPUUsable())
+          //   return;
+          blfc1(instr);
+          break;
+        default:
+          Util::panic("Undefined BC COP1 {:02X}", mask_branch);
+        }
+        break;
+      }
+      regs.cop1.decode(instr);
+    }
     break;
   case COP2:
     break;
   case BEQL:
-    bl(instr, EQ, RS(instr), RT(instr));
+    beql(instr);
     break;
   case BNEL:
-    bl(instr, NE, RS(instr), RT(instr));
+    bnel(instr);
     break;
   case BLEZL:
-    bl(instr, LE, RS(instr));
+    blezl(instr);
     break;
   case BGTZL:
-    bl(instr, GT, RS(instr));
+    bgtzl(instr);
     break;
   case DADDI:
     daddi(instr);

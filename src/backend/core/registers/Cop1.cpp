@@ -12,20 +12,7 @@ void Cop1::Reset() {
   memset(fgr, 0, 32 * sizeof(FloatingPointReg));
 }
 
-template <class T>
-void Cop1::decode(T &cpu, u32 instr) {
-  if constexpr (std::is_same_v<decltype(cpu), Interpreter &>) {
-    decodeInterp(cpu, instr);
-  } else {
-    Util::panic("What the fuck did you just give me?!");
-  }
-}
-
-template void Cop1::decode<Interpreter>(Interpreter &, u32);
-template void Cop1::decode<JIT>(JIT &, u32);
-
-void Cop1::decodeInterp(Interpreter &cpu, u32 instr) {
-
+void Cop1::decode(const u32 instr) {
   const u8 mask_sub = (instr >> 21) & 0x1F;
   const u8 mask_fun = instr & 0x3F;
   const u8 mask_branch = (instr >> 16) & 0x1F;
@@ -54,32 +41,6 @@ void Cop1::decodeInterp(Interpreter &cpu, u32 instr) {
     break;
   case 0x07:
     unimplemented();
-    break;
-  case 0x08:
-    switch (mask_branch) {
-    case 0:
-      if (!CheckFPUUsable())
-        return;
-      cpu.b(instr, !fcr31.compare);
-      break;
-    case 1:
-      if (!CheckFPUUsable())
-        return;
-      cpu.b(instr, fcr31.compare);
-      break;
-    case 2:
-      if (!CheckFPUUsable())
-        return;
-      cpu.bl(instr, !fcr31.compare);
-      break;
-    case 3:
-      if (!CheckFPUUsable())
-        return;
-      cpu.bl(instr, fcr31.compare);
-      break;
-    default:
-      Util::panic("Undefined BC COP1 {:02X}", mask_branch);
-    }
     break;
   case 0x10: // s
     switch (mask_fun) {

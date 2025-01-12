@@ -118,11 +118,12 @@ struct Cop1 {
   u32 fcr0{};
   FCR31 fcr31{};
   FloatingPointReg fgr[32]{};
+  bool fgrIsConstant[32]{};
 
   void Reset();
-  template <class T> // either JIT or Interpreter
-  void decode(T &, u32);
+  void decode(u32);
   friend struct Interpreter;
+  friend struct JIT;
 
   template <bool preserveCause = false>
   bool CheckFPUUsable();
@@ -159,8 +160,6 @@ private:
   auto FGR_S(const Cop0Status &, u32) -> T &;
   template <typename T>
   auto FGR_D(const Cop0Status &, u32) -> T &;
-  void decodeInterp(Interpreter &, u32);
-  void decodeJIT(JIT &, u32);
   void absd(u32 instr);
   void abss(u32 instr);
   void adds(u32 instr);
@@ -234,23 +233,11 @@ private:
   void negd(u32 instr);
   void sqrts(u32 instr);
   void sqrtd(u32 instr);
-  template <class T>
-  void lwc1(T &, Mem &, u32);
-  template <class T>
-  void swc1(T &, Mem &, u32);
-  template <class T>
-  void ldc1(T &, Mem &, u32);
-  template <class T>
-  void sdc1(T &, Mem &, u32);
+  void lwc1(Mem &, u32);
+  void swc1(Mem &, u32);
+  void ldc1(Mem &, u32);
+  void sdc1(Mem &, u32);
 
-  void lwc1Interp(Mem &, u32);
-  void swc1Interp(Mem &, u32);
-  void ldc1Interp(Mem &, u32);
-  void sdc1Interp(Mem &, u32);
-  void lwc1JIT(JIT &, Mem &, u32) { Util::panic("[JIT]: lwc1 not implemented!"); }
-  void swc1JIT(JIT &, Mem &, u32) { Util::panic("[JIT]: swc1 not implemented!"); }
-  void ldc1JIT(JIT &, Mem &, u32) { Util::panic("[JIT]: ldc1 not implemented!"); }
-  void sdc1JIT(JIT &, Mem &, u32) { Util::panic("[JIT]: sdc1 not implemented!"); }
   void mfc1(u32 instr);
   void dmfc1(u32 instr);
   void mtc1(u32 instr);

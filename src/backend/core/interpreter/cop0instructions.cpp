@@ -1,5 +1,5 @@
-#include <core/registers/Cop0.hpp>
-#include <core/registers/Registers.hpp>
+#include <registers/Cop0.hpp>
+#include <registers/Registers.hpp>
 #include <log.hpp>
 #include <ranges>
 

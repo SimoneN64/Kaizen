@@ -304,7 +304,38 @@ void Interpreter::Exec(const u32 instr) {
     regs.cop0.decode(*this, instr);
     break;
   case COP1:
-    regs.cop1.decode(*this, instr);
+    {
+      const u8 mask_sub = (instr >> 21) & 0x1F;
+      const u8 mask_branch = (instr >> 16) & 0x1F;
+      if (mask_sub == 0x08) {
+        switch (mask_branch) {
+        case 0:
+          if (!regs.cop1.CheckFPUUsable())
+            return;
+          b(instr, !regs.cop1.fcr31.compare);
+          break;
+        case 1:
+          if (!regs.cop1.CheckFPUUsable())
+            return;
+          b(instr, regs.cop1.fcr31.compare);
+          break;
+        case 2:
+          if (!regs.cop1.CheckFPUUsable())
+            return;
+          bl(instr, !regs.cop1.fcr31.compare);
+          break;
+        case 3:
+          if (!regs.cop1.CheckFPUUsable())
+            return;
+          bl(instr, regs.cop1.fcr31.compare);
+          break;
+        default:
+          Util::panic("Undefined BC COP1 {:02X}", mask_branch);
+        }
+        break;
+      }
+      regs.cop1.decode(instr);
+    }
     break;
   case COP2:
     cop2Decode(instr);
@@ -387,13 +418,13 @@ void Interpreter::Exec(const u32 instr) {
     ll(instr);
     break;
   case LWC1:
-    regs.cop1.lwc1(*this, mem, instr);
+    regs.cop1.lwc1(mem, instr);
     break;
   case LLD:
     lld(instr);
     break;
   case LDC1:
-    regs.cop1.ldc1(*this, mem, instr);
+    regs.cop1.ldc1(mem, instr);
     break;
   case LD:
     ld(instr);
@@ -402,13 +433,13 @@ void Interpreter::Exec(const u32 instr) {
     sc(instr);
     break;
   case SWC1:
-    regs.cop1.swc1(*this, mem, instr);
+    regs.cop1.swc1(mem, instr);
     break;
   case SCD:
     scd(instr);
     break;
   case SDC1:
-    regs.cop1.sdc1(*this, mem, instr);
+    regs.cop1.sdc1(mem, instr);
     break;
   case SD:
     sd(instr);

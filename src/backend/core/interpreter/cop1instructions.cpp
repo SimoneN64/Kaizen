@@ -1,8 +1,8 @@
 #include <cfenv>
 #include <cmath>
-#include <core/Interpreter.hpp>
-#include <core/registers/Cop1.hpp>
-#include <core/registers/Registers.hpp>
+#include <Interpreter.hpp>
+#include <registers/Cop1.hpp>
+#include <registers/Registers.hpp>
 #include <utils/FloatingPoint.hpp>
 
 namespace n64 {
@@ -1220,71 +1220,7 @@ void Cop1::truncld(const u32 instr) {
   FGR_D<s64>(regs.cop0.status, FD(instr)) = fd;
 }
 
-template <class T>
-void Cop1::lwc1(T &cpu, Mem &mem, u32 instr) {
-  if constexpr (std::is_same_v<decltype(cpu), Interpreter &>) {
-    if (!CheckFPUUsable<true>())
-      return;
-    lwc1Interp(mem, instr);
-  } else if constexpr (std::is_same_v<decltype(cpu), JIT &>) {
-    lwc1JIT(cpu, mem, instr);
-  } else {
-    Util::panic("What the fuck did you just give me?!!");
-  }
-}
-
-template void Cop1::lwc1<Interpreter>(Interpreter &, Mem &, u32);
-template void Cop1::lwc1<JIT>(JIT &, Mem &, u32);
-
-template <class T>
-void Cop1::swc1(T &cpu, Mem &mem, u32 instr) {
-  if constexpr (std::is_same_v<decltype(cpu), Interpreter &>) {
-    if (!CheckFPUUsable<true>())
-      return;
-    swc1Interp(mem, instr);
-  } else if constexpr (std::is_same_v<decltype(cpu), JIT &>) {
-    swc1JIT(cpu, mem, instr);
-  } else {
-    Util::panic("What the fuck did you just give me?!!");
-  }
-}
-
-template void Cop1::swc1<Interpreter>(Interpreter &, Mem &, u32);
-template void Cop1::swc1<JIT>(JIT &, Mem &, u32);
-
-template <class T>
-void Cop1::ldc1(T &cpu, Mem &mem, u32 instr) {
-  if constexpr (std::is_same_v<decltype(cpu), Interpreter &>) {
-    if (!CheckFPUUsable<true>())
-      return;
-    ldc1Interp(mem, instr);
-  } else if constexpr (std::is_same_v<decltype(cpu), JIT &>) {
-    ldc1JIT(cpu, mem, instr);
-  } else {
-    Util::panic("What the fuck did you just give me?!!");
-  }
-}
-
-template void Cop1::ldc1<Interpreter>(Interpreter &, Mem &, u32);
-template void Cop1::ldc1<JIT>(JIT &, Mem &, u32);
-
-template <class T>
-void Cop1::sdc1(T &cpu, Mem &mem, u32 instr) {
-  if constexpr (std::is_same_v<decltype(cpu), Interpreter &>) {
-    if (!CheckFPUUsable<true>())
-      return;
-    sdc1Interp(mem, instr);
-  } else if constexpr (std::is_same_v<decltype(cpu), JIT &>) {
-    sdc1JIT(cpu, mem, instr);
-  } else {
-    Util::panic("What the fuck did you just give me?!!");
-  }
-}
-
-template void Cop1::sdc1<Interpreter>(Interpreter &, Mem &, u32);
-template void Cop1::sdc1<JIT>(JIT &, Mem &, u32);
-
-void Cop1::lwc1Interp(Mem &mem, const u32 instr) {
+void Cop1::lwc1(Mem &mem, u32 instr) {
   const u64 addr = static_cast<s64>(static_cast<s16>(instr)) + regs.Read<s64>(BASE(instr));
 
   if (u32 physical; !regs.cop0.MapVAddr(Cop0::LOAD, addr, physical)) {
@@ -1296,7 +1232,7 @@ void Cop1::lwc1Interp(Mem &mem, const u32 instr) {
   }
 }
 
-void Cop1::swc1Interp(Mem &mem, const u32 instr) {
+void Cop1::swc1(Mem &mem, u32 instr) {
   const u64 addr = static_cast<s64>(static_cast<s16>(instr)) + regs.Read<s64>(BASE(instr));
 
   if (u32 physical; !regs.cop0.MapVAddr(Cop0::STORE, addr, physical)) {
@@ -1307,14 +1243,7 @@ void Cop1::swc1Interp(Mem &mem, const u32 instr) {
   }
 }
 
-void Cop1::unimplemented() {
-  if (!CheckFPUUsable())
-    return;
-  SetCauseUnimplemented();
-  regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
-}
-
-void Cop1::ldc1Interp(Mem &mem, const u32 instr) {
+void Cop1::ldc1(Mem &mem, u32 instr) {
   const u64 addr = static_cast<s64>(static_cast<s16>(instr)) + regs.Read<s64>(BASE(instr));
 
   if (u32 physical; !regs.cop0.MapVAddr(Cop0::LOAD, addr, physical)) {
@@ -1326,7 +1255,7 @@ void Cop1::ldc1Interp(Mem &mem, const u32 instr) {
   }
 }
 
-void Cop1::sdc1Interp(Mem &mem, const u32 instr) {
+void Cop1::sdc1(Mem &mem, u32 instr) {
   const u64 addr = static_cast<s64>(static_cast<s16>(instr)) + regs.Read<s64>(BASE(instr));
 
   if (u32 physical; !regs.cop0.MapVAddr(Cop0::STORE, addr, physical)) {
@@ -1335,6 +1264,13 @@ void Cop1::sdc1Interp(Mem &mem, const u32 instr) {
   } else {
     mem.Write(regs, physical, FGR_T<u64>(regs.cop0.status, FT(instr)));
   }
+}
+
+void Cop1::unimplemented() {
+  if (!CheckFPUUsable())
+    return;
+  SetCauseUnimplemented();
+  regs.cop0.FireException(ExceptionCode::FloatingPointError, 0, regs.oldPC);
 }
 
 void Cop1::mfc1(const u32 instr) {

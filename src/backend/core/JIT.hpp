@@ -17,8 +17,6 @@ struct CodeGenerator : Xbyak::CodeGenerator {
   CodeGenerator() : Xbyak::CodeGenerator{kCodeCacheSize} {}
 };
 
-enum BranchCondition { EQ, NE, GT, GE, LT, LE, GTU, GEU, LTU, LEU };
-
 struct JIT : BaseCPU {
   explicit JIT(ParallelRDP &);
   ~JIT() override = default;
@@ -42,6 +40,47 @@ private:
   u64 cop2Latch{};
   friend struct Cop1;
 
+
+  // Credits to PCSX-Redux: https://github.com/grumpycoders/pcsx-redux
+  // Sets dest to "pointer"
+  void loadAddress(const Xbyak::Reg64 dest, void *pointer) { code.mov(dest, reinterpret_cast<uintptr_t>(pointer)); }
+
+  // Load a pointer to the JIT object in "reg"
+  void loadThisPointer(const Xbyak::Reg64 reg) { code.mov(reg, code.rbp); }
+  // Emit a call to a class member function, passing "thisObject" (+ an adjustment if necessary)
+  // As the function's "this" pointer. Only works with classes with single, non-virtual inheritance
+  // Hence the static asserts. Those are all we need though, thankfully.
+  template <typename T>
+  void emitMemberFunctionCall(T func, void *thisObject) {
+    void *functionPtr;
+    auto thisPtr = reinterpret_cast<uintptr_t>(thisObject);
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+    static_assert(sizeof(T) == 8, "[x64 JIT] Invalid size for member function pointer");
+    std::memcpy(&functionPtr, &func, sizeof(T));
+#else
+    static_assert(sizeof(T) == 16, "[x64 JIT] Invalid size for member function pointer");
+    uintptr_t arr[2];
+    std::memcpy(arr, &func, sizeof(T));
+    // First 8 bytes correspond to the actual pointer to the function
+    functionPtr = reinterpret_cast<void *>(arr[0]);
+    // Next 8 bytes correspond to the "this" pointer adjustment
+    thisPtr += arr[1];
+#endif
+
+    // Load this pointer to arg1
+    if (thisPtr == reinterpret_cast<uintptr_t>(this)) {
+      loadThisPointer(code.rdi);
+    } else {
+      loadAddress(code.rdi, reinterpret_cast<void *>(thisPtr));
+    }
+
+    code.call(functionPtr);
+  }
+  void SkipSlot();
+  void BranchTaken(s64 offs);
+  void BranchTaken(const Xbyak::Reg &offs);
+
 #define check_address_error(mask, vaddr)                                                                               \
   (((!regs.cop0.is64BitAddressing) && (s32)(vaddr) != (vaddr)) || (((vaddr) & (mask)) != 0))
 
@@ -59,14 +98,30 @@ private:
   void addiu(u32);
   void andi(u32);
   void and_(u32);
-  void b(u32 instr, BranchCondition, u32 reg1, u32 reg2);
-  void b(u32 instr, BranchCondition, u32 reg);
-  void blink(u32 instr, BranchCondition, u32 reg1, u32 reg2);
-  void blink(u32 instr, BranchCondition, u32 reg);
-  void bl(u32 instr, BranchCondition, u32 reg1, u32 reg2);
-  void bl(u32 instr, BranchCondition, u32 reg);
-  void bllink(u32 instr, BranchCondition, u32 reg1, u32 reg2);
-  void bllink(u32 instr, BranchCondition, u32 reg);
+  void branch(const Xbyak::Reg &address);
+  void branch_likely(const Xbyak::Reg &address);
+  void branch_constant(const bool cond, const s64 address);
+  void branch_likely_constant(const bool cond, const s64 address);
+  void bltz(u32);
+  void bgez(u32);
+  void bltzl(u32);
+  void bgezl(u32);
+  void bltzal(u32);
+  void bgezal(u32);
+  void bltzall(u32);
+  void bgezall(u32);
+  void beq(u32);
+  void beql(u32);
+  void bne(u32);
+  void bnel(u32);
+  void blez(u32);
+  void blezl(u32);
+  void bgtz(u32);
+  void bgtzl(u32);
+  void bfc1(u32 instr);
+  void blfc1(u32 instr);
+  void bfc0(u32 instr);
+  void blfc0(u32 instr);
   void dadd(u32);
   void daddu(u32);
   void daddi(u32);

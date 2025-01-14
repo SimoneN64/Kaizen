@@ -79,7 +79,7 @@ struct Flash {
 
 struct Mem {
   ~Mem() = default;
-  Mem(Registers &, ParallelRDP &);
+  Mem(Registers &, ParallelRDP &, JIT * = nullptr);
   void Reset();
   void LoadSRAM(SaveType, fs::path);
   static std::vector<u8> OpenROM(const std::string &, size_t &);
@@ -131,6 +131,14 @@ struct Mem {
   Flash flash;
 
 private:
+  template <typename T>
+  void WriteInterpreter(Registers &, u32, u32);
+  void WriteInterpreter(const Registers &, u32, u64);
+  template <typename T>
+  void WriteJIT(Registers &, u32, u32);
+  void WriteJIT(const Registers &, u32, u64);
+
+  JIT *jit = nullptr;
   friend struct SI;
   friend struct PI;
   friend struct AI;

@@ -3,7 +3,7 @@
 #include <Scheduler.hpp>
 
 namespace n64 {
-Core::Core() : cpu(std::make_unique<Interpreter>(parallel)) {}
+Core::Core() : cpu(std::make_unique<JIT>(parallel)) {}
 
 void Core::Stop() {
   render = false;
@@ -23,8 +23,7 @@ void Core::LoadROM(const std::string &rom_) {
   std::string archive_types[] = {".zip", ".7z", ".rar", ".tar"};
 
   auto extension = fs::path(rom).extension().string();
-  const bool isArchive = std::ranges::any_of(archive_types,
-                               [&extension](const auto &e) { return e == extension; });
+  const bool isArchive = std::ranges::any_of(archive_types, [&extension](const auto &e) { return e == extension; });
 
   cpu->GetMem().LoadROM(isArchive, rom);
   GameDB::match(cpu->GetMem());

@@ -1,11 +1,12 @@
 #pragma once
 #include <array>
+#include <xbyak.h>
 #include <backend/core/registers/Cop1.hpp>
 
 namespace n64 {
 struct JIT;
 struct Registers {
-  Registers(JIT* jit = nullptr);
+  Registers(JIT *jit = nullptr);
   void Reset();
   void SetPC64(s64);
   void SetPC32(s32);
@@ -20,7 +21,7 @@ struct Registers {
     return IsRegConstant(first) && IsRegConstant(second);
   }
 
-  JIT* jit = nullptr;
+  JIT *jit = nullptr;
 
   std::array<bool, 32> gprIsConstant{};
   bool loIsConstant = false, hiIsConstant = false;
@@ -28,7 +29,7 @@ struct Registers {
   Cop1 cop1;
   s64 oldPC{}, pc{}, nextPC{};
   s64 hi{}, lo{};
-  bool prevDelaySlot{}, delaySlot{};
+  bool prevDelaySlot{}, delaySlot{}, block_delaySlot{};
   u32 steps = 0;
   u32 extraCycles = 0;
 
@@ -43,9 +44,14 @@ struct Registers {
   template <typename T>
   T Read(size_t);
   template <typename T>
-  void Write(size_t, T);
+  void Read(size_t, Xbyak::Reg);
+  template <typename T>
+  void Write(size_t, T, bool = false);
+  template <typename T>
+  void Write(size_t, Xbyak::Reg);
 
   std::array<s64, 32> gpr{};
+
 private:
   template <typename T>
   void WriteJIT(size_t, T);

@@ -8,19 +8,12 @@ namespace n64 {
 using namespace Xbyak::util;
 
 void JIT::lui(const u32 instr) {
-  if (RT(instr) == 0)
-    return;
-
   u64 val = static_cast<s64>(static_cast<s16>(instr));
   val <<= 16;
-  code.mov(GPR(RT(instr)), val);
-  code.mov(GPR_constant_marker(RT(instr)), 1);
+  regs.Write(RT(instr), val, true);
 }
 
 void JIT::add(const u32 instr) {
-  if (RD(instr) == 0)
-    return;
-
   if (regs.IsRegConstant(RS(instr), RT(instr))) {
     const u32 rs = regs.Read<s32>(RS(instr));
     const u32 rt = regs.Read<s32>(RT(instr));
@@ -30,117 +23,137 @@ void JIT::add(const u32 instr) {
       Util::panic("[JIT]: Unhandled Overflow exception in ADD!");
     }
 
-    code.mov(code.eax, static_cast<s32>(result));
-    code.movsxd(code.rax, code.eax);
-    code.mov(GPR(RD(instr)), code.rax);
-
+    regs.Write<s32>(RD(instr), result, true);
     return;
   }
 
   if (regs.IsRegConstant(RS(instr))) {
     const u32 rs = regs.Read<s32>(RS(instr));
-    code.mov(code.eax, GPR(RT(instr)));
+    regs.Read<u32>(RT(instr), code.eax);
     code.add(code.eax, rs);
-    code.movsxd(code.rax, code.eax);
-    code.mov(GPR(RD(instr)), code.rax);
+    regs.Write<s32>(RD(instr), code.eax);
 
     return;
   }
 
   if (regs.IsRegConstant(RT(instr))) {
     const u32 rt = regs.Read<s32>(RT(instr));
-    code.mov(code.eax, GPR(RS(instr)));
+    regs.Read<u32>(RS(instr), code.eax);
     code.add(code.eax, rt);
-    code.movsxd(code.rax, code.eax);
-    code.mov(GPR(RD(instr)), code.rax);
+    regs.Write<s32>(RD(instr), code.eax);
 
     return;
   }
 
-  code.mov(code.edi, GPR(RT(instr)));
-  code.mov(code.eax, GPR(RS(instr)));
+  regs.Read<u32>(RT(instr), code.eax);
+  regs.Read<u32>(RS(instr), code.edi);
   code.add(code.eax, code.edi);
-  code.movsxd(code.rax, code.eax);
-  code.mov(GPR(RD(instr)), code.rax);
+  regs.Write<s32>(RD(instr), code.eax);
 }
 
 void JIT::addu(u32 instr) {
-  if (RD(instr) == 0)
-    return;
-
   if (regs.IsRegConstant(RS(instr), RT(instr))) {
     const s32 rs = regs.Read<s32>(RS(instr));
     const s32 rt = regs.Read<s32>(RT(instr));
     const s32 result = rs + rt;
 
-    code.mov(code.eax, result);
-    code.movsxd(code.rax, code.eax);
-    code.mov(GPR(RD(instr)), code.rax);
-    code.mov(REG(byte, gprIsConstant), 1);
+    regs.Write<s32>(RD(instr), result);
     return;
   }
-  
+
   if (regs.IsRegConstant(RS(instr))) {
     const s32 rs = regs.Read<s32>(RS(instr));
+    regs.Read<s32>(RT(instr), code.eax);
+    code.add(code.eax, rs);
+    regs.Write<s32>(RD(instr), code.eax);
     return;
   }
+
+  if (regs.IsRegConstant(RT(instr))) {
+    const s32 rs = regs.Read<s32>(RT(instr));
+    regs.Read<s32>(RS(instr), code.eax);
+    code.add(code.eax, rs);
+    regs.Write<s32>(RD(instr), code.eax);
+    return;
+  }
+
+  regs.Read<s32>(RS(instr), code.eax);
+  regs.Read<s32>(RT(instr), code.edi);
+  code.add(code.eax, code.edi);
+  regs.Write<s32>(RD(instr), code.eax);
 }
 
 void JIT::addi(u32 instr) {
-  if (RT(instr) == 0)
-    return;
-
+  u32 imm = s32(s16(instr));
   if (regs.IsRegConstant(RS(instr))) {
     auto rs = regs.Read<u32>(RS(instr));
-    u32 imm = s32(s16(instr));
     u32 result = rs + imm;
     if (check_signed_overflow(rs, imm, result)) {
       Util::panic("[JIT]: Unhandled Overflow exception in ADDI!");
-    } else {
-      code.mov(code.eax, static_cast<s32>(result));
-      code.movsxd(code.rax, code.eax);
-      code.mov(GPR(RT(instr)), code.rax);
     }
-  } else {
-    Util::panic("[JIT]: Implement non constant ADDI!");
+
+    regs.Write<s32>(RT(instr), static_cast<s32>(result), true);
+    return;
   }
+
+  regs.Read<u32>(RS(instr), code.eax);
+  code.add(code.eax, imm);
+  regs.Write<s32>(RT(instr), code.eax);
 }
 
 void JIT::addiu(u32 instr) {
-  if (RT(instr) == 0)
-    return;
-
+  u32 imm = s32(s16(instr));
   if (regs.IsRegConstant(RS(instr))) {
     auto rs = regs.Read<u32>(RS(instr));
-    u32 imm = s32(s16(instr));
     u32 result = rs + imm;
     regs.Write(RT(instr), s32(result));
-  } else {
-    Util::panic("[JIT]: Implement non constant ADDIU!");
+
+    return;
   }
+
+  regs.Read<u32>(RS(instr), code.eax);
+  code.add(code.eax, imm);
+  regs.Write<s32>(RT(instr), code.eax);
 }
 
 void JIT::andi(u32 instr) {
-  if (RT(instr) == 0)
-    return;
-
-  s64 imm = (u16)instr;
+  const s64 imm = static_cast<u16>(instr);
   if (regs.IsRegConstant(RS(instr))) {
     regs.Write(RT(instr), regs.Read<s64>(RS(instr)) & imm);
-  } else {
-    Util::panic("[JIT]: Implement non constant ANDI!");
+    return;
   }
+
+  regs.Read<s64>(RS(instr), code.rax);
+  code.and_(code.rax, imm);
+  regs.Write<s64>(RT(instr), code.rax);
 }
 
 void JIT::and_(u32 instr) {
-  if (RD(instr) == 0)
-    return;
-
   if (regs.IsRegConstant(RS(instr), RT(instr))) {
     regs.Write(RD(instr), regs.Read<s64>(RS(instr)) & regs.Read<s64>(RT(instr)));
-  } else {
-    Util::panic("[JIT]: Implement non constant AND!");
+    return;
   }
+
+  if (regs.IsRegConstant(RS(instr))) {
+    const auto rs = regs.Read<s64>(RS(instr));
+    regs.Read<s64>(RT(instr), code.rax);
+    code.and_(code.rax, rs);
+    regs.Write<s64>(RD(instr), code.rax);
+    return;
+  }
+
+  if (regs.IsRegConstant(RT(instr))) {
+    const auto rt = regs.Read<s64>(RT(instr));
+    regs.Read<s64>(RS(instr), code.rax);
+    code.and_(code.rax, rt);
+    regs.Write<s64>(RD(instr), code.rax);
+    return;
+  }
+
+  regs.Read<s64>(RS(instr), code.rax);
+  regs.Read<s64>(RT(instr), code.rdi);
+  code.and_(code.rdi, code.rax);
+  regs.Write<s64>(RD(instr), code.rdi);
 }
 
 void JIT::SkipSlot() {
@@ -153,6 +166,8 @@ void JIT::SkipSlot() {
   code.add(code.rax, 4);
   code.mov(REG(qword, nextPC), code.rax);
 }
+
+void JIT::SkipSlotConstant() { blockPC += 4; }
 
 void JIT::BranchTaken(const s64 offs) {
   code.mov(code.rax, REG(qword, pc));
@@ -205,7 +220,7 @@ void JIT::branch_likely_constant(const bool cond, const s64 offset) {
     code.mov(REG(byte, delaySlot), code.al);
     BranchTaken(offset);
   } else {
-    SkipSlot();
+    SkipSlotConstant();
   }
 }
 
@@ -245,7 +260,7 @@ void JIT::bltz(const u32 instr) {
     return;
   }
 
-  code.mov(code.rax, GPR(RS(instr)));
+  code.mov(code.rax, GPR<s64>(RS(instr)));
   code.cmp(code.rax, 0);
   branch(offset, l);
 }
@@ -353,7 +368,7 @@ void JIT::beql(const u32 instr) {
   branch_likely(offset, e);
 }
 
-void JIT::bne(const u32 instr) {  
+void JIT::bne(const u32 instr) {
   const s16 imm = instr;
   const s64 offset = u64((s64)imm) << 2;
   if (regs.IsRegConstant(RS(instr)) && regs.IsRegConstant(RT(instr))) {
@@ -409,7 +424,7 @@ void JIT::bnel(const u32 instr) {
   branch_likely(offset, ne);
 }
 
-void JIT::blez(const u32 instr) {  
+void JIT::blez(const u32 instr) {
   const s16 imm = instr;
   const s64 offset = u64((s64)imm) << 2;
   if (regs.IsRegConstant(RS(instr))) {
@@ -462,9 +477,6 @@ void JIT::bgtzl(const u32 instr) {
 }
 
 void JIT::dadd(u32 instr) {
-  if (RD(instr) == 0)
-    return;
-
   if (regs.IsRegConstant(RS(instr), RT(instr))) {
     auto rs = regs.Read<u64>(RS(instr));
     auto rt = regs.Read<u64>(RT(instr));
@@ -1155,7 +1167,7 @@ void JIT::sw(const u32 instr) {
       code.mov(code.rsi, reinterpret_cast<uintptr_t>(&regs));
       code.mov(code.edx, physical);
       code.mov(code.rcx, regs.Read<s64>(RT(instr)));
-      emitMemberFunctionCall(&Mem::Write<u32>, &mem);
+      emitMemberFunctionCall(&Mem::WriteJIT<u32>, &mem);
     }
 
     return;
@@ -1180,7 +1192,7 @@ void JIT::sw(const u32 instr) {
       code.mov(code.rsi, reinterpret_cast<uintptr_t>(&regs));
       code.mov(code.edx, physical);
       code.mov(code.rcx, GPR(RT(instr)));
-      emitMemberFunctionCall(&Mem::Write<u32>, &mem);
+      emitMemberFunctionCall(&Mem::WriteJIT<u32>, &mem);
     }
 
     return;
@@ -1200,7 +1212,7 @@ void JIT::sw(const u32 instr) {
     code.mov(code.rsi, reinterpret_cast<uintptr_t>(&regs));
     code.mov(code.edx, physical);
     code.mov(code.rcx, regs.Read<s64>(RT(instr)));
-    emitMemberFunctionCall(&Mem::Write<u32>, &mem);
+    emitMemberFunctionCall(&Mem::WriteJIT<u32>, &mem);
 
     return;
   }
@@ -1218,7 +1230,7 @@ void JIT::sw(const u32 instr) {
   code.mov(code.rsi, reinterpret_cast<uintptr_t>(&regs));
   code.mov(code.edx, physical);
   code.mov(code.rcx, GPR(RT(instr)));
-  emitMemberFunctionCall(&Mem::Write<u32>, &mem);
+  emitMemberFunctionCall(&Mem::WriteJIT<u32>, &mem);
 }
 
 void JIT::srlv(u32 instr) {

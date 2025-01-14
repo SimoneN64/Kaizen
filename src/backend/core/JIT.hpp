@@ -9,13 +9,10 @@ struct Core;
 
 static constexpr u32 kAddressSpaceSize = 0x8000'0000; // >> 20 = 0x800
 static constexpr u32 kLowerSize = kAddressSpaceSize >> 20; // 0x800
-static constexpr u32 kUpperSize = 1 << 20; // 0x100000
+static constexpr u32 kUpperSize = kAddressSpaceSize >> 8; // 0x100000
 static constexpr u32 kCodeCacheSize = 32_mb;
 static constexpr u32 kCodeCacheAllocSize = kCodeCacheSize + 4096;
-
-struct CodeGenerator : Xbyak::CodeGenerator {
-  CodeGenerator() : Xbyak::CodeGenerator{kCodeCacheSize} {}
-};
+#define REG(acc, x) code.acc[reinterpret_cast<uintptr_t>(&regs.x)]
 
 struct JIT : BaseCPU {
   explicit JIT(ParallelRDP &);
@@ -27,6 +24,8 @@ struct JIT : BaseCPU {
     mem.Reset();
   }
 
+  void InvalidateBlock(u32);
+
   Mem &GetMem() override { return mem; }
 
   Registers &GetRegs() override { return regs; }
@@ -34,23 +33,31 @@ struct JIT : BaseCPU {
   [[nodiscard]] Disassembler::DisassemblyResult Disassemble(u32, u32) const override { return {}; }
 
 private:
-  CodeGenerator code;
+  Xbyak::CodeGenerator code{kCodeCacheSize};
   Registers regs;
   Mem mem;
   u64 cop2Latch{};
+  u64 blockPC = 0;
   friend struct Cop1;
+  friend struct Registers;
+  using BlockFn = int (*)();
 
+  std::vector<std::vector<BlockFn>> blockCache;
   template <typename T>
-  AddressFrame GPR(size_t index) {
-    if constexpr(sizeof(T) == 1) {
-      return code.byte[offsetof(JIT, regs) + offsetof(Registers, gpr) + 8 * x];
-    } else if constexpr(sizeof(T) == 2) {
-      return code.word[offsetof(JIT, regs) + offsetof(Registers, gpr) + 8 * x];
-    } else if constexpr(sizeof(T) == 4) {
-      return code.dword[offsetof(JIT, regs) + offsetof(Registers, gpr) + 8 * x];
-    } else if constexpr(sizeof(T) == 8) {
-      return code.qword[offsetof(JIT, regs) + offsetof(Registers, gpr) + 8 * x];
+  Xbyak::Address GPR(const size_t index) const {
+    if constexpr (sizeof(T) == 1) {
+      return code.byte[reinterpret_cast<uintptr_t>(&regs.gpr[index])];
+    } else if constexpr (sizeof(T) == 2) {
+      return code.word[reinterpret_cast<uintptr_t>(&regs.gpr[index])];
+    } else if constexpr (sizeof(T) == 4) {
+      return code.dword[reinterpret_cast<uintptr_t>(&regs.gpr[index])];
+    } else if constexpr (sizeof(T) == 8) {
+      return code.qword[reinterpret_cast<uintptr_t>(&regs.gpr[index])];
     }
+
+    Util::panic("[JIT]: Invalid register addressing");
+    // never actually hit, but just to silence the warning "not all control paths return a value"
+    return Xbyak::Address{0};
   }
 
   // Credits to PCSX-Redux: https://github.com/grumpycoders/pcsx-redux
@@ -90,6 +97,7 @@ private:
     code.call(functionPtr);
   }
   void SkipSlot();
+  void SkipSlotConstant();
   void BranchTaken(s64 offs);
   void BranchTaken(const Xbyak::Reg &offs);
 
@@ -110,8 +118,8 @@ private:
   void addiu(u32);
   void andi(u32);
   void and_(u32);
-  void branch_constant(const bool cond, const s64 address);
-  void branch_likely_constant(const bool cond, const s64 address);
+  void branch_constant(bool cond, s64 address);
+  void branch_likely_constant(bool cond, s64 address);
   void bltz(u32);
   void bgez(u32);
   void bltzl(u32);

@@ -2,12 +2,11 @@
 #include <Mem.hpp>
 #include <backend/RomHelpers.hpp>
 #include <cassert>
-#include <core/Interpreter.hpp>
-#include <core/registers/Registers.hpp>
+#include <core/JIT.hpp>
 #include <unarr.h>
 
 namespace n64 {
-Mem::Mem(Registers &regs, ParallelRDP &parallel) : mmio(*this, regs, parallel), flash(saveData) {
+Mem::Mem(Registers &regs, ParallelRDP &parallel, JIT *jit) : mmio(*this, regs, parallel), flash(saveData), jit(jit) {
   rom.cart.resize(CART_SIZE);
   std::ranges::fill(rom.cart, 0);
 }
@@ -318,7 +317,20 @@ u64 Mem::Read(Registers &regs, const u32 paddr) {
 }
 
 template <>
-void Mem::Write<u8>(Registers &regs, u32 paddr, u32 val) {
+void Mem::WriteJIT<u8>(Registers &regs, const u32 paddr, const u32 val) {
+  if (jit)
+    jit->InvalidateBlock(paddr);
+
+  WriteInterpreter<u8>(regs, paddr, val);
+}
+
+template <>
+void Mem::Write<u8>(Registers &regs, const u32 paddr, const u32 val) {
+  WriteInterpreter<u8>(regs, paddr, val);
+}
+
+template <>
+void Mem::WriteInterpreter<u8>(Registers &regs, u32 paddr, u32 val) {
   SI &si = mmio.si;
 
   switch (paddr) {
@@ -359,7 +371,20 @@ void Mem::Write<u8>(Registers &regs, u32 paddr, u32 val) {
 }
 
 template <>
-void Mem::Write<u16>(Registers &regs, u32 paddr, u32 val) {
+void Mem::WriteJIT<u16>(Registers &regs, const u32 paddr, const u32 val) {
+  if (jit)
+    jit->InvalidateBlock(paddr);
+
+  WriteInterpreter<u16>(regs, paddr, val);
+}
+
+template <>
+void Mem::Write<u16>(Registers &regs, const u32 paddr, const u32 val) {
+  WriteInterpreter<u16>(regs, paddr, val);
+}
+
+template <>
+void Mem::WriteInterpreter<u16>(Registers &regs, u32 paddr, u32 val) {
   SI &si = mmio.si;
 
   switch (paddr) {
@@ -400,7 +425,20 @@ void Mem::Write<u16>(Registers &regs, u32 paddr, u32 val) {
 }
 
 template <>
+void Mem::WriteJIT<u32>(Registers &regs, const u32 paddr, const u32 val) {
+  if (jit)
+    jit->InvalidateBlock(paddr);
+
+  WriteInterpreter<u32>(regs, paddr, val);
+}
+
+template <>
 void Mem::Write<u32>(Registers &regs, const u32 paddr, const u32 val) {
+  WriteInterpreter<u32>(regs, paddr, val);
+}
+
+template <>
+void Mem::WriteInterpreter<u32>(Registers &regs, const u32 paddr, const u32 val) {
   SI &si = mmio.si;
 
   switch (paddr) {
@@ -437,7 +475,16 @@ void Mem::Write<u32>(Registers &regs, const u32 paddr, const u32 val) {
   }
 }
 
-void Mem::Write(const Registers &regs, const u32 paddr, u64 val) {
+void Mem::WriteJIT(const Registers &regs, const u32 paddr, const u64 val) {
+  if (jit)
+    jit->InvalidateBlock(paddr);
+
+  WriteInterpreter(regs, paddr, val);
+}
+
+void Mem::Write(const Registers &regs, const u32 paddr, const u64 val) { WriteInterpreter(regs, paddr, val); }
+
+void Mem::WriteInterpreter(const Registers &regs, const u32 paddr, u64 val) {
   SI &si = mmio.si;
 
   switch (paddr) {

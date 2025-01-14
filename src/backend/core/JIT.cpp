@@ -2,7 +2,7 @@
 #include <jit/helpers.hpp>
 
 namespace n64 {
-JIT::JIT(ParallelRDP &parallel) : regs(this), mem(regs, parallel) {}
+JIT::JIT(ParallelRDP &parallel) : regs(this), mem(regs, parallel, this) { blockCache.resize(kUpperSize); }
 
 bool JIT::ShouldServiceInterrupt() const {
   const bool interrupts_pending = (regs.cop0.status.im & regs.cop0.cause.interruptPending) != 0;
@@ -23,18 +23,26 @@ void JIT::CheckCompareInterrupt() {
 }
 
 int JIT::Step() {
-  u32 instruction = 0;
-  s64 pc = regs.pc;
+  blockPC = regs.pc;
+
+  if (!blockCache[blockPC >> 8].empty()) {
+    if (blockCache[blockPC >> 8][blockPC >> 20]) {
+      return blockCache[blockPC >> 8][blockPC >> 20]();
+    }
+  } else {
+    blockCache[blockPC >> 8].resize(kLowerSize);
+  }
+
+  regs.block_delaySlot = false;
+
+  u32 instruction;
 
   do {
     // CheckCompareInterrupt();
 
-    // regs.prevDelaySlot = regs.delaySlot;
-    // regs.delaySlot = false;
-
-    if (check_address_error(0b11, u64(pc))) [[unlikely]] {
-      /*regs.cop0.HandleTLBException(pc);
-      regs.cop0.FireException(ExceptionCode::AddressErrorLoad, 0, pc);
+    if (check_address_error(0b11, u64(blockPC))) [[unlikely]] {
+      /*regs.cop0.HandleTLBException(blockPC);
+      regs.cop0.FireException(ExceptionCode::AddressErrorLoad, 0, blockPC);
       return 1;*/
 
       Util::panic("[JIT]: Unhandled exception ADL due to unaligned PC virtual value! (0x{:016lX})",
@@ -42,9 +50,10 @@ int JIT::Step() {
     }
 
     u32 paddr = 0;
-    if (!regs.cop0.MapVAddr(Cop0::LOAD, pc, paddr)) {
-      /*regs.cop0.HandleTLBException(pc);
-      regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, pc);
+
+    if (!regs.cop0.MapVAddr(Cop0::LOAD, blockPC, paddr)) {
+      /*regs.cop0.HandleTLBException(blockPC);
+      regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, blockPC);
       return 1;*/
       Util::panic(
         "[JIT]: Unhandled exception TLB exception {} when retrieving PC physical address! (virtual: 0x{:016lX})",
@@ -58,15 +67,15 @@ int JIT::Step() {
       return 1;
     }*/
 
-    pc += 4;
+    blockPC += 4;
 
     Emit(instruction);
   }
   while (!InstrEndsBlock(instruction));
 
   // emit code to store the value of pc
-
-  return 1;
+  blockCache[regs.pc >> 8][regs.pc >> 20] = code.getCurr<BlockFn>();
+  return blockCache[regs.pc >> 8][regs.pc >> 20]();
 }
 
 std::vector<u8> JIT::Serialize() {

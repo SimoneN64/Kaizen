@@ -20,27 +20,33 @@ static bool SpecialEndsBlock(const u32 instr) {
   }
 }
 
+static bool RegimmEndsBlock(const u32 instr) {
+  switch (instr >> 16 & 0x1F) {
+  case BLTZL:
+  case BGEZL:
+  case BLTZALL:
+  case BGEZALL:
+    return false;
+  default:
+    return true;
+  }
+}
+
 static bool InstrEndsBlock(const u32 instr) {
   switch (instr >> 26 & 0x3f) {
   case SPECIAL:
     return SpecialEndsBlock(instr);
   case REGIMM:
+    return RegimmEndsBlock(instr);
   case J:
   case JAL:
   case BEQ:
   case BNE:
   case BLEZ:
   case BGTZ:
-  case BEQL:
-  case BNEL:
-  case BLEZL:
-  case BGTZL:
     return true;
   default:
     return false;
   }
 }
-
-#define REG(acc, x) code.acc[offsetof(JIT, regs) + offsetof(Registers, x)]
-#define GPR_constant_marker(x) code.byte[offsetof(JIT, regs) + offsetof(Registers, gprIsConstant) + x]
 } // namespace n64

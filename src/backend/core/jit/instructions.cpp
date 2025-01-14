@@ -76,8 +76,13 @@ void JIT::addu(u32 instr) {
     code.mov(code.eax, result);
     code.movsxd(code.rax, code.eax);
     code.mov(GPR(RD(instr)), code.rax);
-  } else {
-    Util::panic("[JIT]: Implement non constant ADDI");
+    code.mov(REG(byte, gprIsConstant), 1);
+    return;
+  }
+  
+  if (regs.IsRegConstant(RS(instr))) {
+    const s32 rs = regs.Read<s32>(RS(instr));
+    return;
   }
 }
 

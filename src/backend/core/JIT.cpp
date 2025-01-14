@@ -2,7 +2,7 @@
 #include <jit/helpers.hpp>
 
 namespace n64 {
-JIT::JIT(ParallelRDP &parallel) : mem(regs, parallel) {}
+JIT::JIT(ParallelRDP &parallel) : regs(this), mem(regs, parallel) {}
 
 bool JIT::ShouldServiceInterrupt() const {
   const bool interrupts_pending = (regs.cop0.status.im & regs.cop0.cause.interruptPending) != 0;

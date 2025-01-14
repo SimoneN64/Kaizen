@@ -3,8 +3,9 @@
 #include <backend/core/registers/Cop1.hpp>
 
 namespace n64 {
+struct JIT;
 struct Registers {
-  Registers();
+  Registers(JIT* jit = nullptr);
   void Reset();
   void SetPC64(s64);
   void SetPC32(s32);
@@ -18,6 +19,8 @@ struct Registers {
   [[nodiscard]] bool IsRegConstant(const u32 first, const u32 second) const {
     return IsRegConstant(first) && IsRegConstant(second);
   }
+
+  JIT* jit = nullptr;
 
   std::array<bool, 32> gprIsConstant{};
   bool loIsConstant = false, hiIsConstant = false;
@@ -41,6 +44,10 @@ struct Registers {
   T Read(size_t);
   template <typename T>
   void Write(size_t, T);
+
   std::array<s64, 32> gpr{};
+private:
+  template <typename T>
+  void WriteJIT(size_t, T);
 };
 } // namespace n64

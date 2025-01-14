@@ -40,6 +40,18 @@ private:
   u64 cop2Latch{};
   friend struct Cop1;
 
+  template <typename T>
+  AddressFrame GPR(size_t index) {
+    if constexpr(sizeof(T) == 1) {
+      return code.byte[offsetof(JIT, regs) + offsetof(Registers, gpr) + 8 * x];
+    } else if constexpr(sizeof(T) == 2) {
+      return code.word[offsetof(JIT, regs) + offsetof(Registers, gpr) + 8 * x];
+    } else if constexpr(sizeof(T) == 4) {
+      return code.dword[offsetof(JIT, regs) + offsetof(Registers, gpr) + 8 * x];
+    } else if constexpr(sizeof(T) == 8) {
+      return code.qword[offsetof(JIT, regs) + offsetof(Registers, gpr) + 8 * x];
+    }
+  }
 
   // Credits to PCSX-Redux: https://github.com/grumpycoders/pcsx-redux
   // Sets dest to "pointer"

@@ -1,7 +1,8 @@
 #include <core/registers/Registers.hpp>
+#include <core/JIT.hpp>
 
 namespace n64 {
-Registers::Registers() : cop0(*this), cop1(*this) { Reset(); }
+Registers::Registers(JIT* jit) : jit(jit), cop0(*this), cop1(*this) { Reset(); }
 
 void Registers::Reset() {
   hi = 0;
@@ -74,6 +75,15 @@ template <>
 void Registers::Write<bool>(size_t idx, bool v) {
   if (idx == 0)
     return;
+
+  if(jit) {
+    jit->code.mov(jit->code.rax, v);
+    jit->code.mov(GPR(idx), jit->code.rax);
+    jit->code.mov(jit->code.rax, 1);
+    jit->code.mov(GPR_constant_marker(idx), jit->code.rax);
+    return;
+  }
+
   gpr[idx] = v;
   gprIsConstant[idx] = true;
 }
@@ -82,6 +92,15 @@ template <>
 void Registers::Write<u64>(size_t idx, u64 v) {
   if (idx == 0)
     return;
+
+  if(jit) {
+    jit->code.mov(jit->code.rax, v);
+    jit->code.mov(GPR(idx), jit->code.rax);
+    jit->code.mov(jit->code.rax, 1);
+    jit->code.mov(GPR_constant_marker(idx), jit->code.rax);
+    return;
+  }
+
   gpr[idx] = v;
   gprIsConstant[idx] = true;
 }
@@ -95,6 +114,15 @@ template <>
 void Registers::Write<u32>(size_t idx, u32 v) {
   if (idx == 0)
     return;
+
+  if(jit) {
+    jit->code.mov(jit->code.rax, v);
+    jit->code.mov(GPR(idx), jit->code.rax);
+    jit->code.mov(jit->code.rax, 1);
+    jit->code.mov(GPR_constant_marker(idx), jit->code.rax);
+    return;
+  }
+
   gpr[idx] = (u32)v;
   gprIsConstant[idx] = true;
 }
@@ -103,6 +131,16 @@ template <>
 void Registers::Write<s32>(size_t idx, s32 v) {
   if (idx == 0)
     return;
+
+  if(jit) {
+    jit->code.mov(jit->code.eax, v);
+    jit->code.movsxd(jit->code.rax, jit->code.eax);
+    jit->code.mov(GPR(idx), jit->code.rax);
+    jit->code.mov(jit->code.rax, 1);
+    jit->code.mov(GPR_constant_marker(idx), jit->code.rax);
+    return;
+  }
+
   gpr[idx] = v;
   gprIsConstant[idx] = true;
 }
@@ -111,6 +149,15 @@ template <>
 void Registers::Write<u16>(size_t idx, u16 v) {
   if (idx == 0)
     return;
+
+  if(jit) {
+    jit->code.mov(jit->code.rax, v);
+    jit->code.mov(GPR(idx), jit->code.rax);
+    jit->code.mov(jit->code.rax, 1);
+    jit->code.mov(GPR_constant_marker(idx), jit->code.rax);
+    return;
+  }
+
   gpr[idx] = (u16)v;
   gprIsConstant[idx] = true;
 }
@@ -119,6 +166,16 @@ template <>
 void Registers::Write<s16>(size_t idx, s16 v) {
   if (idx == 0)
     return;
+
+  if(jit) {
+    jit->code.mov(jit->code.ax, v);
+    jit->code.movsx(jit->code.rax, jit->code.ax);
+    jit->code.mov(GPR(idx), jit->code.rax);
+    jit->code.mov(jit->code.rax, 1);
+    jit->code.mov(GPR_constant_marker(idx), jit->code.rax);
+    return;
+  }
+
   gpr[idx] = v;
   gprIsConstant[idx] = true;
 }
@@ -127,6 +184,15 @@ template <>
 void Registers::Write<u8>(size_t idx, u8 v) {
   if (idx == 0)
     return;
+  
+  if(jit) {
+    jit->code.mov(jit->code.rax, v);
+    jit->code.mov(GPR(idx), jit->code.rax);
+    jit->code.mov(jit->code.rax, 1);
+    jit->code.mov(GPR_constant_marker(idx), jit->code.rax);
+    return;
+  }
+
   gpr[idx] = (u8)v;
   gprIsConstant[idx] = true;
 }
@@ -135,6 +201,16 @@ template <>
 void Registers::Write<s8>(size_t idx, s8 v) {
   if (idx == 0)
     return;
+  
+  if(jit) {
+    jit->code.mov(jit->code.al, v);
+    jit->code.movsx(jit->code.rax, jit->code.al);
+    jit->code.mov(GPR(idx), jit->code.rax);
+    jit->code.mov(jit->code.rax, 1);
+    jit->code.mov(GPR_constant_marker(idx), jit->code.rax);
+    return;
+  }
+  
   gpr[idx] = v;
   gprIsConstant[idx] = true;
 }

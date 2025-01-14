@@ -98,8 +98,6 @@ private:
   void addiu(u32);
   void andi(u32);
   void and_(u32);
-  void branch(const Xbyak::Reg &address);
-  void branch_likely(const Xbyak::Reg &address);
   void branch_constant(const bool cond, const s64 address);
   void branch_likely_constant(const bool cond, const s64 address);
   void bltz(u32);

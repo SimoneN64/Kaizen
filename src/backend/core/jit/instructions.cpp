@@ -258,9 +258,31 @@ void JIT::bgez(const u32 instr) {
   branch(offset, ge);
 }
 
-void JIT::bltzl(const u32 instr) {}
+void JIT::bltzl(const u32 instr) {
+  const s16 imm = instr;
+  const s64 offset = u64((s64)imm) << 2;
+  if (regs.IsRegConstant(RS(instr))) {
+    branch_likely_constant(regs.Read<s64>(RS(instr)) < 0, offset);
+    return;
+  }
 
-void JIT::bgezl(const u32 instr) {}
+  code.mov(code.rax, GPR(RS(instr)));
+  code.cmp(code.rax, 0);
+  branch_likely(offset, l);
+}
+
+void JIT::bgezl(const u32 instr) {
+  const s16 imm = instr;
+  const s64 offset = u64((s64)imm) << 2;
+  if (regs.IsRegConstant(RS(instr))) {
+    branch_likely_constant(regs.Read<s64>(RS(instr)) >= 0, offset);
+    return;
+  }
+
+  code.mov(code.rax, GPR(RS(instr)));
+  code.cmp(code.rax, 0);
+  branch_likely(offset, ge);
+}
 
 void JIT::bltzal(const u32 instr) {}
 
@@ -270,21 +292,169 @@ void JIT::bltzall(const u32 instr) {}
 
 void JIT::bgezall(const u32 instr) {}
 
-void JIT::beq(const u32 instr) {}
+void JIT::beq(const u32 instr) {
+  const s16 imm = instr;
+  const s64 offset = u64((s64)imm) << 2;
+  if (regs.IsRegConstant(RS(instr)) && regs.IsRegConstant(RT(instr))) {
+    branch_constant(regs.Read<s64>(RS(instr)) == regs.Read<s64>(RT(instr)), offset);
+    return;
+  }
 
-void JIT::beql(const u32 instr) {}
+  if (regs.IsRegConstant(RS(instr))) {
+    code.mov(code.rax, GPR(RT(instr)));
+    code.cmp(code.rax, regs.Read<s64>(RS(instr)));
+    branch(offset, e);
+    return;
+  }
 
-void JIT::bne(const u32 instr) {}
+  if (regs.IsRegConstant(RT(instr))) {
+    code.mov(code.rax, GPR(RS(instr)));
+    code.cmp(code.rax, regs.Read<s64>(RT(instr)));
+    branch(offset, e);
+    return;
+  }
 
-void JIT::bnel(const u32 instr) {}
+  code.mov(code.rax, GPR(RS(instr)));
+  code.mov(code.rdi, GPR(RT(instr)));
+  code.cmp(code.rax, code.rdi);
+  branch(offset, e);
+}
 
-void JIT::blez(const u32 instr) {}
+void JIT::beql(const u32 instr) {
+  const s16 imm = instr;
+  const s64 offset = u64((s64)imm) << 2;
+  if (regs.IsRegConstant(RS(instr)) && regs.IsRegConstant(RT(instr))) {
+    branch_likely_constant(regs.Read<s64>(RS(instr)) == regs.Read<s64>(RT(instr)), offset);
+    return;
+  }
 
-void JIT::blezl(const u32 instr) {}
+  if (regs.IsRegConstant(RS(instr))) {
+    code.mov(code.rax, GPR(RT(instr)));
+    code.cmp(code.rax, regs.Read<s64>(RS(instr)));
+    branch_likely(offset, e);
+    return;
+  }
 
-void JIT::bgtz(const u32 instr) {}
+  if (regs.IsRegConstant(RT(instr))) {
+    code.mov(code.rax, GPR(RS(instr)));
+    code.cmp(code.rax, regs.Read<s64>(RT(instr)));
+    branch_likely(offset, e);
+    return;
+  }
 
-void JIT::bgtzl(const u32 instr) {}
+  code.mov(code.rax, GPR(RS(instr)));
+  code.mov(code.rdi, GPR(RT(instr)));
+  code.cmp(code.rax, code.rdi);
+  branch_likely(offset, e);
+}
+
+void JIT::bne(const u32 instr) {  
+  const s16 imm = instr;
+  const s64 offset = u64((s64)imm) << 2;
+  if (regs.IsRegConstant(RS(instr)) && regs.IsRegConstant(RT(instr))) {
+    branch_constant(regs.Read<s64>(RS(instr)) == regs.Read<s64>(RT(instr)), offset);
+    return;
+  }
+
+  if (regs.IsRegConstant(RS(instr))) {
+    code.mov(code.rax, GPR(RT(instr)));
+    code.cmp(code.rax, regs.Read<s64>(RS(instr)));
+    branch(offset, ne);
+    return;
+  }
+
+  if (regs.IsRegConstant(RT(instr))) {
+    code.mov(code.rax, GPR(RS(instr)));
+    code.cmp(code.rax, regs.Read<s64>(RT(instr)));
+    branch(offset, ne);
+    return;
+  }
+
+  code.mov(code.rax, GPR(RS(instr)));
+  code.mov(code.rdi, GPR(RT(instr)));
+  code.cmp(code.rax, code.rdi);
+  branch(offset, ne);
+}
+
+void JIT::bnel(const u32 instr) {
+  const s16 imm = instr;
+  const s64 offset = u64((s64)imm) << 2;
+  if (regs.IsRegConstant(RS(instr)) && regs.IsRegConstant(RT(instr))) {
+    branch_likely_constant(regs.Read<s64>(RS(instr)) == regs.Read<s64>(RT(instr)), offset);
+    return;
+  }
+
+  if (regs.IsRegConstant(RS(instr))) {
+    code.mov(code.rax, GPR(RT(instr)));
+    code.cmp(code.rax, regs.Read<s64>(RS(instr)));
+    branch_likely(offset, ne);
+    return;
+  }
+
+  if (regs.IsRegConstant(RT(instr))) {
+    code.mov(code.rax, GPR(RS(instr)));
+    code.cmp(code.rax, regs.Read<s64>(RT(instr)));
+    branch_likely(offset, ne);
+    return;
+  }
+
+  code.mov(code.rax, GPR(RS(instr)));
+  code.mov(code.rdi, GPR(RT(instr)));
+  code.cmp(code.rax, code.rdi);
+  branch_likely(offset, ne);
+}
+
+void JIT::blez(const u32 instr) {  
+  const s16 imm = instr;
+  const s64 offset = u64((s64)imm) << 2;
+  if (regs.IsRegConstant(RS(instr))) {
+    branch_constant(regs.Read<s64>(RS(instr)) <= 0, offset);
+    return;
+  }
+
+  code.mov(code.rax, GPR(RS(instr)));
+  code.cmp(code.rax, 0);
+  branch(offset, le);
+}
+
+void JIT::blezl(const u32 instr) {
+  const s16 imm = instr;
+  const s64 offset = u64((s64)imm) << 2;
+  if (regs.IsRegConstant(RS(instr))) {
+    branch_likely_constant(regs.Read<s64>(RS(instr)) <= 0, offset);
+    return;
+  }
+
+  code.mov(code.rax, GPR(RS(instr)));
+  code.cmp(code.rax, 0);
+  branch_likely(offset, le);
+}
+
+void JIT::bgtz(const u32 instr) {
+  const s16 imm = instr;
+  const s64 offset = u64((s64)imm) << 2;
+  if (regs.IsRegConstant(RS(instr))) {
+    branch_constant(regs.Read<s64>(RS(instr)) > 0, offset);
+    return;
+  }
+
+  code.mov(code.rax, GPR(RS(instr)));
+  code.cmp(code.rax, 0);
+  branch(offset, g);
+}
+
+void JIT::bgtzl(const u32 instr) {
+  const s16 imm = instr;
+  const s64 offset = u64((s64)imm) << 2;
+  if (regs.IsRegConstant(RS(instr))) {
+    branch_likely_constant(regs.Read<s64>(RS(instr)) > 0, offset);
+    return;
+  }
+
+  code.mov(code.rax, GPR(RS(instr)));
+  code.cmp(code.rax, 0);
+  branch_likely(offset, g);
+}
 
 void JIT::dadd(u32 instr) {
   if (RD(instr) == 0)

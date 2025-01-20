@@ -602,10 +602,8 @@ void Interpreter::jal(const u32 instr) {
 }
 
 void Interpreter::jalr(const u32 instr) {
-  const u64 addr = regs.Read<s64>(RS(instr));
-  const s64 currentNextPC = regs.nextPC;
-  branch(true, addr);
-  regs.Write(RD(instr), currentNextPC);
+  regs.Write(RD(instr), regs.nextPC);
+  jr(instr);
 }
 
 void Interpreter::jr(const u32 instr) {

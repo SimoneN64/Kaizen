@@ -22,22 +22,52 @@ void JIT::CheckCompareInterrupt() {
   }
 }
 
+void JIT::InvalidateBlock(const u32 paddr) {
+  if (const u32 index = paddr >> kUpperShift; !blockCache[index].empty())
+    blockCache[index].erase(blockCache[index].begin(), blockCache[index].end());
+}
+
 int JIT::Step() {
   blockPC = regs.pc;
+  u32 paddr = 0;
 
-  if (!blockCache[blockPC >> 8].empty()) {
-    if (blockCache[blockPC >> 8][blockPC >> 20]) {
-      return blockCache[blockPC >> 8][blockPC >> 20]();
-    }
-  } else {
-    blockCache[blockPC >> 8].resize(kLowerSize);
+  if (!regs.cop0.MapVAddr(Cop0::LOAD, blockPC, paddr)) {
+    /*regs.cop0.HandleTLBException(blockPC);
+    regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, blockPC);
+    return 1;*/
+    Util::panic(
+      "[JIT]: Unhandled exception TLB exception {} when retrieving PC physical address! (virtual: 0x{:016lX})",
+      static_cast<int>(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD)), static_cast<u64>(blockPC));
   }
 
-  regs.block_delaySlot = false;
+  u32 upperIndex = paddr >> kUpperShift;
+  u32 lowerIndex = paddr & 0xff;
 
-  u32 instruction;
+  if (!blockCache[upperIndex].empty()) {
+    if (blockCache[upperIndex][lowerIndex]) {
+      return blockCache[upperIndex][lowerIndex]();
+    }
+  } else {
+    blockCache[upperIndex].resize(kLowerSize);
+  }
 
-  do {
+  const auto block = code.getCurr<BlockFn>();
+  blockCache[upperIndex][lowerIndex] = block;
+
+  code.setProtectModeRW();
+
+  u32 instructionsInBlock = 0;
+
+  bool instrEndsBlock = false;
+  bool instrInDelaySlot = false;
+  bool branchWasLikely = false;
+  bool blockEndsOnBranch = false;
+
+  code.sub(code.rsp, 56);
+  code.push(code.rbp);
+  code.mov(code.rbp, reinterpret_cast<uintptr_t>(this)); // Load context pointer
+
+  while (!instrInDelaySlot) {
     // CheckCompareInterrupt();
 
     if (check_address_error(0b11, u64(blockPC))) [[unlikely]] {
@@ -45,11 +75,8 @@ int JIT::Step() {
       regs.cop0.FireException(ExceptionCode::AddressErrorLoad, 0, blockPC);
       return 1;*/
 
-      Util::panic("[JIT]: Unhandled exception ADL due to unaligned PC virtual value! (0x{:016lX})",
-                  static_cast<u64>(regs.pc));
+      Util::panic("[JIT]: Unhandled exception ADL due to unaligned PC virtual value! (0x{:016lX})", blockPC);
     }
-
-    u32 paddr = 0;
 
     if (!regs.cop0.MapVAddr(Cop0::LOAD, blockPC, paddr)) {
       /*regs.cop0.HandleTLBException(blockPC);
@@ -57,25 +84,52 @@ int JIT::Step() {
       return 1;*/
       Util::panic(
         "[JIT]: Unhandled exception TLB exception {} when retrieving PC physical address! (virtual: 0x{:016lX})",
-        static_cast<int>(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD)), static_cast<u64>(regs.pc));
+        static_cast<int>(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD)), static_cast<u64>(blockPC));
     }
 
-    instruction = mem.Read<u32>(regs, paddr);
+    const u32 instruction = mem.Read<u32>(regs, paddr);
 
     /*if(ShouldServiceInterrupt()) {
-      regs.cop0.FireException(ExceptionCode::Interrupt, 0, regs.pc);
+      regs.cop0.FireException(ExceptionCode::Interrupt, 0, blockPC);
       return 1;
     }*/
 
     blockPC += 4;
-
+    instructionsInBlock++;
     Emit(instruction);
+
+    instrInDelaySlot = instrEndsBlock;
+    instrEndsBlock = InstrEndsBlock(instruction);
+    if (instrEndsBlock) {
+      branchWasLikely = IsBranchLikely(instruction);
+    }
+
+    if (instrInDelaySlot) {
+      blockEndsOnBranch = true;
+    }
+
+    if (instrInDelaySlot && branchWasLikely) {
+      branchWasLikely = false;
+      code.L("not_taken");
+      code.mov(code.rax, blockPC);
+      code.mov(REG(qword, pc), code.rax);
+    }
   }
-  while (!InstrEndsBlock(instruction));
 
   // emit code to store the value of pc
-  blockCache[regs.pc >> 8][regs.pc >> 20] = code.getCurr<BlockFn>();
-  return blockCache[regs.pc >> 8][regs.pc >> 20]();
+  if (!blockEndsOnBranch) {
+    code.mov(code.rax, blockPC);
+    code.mov(REG(qword, pc), code.rax);
+  }
+  code.mov(code.rax, instructionsInBlock);
+  code.pop(code.rbp);
+  code.add(code.rsp, 56);
+  code.ret();
+  code.setProtectModeRE();
+  // const auto dump = code.getCode();
+  // Util::WriteFileBinary(dump, code.getSize(), "jit.dump");
+  // Util::panic("");
+  return block();
 }
 
 std::vector<u8> JIT::Serialize() {

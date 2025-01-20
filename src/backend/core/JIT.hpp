@@ -7,12 +7,14 @@
 namespace n64 {
 struct Core;
 
-static constexpr u32 kAddressSpaceSize = 0x8000'0000; // >> 20 = 0x800
-static constexpr u32 kLowerSize = kAddressSpaceSize >> 20; // 0x800
-static constexpr u32 kUpperSize = kAddressSpaceSize >> 8; // 0x100000
+static constexpr u64 kAddressSpaceSize = 0x8000'0000;
+static constexpr u8 kUpperShift = 8;
+static constexpr u8 kLowerMask = 0xff;
+static constexpr u32 kUpperSize = kAddressSpaceSize >> kUpperShift; // 0x800000
+static constexpr u32 kLowerSize = 0x100; // 0x80
 static constexpr u32 kCodeCacheSize = 32_mb;
-static constexpr u32 kCodeCacheAllocSize = kCodeCacheSize + 4096;
-#define REG(acc, x) code.acc[reinterpret_cast<uintptr_t>(&regs.x)]
+static constexpr u32 kCodeCacheAllocSize = kCodeCacheSize + 4_kb;
+#define REG(acc, x) code.acc[code.rbp + (reinterpret_cast<uintptr_t>(&regs.x) - (uintptr_t)this)]
 
 struct JIT : BaseCPU {
   explicit JIT(ParallelRDP &);
@@ -46,13 +48,13 @@ private:
   template <typename T>
   Xbyak::Address GPR(const size_t index) const {
     if constexpr (sizeof(T) == 1) {
-      return code.byte[reinterpret_cast<uintptr_t>(&regs.gpr[index])];
+      return code.byte[code.rbp + (reinterpret_cast<uintptr_t>(&regs.gpr[index]) - reinterpret_cast<uintptr_t>(this))];
     } else if constexpr (sizeof(T) == 2) {
-      return code.word[reinterpret_cast<uintptr_t>(&regs.gpr[index])];
+      return code.word[code.rbp + (reinterpret_cast<uintptr_t>(&regs.gpr[index]) - reinterpret_cast<uintptr_t>(this))];
     } else if constexpr (sizeof(T) == 4) {
-      return code.dword[reinterpret_cast<uintptr_t>(&regs.gpr[index])];
+      return code.dword[code.rbp + (reinterpret_cast<uintptr_t>(&regs.gpr[index]) - reinterpret_cast<uintptr_t>(this))];
     } else if constexpr (sizeof(T) == 8) {
-      return code.qword[reinterpret_cast<uintptr_t>(&regs.gpr[index])];
+      return code.qword[code.rbp + (reinterpret_cast<uintptr_t>(&regs.gpr[index]) - reinterpret_cast<uintptr_t>(this))];
     }
 
     Util::panic("[JIT]: Invalid register addressing");
@@ -60,18 +62,11 @@ private:
     return Xbyak::Address{0};
   }
 
-  // Credits to PCSX-Redux: https://github.com/grumpycoders/pcsx-redux
-  // Sets dest to "pointer"
-  void loadAddress(const Xbyak::Reg64 dest, void *pointer) { code.mov(dest, reinterpret_cast<uintptr_t>(pointer)); }
-
+  // Thanks to https://github.com/grumpycoders/pcsx-redux
   // Load a pointer to the JIT object in "reg"
-  void loadThisPointer(const Xbyak::Reg64 reg) { code.mov(reg, code.rbp); }
-  // Emit a call to a class member function, passing "thisObject" (+ an adjustment if necessary)
-  // As the function's "this" pointer. Only works with classes with single, non-virtual inheritance
-  // Hence the static asserts. Those are all we need though, thankfully.
   template <typename T>
   void emitMemberFunctionCall(T func, void *thisObject) {
-    void *functionPtr;
+    uintptr_t functionPtr;
     auto thisPtr = reinterpret_cast<uintptr_t>(thisObject);
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
@@ -82,24 +77,22 @@ private:
     uintptr_t arr[2];
     std::memcpy(arr, &func, sizeof(T));
     // First 8 bytes correspond to the actual pointer to the function
-    functionPtr = reinterpret_cast<void *>(arr[0]);
+    functionPtr = reinterpret_cast<uintptr_t>(reinterpret_cast<void *>(arr[0]));
     // Next 8 bytes correspond to the "this" pointer adjustment
     thisPtr += arr[1];
 #endif
 
-    // Load this pointer to arg1
-    if (thisPtr == reinterpret_cast<uintptr_t>(this)) {
-      loadThisPointer(code.rdi);
-    } else {
-      loadAddress(code.rdi, reinterpret_cast<void *>(thisPtr));
-    }
-
-    code.call(functionPtr);
+    code.mov(code.rdi, thisPtr);
+    code.mov(code.rax, functionPtr);
+    code.call(code.rax);
   }
+
   void SkipSlot();
   void SkipSlotConstant();
   void BranchTaken(s64 offs);
-  void BranchTaken(const Xbyak::Reg &offs);
+  void BranchTaken(const Xbyak::Reg64 &offs);
+  void BranchAbsTaken(s64 addr);
+  void BranchAbsTaken(const Xbyak::Reg64 &addr);
 
 #define check_address_error(mask, vaddr)                                                                               \
   (((!regs.cop0.is64BitAddressing) && (s32)(vaddr) != (vaddr)) || (((vaddr) & (mask)) != 0))
@@ -118,8 +111,9 @@ private:
   void addiu(u32);
   void andi(u32);
   void and_(u32);
-  void branch_constant(bool cond, s64 address);
-  void branch_likely_constant(bool cond, s64 address);
+  void branch_constant(bool cond, s64 offset);
+  void branch_likely_constant(bool cond, s64 offset);
+  void branch_abs_constant(bool cond, s64 address);
   void bltz(u32);
   void bgez(u32);
   void bltzl(u32);
@@ -188,17 +182,17 @@ private:
   void mthi(u32);
   void mtlo(u32);
   void nor(u32);
-  void sb(u32);
-  void sc(u32);
-  void scd(u32);
-  void sd(u32);
-  void sdc1(u32);
-  void sdl(u32);
-  void sdr(u32);
-  void sh(u32);
+  void sb(u32) {}
+  void sc(u32) {}
+  void scd(u32) {}
+  void sd(u32) {}
+  void sdc1(u32) {}
+  void sdl(u32) {}
+  void sdr(u32) {}
+  void sh(u32) {}
   void sw(u32);
-  void swl(u32);
-  void swr(u32);
+  void swl(u32) {}
+  void swr(u32) {}
   void slti(u32);
   void sltiu(u32);
   void slt(u32);
@@ -207,12 +201,12 @@ private:
   void sllv(u32);
   void sub(u32);
   void subu(u32);
-  void swc1(u32);
+  void swc1(u32) {}
   void sra(u32);
   void srav(u32);
   void srl(u32);
   void srlv(u32);
-  void trap(bool);
+  void trap(bool) {}
   void or_(u32);
   void ori(u32);
   void xor_(u32);

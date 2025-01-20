@@ -20,24 +20,11 @@ static bool SpecialEndsBlock(const u32 instr) {
   }
 }
 
-static bool RegimmEndsBlock(const u32 instr) {
-  switch (instr >> 16 & 0x1F) {
-  case BLTZL:
-  case BGEZL:
-  case BLTZALL:
-  case BGEZALL:
-    return false;
-  default:
-    return true;
-  }
-}
-
 static bool InstrEndsBlock(const u32 instr) {
   switch (instr >> 26 & 0x3f) {
   case SPECIAL:
     return SpecialEndsBlock(instr);
   case REGIMM:
-    return RegimmEndsBlock(instr);
   case J:
   case JAL:
   case BEQ:
@@ -47,6 +34,39 @@ static bool InstrEndsBlock(const u32 instr) {
     return true;
   default:
     return false;
+  }
+}
+
+static bool IsBranchLikely(const u32 instr) {
+  switch (instr >> 26 & 0x1F) {
+  case BEQL:
+  case BNEL:
+  case BLEZL:
+  case BGTZL:
+    return true;
+  case COP1:
+    {
+      const u8 mask_sub = (instr >> 21) & 0x1F;
+      const u8 mask_branch = (instr >> 16) & 0x1F;
+      if (mask_sub == 0x08) {
+        if (mask_branch == 2 || mask_branch == 3)
+          return true;
+
+        return false;
+      }
+
+      return false;
+    }
+  default:
+    switch (instr >> 16 & 0x1F) {
+    case BLTZL:
+    case BGEZL:
+    case BLTZALL:
+    case BGEZALL:
+      return true;
+    default:
+      return false;
+    }
   }
 }
 } // namespace n64

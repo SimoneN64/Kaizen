@@ -10,7 +10,8 @@ using namespace Xbyak::util;
 void JIT::lui(const u32 instr) {
   u64 val = static_cast<s64>(static_cast<s16>(instr));
   val <<= 16;
-  regs.Write(RT(instr), val, true);
+  regs.gpr[RT(instr)] = val;
+  regs.gprIsConstant[RT(instr)] = true;
 }
 
 void JIT::add(const u32 instr) {
@@ -57,7 +58,7 @@ void JIT::addu(u32 instr) {
     const s32 rt = regs.Read<s32>(RT(instr));
     const s32 result = rs + rt;
 
-    regs.Write<s32>(RD(instr), result);
+    regs.Write<s32>(RD(instr), result, true);
     return;
   }
 
@@ -106,7 +107,7 @@ void JIT::addiu(u32 instr) {
   if (regs.IsRegConstant(RS(instr))) {
     auto rs = regs.Read<u32>(RS(instr));
     u32 result = rs + imm;
-    regs.Write(RT(instr), s32(result));
+    regs.Write(RT(instr), s32(result), true);
 
     return;
   }
@@ -119,7 +120,7 @@ void JIT::addiu(u32 instr) {
 void JIT::andi(u32 instr) {
   const s64 imm = static_cast<u16>(instr);
   if (regs.IsRegConstant(RS(instr))) {
-    regs.Write(RT(instr), regs.Read<s64>(RS(instr)) & imm);
+    regs.Write(RT(instr), regs.Read<s64>(RS(instr)) & imm, true);
     return;
   }
 
@@ -130,7 +131,7 @@ void JIT::andi(u32 instr) {
 
 void JIT::and_(u32 instr) {
   if (regs.IsRegConstant(RS(instr), RT(instr))) {
-    regs.Write(RD(instr), regs.Read<s64>(RS(instr)) & regs.Read<s64>(RT(instr)));
+    regs.Write(RD(instr), regs.Read<s64>(RS(instr)) & regs.Read<s64>(RT(instr)), true);
     return;
   }
 
@@ -156,39 +157,45 @@ void JIT::and_(u32 instr) {
   regs.Write<s64>(RD(instr), code.rdi);
 }
 
-void JIT::SkipSlot() {
-  code.mov(code.rax, REG(qword, pc));
-  code.mov(REG(qword, oldPC), code.rax);
-
-  code.mov(code.rax, REG(qword, nextPC));
-  code.mov(REG(qword, pc), code.rax);
-
-  code.add(code.rax, 4);
-  code.mov(REG(qword, nextPC), code.rax);
-}
+void JIT::SkipSlot() { code.jmp("not_taken"); }
 
 void JIT::SkipSlotConstant() { blockPC += 4; }
 
 void JIT::BranchTaken(const s64 offs) {
   code.mov(code.rax, REG(qword, pc));
   code.add(code.rax, offs);
-  code.mov(REG(qword, nextPC), code.rax);
+  code.mov(REG(qword, pc), code.rax);
 }
 
-void JIT::BranchTaken(const Xbyak::Reg &offs) {
-  code.mov(code.rax, REG(qword, pc));
-  code.add(code.rax, offs);
-  code.mov(REG(qword, nextPC), code.rax);
+void JIT::BranchTaken(const Xbyak::Reg64 &offs) { code.add(REG(qword, pc), offs); }
+
+void JIT::BranchAbsTaken(const s64 addr) {
+  code.mov(code.rax, addr);
+  code.mov(REG(qword, pc), code.rax);
 }
+
+void JIT::BranchAbsTaken(const Xbyak::Reg64 &addr) { code.mov(REG(qword, nextPC), addr); }
 
 #define branch(offs, cond)                                                                                             \
   do {                                                                                                                 \
-    code.mov(code.al, 1);                                                                                              \
-    code.mov(REG(byte, delaySlot), code.al);                                                                           \
     code.j##cond("taken");                                                                                             \
-    code.jmp("not taken");                                                                                             \
+    code.mov(code.rax, blockPC);                                                                                       \
+    code.mov(REG(qword, pc), code.rax);                                                                                \
+    code.jmp("not_taken");                                                                                             \
     code.L("taken");                                                                                                   \
     BranchTaken(offs);                                                                                                 \
+    code.L("not_taken");                                                                                               \
+  }                                                                                                                    \
+  while (0)
+
+#define branch_abs(addr, cond)                                                                                         \
+  do {                                                                                                                 \
+    code.j##cond("taken");                                                                                             \
+    code.mov(code.rax, blockPC);                                                                                       \
+    code.mov(REG(qword, pc), code.rax);                                                                                \
+    code.jmp("not_taken");                                                                                             \
+    code.L("taken");                                                                                                   \
+    BranchAbsTaken(addr);                                                                                              \
     code.L("not_taken");                                                                                               \
   }                                                                                                                    \
   while (0)
@@ -199,16 +206,11 @@ void JIT::BranchTaken(const Xbyak::Reg &offs) {
     SkipSlot();                                                                                                        \
     code.jmp("not_taken");                                                                                             \
     code.L("taken");                                                                                                   \
-    code.mov(code.al, 1);                                                                                              \
-    code.mov(REG(byte, delaySlot), code.al);                                                                           \
     BranchTaken(offs);                                                                                                 \
-    code.L("not_taken");                                                                                               \
   }                                                                                                                    \
   while (0)
 
 void JIT::branch_constant(const bool cond, const s64 offset) {
-  code.mov(code.al, 1);
-  code.mov(REG(byte, delaySlot), code.al);
   if (cond) {
     BranchTaken(offset);
   }
@@ -216,11 +218,15 @@ void JIT::branch_constant(const bool cond, const s64 offset) {
 
 void JIT::branch_likely_constant(const bool cond, const s64 offset) {
   if (cond) {
-    code.mov(code.al, 1);
-    code.mov(REG(byte, delaySlot), code.al);
     BranchTaken(offset);
   } else {
     SkipSlotConstant();
+  }
+}
+
+void JIT::branch_abs_constant(const bool cond, const s64 address) {
+  if (cond) {
+    BranchAbsTaken(address);
   }
 }
 
@@ -260,7 +266,7 @@ void JIT::bltz(const u32 instr) {
     return;
   }
 
-  code.mov(code.rax, GPR<s64>(RS(instr)));
+  regs.Read<s64>(RS(instr), code.rax);
   code.cmp(code.rax, 0);
   branch(offset, l);
 }
@@ -273,7 +279,7 @@ void JIT::bgez(const u32 instr) {
     return;
   }
 
-  code.mov(code.rax, GPR(RS(instr)));
+  regs.Read<s64>(RS(instr), code.rax);
   code.cmp(code.rax, 0);
   branch(offset, ge);
 }
@@ -286,7 +292,7 @@ void JIT::bltzl(const u32 instr) {
     return;
   }
 
-  code.mov(code.rax, GPR(RS(instr)));
+  regs.Read<s64>(RS(instr), code.rax);
   code.cmp(code.rax, 0);
   branch_likely(offset, l);
 }
@@ -299,18 +305,66 @@ void JIT::bgezl(const u32 instr) {
     return;
   }
 
-  code.mov(code.rax, GPR(RS(instr)));
+  regs.Read<s64>(RS(instr), code.rax);
   code.cmp(code.rax, 0);
   branch_likely(offset, ge);
 }
 
-void JIT::bltzal(const u32 instr) {}
+void JIT::bltzal(const u32 instr) {
+  const s16 imm = instr;
+  const s64 offset = u64((s64)imm) << 2;
+  regs.Write<s64>(31, blockPC + 4, true);
+  if (regs.IsRegConstant(RS(instr))) {
+    branch_constant(regs.Read<s64>(RS(instr)) < 0, offset);
+    return;
+  }
 
-void JIT::bgezal(const u32 instr) {}
+  regs.Read<s64>(RS(instr), code.rax);
+  code.cmp(code.rax, 0);
+  branch(offset, l);
+}
 
-void JIT::bltzall(const u32 instr) {}
+void JIT::bgezal(const u32 instr) {
+  const s16 imm = instr;
+  const s64 offset = u64((s64)imm) << 2;
+  regs.Write<s64>(31, blockPC + 4, true);
+  if (regs.IsRegConstant(RS(instr))) {
+    branch_constant(regs.Read<s64>(RS(instr)) >= 0, offset);
+    return;
+  }
 
-void JIT::bgezall(const u32 instr) {}
+  regs.Read<s64>(RS(instr), code.rax);
+  code.cmp(code.rax, 0);
+  branch(offset, ge);
+}
+
+void JIT::bltzall(const u32 instr) {
+  const s16 imm = instr;
+  const s64 offset = u64((s64)imm) << 2;
+  regs.Write<s64>(31, blockPC + 4, true);
+  if (regs.IsRegConstant(RS(instr))) {
+    branch_likely_constant(regs.Read<s64>(RS(instr)) < 0, offset);
+    return;
+  }
+
+  regs.Read<s64>(RS(instr), code.rax);
+  code.cmp(code.rax, 0);
+  branch_likely(offset, l);
+}
+
+void JIT::bgezall(const u32 instr) {
+  const s16 imm = instr;
+  const s64 offset = u64((s64)imm) << 2;
+  regs.Write<s64>(31, blockPC + 4, true);
+  if (regs.IsRegConstant(RS(instr))) {
+    branch_likely_constant(regs.Read<s64>(RS(instr)) >= 0, offset);
+    return;
+  }
+
+  regs.Read<s64>(RS(instr), code.rax);
+  code.cmp(code.rax, 0);
+  branch_likely(offset, ge);
+}
 
 void JIT::beq(const u32 instr) {
   const s16 imm = instr;
@@ -321,21 +375,21 @@ void JIT::beq(const u32 instr) {
   }
 
   if (regs.IsRegConstant(RS(instr))) {
-    code.mov(code.rax, GPR(RT(instr)));
+    regs.Read<s64>(RT(instr), code.rax);
     code.cmp(code.rax, regs.Read<s64>(RS(instr)));
     branch(offset, e);
     return;
   }
 
   if (regs.IsRegConstant(RT(instr))) {
-    code.mov(code.rax, GPR(RS(instr)));
+    regs.Read<s64>(RS(instr), code.rax);
     code.cmp(code.rax, regs.Read<s64>(RT(instr)));
     branch(offset, e);
     return;
   }
 
-  code.mov(code.rax, GPR(RS(instr)));
-  code.mov(code.rdi, GPR(RT(instr)));
+  regs.Read<s64>(RS(instr), code.rax);
+  regs.Read<s64>(RT(instr), code.rdi);
   code.cmp(code.rax, code.rdi);
   branch(offset, e);
 }
@@ -349,21 +403,21 @@ void JIT::beql(const u32 instr) {
   }
 
   if (regs.IsRegConstant(RS(instr))) {
-    code.mov(code.rax, GPR(RT(instr)));
+    regs.Read<s64>(RT(instr), code.rax);
     code.cmp(code.rax, regs.Read<s64>(RS(instr)));
     branch_likely(offset, e);
     return;
   }
 
   if (regs.IsRegConstant(RT(instr))) {
-    code.mov(code.rax, GPR(RS(instr)));
+    regs.Read<s64>(RS(instr), code.rax);
     code.cmp(code.rax, regs.Read<s64>(RT(instr)));
     branch_likely(offset, e);
     return;
   }
 
-  code.mov(code.rax, GPR(RS(instr)));
-  code.mov(code.rdi, GPR(RT(instr)));
+  regs.Read<s64>(RS(instr), code.rax);
+  regs.Read<s64>(RT(instr), code.rdi);
   code.cmp(code.rax, code.rdi);
   branch_likely(offset, e);
 }
@@ -372,26 +426,26 @@ void JIT::bne(const u32 instr) {
   const s16 imm = instr;
   const s64 offset = u64((s64)imm) << 2;
   if (regs.IsRegConstant(RS(instr)) && regs.IsRegConstant(RT(instr))) {
-    branch_constant(regs.Read<s64>(RS(instr)) == regs.Read<s64>(RT(instr)), offset);
+    branch_constant(regs.Read<s64>(RS(instr)) != regs.Read<s64>(RT(instr)), offset);
     return;
   }
 
   if (regs.IsRegConstant(RS(instr))) {
-    code.mov(code.rax, GPR(RT(instr)));
+    regs.Read<s64>(RT(instr), code.rax);
     code.cmp(code.rax, regs.Read<s64>(RS(instr)));
     branch(offset, ne);
     return;
   }
 
   if (regs.IsRegConstant(RT(instr))) {
-    code.mov(code.rax, GPR(RS(instr)));
+    regs.Read<s64>(RS(instr), code.rax);
     code.cmp(code.rax, regs.Read<s64>(RT(instr)));
     branch(offset, ne);
     return;
   }
 
-  code.mov(code.rax, GPR(RS(instr)));
-  code.mov(code.rdi, GPR(RT(instr)));
+  regs.Read<s64>(RS(instr), code.rax);
+  regs.Read<s64>(RT(instr), code.rdi);
   code.cmp(code.rax, code.rdi);
   branch(offset, ne);
 }
@@ -400,26 +454,26 @@ void JIT::bnel(const u32 instr) {
   const s16 imm = instr;
   const s64 offset = u64((s64)imm) << 2;
   if (regs.IsRegConstant(RS(instr)) && regs.IsRegConstant(RT(instr))) {
-    branch_likely_constant(regs.Read<s64>(RS(instr)) == regs.Read<s64>(RT(instr)), offset);
+    branch_likely_constant(regs.Read<s64>(RS(instr)) != regs.Read<s64>(RT(instr)), offset);
     return;
   }
 
   if (regs.IsRegConstant(RS(instr))) {
-    code.mov(code.rax, GPR(RT(instr)));
+    regs.Read<s64>(RT(instr), code.rax);
     code.cmp(code.rax, regs.Read<s64>(RS(instr)));
     branch_likely(offset, ne);
     return;
   }
 
   if (regs.IsRegConstant(RT(instr))) {
-    code.mov(code.rax, GPR(RS(instr)));
+    regs.Read<s64>(RS(instr), code.rax);
     code.cmp(code.rax, regs.Read<s64>(RT(instr)));
     branch_likely(offset, ne);
     return;
   }
 
-  code.mov(code.rax, GPR(RS(instr)));
-  code.mov(code.rdi, GPR(RT(instr)));
+  regs.Read<s64>(RS(instr), code.rax);
+  regs.Read<s64>(RT(instr), code.rdi);
   code.cmp(code.rax, code.rdi);
   branch_likely(offset, ne);
 }
@@ -432,7 +486,7 @@ void JIT::blez(const u32 instr) {
     return;
   }
 
-  code.mov(code.rax, GPR(RS(instr)));
+  regs.Read<s64>(RS(instr), code.rax);
   code.cmp(code.rax, 0);
   branch(offset, le);
 }
@@ -445,7 +499,7 @@ void JIT::blezl(const u32 instr) {
     return;
   }
 
-  code.mov(code.rax, GPR(RS(instr)));
+  regs.Read<s64>(RS(instr), code.rax);
   code.cmp(code.rax, 0);
   branch_likely(offset, le);
 }
@@ -458,7 +512,7 @@ void JIT::bgtz(const u32 instr) {
     return;
   }
 
-  code.mov(code.rax, GPR(RS(instr)));
+  regs.Read<s64>(RS(instr), code.rax);
   code.cmp(code.rax, 0);
   branch(offset, g);
 }
@@ -471,7 +525,7 @@ void JIT::bgtzl(const u32 instr) {
     return;
   }
 
-  code.mov(code.rax, GPR(RS(instr)));
+  regs.Read<s64>(RS(instr), code.rax);
   code.cmp(code.rax, 0);
   branch_likely(offset, g);
 }
@@ -485,7 +539,7 @@ void JIT::dadd(u32 instr) {
       // regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
       Util::panic("[JIT]: Unhandled Overflow exception in DADD!");
     }
-    regs.Write(RD(instr), result);
+    regs.Write(RD(instr), result, true);
   } else {
     Util::panic("[JIT]: Implement non constant DADD!");
   }
@@ -495,7 +549,7 @@ void JIT::daddu(u32 instr) {
   if (regs.IsRegConstant(RS(instr), RT(instr))) {
     auto rs = regs.Read<s64>(RS(instr));
     auto rt = regs.Read<s64>(RT(instr));
-    regs.Write(RD(instr), rt + rs);
+    regs.Write(RD(instr), rt + rs, true);
   } else {
     Util::panic("[JIT]: Implement non constant DADD!");
   }
@@ -510,7 +564,7 @@ void JIT::daddi(u32 instr) {
       // regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
       Util::panic("[JIT]: Unhandled Overflow exception in DADDI!");
     }
-    regs.Write(RT(instr), result);
+    regs.Write(RT(instr), result, true);
   } else {
     Util::panic("[JIT]: Implement non constant DADDI!");
   }
@@ -520,7 +574,7 @@ void JIT::daddiu(u32 instr) {
   if (regs.IsRegConstant(RS(instr))) {
     s16 imm = s16(instr);
     auto rs = regs.Read<s64>(RS(instr));
-    regs.Write(RT(instr), imm + rs);
+    regs.Write(RT(instr), imm + rs, true);
   } else {
     Util::panic("[JIT]: Implement non constant DADDI!");
   }
@@ -654,7 +708,7 @@ void JIT::dsll(u32 instr) {
   if (regs.IsRegConstant(RT(instr))) {
     u8 sa = ((instr >> 6) & 0x1f);
     auto result = regs.Read<s64>(RT(instr)) << sa;
-    regs.Write(RD(instr), result);
+    regs.Write(RD(instr), result, true);
   } else {
     Util::panic("[JIT]: Implement non constant DSLL!");
   }
@@ -664,7 +718,7 @@ void JIT::dsllv(u32 instr) {
   if (regs.IsRegConstant(RT(instr), RS(instr))) {
     auto sa = regs.Read<s64>(RS(instr)) & 63;
     auto result = regs.Read<s64>(RT(instr)) << sa;
-    regs.Write(RD(instr), result);
+    regs.Write(RD(instr), result, true);
   } else {
     Util::panic("[JIT]: Implement non constant DSLLV!");
   }
@@ -674,7 +728,7 @@ void JIT::dsll32(u32 instr) {
   if (regs.IsRegConstant(RT(instr))) {
     u8 sa = ((instr >> 6) & 0x1f);
     auto result = regs.Read<s64>(RT(instr)) << (sa + 32);
-    regs.Write(RD(instr), result);
+    regs.Write(RD(instr), result, true);
   } else {
     Util::panic("[JIT]: Implement non constant DSLL32!");
   }
@@ -685,7 +739,7 @@ void JIT::dsra(u32 instr) {
     auto rt = regs.Read<s64>(RT(instr));
     u8 sa = ((instr >> 6) & 0x1f);
     s64 result = rt >> sa;
-    regs.Write(RD(instr), result);
+    regs.Write(RD(instr), result, true);
   } else {
     Util::panic("[JIT]: Implement non constant DSRA!");
   }
@@ -697,7 +751,7 @@ void JIT::dsrav(u32 instr) {
     auto rs = regs.Read<s64>(RS(instr));
     s64 sa = rs & 63;
     s64 result = rt >> sa;
-    regs.Write(RD(instr), result);
+    regs.Write(RD(instr), result, true);
   } else {
     Util::panic("[JIT]: Implement non constant DSRAV!");
   }
@@ -708,7 +762,7 @@ void JIT::dsra32(u32 instr) {
     auto rt = regs.Read<s64>(RT(instr));
     u8 sa = ((instr >> 6) & 0x1f);
     s64 result = rt >> (sa + 32);
-    regs.Write(RD(instr), result);
+    regs.Write(RD(instr), result, true);
   } else {
     Util::panic("[JIT]: Implement non constant DSRA32!");
   }
@@ -719,7 +773,7 @@ void JIT::dsrl(u32 instr) {
     auto rt = regs.Read<u64>(RT(instr));
     u8 sa = ((instr >> 6) & 0x1f);
     u64 result = rt >> sa;
-    regs.Write(RD(instr), s64(result));
+    regs.Write(RD(instr), s64(result), true);
   } else {
     Util::panic("[JIT]: Implement non constant DSRL!");
   }
@@ -730,7 +784,7 @@ void JIT::dsrlv(u32 instr) {
     u8 amount = regs.Read<u8>(RS(instr)) & 63;
     auto rt = regs.Read<u64>(RT(instr));
     u64 result = rt >> amount;
-    regs.Write(RD(instr), s64(result));
+    regs.Write(RD(instr), s64(result), true);
   } else {
     Util::panic("[JIT]: Implement non constant DSRLV!");
   }
@@ -741,7 +795,7 @@ void JIT::dsrl32(u32 instr) {
     auto rt = regs.Read<u64>(RT(instr));
     u8 sa = ((instr >> 6) & 0x1f);
     u64 result = rt >> (sa + 32);
-    regs.Write(RD(instr), s64(result));
+    regs.Write(RD(instr), s64(result), true);
   } else {
     Util::panic("[JIT]: Implement non constant DSRL32!");
   }
@@ -756,7 +810,7 @@ void JIT::dsub(u32 instr) {
       // regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
       Util::panic("[JIT]: Unhandled Overflow exception in DSUB!");
     } else {
-      regs.Write(RD(instr), result);
+      regs.Write(RD(instr), result, true);
     }
   } else {
     Util::panic("[JIT]: Implement non constant DSUB!");
@@ -768,7 +822,7 @@ void JIT::dsubu(u32 instr) {
     auto rt = regs.Read<s64>(RT(instr));
     auto rs = regs.Read<s64>(RS(instr));
     s64 result = rs - rt;
-    regs.Write(RD(instr), result);
+    regs.Write(RD(instr), result, true);
   } else {
     Util::panic("[JIT]: Implement non constant DSUBU!");
   }
@@ -779,39 +833,28 @@ void JIT::j(const u32 instr) {
   code.mov(code.rax, REG(qword, oldPC));
   code.and_(code.rax, ~0xfffffff);
   code.or_(code.rax, target);
-  code.mov(code.dl, 1);
-  code.mov(REG(byte, delaySlot), code.dl);
-  code.mov(code.rdi, target);
-  code.mov(REG(qword, nextPC), code.rdi);
+  branch_abs(target, mp);
 }
 
 void JIT::jr(const u32 instr) {
   if (regs.IsRegConstant(RS(instr))) {
     const u64 address = regs.Read<s64>(RS(instr));
-    code.mov(code.dl, 1);
-    code.mov(REG(byte, delaySlot), code.dl);
-    code.mov(code.rdi, address);
-    code.mov(REG(qword, nextPC), code.rdi);
+    branch_abs_constant(true, address);
     return;
   }
 
-  code.mov(code.dl, 1);
-  code.mov(REG(byte, delaySlot), code.dl);
-  code.mov(code.rdi, GPR(RS(instr)));
-  code.mov(REG(qword, nextPC), code.rdi);
+  regs.Read<s64>(RS(instr), code.rax);
+  branch_abs(code.rax, mp);
 }
 
 void JIT::jal(const u32 instr) {
-  code.mov(code.rax, REG(qword, nextPC));
-  code.mov(GPR(31), code.rax);
+  regs.Write<s64>(31, blockPC + 4, true);
   j(instr);
 }
 
 void JIT::jalr(const u32 instr) {
-  if (regs.IsRegConstant(RS(instr))) {
-    const u64 addr = regs.Read<s64>(RS(instr));
-    return;
-  }
+  regs.Write<s64>(RD(instr), blockPC + 4, true);
+  jr(instr);
 }
 
 void JIT::lbu(u32 instr) {
@@ -824,7 +867,7 @@ void JIT::lbu(u32 instr) {
       Util::panic("[JIT]: Unhandled TLBL exception in LBU!");
     } else {
       const u8 value = mem.Read<u8>(regs, paddr);
-      regs.Write(RT(instr), value);
+      regs.Write(RT(instr), value, true);
     }
   } else {
     Util::panic("[JIT]: Implement non constant LBU!");
@@ -839,7 +882,7 @@ void JIT::lb(u32 instr) {
       // regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.oldPC);
       Util::panic("[JIT]: Unhandled TLBL exception in LB!");
     } else {
-      regs.Write(RT(instr), (s8)mem.Read<u8>(regs, paddr));
+      regs.Write(RT(instr), (s8)mem.Read<u8>(regs, paddr), true);
     }
   } else {
     Util::panic("[JIT]: Implement non constant LB!");
@@ -863,7 +906,7 @@ void JIT::ld(u32 instr) {
       Util::panic("[JIT]: Unhandled TLBL exception in LD!");
     } else {
       const s64 value = mem.Read<u64>(regs, paddr);
-      regs.Write(RT(instr), value);
+      regs.Write(RT(instr), value, true);
     }
   } else {
     Util::panic("[JIT]: Implement non constant LD!");
@@ -901,7 +944,7 @@ void JIT::ldl(u32 instr) {
       const u64 mask = 0xFFFFFFFFFFFFFFFF << shift;
       const u64 data = mem.Read<u64>(regs, paddr & ~7);
       const s64 result = (s64)((regs.Read<s64>(RT(instr)) & ~mask) | (data << shift));
-      regs.Write(RT(instr), result);
+      regs.Write(RT(instr), result, true);
     }
   } else {
     Util::panic("[JIT]: Implement non constant LDL!");
@@ -921,7 +964,7 @@ void JIT::ldr(u32 instr) {
       const u64 mask = 0xFFFFFFFFFFFFFFFF >> shift;
       const u64 data = mem.Read<u64>(regs, paddr & ~7);
       const s64 result = (s64)((regs.Read<s64>(RT(instr)) & ~mask) | (data >> shift));
-      regs.Write(RT(instr), result);
+      regs.Write(RT(instr), result, true);
     }
   } else {
     Util::panic("[JIT]: Implement non constant LDR!");
@@ -929,21 +972,32 @@ void JIT::ldr(u32 instr) {
 }
 
 void JIT::lh(u32 instr) {
-  const u64 address = regs.Read<s64>(RS(instr)) + (s16)instr;
-  if (check_address_error(0b1, address)) {
-    // regs.cop0.HandleTLBException(address);
-    // regs.cop0.FireException(ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
-    // return;
-    Util::panic("[JIT]: Unhandled ADEL exception in LH!");
+  if (regs.IsRegConstant(RS(instr))) {
+    const u64 address = regs.Read<s64>(RS(instr)) + (s16)instr;
+    if (check_address_error(0b1, address)) {
+      // regs.cop0.HandleTLBException(address);
+      // regs.cop0.FireException(ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+      // return;
+      Util::panic("[JIT]: Unhandled ADEL exception in LH!");
+      return;
+    }
+
+    u32 paddr = 0;
+    if (!regs.cop0.MapVAddr(Cop0::LOAD, address, paddr)) {
+      // regs.cop0.HandleTLBException(address);
+      // regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.oldPC);
+      Util::panic("[JIT]: Unhandled TLBL exception in LH!");
+      return;
+    }
+
+    code.mov(code.rsi, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
+    code.mov(code.edx, paddr);
+    emitMemberFunctionCall(&Mem::Read<u16>, &mem);
+    regs.Write<s16>(RT(instr), code.rax);
+    return;
   }
 
-  u32 paddr = 0;
-  if (!regs.cop0.MapVAddr(Cop0::LOAD, address, paddr)) {
-    // regs.cop0.HandleTLBException(address);
-    // regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.oldPC);
-  } else {
-    regs.Write(RT(instr), (s16)mem.Read<u16>(regs, paddr));
-  }
+  Util::panic("[JIT]: Implement non constant LH!");
 }
 
 void JIT::lhu(u32) {}
@@ -952,7 +1006,35 @@ void JIT::ll(u32) {}
 
 void JIT::lld(u32) {}
 
-void JIT::lw(u32) {}
+void JIT::lw(u32 instr) {
+  if (regs.IsRegConstant(RS(instr))) {
+    const s16 offset = instr;
+    const u64 address = regs.Read<s64>(RS(instr)) + offset;
+    if (check_address_error(0b11, address)) {
+      // regs.cop0.HandleTLBException(address);
+      // regs.cop0.FireException(ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+      // return;
+      Util::panic("[JIT]: Unhandled ADEL exception in LW!");
+      return;
+    }
+
+    u32 paddr = 0;
+    if (!regs.cop0.MapVAddr(Cop0::LOAD, address, paddr)) {
+      // regs.cop0.HandleTLBException(address);
+      // regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.oldPC);
+      Util::panic("[JIT]: Unhandled TLBL exception in LW!");
+      return;
+    }
+
+    code.mov(code.rsi, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
+    code.mov(code.edx, paddr);
+    emitMemberFunctionCall(&Mem::Read<u32>, &mem);
+    regs.Write<s32>(RT(instr), code.rax);
+    return;
+  }
+
+  Util::panic("[JIT]: Implement non constant LW!");
+}
 
 void JIT::lwc1(u32) {}
 
@@ -964,7 +1046,7 @@ void JIT::lwr(u32) {}
 
 void JIT::mfhi(u32 instr) {
   if (regs.hiIsConstant) {
-    regs.Write(RD(instr), regs.hi);
+    regs.Write(RD(instr), regs.hi, true);
   } else {
     Util::panic("[JIT]: Implement non constant MFHI!");
   }
@@ -972,7 +1054,7 @@ void JIT::mfhi(u32 instr) {
 
 void JIT::mflo(u32 instr) {
   if (regs.loIsConstant) {
-    regs.Write(RD(instr), regs.lo);
+    regs.Write(RD(instr), regs.lo, true);
   } else {
     Util::panic("[JIT]: Implement non constant MFLO!");
   }
@@ -1026,7 +1108,7 @@ void JIT::mtlo(u32 instr) {
 
 void JIT::nor(u32 instr) {
   if (regs.IsRegConstant(RS(instr), RT(instr))) {
-    regs.Write(RD(instr), ~(regs.Read<s64>(RS(instr)) | regs.Read<s64>(RT(instr))));
+    regs.Write(RD(instr), ~(regs.Read<s64>(RS(instr)) | regs.Read<s64>(RT(instr))), true);
   } else {
     Util::panic("[JIT]: Implement non constant NOR!");
   }
@@ -1035,7 +1117,7 @@ void JIT::nor(u32 instr) {
 void JIT::slti(u32 instr) {
   if (regs.IsRegConstant(RS(instr))) {
     s16 imm = instr;
-    regs.Write(RT(instr), regs.Read<s64>(RS(instr)) < imm);
+    regs.Write(RT(instr), regs.Read<s64>(RS(instr)) < imm, true);
   } else {
     Util::panic("[JIT]: Implement non constant SLTI!");
   }
@@ -1044,7 +1126,7 @@ void JIT::slti(u32 instr) {
 void JIT::sltiu(u32 instr) {
   if (regs.IsRegConstant(RS(instr))) {
     s16 imm = instr;
-    regs.Write(RT(instr), regs.Read<u64>(RS(instr)) < imm);
+    regs.Write(RT(instr), regs.Read<u64>(RS(instr)) < imm, true);
   } else {
     Util::panic("[JIT]: Implement non constant SLTIU!");
   }
@@ -1052,7 +1134,7 @@ void JIT::sltiu(u32 instr) {
 
 void JIT::slt(u32 instr) {
   if (regs.IsRegConstant(RS(instr), RT(instr))) {
-    regs.Write(RD(instr), regs.Read<s64>(RS(instr)) < regs.Read<s64>(RT(instr)));
+    regs.Write(RD(instr), regs.Read<s64>(RS(instr)) < regs.Read<s64>(RT(instr)), true);
   } else {
     Util::panic("[JIT]: Implement non constant SLT!");
   }
@@ -1060,7 +1142,7 @@ void JIT::slt(u32 instr) {
 
 void JIT::sltu(u32 instr) {
   if (regs.IsRegConstant(RS(instr), RT(instr))) {
-    regs.Write(RD(instr), regs.Read<u64>(RS(instr)) < regs.Read<u64>(RT(instr)));
+    regs.Write(RD(instr), regs.Read<u64>(RS(instr)) < regs.Read<u64>(RT(instr)), true);
   } else {
     Util::panic("[JIT]: Implement non constant SLT!");
   }
@@ -1070,7 +1152,7 @@ void JIT::sll(u32 instr) {
   if (regs.IsRegConstant(RT(instr))) {
     u8 sa = ((instr >> 6) & 0x1f);
     s32 result = regs.Read<s64>(RT(instr)) << sa;
-    regs.Write(RD(instr), (s64)result);
+    regs.Write(RD(instr), (s64)result, true);
   } else {
     Util::panic("[JIT]: Implement non constant SLL!");
   }
@@ -1081,7 +1163,7 @@ void JIT::sllv(u32 instr) {
     u8 sa = (regs.Read<s64>(RS(instr))) & 0x1F;
     u32 rt = regs.Read<s64>(RT(instr));
     s32 result = rt << sa;
-    regs.Write(RD(instr), (s64)result);
+    regs.Write(RD(instr), (s64)result, true);
   } else {
     Util::panic("[JIT]: Implement non constant SLLV!");
   }
@@ -1095,7 +1177,7 @@ void JIT::sub(u32 instr) {
     if (check_signed_underflow(rs, rt, result)) {
       regs.cop0.FireException(ExceptionCode::Overflow, 0, regs.oldPC);
     } else {
-      regs.Write(RD(instr), result);
+      regs.Write(RD(instr), result, true);
     }
   } else {
     Util::panic("[JIT]: Implement non constant SUB!");
@@ -1107,7 +1189,7 @@ void JIT::subu(u32 instr) {
     u32 rt = regs.Read<s64>(RT(instr));
     u32 rs = regs.Read<s64>(RS(instr));
     u32 result = rs - rt;
-    regs.Write(RD(instr), (s64)((s32)result));
+    regs.Write(RD(instr), (s64)((s32)result), true);
   } else {
     Util::panic("[JIT]: Implement non constant SUBU!");
   }
@@ -1118,7 +1200,7 @@ void JIT::sra(u32 instr) {
     s64 rt = regs.Read<s64>(RT(instr));
     u8 sa = ((instr >> 6) & 0x1f);
     s32 result = rt >> sa;
-    regs.Write(RD(instr), result);
+    regs.Write(RD(instr), result, true);
   } else {
     Util::panic("[JIT]: Implement non constant SRA!");
   }
@@ -1130,7 +1212,7 @@ void JIT::srav(u32 instr) {
     s64 rt = regs.Read<s64>(RT(instr));
     u8 sa = rs & 0x1f;
     s32 result = rt >> sa;
-    regs.Write(RD(instr), result);
+    regs.Write(RD(instr), result, true);
   } else {
     Util::panic("[JIT]: Implement non constant SRAV!");
   }
@@ -1141,14 +1223,14 @@ void JIT::srl(u32 instr) {
     u32 rt = regs.Read<s64>(RT(instr));
     u8 sa = ((instr >> 6) & 0x1f);
     u32 result = rt >> sa;
-    regs.Write(RD(instr), (s32)result);
+    regs.Write(RD(instr), (s32)result, true);
   } else {
     Util::panic("[JIT]: Implement non constant SRL!");
   }
 }
 
 void JIT::sw(const u32 instr) {
-  if (regs.IsRegConstant(RS(instr)) && regs.IsRegConstant(RT(instr))) {
+  if (regs.IsRegConstant(RS(instr), RT(instr))) {
     const s16 offset = instr;
     const u64 address = regs.Read<s64>(RS(instr)) + offset;
     if (check_address_error(0b11, address)) {
@@ -1164,7 +1246,7 @@ void JIT::sw(const u32 instr) {
       // regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::STORE), 0, regs.oldPC);
       Util::panic("[JIT]: Unhandled TLBS exception in SW!");
     } else {
-      code.mov(code.rsi, reinterpret_cast<uintptr_t>(&regs));
+      code.lea(code.rsi, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
       code.mov(code.edx, physical);
       code.mov(code.rcx, regs.Read<s64>(RT(instr)));
       emitMemberFunctionCall(&Mem::WriteJIT<u32>, &mem);
@@ -1189,9 +1271,9 @@ void JIT::sw(const u32 instr) {
       // regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::STORE), 0, regs.oldPC);
       Util::panic("[JIT]: Unhandled TLBS exception in SW!");
     } else {
-      code.mov(code.rsi, reinterpret_cast<uintptr_t>(&regs));
+      code.mov(code.rsi, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
       code.mov(code.edx, physical);
-      code.mov(code.rcx, GPR(RT(instr)));
+      regs.Read<s64>(RT(instr), code.rcx);
       emitMemberFunctionCall(&Mem::WriteJIT<u32>, &mem);
     }
 
@@ -1200,7 +1282,7 @@ void JIT::sw(const u32 instr) {
 
   if (regs.IsRegConstant(RT(instr))) {
     const s16 offset = instr;
-    code.mov(code.rdx, GPR(RS(instr)));
+    regs.Read<s64>(RS(instr), code.rdx);
     code.add(code.rdx, offset);
 
     code.mov(code.esi, Cop0::STORE);
@@ -1209,7 +1291,7 @@ void JIT::sw(const u32 instr) {
     code.mov(code.rcx, reinterpret_cast<uintptr_t>(&physical));
     emitMemberFunctionCall(&Cop0::MapVAddr, &regs.cop0);
 
-    code.mov(code.rsi, reinterpret_cast<uintptr_t>(&regs));
+    code.mov(code.rsi, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
     code.mov(code.edx, physical);
     code.mov(code.rcx, regs.Read<s64>(RT(instr)));
     emitMemberFunctionCall(&Mem::WriteJIT<u32>, &mem);
@@ -1218,7 +1300,7 @@ void JIT::sw(const u32 instr) {
   }
 
   const s16 offset = instr;
-  code.mov(code.rdx, GPR(RS(instr)));
+  regs.Read<s64>(RS(instr), code.rdx);
   code.add(code.rdx, offset);
 
   code.mov(code.esi, Cop0::STORE);
@@ -1227,9 +1309,9 @@ void JIT::sw(const u32 instr) {
   code.mov(code.rcx, reinterpret_cast<uintptr_t>(&physical));
   emitMemberFunctionCall(&Cop0::MapVAddr, &regs.cop0);
 
-  code.mov(code.rsi, reinterpret_cast<uintptr_t>(&regs));
+  code.mov(code.rsi, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
   code.mov(code.edx, physical);
-  code.mov(code.rcx, GPR(RT(instr)));
+  regs.Read<s64>(RT(instr), code.rcx);
   emitMemberFunctionCall(&Mem::WriteJIT<u32>, &mem);
 }
 
@@ -1238,7 +1320,7 @@ void JIT::srlv(u32 instr) {
     u8 sa = (regs.Read<s64>(RS(instr)) & 0x1F);
     u32 rt = regs.Read<s64>(RT(instr));
     s32 result = rt >> sa;
-    regs.Write(RD(instr), (s64)result);
+    regs.Write(RD(instr), (s64)result, true);
   } else {
     Util::panic("[JIT]: Implement non constant SRLV!");
   }
@@ -1246,7 +1328,7 @@ void JIT::srlv(u32 instr) {
 
 void JIT::or_(u32 instr) {
   if (regs.IsRegConstant(RS(instr), RT(instr))) {
-    regs.Write(RD(instr), regs.Read<s64>(RS(instr)) | regs.Read<s64>(RT(instr)));
+    regs.Write(RD(instr), regs.Read<s64>(RS(instr)) | regs.Read<s64>(RT(instr)), true);
   } else {
     Util::panic("[JIT]: Implement non constant OR!");
   }
@@ -1256,19 +1338,22 @@ void JIT::ori(u32 instr) {
   if (RT(instr) == 0)
     return;
 
+  s64 imm = (u16)instr;
   if (regs.IsRegConstant(RS(instr))) {
-    s64 imm = (u16)instr;
     s64 result = imm | regs.Read<s64>(RS(instr));
-    code.mov(GPR(RT(instr)), result);
-  } else {
-    Util::panic("[JIT]: Implement non constant ORI!");
+    regs.Write(RT(instr), result, true);
+    return;
   }
+
+  regs.Read<s64>(RS(instr), code.rax);
+  code.or_(code.rax, imm);
+  regs.Write<s64>(RT(instr), code.rax);
 }
 
 void JIT::xori(u32 instr) {
   if (regs.IsRegConstant(RS(instr))) {
     s64 imm = (u16)instr;
-    regs.Write(RT(instr), regs.Read<s64>(RS(instr)) ^ imm);
+    regs.Write(RT(instr), regs.Read<s64>(RS(instr)) ^ imm, true);
   } else {
     Util::panic("[JIT]: Implement non constant XORI!");
   }
@@ -1276,7 +1361,7 @@ void JIT::xori(u32 instr) {
 
 void JIT::xor_(u32 instr) {
   if (regs.IsRegConstant(RS(instr), RT(instr))) {
-    regs.Write(RD(instr), regs.Read<s64>(RT(instr)) ^ regs.Read<s64>(RS(instr)));
+    regs.Write(RD(instr), regs.Read<s64>(RT(instr)) ^ regs.Read<s64>(RS(instr)), true);
   } else {
     Util::panic("[JIT]: Implement non constant XOR!");
   }

@@ -29,7 +29,7 @@ struct Registers {
   Cop1 cop1;
   s64 oldPC{}, pc{}, nextPC{};
   s64 hi{}, lo{};
-  bool prevDelaySlot{}, delaySlot{}, block_delaySlot{};
+  bool prevDelaySlot{}, delaySlot{};
   u32 steps = 0;
   u32 extraCycles = 0;
 

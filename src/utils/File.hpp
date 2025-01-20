@@ -14,6 +14,12 @@ FORCE_INLINE void WriteFileBinary(const std::vector<u8> &data, const std::string
   std::copy(data.begin(), data.end(), std::ostreambuf_iterator{file});
 }
 
+FORCE_INLINE void WriteFileBinary(const u8 *data, const size_t size, const std::string &path) {
+  FILE *out = fopen(path.c_str(), "wb");
+  fwrite(data, size, 1, out);
+  fclose(out);
+}
+
 template <size_t Size>
 FORCE_INLINE void WriteFileBinary(const std::array<u8, Size> &data, const std::string &path) {
   std::ofstream file(path, std::ios::binary);

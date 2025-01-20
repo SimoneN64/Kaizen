@@ -143,6 +143,7 @@ private:
   friend struct PI;
   friend struct AI;
   friend struct RSP;
+  friend struct JIT;
   friend struct Core;
   std::array<u8, ISVIEWER_SIZE> isviewer{};
   std::string sramPath{};

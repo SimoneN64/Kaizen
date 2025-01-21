@@ -45,4 +45,4 @@ struct Scheduler {
   u8 index = 0;
 };
 
-inline Scheduler scheduler;
+extern Scheduler scheduler;

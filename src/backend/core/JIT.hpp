@@ -43,6 +43,7 @@ private:
   friend struct Cop1;
   friend struct Registers;
   using BlockFn = int (*)();
+  Xbyak::Label branch_likely_not_taken;
 
   std::vector<std::vector<BlockFn>> blockCache;
   template <typename T>
@@ -84,7 +85,9 @@ private:
 
     code.mov(code.rdi, thisPtr);
     code.mov(code.rax, functionPtr);
+    code.sub(code.rsp, 8);
     code.call(code.rax);
+    code.add(code.rsp, 8);
   }
 
   void SkipSlot();

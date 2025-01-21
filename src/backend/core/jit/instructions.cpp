@@ -162,50 +162,55 @@ void JIT::SkipSlot() { code.jmp("not_taken"); }
 void JIT::SkipSlotConstant() { blockPC += 4; }
 
 void JIT::BranchTaken(const s64 offs) {
-  code.mov(code.rax, REG(qword, pc));
-  code.add(code.rax, offs);
+  code.mov(code.rax, blockPC + offs);
   code.mov(REG(qword, pc), code.rax);
 }
 
-void JIT::BranchTaken(const Xbyak::Reg64 &offs) { code.add(REG(qword, pc), offs); }
+void JIT::BranchTaken(const Xbyak::Reg64 &offs) {
+  code.add(offs, blockPC);
+  code.mov(REG(qword, pc), offs);
+}
 
 void JIT::BranchAbsTaken(const s64 addr) {
   code.mov(code.rax, addr);
   code.mov(REG(qword, pc), code.rax);
 }
 
-void JIT::BranchAbsTaken(const Xbyak::Reg64 &addr) { code.mov(REG(qword, nextPC), addr); }
+void JIT::BranchAbsTaken(const Xbyak::Reg64 &addr) { code.mov(REG(qword, pc), addr); }
 
 #define branch(offs, cond)                                                                                             \
   do {                                                                                                                 \
-    code.j##cond("taken");                                                                                             \
+    Xbyak::Label taken, not_taken;                                                                                     \
+    code.j##cond(taken);                                                                                               \
     code.mov(code.rax, blockPC);                                                                                       \
     code.mov(REG(qword, pc), code.rax);                                                                                \
-    code.jmp("not_taken");                                                                                             \
-    code.L("taken");                                                                                                   \
+    code.jmp(not_taken);                                                                                               \
+    code.L(taken);                                                                                                     \
     BranchTaken(offs);                                                                                                 \
-    code.L("not_taken");                                                                                               \
+    code.L(not_taken);                                                                                                 \
   }                                                                                                                    \
   while (0)
 
 #define branch_abs(addr, cond)                                                                                         \
   do {                                                                                                                 \
-    code.j##cond("taken");                                                                                             \
+    Xbyak::Label taken, not_taken;                                                                                     \
+    code.j##cond(taken);                                                                                               \
     code.mov(code.rax, blockPC);                                                                                       \
     code.mov(REG(qword, pc), code.rax);                                                                                \
-    code.jmp("not_taken");                                                                                             \
-    code.L("taken");                                                                                                   \
+    code.jmp(not_taken);                                                                                               \
+    code.L(taken);                                                                                                     \
     BranchAbsTaken(addr);                                                                                              \
-    code.L("not_taken");                                                                                               \
+    code.L(not_taken);                                                                                                 \
   }                                                                                                                    \
   while (0)
 
 #define branch_likely(offs, cond)                                                                                      \
   do {                                                                                                                 \
-    code.j##cond("taken");                                                                                             \
+    Xbyak::Label taken;                                                                                                \
+    code.j##cond(taken);                                                                                               \
     SkipSlot();                                                                                                        \
-    code.jmp("not_taken");                                                                                             \
-    code.L("taken");                                                                                                   \
+    code.jmp(branch_likely_not_taken);                                                                                 \
+    code.L(taken);                                                                                                     \
     BranchTaken(offs);                                                                                                 \
   }                                                                                                                    \
   while (0)

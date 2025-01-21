@@ -63,7 +63,8 @@ int JIT::Step() {
   bool branchWasLikely = false;
   bool blockEndsOnBranch = false;
 
-  code.sub(code.rsp, 56);
+  // code.int3();
+  code.sub(code.rsp, 8);
   code.push(code.rbp);
   code.mov(code.rbp, reinterpret_cast<uintptr_t>(this)); // Load context pointer
 
@@ -110,7 +111,7 @@ int JIT::Step() {
 
     if (instrInDelaySlot && branchWasLikely) {
       branchWasLikely = false;
-      code.L("not_taken");
+      code.L(branch_likely_not_taken);
       code.mov(code.rax, blockPC);
       code.mov(REG(qword, pc), code.rax);
     }
@@ -123,11 +124,11 @@ int JIT::Step() {
   }
   code.mov(code.rax, instructionsInBlock);
   code.pop(code.rbp);
-  code.add(code.rsp, 56);
+  code.add(code.rsp, 8);
   code.ret();
   code.setProtectModeRE();
-  // const auto dump = code.getCode();
-  // Util::WriteFileBinary(dump, code.getSize(), "jit.dump");
+  const auto dump = code.getCode();
+  Util::WriteFileBinary(dump, code.getSize(), "jit.dump");
   // Util::panic("");
   return block();
 }

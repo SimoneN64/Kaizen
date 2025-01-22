@@ -116,210 +116,82 @@ void Registers::Read<s8>(size_t idx, Xbyak::Reg reg) {
 }
 
 template <>
-void Registers::WriteJIT<bool>(size_t idx, bool v) {
-  jit->code.mov(jit->code.al, v);
-  jit->code.mov(jit->GPR<u8>(idx), jit->code.al);
-}
-
-template <>
-void Registers::Write<bool>(size_t idx, bool v, bool isConstant) {
+void Registers::Write<bool>(size_t idx, bool v) {
   if (idx == 0)
     return;
 
-  if (jit) {
-    gprIsConstant[idx] = isConstant;
-    if (isConstant) {
-      gpr[idx] = v;
-      return;
-    }
-
-    WriteJIT<bool>(idx, v);
-    return;
-  }
-
+  gprIsConstant[idx] = isConstant;
   gpr[idx] = v;
 }
 
 template <>
-void Registers::WriteJIT<u64>(size_t idx, u64 v) {
-  jit->code.mov(jit->code.rax, v);
-  jit->code.mov(jit->GPR<u64>(idx), jit->code.rax);
-}
-
-template <>
-void Registers::Write<u64>(size_t idx, u64 v, bool isConstant) {
+void Registers::Write<u64>(size_t idx, u64 v) {
   if (idx == 0)
     return;
 
-  if (jit) {
-    gprIsConstant[idx] = isConstant;
-    if (isConstant) {
-      gpr[idx] = v;
-      return;
-    }
-
-    WriteJIT<u64>(idx, v);
-    return;
-  }
-
+  gprIsConstant[idx] = isConstant;
   gpr[idx] = v;
 }
 
 template <>
-void Registers::Write<s64>(size_t idx, s64 v, bool isConstant) {
+void Registers::Write<s64>(size_t idx, s64 v) {
   Write<u64>(idx, v, isConstant);
 }
 
 template <>
-void Registers::WriteJIT<u32>(size_t idx, u32 v) {
-  jit->code.mov(jit->code.eax, v);
-  jit->code.mov(jit->GPR<u32>(idx), jit->code.eax);
-}
-
-template <>
-void Registers::Write<u32>(size_t idx, u32 v, bool isConstant) {
+void Registers::Write<u32>(size_t idx, u32 v) {
   if (idx == 0)
     return;
 
-  if (jit) {
-    gprIsConstant[idx] = isConstant;
-    if (isConstant) {
-      gpr[idx] = v;
-      return;
-    }
+  gprIsConstant[idx] = isConstant;
+  gpr[idx] = v;
+}
 
-    WriteJIT<u32>(idx, v);
+
+template <>
+void Registers::Write<s32>(size_t idx, s32 v) {
+  if (idx == 0)
     return;
-  }
 
+  gprIsConstant[idx] = isConstant;
   gpr[idx] = v;
 }
 
 template <>
-void Registers::WriteJIT<s32>(size_t idx, s32 v) {
-  jit->code.mov(jit->code.eax, v);
-  jit->code.movsxd(jit->code.rax, jit->code.eax);
-  jit->code.mov(jit->GPR<u64>(idx), jit->code.rax);
-}
-
-template <>
-void Registers::Write<s32>(size_t idx, s32 v, bool isConstant) {
+void Registers::Write<u16>(size_t idx, u16 v) {
   if (idx == 0)
     return;
 
-  if (jit) {
-    gprIsConstant[idx] = isConstant;
-    if (isConstant) {
-      gpr[idx] = v;
-      return;
-    }
+  gprIsConstant[idx] = isConstant;
+  gpr[idx] = v;
+}
 
-    WriteJIT<s32>(idx, v);
+
+template <>
+void Registers::Write<s16>(size_t idx, s16 v) {
+  if (idx == 0)
     return;
-  }
 
+  gprIsConstant[idx] = isConstant;
   gpr[idx] = v;
 }
 
 template <>
-void Registers::WriteJIT<u16>(size_t idx, u16 v) {
-  jit->code.mov(jit->code.ax, v);
-  jit->code.mov(jit->GPR<u16>(idx), jit->code.ax);
-}
-
-template <>
-void Registers::Write<u16>(size_t idx, u16 v, bool isConstant) {
+void Registers::Write<u8>(size_t idx, u8 v) {
   if (idx == 0)
     return;
 
-  if (jit) {
-    gprIsConstant[idx] = isConstant;
-    if (isConstant) {
-      gpr[idx] = v;
-      return;
-    }
-
-    WriteJIT<u16>(idx, v);
-    return;
-  }
-
+  gprIsConstant[idx] = isConstant;
   gpr[idx] = v;
 }
 
-template <>
-void Registers::WriteJIT<s16>(size_t idx, s16 v) {
-  jit->code.mov(jit->code.ax, v);
-  jit->code.movsx(jit->code.rax, jit->code.ax);
-  jit->code.mov(jit->GPR<u64>(idx), jit->code.rax);
-}
 
 template <>
-void Registers::Write<s16>(size_t idx, s16 v, bool isConstant) {
+void Registers::Write<s8>(size_t idx, s8 v) {
   if (idx == 0)
     return;
 
-  if (jit) {
-    gprIsConstant[idx] = isConstant;
-    if (isConstant) {
-      gpr[idx] = v;
-      return;
-    }
-
-    WriteJIT<s16>(idx, v);
-    return;
-  }
-
-  gpr[idx] = v;
-}
-
-template <>
-void Registers::WriteJIT<u8>(size_t idx, u8 v) {
-  jit->code.mov(jit->code.al, v);
-  jit->code.mov(jit->GPR<u8>(idx), jit->code.al);
-}
-
-template <>
-void Registers::Write<u8>(size_t idx, u8 v, bool isConstant) {
-  if (idx == 0)
-    return;
-
-  if (jit) {
-    gprIsConstant[idx] = isConstant;
-    if (isConstant) {
-      gpr[idx] = v;
-      return;
-    }
-
-    WriteJIT<u8>(idx, v);
-    return;
-  }
-
-  gpr[idx] = v;
-}
-
-template <>
-void Registers::WriteJIT<s8>(size_t idx, s8 v) {
-  jit->code.mov(jit->code.al, v);
-  jit->code.movsx(jit->code.rax, jit->code.al);
-  jit->code.mov(jit->GPR<u64>(idx), jit->code.rax);
-}
-
-template <>
-void Registers::Write<s8>(size_t idx, s8 v, bool isConstant) {
-  if (idx == 0)
-    return;
-
-  if (jit) {
-    gprIsConstant[idx] = isConstant;
-    if (isConstant) {
-      gpr[idx] = v;
-      return;
-    }
-
-    WriteJIT<s8>(idx, v);
-    return;
-  }
-
+  gprIsConstant[idx] = isConstant;
   gpr[idx] = v;
 }
 

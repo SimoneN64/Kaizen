@@ -46,14 +46,10 @@ struct Registers {
   template <typename T>
   void Read(size_t, Xbyak::Reg);
   template <typename T>
-  void Write(size_t, T, bool = false);
+  void Write(size_t, T);
   template <typename T>
   void Write(size_t, Xbyak::Reg);
 
   std::array<s64, 32> gpr{};
-
-private:
-  template <typename T>
-  void WriteJIT(size_t, T);
 };
 } // namespace n64

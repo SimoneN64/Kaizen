@@ -38,12 +38,22 @@ static bool InstrEndsBlock(const u32 instr) {
 }
 
 static bool IsBranchLikely(const u32 instr) {
-  switch (instr >> 26 & 0x1F) {
+  switch (instr >> 26 & 0x3F) {
   case BEQL:
   case BNEL:
   case BLEZL:
   case BGTZL:
     return true;
+  case REGIMM:
+    switch (instr >> 16 & 0x1f) {
+    case BLTZL:
+    case BGEZL:
+    case BLTZALL:
+    case BGEZALL:
+      return true;
+    default:
+      return false;
+    }
   case COP1:
     {
       const u8 mask_sub = (instr >> 21) & 0x1F;
@@ -58,15 +68,7 @@ static bool IsBranchLikely(const u32 instr) {
       return false;
     }
   default:
-    switch (instr >> 16 & 0x1F) {
-    case BLTZL:
-    case BGEZL:
-    case BLTZALL:
-    case BGEZALL:
-      return true;
-    default:
-      return false;
-    }
+    return false;
   }
 }
 } // namespace n64

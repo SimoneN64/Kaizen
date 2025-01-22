@@ -92,6 +92,7 @@ private:
 
   void SkipSlot();
   void SkipSlotConstant();
+  void BranchNotTaken();
   void BranchTaken(s64 offs);
   void BranchTaken(const Xbyak::Reg64 &offs);
   void BranchAbsTaken(s64 addr);
@@ -185,17 +186,17 @@ private:
   void mthi(u32);
   void mtlo(u32);
   void nor(u32);
-  void sb(u32) {}
-  void sc(u32) {}
-  void scd(u32) {}
-  void sd(u32) {}
-  void sdc1(u32) {}
-  void sdl(u32) {}
-  void sdr(u32) {}
-  void sh(u32) {}
+  void sb(u32) { Util::panic("[JIT] Implement sb!"); }
+  void sc(u32) { Util::panic("[JIT] Implement sc!"); }
+  void scd(u32) { Util::panic("[JIT] Implement scd!"); }
+  void sd(u32) { Util::panic("[JIT] Implement sd!"); }
+  void sdc1(u32) { Util::panic("[JIT] Implement sdc1!"); }
+  void sdl(u32) { Util::panic("[JIT] Implement sdl!"); }
+  void sdr(u32) { Util::panic("[JIT] Implement sdr!"); }
+  void sh(u32) { Util::panic("[JIT] Implement sh!"); }
   void sw(u32);
-  void swl(u32) {}
-  void swr(u32) {}
+  void swl(u32) { Util::panic("[JIT] Implement swl!"); }
+  void swr(u32) { Util::panic("[JIT] Implement swr!"); }
   void slti(u32);
   void sltiu(u32);
   void slt(u32);
@@ -204,12 +205,12 @@ private:
   void sllv(u32);
   void sub(u32);
   void subu(u32);
-  void swc1(u32) {}
+  void swc1(u32) { Util::panic("[JIT] Implement swc1!"); }
   void sra(u32);
   void srav(u32);
   void srl(u32);
   void srlv(u32);
-  void trap(bool) {}
+  void trap(bool) { Util::panic("[JIT] Implement trap!"); }
   void or_(u32);
   void ori(u32);
   void xor_(u32);

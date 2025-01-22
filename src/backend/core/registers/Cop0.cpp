@@ -501,7 +501,7 @@ void Cop0::decodeInterp(const u32 instr) {
       eret();
       break;
     default:
-      Util::panic("Unimplemented COP0 function {} {} ({:08X}) ({:016lX})", mask_cop2 >> 3, mask_cop2 & 7, instr,
+      Util::panic("Unimplemented COP0 function {} {} ({:08X}) ({:016X})", mask_cop2 >> 3, mask_cop2 & 7, instr,
                   regs.oldPC);
     }
     break;

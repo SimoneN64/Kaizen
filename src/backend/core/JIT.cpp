@@ -35,9 +35,8 @@ int JIT::Step() {
     /*regs.cop0.HandleTLBException(blockPC);
     regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, blockPC);
     return 1;*/
-    Util::panic(
-      "[JIT]: Unhandled exception TLB exception {} when retrieving PC physical address! (virtual: 0x{:016lX})",
-      static_cast<int>(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD)), static_cast<u64>(blockPC));
+    Util::panic("[JIT]: Unhandled exception TLB exception {} when retrieving PC physical address! (virtual: 0x{:016X})",
+                static_cast<int>(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD)), static_cast<u64>(blockPC));
   }
 
   u32 upperIndex = paddr >> kUpperShift;
@@ -45,12 +44,14 @@ int JIT::Step() {
 
   if (!blockCache[upperIndex].empty()) {
     if (blockCache[upperIndex][lowerIndex]) {
+      Util::trace("[JIT]: Executing already compiled block @ 0x{:016X}", blockPC);
       return blockCache[upperIndex][lowerIndex]();
     }
   } else {
     blockCache[upperIndex].resize(kLowerSize);
   }
 
+  Util::trace("[JIT]: Compiling block @ 0x{:016X}", blockPC);
   const auto block = code.getCurr<BlockFn>();
   blockCache[upperIndex][lowerIndex] = block;
 
@@ -63,7 +64,6 @@ int JIT::Step() {
   bool branchWasLikely = false;
   bool blockEndsOnBranch = false;
 
-  // code.int3();
   code.sub(code.rsp, 8);
   code.push(code.rbp);
   code.mov(code.rbp, reinterpret_cast<uintptr_t>(this)); // Load context pointer
@@ -76,7 +76,7 @@ int JIT::Step() {
       regs.cop0.FireException(ExceptionCode::AddressErrorLoad, 0, blockPC);
       return 1;*/
 
-      Util::panic("[JIT]: Unhandled exception ADL due to unaligned PC virtual value! (0x{:016lX})", blockPC);
+      Util::panic("[JIT]: Unhandled exception ADL due to unaligned PC virtual value! (0x{:016X})", blockPC);
     }
 
     if (!regs.cop0.MapVAddr(Cop0::LOAD, blockPC, paddr)) {
@@ -84,7 +84,7 @@ int JIT::Step() {
       regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, blockPC);
       return 1;*/
       Util::panic(
-        "[JIT]: Unhandled exception TLB exception {} when retrieving PC physical address! (virtual: 0x{:016lX})",
+        "[JIT]: Unhandled exception TLB exception {} when retrieving PC physical address! (virtual: 0x{:016X})",
         static_cast<int>(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD)), static_cast<u64>(blockPC));
     }
 
@@ -127,9 +127,9 @@ int JIT::Step() {
   code.add(code.rsp, 8);
   code.ret();
   code.setProtectModeRE();
-  const auto dump = code.getCode();
-  Util::WriteFileBinary(dump, code.getSize(), "jit.dump");
-  // Util::panic("");
+  // const auto dump = code.getCode();
+  // Util::WriteFileBinary(dump, code.getSize(), "jit.dump");
+  //  Util::panic("");
   return block();
 }
 

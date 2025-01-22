@@ -544,24 +544,39 @@ void JIT::dadd(u32 instr) {
       Util::panic("[JIT]: Unhandled Overflow exception in DADD!");
     }
     regs.Write(RD(instr), result);
-  } else {
-    Util::panic("[JIT]: Implement non constant DADD!");
+    return;
   }
+
+  if(regs.IsRegConstant(RS(instr))) {
+    auto rs = regs.Read<u64>(RS(instr));
+    regs.Read<u64>(RT(instr), code.rax);
+    code.add(code.rax, rs);
+    regs.Write<u64>(RD(instr), code.rax);
+    return;
+  }
+
+  if(regs.IsRegConstant(RT(instr))) {
+    auto rt = regs.Read<u64>(RT(instr));
+    regs.Read<u64>(RS(instr), code.rax);
+    code.add(code.rax, rt);
+    regs.Write<u64>(RD(instr), code.rax);
+    return;
+  }
+
+  regs.Read<u64>(RS(instr), code.rax);
+  regs.Read<u64>(RT(instr), code.rdi);
+  code.add(code.rax, code.rdi);
+  regs.Write<u64>(RD(instr), code.rax);
 }
 
 void JIT::daddu(u32 instr) {
-  if (regs.IsRegConstant(RS(instr), RT(instr))) {
-    auto rs = regs.Read<s64>(RS(instr));
-    auto rt = regs.Read<s64>(RT(instr));
-    regs.Write(RD(instr), rt + rs);
-  } else {
-    Util::panic("[JIT]: Implement non constant DADD!");
-  }
+  // TODO: IMPLEMENT DADDU BY ITSELF ACTUALLY
+  dadd(instr);
 }
 
 void JIT::daddi(u32 instr) {
+  u64 imm = s64(s16(instr));
   if (regs.IsRegConstant(RS(instr))) {
-    u64 imm = s64(s16(instr));
     auto rs = regs.Read<u64>(RS(instr));
     u64 result = imm + rs;
     if (check_signed_overflow(rs, imm, result)) {
@@ -569,19 +584,17 @@ void JIT::daddi(u32 instr) {
       Util::panic("[JIT]: Unhandled Overflow exception in DADDI!");
     }
     regs.Write(RT(instr), result);
-  } else {
-    Util::panic("[JIT]: Implement non constant DADDI!");
+    return;
   }
+
+  regs.Read<u64>(RS(instr), code.rax);
+  code.add(code.rax, imm);
+  regs.Write(RT(instr), code.rax);
 }
 
 void JIT::daddiu(u32 instr) {
-  if (regs.IsRegConstant(RS(instr))) {
-    s16 imm = s16(instr);
-    auto rs = regs.Read<s64>(RS(instr));
-    regs.Write(RT(instr), imm + rs);
-  } else {
-    Util::panic("[JIT]: Implement non constant DADDI!");
-  }
+  // TODO: IMPLEMENT DADDIU BY ITSELF ACTUALLY
+  daddi(instr);
 }
 
 void JIT::ddiv(u32 instr) {

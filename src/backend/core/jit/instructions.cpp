@@ -10,8 +10,7 @@ using namespace Xbyak::util;
 void JIT::lui(const u32 instr) {
   u64 val = static_cast<s64>(static_cast<s16>(instr));
   val <<= 16;
-  regs.gpr[RT(instr)] = val;
-  regs.gprIsConstant[RT(instr)] = true;
+  regs.Write<s64>(RT(instr), val, true);
 }
 
 void JIT::add(const u32 instr) {
@@ -835,10 +834,9 @@ void JIT::dsubu(u32 instr) {
 
 void JIT::j(const u32 instr) {
   const s32 target = (instr & 0x3ffffff) << 2;
-  code.mov(code.rax, REG(qword, oldPC));
-  code.and_(code.rax, ~0xfffffff);
-  code.or_(code.rax, target);
-  branch_abs(target, mp);
+  const s64 oldPC = branchPC - 8;
+  const s64 address = (oldPC & ~0xfffffff) | target;
+  branch_abs_constant(true, address);
 }
 
 void JIT::jr(const u32 instr) {

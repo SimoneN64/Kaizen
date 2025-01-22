@@ -126,11 +126,9 @@ void Registers::Write<bool>(size_t idx, bool v, bool isConstant) {
   if (idx == 0)
     return;
 
-  bool oldIsConstant = gprIsConstant[idx];
-  gprIsConstant[idx] = isConstant;
-
   if (jit) {
-    if (oldIsConstant) {
+    gprIsConstant[idx] = isConstant;
+    if (isConstant) {
       gpr[idx] = v;
       return;
     }
@@ -153,11 +151,9 @@ void Registers::Write<u64>(size_t idx, u64 v, bool isConstant) {
   if (idx == 0)
     return;
 
-  bool oldIsConstant = gprIsConstant[idx];
-  gprIsConstant[idx] = isConstant;
-
   if (jit) {
-    if (oldIsConstant) {
+    gprIsConstant[idx] = isConstant;
+    if (isConstant) {
       gpr[idx] = v;
       return;
     }
@@ -185,11 +181,9 @@ void Registers::Write<u32>(size_t idx, u32 v, bool isConstant) {
   if (idx == 0)
     return;
 
-  bool oldIsConstant = gprIsConstant[idx];
-  gprIsConstant[idx] = isConstant;
-
   if (jit) {
-    if (oldIsConstant) {
+    gprIsConstant[idx] = isConstant;
+    if (isConstant) {
       gpr[idx] = v;
       return;
     }
@@ -213,11 +207,9 @@ void Registers::Write<s32>(size_t idx, s32 v, bool isConstant) {
   if (idx == 0)
     return;
 
-  bool oldIsConstant = gprIsConstant[idx];
-  gprIsConstant[idx] = isConstant;
-
   if (jit) {
-    if (oldIsConstant) {
+    gprIsConstant[idx] = isConstant;
+    if (isConstant) {
       gpr[idx] = v;
       return;
     }
@@ -240,11 +232,9 @@ void Registers::Write<u16>(size_t idx, u16 v, bool isConstant) {
   if (idx == 0)
     return;
 
-  bool oldIsConstant = gprIsConstant[idx];
-  gprIsConstant[idx] = isConstant;
-
   if (jit) {
-    if (oldIsConstant) {
+    gprIsConstant[idx] = isConstant;
+    if (isConstant) {
       gpr[idx] = v;
       return;
     }
@@ -268,11 +258,9 @@ void Registers::Write<s16>(size_t idx, s16 v, bool isConstant) {
   if (idx == 0)
     return;
 
-  bool oldIsConstant = gprIsConstant[idx];
-  gprIsConstant[idx] = isConstant;
-
   if (jit) {
-    if (oldIsConstant) {
+    gprIsConstant[idx] = isConstant;
+    if (isConstant) {
       gpr[idx] = v;
       return;
     }
@@ -295,11 +283,9 @@ void Registers::Write<u8>(size_t idx, u8 v, bool isConstant) {
   if (idx == 0)
     return;
 
-  bool oldIsConstant = gprIsConstant[idx];
-  gprIsConstant[idx] = isConstant;
-
   if (jit) {
-    if (oldIsConstant) {
+    gprIsConstant[idx] = isConstant;
+    if (isConstant) {
       gpr[idx] = v;
       return;
     }
@@ -323,11 +309,9 @@ void Registers::Write<s8>(size_t idx, s8 v, bool isConstant) {
   if (idx == 0)
     return;
 
-  bool oldIsConstant = gprIsConstant[idx];
-  gprIsConstant[idx] = isConstant;
-
   if (jit) {
-    if (oldIsConstant) {
+    gprIsConstant[idx] = isConstant;
+    if (isConstant) {
       gpr[idx] = v;
       return;
     }

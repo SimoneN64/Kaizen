@@ -12,7 +12,7 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   mainWindow = std::make_unique<MainWindow>(core);
   settingsWindow = std::make_unique<SettingsWindow>();
   emuThread = std::make_unique<EmuThread>(core, *mainWindow->fpsCounter, *mainWindow->vulkanWidget, *settingsWindow);
-  debugger = std::make_unique<Debugger>();
+  // debugger = std::make_unique<Debugger>();
 
   ConnectMainWindowSignalsToSlots();
   Util::RPC::GetInstance().Update(Util::RPC::Idling);
@@ -22,7 +22,7 @@ KaizenQt::KaizenQt() noexcept : QWidget(nullptr) {
   setFocus();
   grabKeyboard();
   mainWindow->show();
-  debugger->hide();
+  // debugger->hide();
   settingsWindow->hide();
 }
 
@@ -36,7 +36,7 @@ void KaizenQt::ConnectMainWindowSignalsToSlots() noexcept {
           [&] { mainWindow->vulkanWidget->wsiPlatform->DisableEventPolling(); });
 
   connect(mainWindow.get(), &MainWindow::OpenSettings, this, [this] { settingsWindow->show(); });
-  connect(mainWindow.get(), &MainWindow::OpenDebugger, this, [this] { debugger->show(); });
+  //  connect(mainWindow.get(), &MainWindow::OpenDebugger, this, [this] { debugger->show(); });
   connect(mainWindow.get(), &MainWindow::OpenROM, this, &KaizenQt::LoadROM);
   connect(mainWindow.get(), &MainWindow::Exit, this, &KaizenQt::Quit);
   connect(mainWindow.get(), &MainWindow::Reset, emuThread.get(), &EmuThread::Reset);

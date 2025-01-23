@@ -39,6 +39,6 @@ private:
   std::unique_ptr<MainWindow> mainWindow;
   std::unique_ptr<SettingsWindow> settingsWindow;
   std::unique_ptr<EmuThread> emuThread;
-  std::unique_ptr<Debugger> debugger;
+  // std::unique_ptr<Debugger> debugger;
   std::shared_ptr<n64::Core> core;
 };

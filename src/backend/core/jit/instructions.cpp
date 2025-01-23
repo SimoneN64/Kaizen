@@ -1111,7 +1111,7 @@ void JIT::lw(u32 instr) {
   }
 
   code.mov(code.ARG2, Cop0::LOAD);
-  regs.Read<s64>(RS(instr), code.rdx);
+  regs.Read<s64>(RS(instr), code.ARG3);
   code.add(code.ARG3, offset);
   code.mov(code.ARG4, reinterpret_cast<uintptr_t>(&paddr));
   emitMemberFunctionCall(&Cop0::MapVAddr, &regs.cop0);

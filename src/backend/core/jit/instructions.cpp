@@ -916,7 +916,7 @@ void JIT::lb(u32 instr) {
     if (u32 paddr = 0; !regs.cop0.MapVAddr(Cop0::LOAD, address, paddr)) {
       // regs.cop0.HandleTLBException(address);
       // regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.oldPC);
-      Util::panic("[JIT]: Unhandled TLBL exception in LB!");
+      Util::panic("[JIT]: Unhandled TLBL exception in LB (pc: 0x{:016X})!", blockPC);
     } else {
       code.mov(code.ARG2,
                code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
@@ -1045,7 +1045,39 @@ void JIT::lh(u32 instr) {
   Util::panic("[JIT]: Implement non constant LH!");
 }
 
-void JIT::lhu(u32) { Util::panic("[JIT]: Implement LHU!"); }
+void JIT::lhu(u32 instr) {
+  u32 paddr;
+  if (regs.IsRegConstant(RS(instr))) {
+    const s64 address = regs.Read<s64>(RS(instr)) + (s16)instr;
+    if (check_address_error(0b1, address)) {
+      regs.cop0.HandleTLBException(address);
+      regs.cop0.FireException(ExceptionCode::AddressErrorLoad, 0, regs.oldPC);
+      return;
+    }
+
+    if (!regs.cop0.MapVAddr(Cop0::LOAD, address, paddr)) {
+      regs.cop0.HandleTLBException(address);
+      regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.oldPC);
+      return;
+    }
+
+    code.mov(code.ARG2, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
+    code.mov(code.ARG3, paddr);
+    emitMemberFunctionCall(&Mem::Read<u16>, &mem);
+    regs.Write<u16>(RT(instr), code.rax);
+  }
+
+  code.mov(code.ARG2, Cop0::LOAD);
+  regs.Read<s64>(RS(instr), code.ARG3);
+  code.add(code.ARG3, s16(instr));
+  code.mov(code.ARG4, reinterpret_cast<uintptr_t>(&paddr));
+  emitMemberFunctionCall(&Cop0::MapVAddr, &regs.cop0);
+
+  code.mov(code.ARG2, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
+  code.mov(code.ARG3, paddr);
+  emitMemberFunctionCall(&Mem::Read<u16>, &mem);
+  regs.Write<u16>(RT(instr), code.rax);
+}
 
 void JIT::ll(u32) { Util::panic("[JIT]: Implement constant LL!"); }
 

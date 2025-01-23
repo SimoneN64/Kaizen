@@ -899,8 +899,9 @@ void JIT::lbu(u32 instr) {
       // regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.oldPC);
       Util::panic("[JIT]: Unhandled TLBL exception in LBU!");
     } else {
-      code.mov(code.rsi, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
-      code.mov(code.edx, paddr);
+      code.mov(code.ARG2,
+               code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
+      code.mov(code.ARG3, paddr);
       emitMemberFunctionCall(&Mem::Read<u8>, &mem);
       regs.Write<u8>(RT(instr), code.rax);
     }
@@ -917,8 +918,9 @@ void JIT::lb(u32 instr) {
       // regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.oldPC);
       Util::panic("[JIT]: Unhandled TLBL exception in LB!");
     } else {
-      code.mov(code.rsi, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
-      code.mov(code.edx, paddr);
+      code.mov(code.ARG2,
+               code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
+      code.mov(code.ARG3, paddr);
       emitMemberFunctionCall(&Mem::Read<u8>, &mem);
       regs.Write<s8>(RT(instr), code.rax);
     }
@@ -943,8 +945,9 @@ void JIT::ld(u32 instr) {
       // regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::LOAD), 0, regs.oldPC);
       Util::panic("[JIT]: Unhandled TLBL exception in LD!");
     } else {
-      code.mov(code.rsi, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
-      code.mov(code.edx, paddr);
+      code.mov(code.ARG2,
+               code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
+      code.mov(code.ARG3, paddr);
       emitMemberFunctionCall(&Mem::Read<u64>, &mem);
       regs.Write<u64>(RT(instr), code.rax);
     }
@@ -1032,8 +1035,8 @@ void JIT::lh(u32 instr) {
       return;
     }
 
-    code.mov(code.rsi, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
-    code.mov(code.edx, paddr);
+    code.mov(code.ARG2, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
+    code.mov(code.ARG3, paddr);
     emitMemberFunctionCall(&Mem::Read<u16>, &mem);
     regs.Write<s16>(RT(instr), code.rax);
     return;
@@ -1068,21 +1071,21 @@ void JIT::lw(u32 instr) {
       return;
     }
 
-    code.mov(code.rsi, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
-    code.mov(code.edx, paddr);
+    code.mov(code.ARG2, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
+    code.mov(code.ARG3, paddr);
     emitMemberFunctionCall(&Mem::Read<u32>, &mem);
     regs.Write<s32>(RT(instr), code.rax);
     return;
   }
 
-  code.mov(code.esi, Cop0::LOAD);
+  code.mov(code.ARG2, Cop0::LOAD);
   regs.Read<s64>(RS(instr), code.rdx);
-  code.add(code.rdx, offset);
-  code.mov(code.rcx, reinterpret_cast<uintptr_t>(&paddr));
+  code.add(code.ARG3, offset);
+  code.mov(code.ARG4, reinterpret_cast<uintptr_t>(&paddr));
   emitMemberFunctionCall(&Cop0::MapVAddr, &regs.cop0);
 
-  code.mov(code.rsi, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
-  code.mov(code.edx, paddr);
+  code.mov(code.ARG2, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
+  code.mov(code.ARG3, paddr);
   emitMemberFunctionCall(&Mem::Read<u32>, &mem);
   regs.Write<s32>(RT(instr), code.rax);
 }
@@ -1305,9 +1308,10 @@ void JIT::sw(const u32 instr) {
       // regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::STORE), 0, regs.oldPC);
       Util::panic("[JIT]: Unhandled TLBS exception in SW!");
     } else {
-      code.lea(code.rsi, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
-      code.mov(code.edx, physical);
-      code.mov(code.rcx, regs.Read<s64>(RT(instr)));
+      code.lea(code.ARG2,
+               code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
+      code.mov(code.ARG3, physical);
+      code.mov(code.ARG4, regs.Read<s64>(RT(instr)));
       emitMemberFunctionCall(&Mem::WriteJIT<u32>, &mem);
     }
 
@@ -1329,8 +1333,9 @@ void JIT::sw(const u32 instr) {
       // regs.cop0.FireException(Cop0::GetTLBExceptionCode(regs.cop0.tlbError, Cop0::STORE), 0, regs.oldPC);
       Util::panic("[JIT]: Unhandled TLBS exception in SW!");
     } else {
-      code.mov(code.rsi, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
-      code.mov(code.edx, physical);
+      code.mov(code.ARG2,
+               code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
+      code.mov(code.ARG3, physical);
       regs.Read<s64>(RT(instr), code.rcx);
       emitMemberFunctionCall(&Mem::WriteJIT<u32>, &mem);
     }
@@ -1341,16 +1346,16 @@ void JIT::sw(const u32 instr) {
   if (regs.IsRegConstant(RT(instr))) {
     const s16 offset = instr;
     regs.Read<s64>(RS(instr), code.rdx);
-    code.add(code.rdx, offset);
+    code.add(code.ARG3, offset);
 
-    code.mov(code.esi, Cop0::STORE);
+    code.mov(code.ARG2, Cop0::STORE);
 
-    code.mov(code.rcx, reinterpret_cast<uintptr_t>(&physical));
+    code.mov(code.ARG4, reinterpret_cast<uintptr_t>(&physical));
     emitMemberFunctionCall(&Cop0::MapVAddr, &regs.cop0);
 
-    code.mov(code.rsi, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
-    code.mov(code.edx, physical);
-    code.mov(code.rcx, regs.Read<s64>(RT(instr)));
+    code.mov(code.ARG2, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
+    code.mov(code.ARG3, physical);
+    code.mov(code.ARG4, regs.Read<s64>(RT(instr)));
     emitMemberFunctionCall(&Mem::WriteJIT<u32>, &mem);
 
     return;
@@ -1358,16 +1363,16 @@ void JIT::sw(const u32 instr) {
 
   const s16 offset = instr;
   regs.Read<s64>(RS(instr), code.rdx);
-  code.add(code.rdx, offset);
+  code.add(code.ARG3, offset);
 
-  code.mov(code.esi, Cop0::STORE);
+  code.mov(code.ARG2, Cop0::STORE);
 
-  code.mov(code.rcx, reinterpret_cast<uintptr_t>(&physical));
+  code.mov(code.ARG4, reinterpret_cast<uintptr_t>(&physical));
   emitMemberFunctionCall(&Cop0::MapVAddr, &regs.cop0);
 
-  code.mov(code.rsi, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
-  code.mov(code.edx, physical);
-  regs.Read<s64>(RT(instr), code.rcx);
+  code.mov(code.ARG2, code.ptr[code.rbp + (reinterpret_cast<uintptr_t>(&regs) - reinterpret_cast<uintptr_t>(this))]);
+  code.mov(code.ARG3, physical);
+  regs.Read<s64>(RT(instr), code.ARG4);
   emitMemberFunctionCall(&Mem::WriteJIT<u32>, &mem);
 }
 

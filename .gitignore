@@ -2,7 +2,12 @@
 *.ini
 *build*/
 .idea/
-roms/
+*.z64
+*.n64
+*.v64
+*.Z64
+*.N64
+*.V64
 saves/
 *.bin
 *.sh

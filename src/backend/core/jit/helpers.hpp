@@ -71,4 +71,18 @@ static bool IsBranchLikely(const u32 instr) {
     return false;
   }
 }
+
+#ifdef _WIN32
+#define ARG1 rcx
+#define ARG2 rdx
+#define ARG3 r8
+#define ARG4 r9
+#else
+#define ARG1 rdi
+#define ARG2 rsi
+#define ARG3 rdx
+#define ARG4 rcx
+#define ARG5 r8
+#define ARG6 r9
+#endif
 } // namespace n64

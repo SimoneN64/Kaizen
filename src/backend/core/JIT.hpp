@@ -3,6 +3,7 @@
 #include <Mem.hpp>
 #include <vector>
 #include <xbyak.h>
+#include <jit/helpers.hpp>
 
 namespace n64 {
 struct Core;
@@ -35,7 +36,7 @@ struct JIT : BaseCPU {
   [[nodiscard]] Disassembler::DisassemblyResult Disassemble(u32, u32) const override { return {}; }
 
 private:
-  Xbyak::CodeGenerator code{kCodeCacheSize};
+  Xbyak::CodeGenerator code{kCodeCacheAllocSize};
   Registers regs;
   Mem mem;
   u64 cop2Latch{};
@@ -83,7 +84,7 @@ private:
     thisPtr += arr[1];
 #endif
 
-    code.mov(code.rdi, thisPtr);
+    code.mov(code.ARG1, thisPtr);
     code.mov(code.rax, functionPtr);
     code.sub(code.rsp, 8);
     code.call(code.rax);

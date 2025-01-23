@@ -44,9 +44,9 @@ private:
   friend struct Cop1;
   friend struct Registers;
   using BlockFn = int (*)();
+  std::vector<std::vector<BlockFn>> blockCache;
   Xbyak::Label branch_likely_not_taken;
 
-  std::vector<std::vector<BlockFn>> blockCache;
   template <typename T>
   Xbyak::Address GPR(const size_t index) const {
     if constexpr (sizeof(T) == 1) {

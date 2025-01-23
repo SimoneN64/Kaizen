@@ -40,7 +40,7 @@ int JIT::Step() {
   }
 
   u32 upperIndex = paddr >> kUpperShift;
-  u32 lowerIndex = paddr & 0xff;
+  u32 lowerIndex = paddr & kLowerMask;
 
   if (!blockCache[upperIndex].empty()) {
     if (blockCache[upperIndex][lowerIndex]) {

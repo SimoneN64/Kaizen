@@ -196,6 +196,20 @@ void Registers::Write<s8>(size_t idx, s8 v) {
 }
 
 template <>
+void Registers::Write<bool>(size_t idx, Xbyak::Reg v) {
+  if (idx == 0)
+    return;
+
+  gprIsConstant[idx] = false;
+
+  if (!jit)
+    Util::panic("Did you try to call Registers::Write(size_t, *Xbyak::Reg*) from the interpreter?");
+
+  jit->code.movsx(v.cvt64(), v.cvt8());
+  jit->code.mov(jit->GPR<u64>(idx), v);
+}
+
+template <>
 void Registers::Write<s8>(size_t idx, Xbyak::Reg v) {
   if (idx == 0)
     return;

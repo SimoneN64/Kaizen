@@ -219,7 +219,8 @@ void Registers::Write<u8>(size_t idx, Xbyak::Reg v) {
   if (!jit)
     Util::panic("Did you try to call Registers::Write(size_t, *Xbyak::Reg*) from the interpreter?");
 
-  jit->code.mov(jit->GPR<u8>(idx), v.cvt8());
+  jit->code.movzx(v.cvt64(), v.cvt8());
+  jit->code.mov(jit->GPR<u64>(idx), v.cvt64());
 }
 
 template <>
@@ -246,7 +247,8 @@ void Registers::Write<u16>(size_t idx, Xbyak::Reg v) {
   if (!jit)
     Util::panic("Did you try to call Registers::Write(size_t, *Xbyak::Reg*) from the interpreter?");
 
-  jit->code.mov(jit->GPR<u16>(idx), v.cvt16());
+  jit->code.movzx(v.cvt64(), v.cvt16());
+  jit->code.mov(jit->GPR<u64>(idx), v.cvt64());
 }
 
 template <>
@@ -273,7 +275,8 @@ void Registers::Write<u32>(size_t idx, Xbyak::Reg v) {
   if (!jit)
     Util::panic("Did you try to call Registers::Write(size_t, *Xbyak::Reg*) from the interpreter?");
 
-  jit->code.mov(jit->GPR<u32>(idx), v.cvt32());
+  jit->code.movzx(v.cvt64(), v.cvt32());
+  jit->code.mov(jit->GPR<u64>(idx), v.cvt64());
 }
 
 template <>

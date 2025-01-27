@@ -4,6 +4,7 @@
 #include <vector>
 #include <xbyak.h>
 #include <jit/helpers.hpp>
+#include <capstone/capstone.h>
 
 namespace n64 {
 struct Core;
@@ -46,6 +47,7 @@ private:
   using BlockFn = int (*)();
   std::vector<std::vector<BlockFn>> blockCache;
   Xbyak::Label branch_likely_not_taken;
+  csh disassemblerMips, disassemblerX86;
 
   template <typename T>
   Xbyak::Address GPR(const size_t index) const {

@@ -2,7 +2,17 @@
 #include <jit/helpers.hpp>
 
 namespace n64 {
-JIT::JIT(ParallelRDP &parallel) : regs(this), mem(regs, parallel, this) { blockCache.resize(kUpperSize); }
+JIT::JIT(ParallelRDP &parallel) : regs(this), mem(regs, parallel, this) {
+  blockCache.resize(kUpperSize);
+  if (cs_open(CS_ARCH_MIPS, static_cast<cs_mode>(CS_MODE_MIPS64 | CS_MODE_BIG_ENDIAN), &disassemblerMips) !=
+      CS_ERR_OK) {
+    Util::panic("Failed to initialize MIPS disassembler");
+  }
+
+  if (cs_open(CS_ARCH_X86, static_cast<cs_mode>(CS_MODE_64 | CS_MODE_LITTLE_ENDIAN), &disassemblerX86) != CS_ERR_OK) {
+    Util::panic("Failed to initialize x86 disassembler");
+  }
+}
 
 bool JIT::ShouldServiceInterrupt() const {
   const bool interrupts_pending = (regs.cop0.status.im & regs.cop0.cause.interruptPending) != 0;
@@ -24,7 +34,7 @@ void JIT::CheckCompareInterrupt() {
 
 void JIT::InvalidateBlock(const u32 paddr) {
   if (const u32 index = paddr >> kUpperShift; !blockCache[index].empty())
-    blockCache[index].erase(blockCache[index].begin(), blockCache[index].end());
+    blockCache[index] = {};
 }
 
 int JIT::Step() {
@@ -44,14 +54,15 @@ int JIT::Step() {
 
   if (!blockCache[upperIndex].empty()) {
     if (blockCache[upperIndex][lowerIndex]) {
-      Util::trace("[JIT]: Executing already compiled block @ 0x{:016X}", blockPC);
+      // Util::trace("[JIT]: Executing already compiled block @ 0x{:016X}", blockPC);
       return blockCache[upperIndex][lowerIndex]();
     }
   } else {
     blockCache[upperIndex].resize(kLowerSize);
   }
 
-  Util::trace("[JIT]: Compiling block @ 0x{:016X}", blockPC);
+  Util::trace("[JIT]: Compiling block @ 0x{:016X}:", blockPC);
+  // const auto blockInfo = code.getCurr();
   const auto block = code.getCurr<BlockFn>();
   blockCache[upperIndex][lowerIndex] = block;
 
@@ -68,6 +79,8 @@ int JIT::Step() {
   code.push(code.rbp);
   code.mov(code.rbp, reinterpret_cast<uintptr_t>(this)); // Load context pointer
 
+  // cs_insn *insn;
+  Util::trace("\tMIPS code (guest PC = 0x{:016X}):", blockPC);
   while (!instrInDelaySlot) {
     // CheckCompareInterrupt();
 
@@ -90,7 +103,17 @@ int JIT::Step() {
 
     const u32 instruction = mem.Read<u32>(regs, paddr);
 
-    /*if(ShouldServiceInterrupt()) {
+    /*u32 bswapped = bswap(instruction);
+    auto count = cs_disasm(disassemblerMips, reinterpret_cast<const u8 *>(&bswapped), 4, blockPC, 0, &insn);
+
+    if (count > 0) {
+      Util::trace("\t\t0x{:016X}:\t{}\t\t{}\n", insn->address, insn->mnemonic, insn->op_str);
+      cs_free(insn, count);
+    } else {
+      Util::trace("\t\tCould not disassemble 0x{:08X} due to error {}\n", instruction, (int)cs_errno(disassemblerMips));
+    }
+
+    if(ShouldServiceInterrupt()) {
       regs.cop0.FireException(ExceptionCode::Interrupt, 0, blockPC);
       return 1;
     }*/
@@ -127,6 +150,18 @@ int JIT::Step() {
   code.add(code.rsp, 8);
   code.ret();
   code.setProtectModeRE();
+  /* static auto blockInfoSize = 0;
+  blockInfoSize = code.getSize() - blockInfoSize;
+
+  Util::trace("\tX86 code (block address = 0x{:016X}):", (uintptr_t)block);
+  auto count = cs_disasm(disassemblerX86, blockInfo, blockInfoSize, (uintptr_t)block, 0, &insn);
+  if (count > 0) {
+    for (size_t j = 0; j < count; j++) {
+      Util::trace("\t\t0x{:016X}:\t{}\t\t{}\n", insn[j].address, insn[j].mnemonic, insn[j].op_str);
+    }
+
+    cs_free(insn, count);
+  }*/
   // const auto dump = code.getCode();
   // Util::WriteFileBinary(dump, code.getSize(), "jit.dump");
   //  Util::panic("");

@@ -166,7 +166,7 @@ void JIT::BranchTaken(const s64 offs) {
 }
 
 void JIT::BranchNotTaken() {
-  code.mov(code.rax, blockPC);
+  code.mov(code.rax, blockPC + 4);
   code.mov(REG(qword, pc), code.rax);
 }
 
@@ -1241,9 +1241,9 @@ void JIT::sltu(u32 instr) {
 }
 
 void JIT::sll(u32 instr) {
-  u8 sa = ((instr >> 6) & 0x1f);
+  const u8 sa = ((instr >> 6) & 0x1f);
   if (regs.IsRegConstant(RT(instr))) {
-    s32 result = regs.Read<s64>(RT(instr)) << sa;
+    const s32 result = regs.Read<s64>(RT(instr)) << sa;
     regs.Write(RD(instr), (s64)result);
   } else {
     regs.Read<s64>(RT(instr), code.rax);

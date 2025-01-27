@@ -26,6 +26,8 @@ struct JIT : BaseCPU {
   void Reset() override {
     regs.Reset();
     mem.Reset();
+    code.reset();
+    blockCache = {};
   }
 
   void InvalidateBlock(u32);

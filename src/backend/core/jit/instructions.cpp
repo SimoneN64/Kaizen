@@ -1210,9 +1210,10 @@ void JIT::slti(u32 instr) {
   if (regs.IsRegConstant(RS(instr))) {
     s16 imm = instr;
     regs.Write(RT(instr), regs.Read<s64>(RS(instr)) < imm);
-  } else {
-    Util::panic("[JIT]: Implement non constant SLTI!");
+    return;
   }
+
+  Util::panic("[JIT]: Implement non constant SLTI!");
 }
 
 void JIT::sltiu(u32 instr) {
@@ -1227,9 +1228,32 @@ void JIT::sltiu(u32 instr) {
 void JIT::slt(u32 instr) {
   if (regs.IsRegConstant(RS(instr), RT(instr))) {
     regs.Write(RD(instr), regs.Read<s64>(RS(instr)) < regs.Read<s64>(RT(instr)));
-  } else {
-    Util::panic("[JIT]: Implement non constant SLT!");
+    return;
   }
+
+  if (regs.IsRegConstant(RT(instr))) {
+    s64 rt = regs.Read<s64>(RT(instr));
+    regs.Read<s64>(RS(instr), code.rax);
+    code.cmp(code.rax, rt);
+    code.setl(code.al);
+    regs.Write<bool>(RD(instr), code.al);
+    return;
+  }
+
+  if (regs.IsRegConstant(RS(instr))) {
+    s64 rs = regs.Read<s64>(RS(instr));
+    regs.Read<s64>(RT(instr), code.rax);
+    code.cmp(code.rax, rs);
+    code.setge(code.al);
+    regs.Write<bool>(RD(instr), code.al);
+    return;
+  }
+
+  regs.Read<s64>(RS(instr), code.rax);
+  regs.Read<s64>(RT(instr), code.rdx);
+  code.cmp(code.rax, code.rdx);
+  code.setl(code.al);
+  regs.Write<bool>(RD(instr), code.al);
 }
 
 void JIT::sltu(u32 instr) {

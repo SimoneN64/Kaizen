@@ -334,7 +334,7 @@ void JIT::bgezl(const u32 instr) {
 void JIT::bltzal(const u32 instr) {
   const s16 imm = instr;
   const s64 offset = u64((s64)imm) << 2;
-  regs.Write<s64>(31, blockPC + 4);
+  regs.Write<s64>(31, blockNextPC);
   if (regs.IsRegConstant(RS(instr))) {
     branch_constant(regs.Read<s64>(RS(instr)) < 0, offset);
     return;
@@ -348,7 +348,7 @@ void JIT::bltzal(const u32 instr) {
 void JIT::bgezal(const u32 instr) {
   const s16 imm = instr;
   const s64 offset = u64((s64)imm) << 2;
-  regs.Write<s64>(31, blockPC + 4);
+  regs.Write<s64>(31, blockNextPC);
   if (regs.IsRegConstant(RS(instr))) {
     branch_constant(regs.Read<s64>(RS(instr)) >= 0, offset);
     return;
@@ -362,7 +362,7 @@ void JIT::bgezal(const u32 instr) {
 void JIT::bltzall(const u32 instr) {
   const s16 imm = instr;
   const s64 offset = u64((s64)imm) << 2;
-  regs.Write<s64>(31, blockPC + 4);
+  regs.Write<s64>(31, blockNextPC);
   if (regs.IsRegConstant(RS(instr))) {
     branch_likely_constant(regs.Read<s64>(RS(instr)) < 0, offset);
     return;
@@ -376,7 +376,7 @@ void JIT::bltzall(const u32 instr) {
 void JIT::bgezall(const u32 instr) {
   const s16 imm = instr;
   const s64 offset = u64((s64)imm) << 2;
-  regs.Write<s64>(31, blockPC + 4);
+  regs.Write<s64>(31, blockNextPC);
   if (regs.IsRegConstant(RS(instr))) {
     branch_likely_constant(regs.Read<s64>(RS(instr)) >= 0, offset);
     return;
@@ -864,8 +864,7 @@ void JIT::dsubu(u32 instr) {
 
 void JIT::j(const u32 instr) {
   const s32 target = (instr & 0x3ffffff) << 2;
-  const s64 oldPC = blockPC - 8;
-  const s64 address = (oldPC & ~0xfffffff) | target;
+  const s64 address = (blockOldPC & ~0xfffffff) | target;
   branch_abs_constant(true, address);
 }
 
@@ -881,12 +880,12 @@ void JIT::jr(const u32 instr) {
 }
 
 void JIT::jal(const u32 instr) {
-  regs.Write<s64>(31, blockPC + 4);
+  regs.Write<s64>(31, blockNextPC);
   j(instr);
 }
 
 void JIT::jalr(const u32 instr) {
-  regs.Write<s64>(RD(instr), blockPC + 4);
+  regs.Write<s64>(RD(instr), blockNextPC);
   jr(instr);
 }
 

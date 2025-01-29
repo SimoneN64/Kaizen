@@ -28,6 +28,7 @@ struct JIT : BaseCPU {
     mem.Reset();
     code.reset();
     blockCache = {};
+    blockCache.resize(kUpperSize);
   }
 
   void InvalidateBlock(u32);
@@ -43,7 +44,7 @@ private:
   Registers regs;
   Mem mem;
   u64 cop2Latch{};
-  u64 blockPC = 0;
+  u64 blockOldPC = 0, blockPC = 0, blockNextPC = 0;
   friend struct Cop1;
   friend struct Registers;
   using BlockFn = int (*)();

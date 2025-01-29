@@ -38,7 +38,9 @@ void JIT::InvalidateBlock(const u32 paddr) {
 }
 
 int JIT::Step() {
+  blockOldPC = regs.oldPC;
   blockPC = regs.pc;
+  blockNextPC = regs.nextPC;
   u32 paddr = 0;
 
   if (!regs.cop0.MapVAddr(Cop0::LOAD, blockPC, paddr)) {
@@ -118,7 +120,9 @@ int JIT::Step() {
       return 1;
     }*/
 
-    blockPC += 4;
+    blockOldPC = blockPC;
+    blockPC = blockNextPC;
+    blockNextPC += 4;
     instructionsInBlock++;
     Emit(instruction);
 
